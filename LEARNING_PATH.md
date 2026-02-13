@@ -234,6 +234,96 @@ This guide is organized by **learning topics** for coding interview preparation.
 
 **Practice**: `32_anomaly_detection/`
 
+### 33. **Information Theory & Probability Metrics**
+**What you'll learn**: Essential information theory
+- Entropy (uncertainty measure)
+- Cross-Entropy (loss function)
+- KL Divergence (distribution distance)
+- Mutual Information (feature selection)
+- Gini Impurity (decision trees)
+- Jensen-Shannon Divergence
+- Detailed mathematical explanations
+- Simple implementations
+
+**Practice**: `33_information_theory/`
+
+### 34. **Discriminative vs Generative Models**
+**What you'll learn**: Model types and assumptions
+- Discriminative models (what they are, how they work)
+- Generative models (what they are, how they work)
+- Key differences and when to use each
+- Model assumptions (Linear Regression, Logistic Regression, SVM)
+- Bayes' Theorem (detailed paragraph-style explanation)
+- Simple implementations
+
+**Practice**: `34_discriminative_generative/`
+
+### 35. **Kernel Functions**
+**What you'll learn**: Kernel methods in detail
+- What kernels are and why we need them
+- Linear kernel (when to use)
+- Polynomial kernel (degree, parameters)
+- RBF kernel (gamma parameter, most common)
+- Sigmoid kernel (rarely used)
+- Kernel trick explained
+- When to use each kernel
+- Parameter tuning
+- Simple implementations with examples
+
+**Practice**: `35_kernel_functions/`
+
+### 36. **NLP Basics**
+**What you'll learn**: Fundamental NLP concepts
+- TF-IDF (Term Frequency-Inverse Document Frequency)
+- N-gram models (unigram, bigram, trigram)
+- Laplace smoothing (add-k smoothing)
+- Language modeling
+- Bayesian interpretation of L1/L2 regularization
+- Detailed explanations with examples
+- Simple implementations
+
+**Practice**: `36_nlp_basics/`
+
+### 37. **MLE and MAP Estimation**
+**What you'll learn**: Maximum likelihood and Bayesian estimation
+- Maximum Likelihood Estimation (MLE) - detailed derivations
+- Maximum A Posteriori (MAP) - detailed derivations
+- Connection between MLE and MAP
+- MLE for Bernoulli, Normal, Linear Regression
+- MAP with different priors (Beta, Gaussian, Laplace)
+- Regularization as Bayesian prior
+- Intuitive explanations with examples
+- When to use each approach
+
+**Practice**: `37_mle_map_estimation/`
+
+### 38. **Multimodal Models & Embedding History**
+**What you'll learn**: Multimodal AI and NLP evolution
+- Multimodal models (CLIP, etc.) - detailed backgrounds
+- CLIP architecture, training, and evaluation
+- Evaluation of multimodal models
+- How to train embedding models (Word2Vec, GloVe)
+- History of NLP embeddings: TF-IDF → N-grams → Word2Vec → GloVe → BERT
+- Training procedures for each embedding method
+- Evolution of NLP from statistical to neural methods
+
+**Practice**: `38_multimodal_and_embeddings/`
+
+### 39. **RAG (Retrieval-Augmented Generation)**
+**What you'll learn**: Industry-standard RAG systems
+- RAG architecture and components
+- Document ingestion and chunking strategies
+- Embedding generation and vector databases
+- Retrieval strategies (dense, sparse, hybrid)
+- Re-ranking techniques
+- Context assembly and generation
+- Real-world challenges and solutions
+- Production considerations (scalability, latency, cost)
+- Evaluation metrics and frameworks
+- Industry-standard code implementations
+
+**Practice**: `39_rag_retrieval_augmented_generation/`
+
 ## 🚀 Quick Start Guide
 
 ### Step 1: Start with Classical ML

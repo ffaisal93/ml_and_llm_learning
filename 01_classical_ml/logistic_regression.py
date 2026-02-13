@@ -5,6 +5,14 @@ Interview question: "Implement logistic regression"
 Two versions:
 1. Pure Python/NumPy (this file)
 2. PyTorch version (see logistic_regression_torch.py)
+
+For detailed derivation with intuitive explanations, see:
+- logistic_regression_derivation.md (complete step-by-step derivation)
+  - Why sigmoid function?
+  - Log odds transformation
+  - Cross-entropy loss derivation
+  - Gradient descent
+  - Decision boundary
 """
 import numpy as np
 import matplotlib.pyplot as plt

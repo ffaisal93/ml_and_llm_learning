@@ -140,40 +140,31 @@ def dpo_loss(policy_logprobs_chosen: torch.Tensor,
 
 ### PPO (Proximal Policy Optimization)
 
-```python
-"""
-PPO: Proximal Policy Optimization
-Used in RLHF pipeline
-"""
-import torch
+**Detailed Implementation:** See `ppo.py` for complete implementation with:
+- Advantage computation (GAE)
+- PPO clipping explained
+- Value function loss
+- Entropy bonus
+- Complete training loop
 
-def ppo_loss(old_logprobs: torch.Tensor,
-             new_logprobs: torch.Tensor,
-             advantages: torch.Tensor,
-             clip_epsilon: float = 0.2) -> torch.Tensor:
-    """
-    PPO Loss with clipping
-    
-    Clips policy updates to prevent large changes
-    More stable than vanilla policy gradient
-    
-    Args:
-        old_logprobs: Log probs from old policy
-        new_logprobs: Log probs from new policy
-        advantages: Advantage estimates
-        clip_epsilon: Clipping parameter
-    """
-    # Importance sampling ratio
-    ratio = torch.exp(new_logprobs - old_logprobs)
-    
-    # Clipped objective
-    clipped_ratio = torch.clamp(ratio, 1 - clip_epsilon, 1 + clip_epsilon)
-    
-    # Take minimum (pessimistic)
-    loss = -torch.min(ratio * advantages, clipped_ratio * advantages)
-    
-    return loss.mean()
-```
+**Key Concepts:**
+- **Clipping**: Prevents large policy updates
+- **Importance Sampling**: Reuse old data
+- **Advantages**: How much better than average
+- **Why used in RLHF**: Stable, sample-efficient
+
+### GRPO (Group Relative Policy Optimization)
+
+**Detailed Implementation:** See `grpo.py` for complete implementation with:
+- Group-based optimization
+- Relative rewards
+- Multi-group handling
+
+**Key Concepts:**
+- **Relative optimization**: Better than baseline, not absolute
+- **Multiple groups**: Different preferences per group
+- **Fairness**: All groups improve relative to average
+- **Use case**: When you have multiple user segments
 
 ## Theory
 
@@ -187,12 +178,20 @@ def ppo_loss(old_logprobs: torch.Tensor,
 - **DPO**: No reward model, simpler, direct optimization
 - **Trade-off**: DPO simpler but RLHF more flexible
 
+## Code Files
+
+- **`rlhf_dpo.py`**: RLHF and DPO loss implementations
+- **`ppo.py`**: Complete PPO implementation with detailed explanations
+- **`grpo.py`**: GRPO implementation for group-based optimization
+- **`rl_alignment_qa.md`**: Detailed interview Q&A on RL alignment
+
 ## Exercises
 
 1. Implement DPO loss
 2. Compare RLHF vs DPO
 3. Implement PPO clipping
-4. Test on preference data
+4. Test GRPO on multi-group data
+5. Understand KL penalty role
 
 ## Next Steps
 

@@ -133,6 +133,13 @@ See `LEARNING_PATH.md` for the complete learning journey.
 30. **A/B Testing** - Statistical testing, sample size, interpretation
 31. **Neural Networks** - Forward pass, backpropagation from scratch (detailed)
 32. **Anomaly Detection** - Isolation Forest (detailed explanation, when to use)
+33. **Information Theory** - Entropy, KL divergence, cross-entropy, mutual information, Gini
+34. **Discriminative vs Generative** - Model types, assumptions (Linear, Logistic, SVM), Bayes' theorem
+35. **Kernel Functions** - Linear, Polynomial, RBF, Sigmoid (detailed explanations, when to use)
+36. **NLP Basics** - TF-IDF, N-grams, Laplace smoothing, L1/L2 priors (detailed explanations)
+37. **MLE and MAP Estimation** - Maximum Likelihood, Maximum A Posteriori (detailed derivations)
+38. **Multimodal Models & Embedding History** - CLIP, embedding training, NLP evolution (TF-IDF → Word2Vec → GloVe → BERT)
+39. **RAG (Retrieval-Augmented Generation)** - Industry-standard architecture, challenges, solutions, evaluation (production-ready)
 
 ## 🎯 Prerequisites
 

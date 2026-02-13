@@ -26,10 +26,20 @@ class DecisionTree:
         """
         Gini Impurity: Measure of node impurity
         
+        Mathematical Formulation:
         Gini = 1 - Σ(p_i)²
         where p_i is proportion of class i
         
-        Range: 0 (pure) to 1 (impure)
+        Interpretation:
+        - Gini = 0: Pure node (all same class)
+        - Gini = 1 - 1/k: Maximum for k classes (uniform distribution)
+        - Range: [0, 1-1/k] for k classes
+        - For binary: [0, 0.5]
+        
+        Why it works:
+        - Measures probability of misclassifying a random element
+        - If we label according to class distribution, Gini = misclassification prob
+        - Lower Gini = better split (more pure)
         """
         if len(y) == 0:
             return 0.0
@@ -38,14 +48,30 @@ class DecisionTree:
     
     def entropy(self, y: np.ndarray) -> float:
         """
-        Entropy: Another impurity measure
+        Entropy: Information-theoretic impurity measure
         
-        Entropy = -Σ(p_i × log2(p_i))
+        Mathematical Formulation:
+        H(X) = -Σ p_i × log₂(p_i)
+        
+        Interpretation:
+        - H(X) = 0: Pure node (deterministic, one class)
+        - H(X) = log₂(k): Maximum for k classes (uniform distribution)
+        - Higher entropy = more uncertainty = more impure
+        
+        Why it works:
+        - Measures uncertainty/randomness in class distribution
+        - Information-theoretic foundation
+        - Used in ID3, C4.5 algorithms
+        
+        Properties:
+        - Always non-negative: H(X) ≥ 0
+        - Maximum when uniform
+        - Minimum (0) when deterministic
         """
         if len(y) == 0:
             return 0.0
         proportions = np.bincount(y) / len(y)
-        proportions = proportions[proportions > 0]  # Remove zeros
+        proportions = proportions[proportions > 0]  # Remove zeros (log(0) undefined)
         return -np.sum(proportions * np.log2(proportions))
     
     def find_best_split(self, X: np.ndarray, y: np.ndarray):

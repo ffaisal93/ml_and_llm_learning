@@ -13,6 +13,9 @@ Mathematical Formulation:
   - ∂MSE/∂w = (1/n) X^T (y_pred - y_true)
   - ∂MSE/∂b = (1/n) Σ(y_pred - y_true)
   - Update: w = w - α × ∂MSE/∂w, b = b - α × ∂MSE/∂b
+
+For detailed derivation with intuitive explanations, see:
+- linear_regression_derivation.md (complete step-by-step derivation)
 """
 import numpy as np
 import matplotlib.pyplot as plt

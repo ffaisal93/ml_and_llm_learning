@@ -47,6 +47,24 @@ This topic teaches you to implement classical ML algorithms from scratch:
 - Image compression
 - Data preprocessing
 
+## Detailed Derivations
+
+**Complete mathematical derivations with intuitive explanations:**
+- **Linear Regression**: Step-by-step derivation from first principles
+  - Why least squares?
+  - Normal equation derivation
+  - Geometric intuition
+  - Gradient descent alternative
+  - See `linear_regression_derivation.md`
+
+- **Logistic Regression**: Complete derivation with intuitive explanations
+  - Why sigmoid function?
+  - Log odds transformation
+  - Cross-entropy loss derivation
+  - Gradient descent
+  - Decision boundary
+  - See `logistic_regression_derivation.md`
+
 ## Industry-Standard Boilerplate Code
 
 ### Linear Regression (From Scratch)
