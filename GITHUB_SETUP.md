@@ -2,15 +2,23 @@
 
 This guide will help you push the `ml_and_llm_learning` repository to GitHub.
 
-## Step 1: Create Repository on GitHub
+## Step 1: Create Repository on GitHub (IMPORTANT - DO THIS FIRST!)
+
+**⚠️ You must create the repository on GitHub BEFORE pushing!**
 
 1. Go to [GitHub](https://github.com) and sign in
 2. Click the **"+"** icon in the top right → **"New repository"**
+   - Or go directly to: https://github.com/new
 3. Repository name: `ml_and_llm_learning`
 4. Description: `Comprehensive ML & LLM learning repository with 32+ topics covering classical ML, transformers, business use cases, and interview preparation`
 5. Choose **Public** or **Private**
-6. **DO NOT** initialize with README, .gitignore, or license (we already have these)
+6. **⚠️ IMPORTANT: DO NOT** check any of these boxes:
+   - ❌ Add a README file
+   - ❌ Add .gitignore
+   - ❌ Choose a license
+   (We already have these files in the repository)
 7. Click **"Create repository"**
+8. **Wait for the repository to be created** - you'll see a page with setup instructions
 
 ## Step 2: Initialize Git and Push
 
