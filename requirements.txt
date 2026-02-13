@@ -1,0 +1,21 @@
+# ML & LLM Learning - Base Dependencies
+
+# Core
+numpy==1.24.3
+pandas==2.1.3
+
+# Deep Learning
+torch==2.1.0
+transformers==4.35.0
+
+# Visualization
+matplotlib==3.8.2
+seaborn==0.13.0
+
+# Utilities
+tqdm==4.66.1
+scipy==1.11.4
+
+# For reference (optional)
+# scikit-learn==1.3.2
+
