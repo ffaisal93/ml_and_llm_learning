@@ -192,8 +192,25 @@ def positional_encoding(seq_len: int, d_model: int) -> np.ndarray:
 3. Implement relative position encoding
 4. Build complete transformer block
 
+## Complete GPT Implementation
+
+**New Files:**
+- **`gpt_complete.py`**: Complete GPT implementation with all components
+  - Positional encoding
+  - Multi-head attention
+  - Feed-forward network
+  - Transformer block
+  - Causal mask
+  - Complete GPT model
+  - Training function
+  - Decoding function
+- **`gpt_training_decoding.md`**: Detailed explanations
+  - How GPT is trained (next token prediction, loss function, optimization)
+  - How GPT decodes (autoregressive generation, decoding strategies)
+  - Temperature scaling, stopping conditions
+
 ## Next Steps
 
-- **Topic 5**: Different attention mechanisms
+- **Topic 5**: Different attention mechanisms (with complexity analysis)
 - **Topic 6**: LLM inference techniques
 

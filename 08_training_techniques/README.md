@@ -140,18 +140,25 @@ def dpo_loss(policy_logprobs_chosen: torch.Tensor,
 
 ### PPO (Proximal Policy Optimization)
 
-**Detailed Implementation:** See `ppo.py` for complete implementation with:
-- Advantage computation (GAE)
-- PPO clipping explained
-- Value function loss
-- Entropy bonus
-- Complete training loop
+**Detailed Implementation:** See `ppo.py` for basic implementation and `ppo_complete.py` for complete version with all four models.
+
+**Complete Guide:** See `ppo_models_detailed.md` for comprehensive explanation of all four models:
+- **Policy Model (π_θ)**: Generates responses, being optimized
+- **Critic Model (V_φ)**: Estimates values, computes advantages
+- **Reference Model (π_ref)**: Frozen, provides KL penalty
+- **Reward Model (r_ψ)**: Scores responses, provides learning signal
 
 **Key Concepts:**
 - **Clipping**: Prevents large policy updates
 - **Importance Sampling**: Reuse old data
 - **Advantages**: How much better than average
 - **Why used in RLHF**: Stable, sample-efficient
+
+**Mathematical Details:**
+- Policy gradient: ∇_θ L = E[r(θ) * A * ∇_θ log π_θ]
+- PPO clipping: L^CLIP = E[min(r(θ)A, clip(r(θ), 1-ε, 1+ε)A)]
+- Value loss: L^VF = E[(V_φ(s) - R)^2]
+- KL penalty: β * KL(π_θ || π_ref)
 
 ### GRPO (Group Relative Policy Optimization)
 
@@ -181,7 +188,11 @@ def dpo_loss(policy_logprobs_chosen: torch.Tensor,
 ## Code Files
 
 - **`rlhf_dpo.py`**: RLHF and DPO loss implementations
-- **`ppo.py`**: Complete PPO implementation with detailed explanations
+- **`ppo.py`**: Basic PPO implementation with detailed explanations
+- **`ppo_complete.py`**: Complete PPO with all four models (Policy, Critic, Reference, Reward)
+- **`ppo_models_detailed.md`**: Comprehensive guide explaining all four models, their roles, and mathematical details
+- **`ppo_process_explanation.md`**: **NEW** - Complete paragraph-style explanations of PPO, GRPO, and DPO processes for interviews
+- **`rlhf_pipeline_explanation.md`**: **NEW** - Complete paragraph-style explanation of the three-stage RLHF pipeline
 - **`grpo.py`**: GRPO implementation for group-based optimization
 - **`rl_alignment_qa.md`**: Detailed interview Q&A on RL alignment
 

@@ -134,6 +134,39 @@ def r2_score(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 3. Calculate metrics from confusion matrix
 4. Compare different metrics
 
+## Perplexity: Detailed Guide
+
+**New Comprehensive Content:**
+
+- **`perplexity_detailed.md`**: Complete theoretical guide
+  - What is perplexity and intuitive understanding
+  - Mathematical formulations
+  - Connection to entropy and cross-entropy
+  - Interpretation and typical values
+  - Computing perplexity step-by-step
+  - Perplexity variants (word, character, byte-level)
+  - Perplexity in practice (training, evaluation, comparison)
+  - Limitations and best practices
+  - Related concepts (entropy, KL divergence, bits per token)
+  - Applications
+
+- **`perplexity_code.py`**: Complete implementations
+  - Basic perplexity computation
+  - Perplexity from logits
+  - Language model perplexity
+  - Per-token perplexity
+  - Character-level perplexity
+  - Bits per token
+  - Normalized perplexity
+  - Model comparison utilities
+
+**Key Concepts:**
+- Perplexity = exp(average negative log-likelihood)
+- Lower perplexity = better model
+- Typical values: 10-50 for good language models
+- Connection: PP = 2^H (perplexity = 2^entropy)
+- BPT = log₂(PP) (bits per token)
+
 ## Next Steps
 
 - **Topic 4**: Transformers

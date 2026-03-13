@@ -310,6 +310,100 @@ This guide is organized by **learning topics** for coding interview preparation.
 **Practice**: `38_multimodal_and_embeddings/`
 
 ### 39. **RAG (Retrieval-Augmented Generation)**
+
+**What you'll learn**: Complete RAG system
+- Architecture and components
+- Chunking strategies
+- Retrieval methods (TF-IDF, BM25, Dense, Hybrid)
+- Evaluation metrics
+- Real-world challenges and solutions
+
+**Practice**: `39_rag_retrieval_augmented_generation/`
+
+### 40. **Diffusion Models**
+
+**What you'll learn**: Diffusion models for generation
+- What are diffusion models and how they work
+- Mathematical foundations (forward, reverse process)
+- Training procedures
+- Evaluation methods
+- NLP applications (discrete diffusion)
+- Text generation, inpainting, editing
+
+**Practice**: `40_diffusion_models/`
+
+### 41. **Mixture of Experts (MoE)**
+
+**What you'll learn**: MoE architecture for efficient scaling
+- What is MoE and how it works
+- Routing mechanisms (top-k, switch)
+- Load balancing
+- Training procedures
+- Memory and computation efficiency
+- Real-world applications (GPT-4, Mixtral)
+
+**Practice**: `41_mixture_of_experts/`
+
+### 42. **State Space Models (SSM)**
+
+**What you'll learn**: SSMs for long sequence modeling
+- What are State Space Models
+- Linear State Space Models (S4)
+- Mamba architecture (selective SSM)
+- Linear complexity vs quadratic
+- Long-range dependencies
+- Comparison with transformers
+
+**Practice**: `42_state_space_models/`
+
+### 43. **Language Modeling Training Losses**
+
+**What you'll learn**: Pre-training objectives for language models
+- MLM (Masked Language Modeling) - BERT-style
+- CLM (Causal Language Modeling) - GPT-style
+- NSP (Next Sentence Prediction) - BERT-style
+- Mathematical formulations
+- Implementation details
+- When to use each
+
+**Practice**: `43_language_modeling_losses/`
+
+### 44. **Normalization Techniques**
+
+**What you'll learn**: Normalization in neural networks
+- Batch Normalization (BatchNorm)
+- Layer Normalization (LayerNorm)
+- Mathematical formulations
+- Differences and when to use each
+- Why transformers use LayerNorm
+- Implementation from scratch
+
+**Practice**: `44_normalization/`
+
+### 45. **Reinforcement Learning Fundamentals**
+
+**What you'll learn**: RL basics in easy language
+- Markov Decision Process (MDP)
+- Multi-Armed Bandit (exploration vs exploitation)
+- Q-Learning (value-based RL)
+- Monte Carlo methods (model-free learning)
+- Policy Gradients (policy-based RL)
+- Value Iteration and Policy Iteration
+- Temporal Difference Learning
+- Easy-to-understand explanations
+
+**Practice**: `45_reinforcement_learning_fundamentals/`
+
+### 46. **RNN and LSTM**
+
+**What you'll learn**: Sequence models before transformers
+- RNN (Recurrent Neural Network) from scratch
+- LSTM (Long Short-Term Memory) from scratch
+- Simple, short, precise implementations
+- Key concepts and differences
+- Vanishing gradient problem
+
+**Practice**: `46_rnn_lstm/`
 **What you'll learn**: Industry-standard RAG systems
 - RAG architecture and components
 - Document ingestion and chunking strategies

@@ -187,6 +187,44 @@ def dequantize_from_int8(quantized: np.ndarray, scale: float,
 3. Implement quantization
 4. Compare quantized vs full precision
 
+## KV Cache Detailed Explanation
+
+**New Comprehensive Guides:**
+
+- **`kv_cache_detailed.md`**: Complete detailed explanation
+  - The problem with standard inference (redundancy)
+  - How KV cache solves it (step-by-step)
+  - Code-level comparison (standard vs KV cache)
+  - Computational complexity analysis
+  - Memory considerations
+  - Practical implementation details
+
+- **`kv_cache_comparison.py`**: Side-by-side code comparison
+  - Standard inference implementation (shows the problem)
+  - KV cache implementation (shows the solution)
+  - Step-by-step comparison showing exactly what changes
+  - The key code difference highlighted
+
+**Key Improvements:**
+- **Standard**: O(n³d) total, recomputes all K, V every step
+- **KV Cache**: O(n²d) total, only computes K, V for new token
+- **Speedup**: ~n× for sequences of length n
+
+**Code Changes:**
+- Standard: `input_ids = entire_sequence`, recomputes all
+- KV Cache: `input_ids = [new_token]`, reuses cache
+- Key operation: `concatenate([K_cache, K_new])` - reuses cached values!
+
+**The Key Code:**
+```python
+# Standard (without cache):
+K = compute_K([token_0, ..., token_i])  # Recomputes all
+
+# KV Cache (with cache):
+K_new = compute_K([token_i])  # Only new token
+K = concatenate([K_cache, K_new])  # Reuses cache!
+```
+
 ## Next Steps
 
 - **Topic 7**: LLM problem solving

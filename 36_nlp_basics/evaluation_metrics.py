@@ -287,11 +287,34 @@ def perplexity(log_probs: List[float]) -> float:
     """
     Perplexity: For language modeling
     
-    Measures how well model predicts next word
+    Measures how well a probability model predicts a sample.
+    It's the exponentiated average negative log-likelihood.
     
-    Perplexity = exp(-1/N * Σ log P(w_i|context))
+    Mathematical Formulation:
+    PP = exp(-(1/N) * Σ log P(w_i | context))
     
-    Lower is better (model is less "perplexed")
+    Intuition:
+    - Perplexity = k means model is as uncertain as uniform choice among k options
+    - Lower perplexity = better model (more confident predictions)
+    - Typical values: 10-50 for good language models
+    
+    Connection to Entropy:
+    - PP = 2^H (where H is cross-entropy in bits)
+    - Perplexity measures uncertainty in "effective vocabulary size"
+    
+    Args:
+        log_probs: List of log probabilities of true tokens
+    Returns:
+        Perplexity (scalar, lower is better)
+    
+    Example:
+        >>> log_probs = [-2.0, -1.5, -2.5, -1.8]  # Example log probabilities
+        >>> pp = perplexity(log_probs)
+        >>> print(f"Perplexity: {pp:.2f}")  # Lower is better
+    
+    See also:
+        - 03_evaluation_metrics/perplexity_detailed.md for complete theory
+        - 03_evaluation_metrics/perplexity_code.py for full implementation
     """
     if len(log_probs) == 0:
         return float('inf')

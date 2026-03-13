@@ -236,6 +236,39 @@ class LoRALinear(nn.Module):
 3. Compare parameter counts
 4. Fine-tune with LoRA
 
+## Prompt Tuning and Prefix Tuning
+
+**New Comprehensive Content:**
+
+- **`prompt_prefix_tuning.md`**: Complete detailed guide
+  - What is prompt tuning and prefix tuning
+  - Why they work (theory and intuition)
+  - Mathematical formulations with detailed explanations
+  - Architecture details
+  - Initialization strategies
+  - Best practices and tips
+  - Comparison with other methods
+
+- **`prompt_prefix_code.py`**: Complete implementations
+  - `PromptTuning` class with full code
+  - `PrefixTuning` class with full code
+  - Training functions for both methods
+  - Parameter comparison utilities
+  - Usage examples
+
+- **`prompt_prefix_qa.md`**: Comprehensive interview Q&A
+  - 10 detailed questions and answers
+  - Comparisons with LoRA and full fine-tuning
+  - Implementation details
+  - Complexity analysis
+  - Parameter efficiency comparisons
+
+**Key Concepts:**
+- Prompt tuning: Adds trainable embeddings at input (0.01% parameters)
+- Prefix tuning: Adds trainable key-value at each layer (0.3% parameters)
+- Both keep model frozen, extremely efficient
+- Can achieve similar performance to full fine-tuning
+
 ## Next Steps
 
 - **Topic 26**: Tree-based methods

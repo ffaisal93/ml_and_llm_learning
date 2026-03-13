@@ -238,6 +238,17 @@ See `information_theory.py` for complete implementations.
 3. Compute mutual information for feature selection
 4. Use KL divergence for regularization
 
+## Perplexity and Entropy Connection
+
+**Perplexity is closely related to entropy:**
+- **Perplexity = 2^H** (where H is cross-entropy in bits)
+- **Perplexity = exp(H)** (where H is cross-entropy in nats)
+- Both measure uncertainty, but in different units
+- Entropy: bits (information content)
+- Perplexity: "effective vocabulary size" (more intuitive)
+
+**See `03_evaluation_metrics/perplexity_detailed.md` for complete explanation!**
+
 ## Next Steps
 
 - Use these in decision trees, neural networks, RLHF

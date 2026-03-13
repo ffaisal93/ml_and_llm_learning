@@ -112,6 +112,32 @@ Where:
 **What is PPO?**
 PPO is a policy gradient algorithm that prevents large policy updates by clipping the objective function.
 
+**The Four Models in PPO/RLHF:**
+
+**1. Policy Model (π_θ):**
+- Generates responses/actions
+- Outputs probability distribution: π_θ(a|s)
+- Being optimized during training
+- Used for: generation, policy gradient computation
+
+**2. Critic Model (V_φ):**
+- Estimates state value: V_φ(s) = E[R | s]
+- Predicts expected future return
+- Used for: advantage computation (A = Q - V), baseline for variance reduction
+- Trained with: value loss L^VF = (V_φ(s) - R)^2
+
+**3. Reference Model (π_ref):**
+- Frozen copy of policy before RL training
+- Typically the SFT (Supervised Fine-Tuned) model
+- Used for: KL penalty computation, importance sampling ratio
+- Mathematical role: KL(π_θ || π_ref) = E[log(π_θ/π_ref)]
+
+**4. Reward Model (r_ψ):**
+- Scores responses: r_ψ(x, y)
+- Trained on human preferences before RL
+- Used for: computing rewards during RL training
+- Typically frozen during RL (can be updated)
+
 **Mathematical Formulation:**
 
 **Standard Policy Gradient:**
@@ -163,14 +189,41 @@ Where:
 
 **PPO Loss Components:**
 ```
-L_PPO = L^CLIP + c_v * L^VF + c_e * H[π_θ]
+L_PPO = L^CLIP + c_v * L^VF + β * KL(π_θ || π_ref)
 
 Where:
-- L^CLIP: Clipped policy loss
-- L^VF: Value function loss (MSE)
-- H[π_θ]: Entropy bonus (encourages exploration)
-- c_v, c_e: Coefficients
+- L^CLIP: Clipped policy loss (uses Policy Model π_θ)
+- L^VF: Value function loss (uses Critic Model V_φ)
+- KL: KL penalty (uses Reference Model π_ref)
+- Rewards: From Reward Model r_ψ
+- c_v, β: Coefficients
 ```
+
+**How All Four Models Work Together:**
+
+**Training Loop:**
+1. **Generate**: Policy Model π_θ generates responses
+2. **Score**: Reward Model r_ψ scores responses → rewards
+3. **Evaluate**: Critic Model V_φ estimates values → V(s)
+4. **Compare**: Reference Model π_ref provides logprobs → KL penalty
+5. **Compute**: Advantages A = returns - V(s)
+6. **Update**: Policy π_θ and Critic V_φ (Reference π_ref and Reward r_ψ frozen)
+
+**Mathematical Flow:**
+```
+responses = π_θ.generate(prompts)
+rewards = r_ψ(prompts, responses)
+values = V_φ(prompts)
+policy_logprobs = log π_θ(responses | prompts)
+ref_logprobs = log π_ref(responses | prompts)
+
+advantages = returns - values
+ratio = exp(policy_logprobs - ref_logprobs)
+
+L = min(ratio*A, clip(ratio)*A) + c_v*(V-R)² + β*KL(π_θ||π_ref)
+```
+
+See `ppo_models_detailed.md` for complete mathematical details!
 
 ---
 
@@ -512,4 +565,26 @@ These questions cover:
 - Complete implementation
 
 All with detailed explanations, mathematical formulations, and code examples!
+
+---
+
+## Additional Resources for Interview Preparation
+
+**For detailed paragraph-style explanations suitable for interviews, see:**
+
+- **`ppo_process_explanation.md`**: Complete process explanations of:
+  - PPO training process (full paragraph style)
+  - GRPO training process (full paragraph style)
+  - DPO training process (full paragraph style)
+  - When to use each approach
+  - Complete mathematical flow in narrative form
+
+- **`rlhf_pipeline_explanation.md`**: Complete three-stage RLHF pipeline:
+  - Stage 1: Supervised Fine-Tuning (detailed process)
+  - Stage 2: Reward Model Training (detailed process)
+  - Stage 3: RL Optimization with PPO (detailed process)
+  - Challenges and solutions
+  - Evaluation and iteration
+
+These documents provide comprehensive, flowing explanations that you can use directly in interviews to explain the complete processes from start to finish.
 

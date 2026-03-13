@@ -152,4 +152,42 @@ if __name__ == "__main__":
     # Example: Positional encoding
     pe = positional_encoding(seq_len=10, d_model=64)
     print(f"\nPositional encoding shape: {pe.shape}")
+    
+    # Example: Causal attention
+    print("\n" + "=" * 60)
+    print("Causal Attention Example")
+    print("=" * 60)
+    
+    def causal_attention(Q: np.ndarray, K: np.ndarray, V: np.ndarray, d_k: int):
+        """
+        Causal Attention: Masks future positions (for autoregressive generation)
+        
+        WHAT THIS DOES:
+        1. Creates lower triangular mask: np.tril(np.ones((seq_len, seq_len)))
+           - Position i can attend to positions j where j ≤ i (past and current)
+           - Position i cannot attend to positions j where j > i (future)
+        
+        2. Applies mask to attention scores
+           - Future positions get -∞ (which becomes 0 after softmax)
+           - Past/current positions keep their computed scores
+        
+        3. Result: Each position only attends to itself and previous positions
+        
+        WHY LOWER TRIANGULAR?
+        - Lower triangular: 1s on and below diagonal (can attend to past/current)
+        - Upper triangular: Would be wrong (allows future, blocks past)
+        """
+        seq_len = Q.shape[0]
+        # Create lower triangular mask
+        mask = np.tril(np.ones((seq_len, seq_len)))
+        return self_attention(Q, K, V, d_k, mask=mask)
+    
+    # Apply causal attention
+    causal_output, causal_weights = causal_attention(Q, K, V, d_k)
+    print(f"Causal attention output shape: {causal_output.shape}")
+    print(f"Causal attention weights shape: {causal_weights.shape}")
+    print(f"\nCausal attention weights (first row - position 0):")
+    print(causal_weights[0].round(3))
+    print("\nNote: Position 0 can only attend to itself (future positions = 0.0)")
+    print("This enforces autoregressive property for GPT-style models!")
 

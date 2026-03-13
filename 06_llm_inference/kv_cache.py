@@ -1,6 +1,37 @@
 """
 KV Cache from Scratch
 Interview question: "How does KV caching work?"
+
+KEY IMPROVEMENT OVER STANDARD INFERENCE:
+
+STANDARD INFERENCE (WITHOUT KV CACHE):
+- At each generation step, processes ENTIRE sequence from scratch
+- Recomputes K and V for ALL previous tokens every time
+- Example: Generating token 3 requires recomputing K, V for tokens 0, 1, 2
+- Complexity: O(n³d) total, O(i²d) per step (where i is current sequence length)
+
+KV CACHE INFERENCE (WITH KV CACHE):
+- At each generation step, processes ONLY the new token
+- Reuses cached K and V for all previous tokens
+- Example: Generating token 3 only computes K, V for token 3, reuses cached K, V for tokens 0, 1, 2
+- Complexity: O(n²d) total, O(id) per step
+- Speedup: ~n× for sequences of length n
+
+THE KEY CODE DIFFERENCE:
+
+Standard (without cache):
+    input_ids = [token_0, token_1, ..., token_i]  # Entire sequence
+    K = compute_K(input_ids)  # Recomputes K for ALL tokens
+    V = compute_V(input_ids)  # Recomputes V for ALL tokens
+
+KV Cache (with cache):
+    input_ids = [token_i]  # Only new token
+    K_new = compute_K(input_ids)  # Only computes K for new token
+    V_new = compute_V(input_ids)  # Only computes V for new token
+    K = concatenate([K_cache, K_new])  # Reuses cached K
+    V = concatenate([V_cache, V_new])  # Reuses cached V
+
+See kv_cache_detailed.md for complete explanation with step-by-step comparisons!
 """
 import numpy as np
 from typing import Dict, List, Optional
@@ -33,6 +64,21 @@ class KVCache:
     def update(self, layer_idx: int, keys: np.ndarray, values: np.ndarray):
         """
         Update cache with new keys and values
+        
+        THIS IS WHAT MAKES KV CACHE WORK:
+        - Stores computed K, V so they can be reused in future steps
+        - Without this, we'd have to recompute K, V every time
+        - With this, we compute K, V once, store them, reuse them
+        
+        STANDARD (without cache):
+            - Doesn't store K, V
+            - Recomputes them every step
+            - Wasteful: same computation repeated many times
+        
+        KV CACHE (with cache):
+            - Stores K, V after computing them
+            - Reuses stored values in future steps
+            - Efficient: each K, V computed only once
         
         Args:
             layer_idx: Which transformer layer
@@ -83,23 +129,47 @@ def attention_with_kv_cache(Q: np.ndarray, K_cache: Optional[np.ndarray],
     Attention with KV cache
     Only compute attention for new token, reuse cached K/V
     
-    This is the key optimization: instead of recomputing attention
-    for all previous tokens, we reuse cached K and V.
+    THIS IS THE KEY OPTIMIZATION:
+    
+    STANDARD (without cache):
+        - Would recompute K, V for ALL tokens: K_all = compute_K([token_0, ..., token_i])
+        - Processes entire sequence every time
+        - Redundant computation: recomputes K_0, V_0, K_1, V_1, ... every step
+    
+    KV CACHE (with cache):
+        - Only computes K, V for NEW token: K_new = compute_K([token_i])
+        - Reuses cached K, V for previous tokens: K = [K_cache, K_new]
+        - No redundant computation: each K, V computed only once
+    
+    THE CONCATENATION IS THE KEY:
+        K = concatenate([K_cache, K_new])  # This line reuses cached values!
+        V = concatenate([V_cache, V_new])  # This line reuses cached values!
+    
+    This concatenation allows us to:
+        1. Use cached K, V for all previous tokens (no recomputation)
+        2. Only compute K, V for the new token
+        3. Combine them for attention computation
     
     Args:
         Q: Query for new token (num_heads, head_dim)
         K_cache: Cached keys (seq_len-1, num_heads, head_dim) or None
         V_cache: Cached values (seq_len-1, num_heads, head_dim) or None
-        K_new: New key (num_heads, head_dim)
-        V_new: New value (num_heads, head_dim)
+        K_new: New key (num_heads, head_dim) - ONLY computed for new token
+        V_new: New value (num_heads, head_dim) - ONLY computed for new token
         d_k: Key dimension
     """
     # If no cache, this is first token
     if K_cache is None:
+        # First token: no cache yet, just use new K, V
         K = K_new[np.newaxis, :, :]  # (1, num_heads, head_dim)
         V = V_new[np.newaxis, :, :]
     else:
-        # Concatenate cached + new
+        # THIS IS THE KEY OPTIMIZATION:
+        # Instead of recomputing K, V for all previous tokens,
+        # we concatenate cached (already computed) + new (just computed)
+        # 
+        # Standard would do: K = compute_K([token_0, ..., token_i])  # Recomputes all!
+        # KV Cache does: K = [K_cache, K_new]  # Reuses cache, only computes new!
         K = np.concatenate([K_cache, K_new[np.newaxis, :, :]], axis=0)
         V = np.concatenate([V_cache, V_new[np.newaxis, :, :]], axis=0)
     

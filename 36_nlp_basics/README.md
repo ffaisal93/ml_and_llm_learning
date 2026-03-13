@@ -284,6 +284,26 @@ See `evaluation_metrics.py`, `nlp_tasks_and_solutions.md`, `nlp_problems_detaile
 4. Implement BLEU and ROUGE scores
 5. Build schema pruner for NL2Code
 
+## Perplexity: Detailed Explanation
+
+**Perplexity is a fundamental metric in language modeling. See:**
+- **`03_evaluation_metrics/perplexity_detailed.md`**: Complete theoretical guide
+  - What is perplexity and intuitive understanding
+  - Mathematical formulations and connection to entropy
+  - Interpretation and typical values
+  - Computing perplexity step-by-step
+  - Perplexity variants and applications
+- **`03_evaluation_metrics/perplexity_code.py`**: Complete implementations
+  - All perplexity computation methods
+  - Bits per token, normalized perplexity
+  - Model comparison utilities
+
+**Key Points:**
+- Perplexity = exp(average negative log-likelihood)
+- Lower perplexity = better model
+- Connection: PP = 2^H (entropy)
+- Typical values: 10-50 for good language models
+
 ## Next Steps
 
 - Use TF-IDF for text classification

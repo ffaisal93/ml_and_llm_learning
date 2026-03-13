@@ -21,6 +21,13 @@ This repository covers everything you need for ML/LLM coding interviews:
 - **Optimizers** - SGD, Adam, etc. (from scratch)
 - **Regularization** - L1, L2, dropout (simple implementations)
 - **Theory & Interview Q&A** - Comprehensive coverage
+- **Diffusion Models** - Complete theory, training, evaluation, NLP applications
+- **Mixture of Experts (MoE)** - Architecture, routing, load balancing, efficiency
+- **State Space Models (SSM)** - Mamba, linear complexity, long sequence modeling
+- **Language Modeling Losses** - MLM, CLM, NSP implementations and explanations
+- **Normalization Techniques** - BatchNorm and LayerNorm with detailed theory and implementations
+- **Reinforcement Learning Fundamentals** - MDP, Q-Learning, Multi-Armed Bandit, Monte Carlo in easy language
+- **RNN and LSTM** - Simple, short, precise implementations from scratch
 
 ## 💡 Code Philosophy
 

@@ -3012,6 +3012,1679 @@ LLM → World Model Interface → World Model → Planning → Actions
 
 See `38_multimodal_and_embeddings/multimodal_integration_and_world_models.md` for complete details!
 
+---
+
+## GPT Implementation, Training, and Decoding
+
+### Q81: Implement a complete GPT model from scratch. What are all the components?
+
+**Answer:**
+
+**Complete GPT consists of:**
+
+**1. Token Embedding:**
+- Converts token indices to dense vectors
+- Learned embeddings, shape (vocab_size, d_model)
+
+**2. Positional Encoding:**
+- Adds position information to embeddings
+- Sinusoidal or learned positional embeddings
+- Shape: (max_seq_len, d_model)
+
+**3. Multi-Head Attention:**
+- Self-attention mechanism
+- Multiple heads (typically 12-96)
+- Each head: Q, K, V projections → attention → concatenate
+- Complexity: O(n²d)
+
+**4. Feed-Forward Network:**
+- Two linear layers with ReLU
+- Expands then contracts: d_model → d_ff → d_model
+- Applied position-wise
+
+**5. Transformer Block:**
+- Multi-head attention + Feed-forward
+- Residual connections + Layer normalization
+- Dropout for regularization
+
+**6. Stack of Transformer Blocks:**
+- Multiple blocks (typically 12-96 layers)
+- Each block refines representations
+
+**7. Final Layer Norm:**
+- Normalizes final representations
+
+**8. Output Projection:**
+- Maps to vocabulary size
+- Produces logits for next token prediction
+
+**See `04_transformers/gpt_complete.py` for complete implementation!**
+
+---
+
+### Q82: How is GPT trained? Explain the training process in detail.
+
+**Answer:**
+
+**Training Objective:**
+- Next token prediction (language modeling)
+- Given tokens [t₁, t₂, ..., tₙ], predict [t₂, t₃, ..., tₙ₊₁]
+- Autoregressive: each token depends on all previous tokens
+
+**Training Process:**
+
+**1. Data Preparation:**
+- Large text corpora (books, web, articles)
+- Tokenization (BPE, SentencePiece)
+- Batching and padding to fixed length
+
+**2. Forward Pass:**
+- Token embeddings + positional encoding
+- Pass through transformer blocks
+- Output logits for each position
+
+**3. Loss Function:**
+- Cross-entropy loss
+- L = -(1/n) Σ log P(tᵢ | t₁, ..., tᵢ₋₁)
+- Compares predicted distribution to true next token
+
+**4. Backward Pass:**
+- Compute gradients via backpropagation
+- Gradient clipping (max_norm=1.0)
+- Update parameters with optimizer (Adam/AdamW)
+
+**5. Training Details:**
+- Learning rate: 3e-4 to 1e-4
+- Learning rate scheduling (warmup + decay)
+- Dropout for regularization
+- Weight initialization (normal, std=0.02)
+
+**Key Insight:**
+- Massive scale: GPT-3 trained on trillions of tokens
+- Self-supervised: no labels needed, just text
+- Learns language patterns, syntax, semantics, reasoning
+
+**See `04_transformers/gpt_training_decoding.md` for complete details!**
+
+---
+
+### Q83: How does GPT decode/generate text? Explain the decoding process.
+
+**Answer:**
+
+**Autoregressive Generation:**
+- Generate one token at a time
+- Each token depends on all previous tokens
+- Start with prompt, generate until stop condition
+
+**Decoding Process:**
+
+**1. Initial Prompt:**
+- User provides starting text
+- Tokenized into sequence [p₁, p₂, ..., pₖ]
+
+**2. Forward Pass:**
+- Process prompt through model
+- Get logits for next token
+- Shape: (vocab_size,) - scores for each token
+
+**3. Convert to Probabilities:**
+- Apply softmax: P(t) = exp(logit_t) / Σ exp(logit_i)
+- Temperature scaling: P(t) = softmax(logits / T)
+  - T=1.0: original distribution
+  - T>1.0: more random (higher diversity)
+  - T<1.0: more deterministic (lower diversity)
+
+**4. Sample Token:**
+- **Greedy**: Always pick highest probability
+- **Sampling**: Random sample from distribution
+- **Top-k**: Sample from top-k tokens
+- **Top-p (Nucleus)**: Sample from tokens with cumulative prob > p
+
+**5. Append and Repeat:**
+- Append sampled token to sequence
+- Process new sequence again
+- Repeat until stop condition
+
+**6. Stop Conditions:**
+- Maximum length reached
+- End-of-sequence token generated
+- Specific stop sequence
+
+**Causal Masking:**
+- During decoding, mask future positions
+- Upper triangular matrix: -inf for future, 0 for past
+- Ensures model only sees previous tokens
+
+**See `04_transformers/gpt_training_decoding.md` for complete details!**
+
+---
+
+### Q84: What is the complexity of attention? Explain O(n²d) and different attention types.
+
+**Answer:**
+
+**Standard Self-Attention: O(n²d)**
+
+**Why O(n²d)?**
+- Compute QK^T: (n, d) @ (d, n) → (n, n) matrix
+- Each element: dot product of d-dimensional vectors
+- n² elements × d operations = O(n²d)
+- Apply to V: (n, n) @ (n, d) → O(n²d)
+- Total: O(n²d) time, O(n²) space
+
+**The n² term:**
+- Attention matrix: n×n (all pairs of tokens)
+- Each token attends to all other tokens
+- Quadratic in sequence length
+
+**The d term:**
+- Model dimension (typically 768-12288)
+- Vector operations scale with dimension
+
+**Multi-Head Attention:**
+- Still O(n²d) overall
+- Divides d into h heads (d/h each)
+- h heads × O(n²d/h) = O(n²d)
+- Can parallelize across heads
+
+**Linear Attention: O(nd²)**
+- Reformulates: (QK^T)V = Q(K^T V)
+- Compute K^T V first: O(nd²)
+- Then Q @ (K^T V): O(nd²)
+- Faster when n >> d
+
+**Sparse Attention: O(n√n d) or O(n log n d)**
+- Only attends to subset of tokens
+- Local window + global tokens
+- Reduces n² to n√n or n log n
+
+**Flash Attention: O(n²d) time, O(n) space**
+- Same computation, block-wise
+- Doesn't store full attention matrix
+- Memory efficient
+
+**See `05_attention_mechanisms/attention_complexity.md` for complete analysis!**
+
+---
+
+See `04_transformers/gpt_complete.py` for complete GPT implementation!
+See `04_transformers/gpt_training_decoding.md` for training and decoding details!
+See `05_attention_mechanisms/attention_complexity.md` for complexity analysis!
+
+---
+
+## Prompt Tuning and Prefix Tuning
+
+### Q85: What is prompt tuning? How does it work?
+
+**Answer:**
+
+**Prompt Tuning:**
+- Parameter-efficient fine-tuning method
+- Adds trainable "soft prompts" (continuous embeddings) to input
+- Keeps entire pre-trained model frozen
+- Only trains prompt embeddings (typically 20-100 tokens)
+
+**How It Works:**
+1. Prepend trainable prompt embeddings to input
+2. Pass [prompt; input] through frozen model
+3. Only update prompt embeddings during training
+4. Prompt learns to encode task-specific information
+
+**Mathematical Formulation:**
+```
+E_input = Embedding(x)  # Input embeddings
+P = [p₁, ..., pₚ]  # Trainable prompt (p tokens)
+E_combined = [P; E_input]  # Concatenate
+output = Model_θ(E_combined)  # Model frozen
+# Only P is updated: P ← P - α∇P
+```
+
+**Parameters:**
+- Trainable: p × d_model (e.g., 20 × 768 = 15,360)
+- Efficiency: 0.01% of model parameters
+- Storage: Only prompt embeddings per task
+
+**Advantages:**
+- Extremely parameter-efficient
+- Simple implementation
+- Fast training
+- Preserves pre-trained knowledge
+- Enables multi-task deployment
+
+---
+
+### Q86: What is prefix tuning? How does it differ from prompt tuning?
+
+**Answer:**
+
+**Prefix Tuning:**
+- Similar to prompt tuning but adds parameters at every layer
+- Adds trainable "prefix" key-value pairs at each transformer layer
+- More expressive than prompt tuning
+- Still parameter-efficient
+
+**Key Differences:**
+
+**1. Where Parameters Are Added:**
+- **Prompt tuning**: Only at input layer
+- **Prefix tuning**: At every transformer layer
+- **Impact**: Prefix influences model at multiple levels
+
+**2. What's Added:**
+- **Prompt tuning**: Prompt embeddings (input)
+- **Prefix tuning**: Prefix keys and values (attention)
+- **Impact**: Prefix directly modifies attention computation
+
+**3. Parameters:**
+- **Prompt tuning**: p × d_model
+- **Prefix tuning**: L × p × 2d_model (for K and V)
+- **Example**: 12 layers, 20 tokens, 768 dim
+  - Prompt: 15,360 parameters
+  - Prefix: ~368,640 parameters
+  - Still much less than full model
+
+**4. Performance:**
+- **Prompt tuning**: Good for simple tasks
+- **Prefix tuning**: Often matches full fine-tuning
+- **Trade-off**: More parameters for better performance
+
+**Mathematical Formulation:**
+```
+At each layer l:
+K_l = [P_l^K; K_l]  # Add prefix keys
+V_l = [P_l^V; V_l]  # Add prefix values
+Q_l unchanged
+Attention_l = softmax(Q_l K_l^T) V_l
+```
+
+---
+
+### Q87: Compare prompt tuning, prefix tuning, LoRA, and full fine-tuning.
+
+**Answer:**
+
+**Parameter Efficiency:**
+
+| Method | Parameters | Example (GPT-2) | Efficiency |
+|--------|-----------|-----------------|------------|
+| **Full Fine-tuning** | 100% | 125M | 1x |
+| **LoRA** | 0.1-1% | 125K-1.25M | 100-1000x |
+| **Prefix Tuning** | 0.3% | ~368K | ~340x |
+| **Prompt Tuning** | 0.01% | ~15K | ~8000x |
+
+**Performance:**
+
+**Full Fine-tuning:**
+- Best performance
+- Risk of catastrophic forgetting
+- Requires most resources
+
+**LoRA:**
+- Near full fine-tuning performance
+- Best balance of efficiency and performance
+- Most popular in practice
+
+**Prefix Tuning:**
+- Very good performance (often matches full fine-tuning)
+- More expressive than prompt tuning
+- Good for complex tasks
+
+**Prompt Tuning:**
+- Good performance
+- Sufficient for many tasks
+- Maximum efficiency
+
+**Use Cases:**
+
+- **Full Fine-tuning**: Maximum performance, single task
+- **LoRA**: Best balance, most common
+- **Prefix Tuning**: Complex tasks, good performance
+- **Prompt Tuning**: Simple tasks, maximum efficiency
+
+**Recommendation:**
+- Start with prompt tuning (simplest)
+- If insufficient, try prefix tuning
+- For best balance, use LoRA
+- Full fine-tuning only if needed
+
+---
+
+### Q88: How do you initialize prompt/prefix embeddings?
+
+**Answer:**
+
+**Initialization Strategies:**
+
+**1. Random Initialization:**
+```
+P ~ N(0, 0.02²)  # Small random values
+```
+- Simple, unbiased
+- May require more training
+
+**2. Vocabulary-Based:**
+```
+Sample random tokens from vocabulary
+Use their embeddings as initial prompt
+```
+- Starts with semantic information
+- Often works better than random
+
+**3. Task-Specific:**
+```
+Use embeddings from task-related tokens
+E.g., sentiment: "sentiment", "positive", "negative"
+```
+- Better starting point
+- Faster convergence
+
+**4. Reparameterization (Prefix):**
+```
+Learn in smaller space (d_model/2)
+Project up to full dimension
+```
+- More stable training
+- Used in prefix tuning
+
+**Best Practices:**
+- **Prompt tuning**: Vocabulary-based initialization
+- **Prefix tuning**: Reparameterization + random
+- **Experiment**: Try different strategies
+- **Use domain knowledge**: When available
+
+---
+
+### Q89: What is the optimal prompt/prefix length?
+
+**Answer:**
+
+**Typical Ranges:**
+- **Prompt tuning**: 20-100 tokens (commonly 20-50)
+- **Prefix tuning**: 10-50 tokens (commonly 10-20 per layer)
+
+**Selection Factors:**
+
+**1. Task Complexity:**
+- Simple tasks: 20 tokens sufficient
+- Complex tasks: 50-100 tokens needed
+- Rule: More complex → longer prompt/prefix
+
+**2. Dataset Size:**
+- Large datasets: Can support longer prompts
+- Small datasets: Shorter prompts (avoid overfitting)
+
+**3. Model Size:**
+- Larger models: Can utilize longer prompts
+- Smaller models: Shorter prompts sufficient
+
+**Selection Process:**
+1. Start with moderate length (20-30 tokens)
+2. Try different lengths: [10, 20, 50, 100]
+3. Evaluate on validation set
+4. Choose best performing length
+
+**Empirical Finding:**
+- Performance improves with length up to a point
+- Then plateaus (diminishing returns)
+- Sweet spot: 20-50 tokens for most tasks
+
+---
+
+### Q90: Implement prompt tuning from scratch. Show the key code.
+
+**Answer:**
+
+**Key Implementation:**
+
+```python
+class PromptTuning(nn.Module):
+    def __init__(self, model, prompt_length=20):
+        super().__init__()
+        self.model = model
+        self.prompt_length = prompt_length
+        self.d_model = model.config.n_embd
+        
+        # Freeze model
+        for param in model.parameters():
+            param.requires_grad = False
+        
+        # Trainable prompt embeddings
+        self.prompt_embeddings = nn.Parameter(
+            torch.randn(prompt_length, self.d_model) * 0.02
+        )
+    
+    def forward(self, input_ids):
+        batch_size = input_ids.size(0)
+        
+        # Input embeddings
+        input_emb = self.model.transformer.wte(input_ids)
+        
+        # Expand prompt for batch
+        prompt = self.prompt_embeddings.unsqueeze(0).expand(batch_size, -1, -1)
+        
+        # Concatenate: [prompt; input]
+        combined = torch.cat([prompt, input_emb], dim=1)
+        
+        # Forward through frozen model
+        outputs = self.model.transformer(inputs_embeds=combined)
+        logits = self.model.lm_head(outputs.last_hidden_state)
+        
+        return logits
+
+# Training
+optimizer = torch.optim.Adam([prompt_model.prompt_embeddings], lr=0.3)
+# Only prompt_embeddings are updated
+```
+
+**Key Points:**
+- Freeze all model parameters
+- Only prompt_embeddings requires gradients
+- Simple concatenation at input
+- Extremely parameter-efficient
+
+**See `25_adapters_lora/prompt_prefix_code.py` for complete implementation!**
+
+---
+
+See `25_adapters_lora/prompt_prefix_tuning.md` for detailed theory!
+See `25_adapters_lora/prompt_prefix_code.py` for complete code!
+See `25_adapters_lora/prompt_prefix_qa.md` for comprehensive Q&A!
+
+---
+
+## Diffusion Models
+
+### Q91: What are diffusion models? How do they work?
+
+**Answer:**
+
+**Diffusion Models:**
+- Generative models that learn to reverse a gradual noising process
+- Work by iteratively removing noise from data, starting from pure noise
+- State-of-the-art results in image generation (DALL-E, Stable Diffusion)
+
+**How They Work:**
+
+**1. Forward Process (Fixed):**
+- Gradually add Gaussian noise to data
+- q(x_t | x_{t-1}) = N(x_t; √(1-β_t)x_{t-1}, β_t I)
+- After T steps, data becomes pure noise
+
+**2. Reverse Process (Learned):**
+- Learn to remove noise step by step
+- p_θ(x_{t-1} | x_t) = N(x_{t-1}; μ_θ(x_t, t), Σ_θ(x_t, t))
+- Neural network predicts how to denoise
+
+**3. Training:**
+- Predict the noise that was added
+- Loss: L = E[||ε - ε_θ(x_t, t)||²]
+
+**4. Generation:**
+- Start from pure noise x_T ~ N(0, I)
+- Iteratively apply reverse process: x_T → x_{T-1} → ... → x_0
+
+**Key Insight:**
+- Break down complex generation into many simple denoising steps
+- Each step only removes small amount of noise
+- Much easier to learn than generating directly
+
+---
+
+### Q92: How do you train a diffusion model?
+
+**Answer:**
+
+**Training Algorithm:**
+
+**1. Setup:**
+- Define variance schedule β_t (linear or cosine)
+- Precompute α_t, ᾱ_t for efficiency
+
+**2. Training Loop:**
+```
+For each batch:
+  a. Sample data: x_0 ~ q(x_0)
+  b. Sample timestep: t ~ Uniform({1, 2, ..., T})
+  c. Sample noise: ε ~ N(0, I)
+  d. Create noisy data: x_t = √(ᾱ_t)x_0 + √(1-ᾱ_t)ε
+  e. Predict noise: ε_pred = ε_θ(x_t, t)
+  f. Compute loss: L = ||ε - ε_pred||²
+  g. Update: θ ← θ - α∇_θ L
+```
+
+**Best Practices:**
+- Learning rate: 1e-4 to 1e-3
+- Use learning rate scheduling (cosine annealing)
+- Gradient clipping (norm = 1.0)
+- Monitor loss and generate samples during training
+
+**Variance Schedule:**
+- Linear: β_t = (β_max - β_min) * (t/T) + β_min
+- Cosine: ᾱ_t = cos²(π/2 * (t/T)) (often better)
+
+---
+
+### Q93: What are discrete diffusion models? How do they work for NLP?
+
+**Answer:**
+
+**The Challenge:**
+- Standard diffusion works on continuous data (images)
+- Text is discrete (tokens), need adaptation
+
+**Discrete Forward Process:**
+
+Instead of Gaussian noise, use transition matrix:
+```
+q(x_t | x_{t-1}) = Categorical(x_t; Q_t x_{t-1})
+```
+
+**Common Approaches:**
+
+**1. Absorbing State:**
+- Have special [MASK] token
+- At each step, tokens transition to [MASK] with probability β_t
+- After T steps, all tokens become [MASK]
+
+**2. Uniform Transition:**
+- Tokens can transition to any other token uniformly
+
+**Discrete Reverse Process:**
+
+Learn to predict original token:
+```
+p_θ(x_{t-1} | x_t) = Categorical(x_{t-1}; p_θ(x_t, t))
+```
+
+**Advantages for NLP:**
+- Non-autoregressive (can generate in parallel)
+- Better for editing tasks (text inpainting)
+- More flexible control
+
+---
+
+### Q94: What are use cases of diffusion models in NLP?
+
+**Answer:**
+
+**1. Non-Autoregressive Text Generation:**
+- Generate all tokens in parallel
+- Faster than autoregressive models
+- Better for controlled generation
+
+**2. Text Inpainting:**
+- Fill in masked tokens
+- Edit specific parts of text
+- Example: "The [MASK] sat on the [MASK]" → "The cat sat on the mat"
+
+**3. Text-to-Image:**
+- DALL-E, Stable Diffusion
+- Generate images from text descriptions
+- Multimodal understanding
+
+**4. Text Editing:**
+- Style transfer
+- Paraphrasing
+- Rewriting with constraints
+
+**5. Controllable Generation:**
+- Generate with specific attributes
+- Control length, style, topic
+- More flexible than autoregressive
+
+**Industry Examples:**
+- DALL-E: Text-to-image generation
+- Stable Diffusion: Open-source text-to-image
+- Research: Non-autoregressive text generation
+
+---
+
+### Q95: How do you evaluate diffusion models?
+
+**Answer:**
+
+**For Images:**
+
+**1. FID (Frechet Inception Distance):**
+- Measures quality and diversity
+- Lower is better
+- Compares feature distributions
+
+**2. IS (Inception Score):**
+- Measures quality and diversity
+- Higher is better (typically 1-10)
+
+**3. Reconstruction Error:**
+- Test if model can recover original
+- Lower is better
+
+**For Text:**
+
+**1. BLEU Score:**
+- Measures n-gram overlap with reference
+- Higher is better (0-1)
+
+**2. Perplexity:**
+- Measures how well model predicts tokens
+- Lower is better
+
+**3. Diversity Metrics:**
+- Distinct-n: Ratio of unique n-grams
+- Self-BLEU: Average BLEU between samples
+- Higher distinct = more diverse
+
+**Diffusion-Specific:**
+
+**1. Denoising Accuracy:**
+- Test accuracy at each timestep
+- Measures how well model denoises
+
+**2. Sample Quality:**
+- Visual inspection (for images)
+- Human evaluation (for text)
+
+---
+
+### Q96: Compare diffusion models with autoregressive models (GPT) for text generation.
+
+**Answer:**
+
+**Generation Process:**
+
+**Autoregressive (GPT):**
+- Generate left-to-right, one token at a time
+- Sequential: t₁ → t₂ → t₃ → ...
+
+**Diffusion:**
+- Generate all tokens in parallel (discrete diffusion)
+- Iteratively refine all tokens together
+
+**Advantages:**
+
+**Autoregressive:**
+- Faster single-pass generation
+- Simpler implementation
+- Better for long sequences
+- More established for text
+
+**Diffusion:**
+- Non-autoregressive (parallel)
+- Better for editing tasks
+- More flexible control
+- Can edit specific parts
+
+**When to Use:**
+
+**Autoregressive:**
+- Standard text generation
+- Long sequences
+- When speed is important
+
+**Diffusion:**
+- Text editing/inpainting
+- Controlled generation
+- When need parallel generation
+
+**Current State:**
+- Autoregressive (GPT) dominates text generation
+- Diffusion better for images
+- Discrete diffusion promising for text
+
+---
+
+See `40_diffusion_models/diffusion_theory.md` for complete theory!
+See `40_diffusion_models/diffusion_code.py` for continuous diffusion!
+See `40_diffusion_models/nlp_diffusion.py` for discrete diffusion!
+See `40_diffusion_models/training_diffusion.py` for training procedures!
+See `40_diffusion_models/evaluation_diffusion.py` for evaluation methods!
+See `40_diffusion_models/diffusion_qa.md` for comprehensive Q&A!
+
+---
+
+## Perplexity and Related Concepts
+
+### Q97: What is perplexity? How is it computed?
+
+**Answer:**
+
+**Perplexity:**
+- Metric that measures how well a probability model predicts a sample
+- Defined as exponentiated average negative log-likelihood
+- Lower perplexity = better model
+
+**Mathematical Definition:**
+
+```
+PP(W) = exp(-(1/N) * Σ log P(w_i | context))
+```
+
+Where:
+- W = (w₁, w₂, ..., wₙ) is a sequence of tokens
+- P(w_i | context) is probability assigned by model
+- N is number of tokens
+
+**Intuitive Understanding:**
+- Perplexity = k means model is as uncertain as uniform choice among k options
+- If PP = 10, model thinks there are 10 equally likely next tokens
+- Lower perplexity = model is more confident = better predictions
+
+**Computation:**
+
+**1. Get Model Predictions:**
+```python
+logits = model(input_ids)  # (batch, seq_len, vocab_size)
+probs = softmax(logits, dim=-1)
+```
+
+**2. Get True Token Probabilities:**
+```python
+true_token_probs = probs[range(batch), range(seq_len), true_tokens]
+```
+
+**3. Compute Perplexity:**
+```python
+nll = -log(true_token_probs).mean()  # Negative log-likelihood
+perplexity = exp(nll)
+```
+
+**Connection to Cross-Entropy:**
+- Cross-entropy loss = average negative log-likelihood
+- Perplexity = exp(cross-entropy_loss)
+- Minimizing loss = minimizing perplexity
+
+---
+
+### Q98: What does perplexity mean? How do you interpret it?
+
+**Answer:**
+
+**Interpretation:**
+
+**Perplexity = k means:**
+- Model is as uncertain as if it had to choose uniformly among k options
+- On average, model thinks there are k equally likely next tokens
+
+**Examples:**
+
+**Perplexity = 1:**
+- Model is perfectly certain
+- Always predicts one token with probability 1
+- Unrealistic for real language
+
+**Perplexity = 10:**
+- Model is as uncertain as uniform choice among 10 tokens
+- Reasonable for a good language model
+- Better than random (which would be vocabulary size)
+
+**Perplexity = 100:**
+- Model is very uncertain
+- As confused as uniform choice among 100 tokens
+- Indicates poor model or difficult task
+
+**Perplexity = Vocabulary Size:**
+- Model is as bad as random guessing
+- Worst case scenario
+
+**Typical Values:**
+
+**For Language Models:**
+- GPT-2 (small): ~30-50 on WikiText-103
+- GPT-2 (large): ~15-25 on WikiText-103
+- GPT-3: ~10-20 on various datasets
+- State-of-the-art: < 10 on some datasets
+
+**For Different Tasks:**
+- Simple tasks: Lower perplexity (5-20)
+- Complex tasks: Higher perplexity (20-100)
+- Domain-specific: Varies widely
+
+**Connection to Entropy:**
+- Perplexity = 2^H (where H is cross-entropy in bits)
+- Entropy measures uncertainty in bits
+- Perplexity measures uncertainty in "effective vocabulary size"
+
+---
+
+### Q99: How is perplexity related to entropy and cross-entropy?
+
+**Answer:**
+
+**Connection to Entropy:**
+
+**Entropy:**
+```
+H(X) = -Σ P(x) * log P(x)
+```
+
+**Perplexity:**
+```
+PP = 2^H(X)  (for base-2 log)
+PP = exp(H(X))  (for natural log)
+```
+
+**Intuition:**
+- Entropy: uncertainty in bits
+- Perplexity: uncertainty in "effective vocabulary size"
+- If entropy = log₂(10) ≈ 3.32 bits, perplexity = 2^3.32 ≈ 10
+
+**Connection to Cross-Entropy:**
+
+**Cross-Entropy:**
+```
+H(P, Q) = -Σ P(x) * log Q(x)
+```
+
+**For Language Models:**
+```
+H = -(1/N) * Σ log P(w_i | context)
+```
+
+**Perplexity:**
+```
+PP = exp(H)
+```
+
+**Key Insight:**
+- Cross-entropy loss = average negative log-likelihood
+- Perplexity = exp(cross-entropy_loss)
+- Minimizing cross-entropy = minimizing perplexity
+- They are equivalent objectives
+
+**Training:**
+- When training language models, we minimize cross-entropy
+- This is equivalent to minimizing perplexity
+- Lower loss = lower perplexity = better model
+
+**Bits per Token:**
+- BPT = log₂(PP) = H (in bits)
+- Lower BPT = lower perplexity = better model
+- More interpretable for some applications
+
+---
+
+### Q100: How do you compute perplexity for a language model? Show the code.
+
+**Answer:**
+
+**Step-by-Step Algorithm:**
+
+**1. Get Model Predictions:**
+```python
+logits = model(input_ids)  # (batch, seq_len, vocab_size)
+```
+
+**2. Get Log Probabilities:**
+```python
+log_probs = F.log_softmax(logits, dim=-1)
+```
+
+**3. Get True Token Log Probabilities:**
+```python
+batch_size, seq_len = targets.shape
+indices = targets.unsqueeze(-1)  # (batch, seq, 1)
+true_token_log_probs = log_probs.gather(dim=-1, index=indices).squeeze(-1)
+```
+
+**4. Compute Average Negative Log-Likelihood:**
+```python
+if mask is not None:
+    nll = -(true_token_log_probs * mask).sum() / mask.sum()
+else:
+    nll = -true_token_log_probs.mean()
+```
+
+**5. Compute Perplexity:**
+```python
+perplexity = torch.exp(nll).item()
+```
+
+**Complete Function:**
+
+```python
+def perplexity_from_logits(logits, targets, mask=None):
+    # Get log probabilities
+    log_probs = F.log_softmax(logits, dim=-1)
+    
+    # Get true token log probabilities
+    indices = targets.unsqueeze(-1)
+    true_token_log_probs = log_probs.gather(dim=-1, index=indices).squeeze(-1)
+    
+    # Average negative log-likelihood
+    if mask is not None:
+        nll = -(true_token_log_probs * mask).sum() / mask.sum()
+    else:
+        nll = -true_token_log_probs.mean()
+    
+    # Perplexity
+    return torch.exp(nll).item()
+```
+
+**For Language Model Evaluation:**
+
+```python
+def language_model_perplexity(model, dataloader, device='cpu'):
+    model.eval()
+    total_nll = 0.0
+    total_tokens = 0
+    
+    with torch.no_grad():
+        for batch in dataloader:
+            input_ids = batch['input_ids'].to(device)
+            labels = batch['labels'].to(device)
+            
+            # Forward pass
+            logits = model(input_ids).logits
+            
+            # Shift for next token prediction
+            shift_logits = logits[:, :-1, :]
+            shift_labels = labels[:, 1:]
+            
+            # Compute perplexity
+            pp = perplexity_from_logits(shift_logits, shift_labels)
+            
+            # Accumulate
+            batch_tokens = shift_labels.numel()
+            total_nll += np.log(pp) * batch_tokens
+            total_tokens += batch_tokens
+    
+    # Average perplexity
+    avg_pp = np.exp(total_nll / total_tokens)
+    return avg_pp
+```
+
+**See `03_evaluation_metrics/perplexity_code.py` for complete implementation!**
+
+---
+
+### Q101: What are the limitations of perplexity? When should you use other metrics?
+
+**Answer:**
+
+**Limitations:**
+
+**1. Not Always Correlates with Quality:**
+- Lower perplexity doesn't always mean better text
+- Can overfit to training data
+- May not reflect human judgment
+- Need other metrics (BLEU, ROUGE, human eval)
+
+**2. Dataset Dependent:**
+- Perplexity varies by dataset
+- Can't compare across different datasets
+- Need same preprocessing
+- Fair comparison requires same setup
+
+**3. Vocabulary Size Matters:**
+- Larger vocabulary = higher baseline perplexity
+- Need to account for vocabulary size
+- Normalized perplexity helps
+- Compare models with similar vocabularies
+
+**4. Sequence Length:**
+- Longer sequences = more stable estimate
+- Shorter sequences = more variable
+- Need sufficient data for reliable estimate
+
+**5. Task-Specific:**
+- Good perplexity doesn't guarantee good performance on downstream tasks
+- May not reflect task-specific quality
+- Need task-specific metrics
+
+**When to Use Other Metrics:**
+
+**1. Text Generation:**
+- Use BLEU, ROUGE for quality
+- Use diversity metrics (distinct-n)
+- Use human evaluation
+- Perplexity as one of many metrics
+
+**2. Machine Translation:**
+- Use BLEU as primary metric
+- Use METEOR, TER
+- Perplexity for model selection
+
+**3. Summarization:**
+- Use ROUGE as primary metric
+- Use BLEU, METEOR
+- Perplexity for training monitoring
+
+**4. Question Answering:**
+- Use EM (Exact Match), F1
+- Use BLEU for generation quality
+- Perplexity less relevant
+
+**Best Practices:**
+- Use perplexity for model selection during training
+- Combine with task-specific metrics
+- Don't rely only on perplexity
+- Consider context and task requirements
+
+---
+
+See `03_evaluation_metrics/perplexity_detailed.md` for complete theory!
+See `03_evaluation_metrics/perplexity_code.py` for complete code!
+See `33_information_theory/information_theory.py` for entropy implementation!
+
+---
+
+## Causal Attention
+
+### Q102: Explain causal attention. What does the code `np.tril(np.ones((seq_len, seq_len)))` do?
+
+**Answer:**
+
+**Causal Attention:**
+- Masks future positions to enforce autoregressive property
+- Each position can only attend to itself and previous positions
+- Critical for GPT-style models (autoregressive generation)
+
+**The Code:**
+```python
+mask = np.tril(np.ones((seq_len, seq_len)))
+```
+
+**Step-by-Step:**
+
+**1. `np.ones((seq_len, seq_len))`:**
+- Creates matrix of all 1s
+- Shape: (seq_len, seq_len)
+- Example for seq_len=4:
+```
+[[1, 1, 1, 1],
+ [1, 1, 1, 1],
+ [1, 1, 1, 1],
+ [1, 1, 1, 1]]
+```
+
+**2. `np.tril()`:**
+- Takes lower triangular part
+- Sets everything above diagonal to 0
+- Keeps everything on and below diagonal as is
+- Result:
+```
+[[1, 0, 0, 0],   ← Position 0: can only see itself
+ [1, 1, 0, 0],   ← Position 1: can see 0, 1
+ [1, 1, 1, 0],   ← Position 2: can see 0, 1, 2
+ [1, 1, 1, 1]]   ← Position 3: can see all (0, 1, 2, 3)
+```
+
+**3. Application:**
+- Mask applied to attention scores
+- `scores[mask == 0] = -∞` (future positions)
+- After softmax: Future positions get 0 attention weight
+- Result: Each position only attends to past and current
+
+**Why Lower Triangular?**
+- Lower triangular = can attend to positions ≤ current (past + current)
+- Upper triangular = wrong (would allow future, block past)
+- This enforces causal constraint for autoregressive generation
+
+**See `05_attention_mechanisms/causal_attention_detailed.md` for complete explanation!**
+
+---
+
+### Q103: Why do we need causal attention? What happens without it?
+
+**Answer:**
+
+**Why We Need It:**
+
+**Autoregressive Constraint:**
+- In autoregressive generation, tokens are generated left-to-right
+- When generating token at position i, only tokens 0...i-1 exist
+- Future tokens (i+1, i+2, ...) don't exist yet
+- Model should only use information from past and current tokens
+
+**What Happens Without Causal Mask:**
+
+**During Training:**
+- Model sees full sequence: [token_0, token_1, ..., token_n]
+- Without mask: Each position can attend to ALL positions (including future)
+- Model learns to use future tokens for prediction
+
+**During Inference:**
+- Generate one token at a time
+- At step i, only have [token_0, ..., token_{i-1}]
+- Future tokens don't exist
+- But model was trained to use future tokens!
+
+**Result:**
+- Training and inference mismatch
+- Model behavior inconsistent
+- Poor generation quality
+
+**With Causal Mask:**
+- Training: Each position only sees past/current (matches inference)
+- Inference: Each position only sees past/current (matches training)
+- Consistent behavior → good generation
+
+**Example:**
+- Without mask: Position 1 can see position 2 (future) during training
+- With mask: Position 1 cannot see position 2 (future) during training
+- This matches inference where position 2 doesn't exist yet
+
+---
+
+### Q104: How does the causal mask work mathematically?
+
+**Answer:**
+
+**Mathematical Formulation:**
+
+**Standard Attention:**
+```
+Attention(Q, K, V) = softmax(QK^T / √d_k) V
+```
+
+**Causal Attention:**
+```
+Attention(Q, K, V) = softmax((QK^T / √d_k) + M) V
+```
+
+Where M is the causal mask:
+```
+M[i, j] = {
+    0   if j ≤ i  (can attend to past/current)
+    -∞  if j > i  (cannot attend to future)
+}
+```
+
+**Step-by-Step:**
+
+**1. Compute Attention Scores:**
+```
+scores = Q @ K.T / √d_k  # Shape: (seq_len, seq_len)
+```
+
+**2. Apply Causal Mask:**
+```
+masked_scores = scores + M
+# Where M[i, j] = -∞ if j > i (future positions)
+```
+
+**3. Softmax:**
+```
+attention_weights = softmax(masked_scores)
+```
+
+**What Happens:**
+- Future positions: scores = -∞ → softmax(-∞) = 0
+- Past/current positions: scores = original → softmax(original) = normal weights
+
+**Result:**
+- Each position gets attention weights that sum to 1
+- Future positions always have 0 weight
+- Past/current positions have non-zero weights
+
+**Example for seq_len=4:**
+
+**Mask Matrix:**
+```
+M = [[0,  -∞, -∞, -∞],
+     [0,  0,  -∞, -∞],
+     [0,  0,  0,  -∞],
+     [0,  0,  0,  0]]
+```
+
+**After Adding Mask:**
+```
+scores = [[2.3, -∞,  -∞,  -∞],
+          [1.8, 2.1, -∞,  -∞],
+          [1.2, 1.7, 2.0, -∞],
+          [0.9, 1.4, 1.6, 2.2]]
+```
+
+**After Softmax:**
+```
+weights = [[1.0, 0.0, 0.0, 0.0],   ← Position 0: 100% to itself
+           [0.4, 0.6, 0.0, 0.0],   ← Position 1: 40% to 0, 60% to 1
+           [0.2, 0.3, 0.5, 0.0],   ← Position 2: distributed, 0% to future
+           [0.1, 0.2, 0.3, 0.4]]   ← Position 3: distributed across all
+```
+
+---
+
+See `05_attention_mechanisms/causal_attention_detailed.md` for complete theory!
+See `05_attention_mechanisms/causal_attention_code.py` for visualization!
+
+---
+
+## Advanced Attention Mechanisms (GQA, Paged Attention)
+
+### Q105: What is Group Query Attention (GQA)? How does it differ from Multi-Head Attention?
+
+**Answer:**
+
+**Group Query Attention (GQA):**
+- Groups heads and shares K, V within each group
+- Middle ground between MHA and MQA
+- Reduces KV cache memory while maintaining quality
+
+**Key Differences:**
+
+**Multi-Head Attention (MHA):**
+- Each head has separate Q, K, V
+- KV Cache: num_heads × seq_len × (d_k + d_v)
+- Parameters: 3 × num_heads × d_model²
+
+**Group Query Attention (GQA):**
+- Heads grouped, K, V shared within each group
+- Q separate per head (like MHA)
+- KV Cache: num_groups × seq_len × (d_k + d_v)
+- Parameters: num_heads × d_model² + 2 × num_groups × d_model²
+
+**Example: 32 heads, 8 groups**
+- MHA: 32 × seq_len × (d_k + d_v) KV cache
+- GQA: 8 × seq_len × (d_k + d_v) KV cache
+- Reduction: 4× in KV cache memory
+
+**Why It Works:**
+- Queries need to be different (capture different aspects)
+- Keys and values can be shared within groups
+- Maintains most of MHA's expressiveness
+- Significant memory reduction
+
+**When to Use:**
+- Production inference (recommended)
+- Need efficiency but maintain quality
+- Best balance between MHA and MQA
+
+---
+
+### Q106: What is Multi-Query Attention (MQA)? How does it reduce memory?
+
+**Answer:**
+
+**Multi-Query Attention (MQA):**
+- Shares K and V across ALL heads
+- Only Q is separate per head
+- Maximum memory reduction
+
+**Key Difference:**
+
+**MHA:**
+```
+Head 1: Q_1, K_1, V_1
+Head 2: Q_2, K_2, V_2
+...
+Head h: Q_h, K_h, V_h
+```
+
+**MQA:**
+```
+Head 1: Q_1, K_shared, V_shared
+Head 2: Q_2, K_shared, V_shared
+...
+Head h: Q_h, K_shared, V_shared
+```
+
+**Memory Reduction:**
+
+**KV Cache:**
+- MHA: num_heads × seq_len × (d_k + d_v)
+- MQA: 1 × seq_len × (d_k + d_v) (shared, not per head!)
+- Reduction: num_heads× (e.g., 32× for 32 heads)
+
+**Parameters:**
+- MHA: 3 × num_heads × d_model²
+- MQA: num_heads × d_model² + 2 × d_model²
+- Reduction: From 3×num_heads to (num_heads + 2)
+
+**Example: 32 heads, seq_len=2048, d_k=128**
+- MHA KV Cache: 32 × 2048 × 256 = 16.8M values
+- MQA KV Cache: 1 × 2048 × 256 = 0.5M values
+- Reduction: 32× (16.8M → 0.5M)
+
+**Why It Works:**
+- Queries represent "what am I looking for?" (different per head)
+- Keys represent "what information do I have?" (can be shared)
+- Values represent "what is the information?" (can be shared)
+- Same information, different queries → similar quality
+
+**Trade-offs:**
+- Maximum memory reduction
+- Slight quality loss compared to MHA
+- Still achieves good quality
+- Used when maximum efficiency needed
+
+---
+
+### Q107: What is Paged Attention? How does it improve memory efficiency?
+
+**Answer:**
+
+**Paged Attention:**
+- Memory-efficient KV cache management
+- Manages cache in non-contiguous pages (blocks)
+- Similar to virtual memory in operating systems
+- Core innovation behind vLLM
+
+**The Problem: Memory Fragmentation**
+
+**Standard KV Cache:**
+- Store K, V for each sequence in contiguous memory
+- Variable-length sequences → memory fragmentation
+- When sequence finishes, memory freed but fragmented
+- Cannot reuse efficiently → waste
+
+**Example:**
+```
+Sequence 1: [12 tokens, finished] → 12 tokens freed
+Sequence 2: [16 tokens, still generating]
+New sequence needs 20 tokens → Cannot use the 12 freed tokens (fragmented)
+```
+
+**Paged Attention Solution:**
+
+**1. Page Structure:**
+- Divide KV cache into fixed-size pages (blocks)
+- Each page stores K, V for block_size tokens (e.g., 16 tokens)
+- Pages can be non-contiguous in memory
+
+**2. Memory Management:**
+- Maintain pool of free pages
+- Allocate pages on-demand
+- Return pages to pool when sequence finishes
+- Pages can be reused immediately
+
+**3. Benefits:**
+- No memory fragmentation
+- Efficient memory reuse
+- Can handle variable-length sequences
+- Better GPU memory utilization (95%+ vs ~70%)
+
+**Example:**
+- block_size = 16 tokens
+- Sequence of 25 tokens: needs 2 pages (32 tokens allocated)
+- Waste: Only 7 tokens (within last page)
+- Much better than standard (could waste 50%+)
+
+**Memory Efficiency:**
+- Standard: ~70% utilization (due to fragmentation)
+- Paged: ~95%+ utilization
+- Enables serving more sequences with same memory
+
+**See `05_attention_mechanisms/advanced_attention_mechanisms.md` for complete details!**
+
+---
+
+### Q108: Compare MHA, GQA, and MQA. When should you use each?
+
+**Answer:**
+
+**Comparison Table:**
+
+| Aspect | MHA | GQA | MQA |
+|-------|-----|-----|-----|
+| **Q Projections** | num_heads | num_heads | num_heads |
+| **K Projections** | num_heads | num_groups | 1 |
+| **V Projections** | num_heads | num_groups | 1 |
+| **KV Cache** | num_heads × seq_len × (d_k + d_v) | num_groups × seq_len × (d_k + d_v) | seq_len × (d_k + d_v) |
+| **Quality** | Best | Very Good | Good |
+| **Memory** | Highest | Medium | Lowest |
+| **Use Case** | Training, research | Production (recommended) | Maximum efficiency |
+
+**Example: 32 heads, 8 groups, seq_len=2048**
+
+**MHA:**
+- KV Cache: 32 × 2048 × 256 = 16.8M values
+- Quality: Best
+- Use: Training, maximum quality needed
+
+**GQA:**
+- KV Cache: 8 × 2048 × 256 = 4.2M values (4× reduction)
+- Quality: Very Good (minimal loss)
+- Use: Production inference (recommended)
+
+**MQA:**
+- KV Cache: 1 × 2048 × 256 = 0.5M values (32× reduction)
+- Quality: Good (slight loss)
+- Use: Maximum efficiency needed
+
+**When to Use:**
+
+**MHA:**
+- Training: Maximum quality
+- Research: Need best performance
+- When: Have resources, quality is priority
+
+**GQA:**
+- Production inference: Best balance
+- Recommended default
+- When: Need efficiency but maintain quality
+
+**MQA:**
+- Maximum efficiency needed
+- Quality loss acceptable
+- When: Resource-constrained, high throughput
+
+**Paged Attention:**
+- Can be used with any of above
+- Production serving (vLLM)
+- When: Need efficient memory management
+
+---
+
+See `05_attention_mechanisms/advanced_attention_mechanisms.md` for complete theory!
+See `05_attention_mechanisms/advanced_attention_code.py` for complete code!
+
+---
+
+## Mixture of Experts (MoE)
+
+### Q109: What is Mixture of Experts? How does it work?
+
+**Answer:**
+
+**Mixture of Experts (MoE):**
+- Architecture with multiple expert networks
+- Router decides which experts to activate
+- Only subset of experts process each input
+- Enables models with trillions of parameters
+
+**How It Works:**
+
+**1. Multiple Experts:**
+- 8-128 feed-forward networks
+- Each expert is independent
+- All experts have same architecture
+
+**2. Router:**
+- Takes input, outputs expert scores
+- Computes probability distribution
+- Selects top-k experts with highest scores
+
+**3. Sparse Activation:**
+- Only k experts activated per token (typically k=1 or 2)
+- Most experts remain inactive
+- Reduces computation significantly
+
+**4. Weighted Combination:**
+- Process through selected experts
+- Weighted combination of outputs
+
+**Efficiency:**
+- Total parameters: num_experts × params_per_expert
+- Active parameters: k × params_per_expert
+- Example: 8 experts, k=2 → 4× reduction in computation
+
+---
+
+### Q110: How does MoE reduce computation? Compare with dense models.
+
+**Answer:**
+
+**Dense Model:**
+- All parameters used for every input
+- Computation: O(d_model²) per token
+- Example: 7B parameters, all active
+
+**MoE Model:**
+- Total: num_experts × params_per_expert
+- Active: k × params_per_expert
+- Computation: O(k × d_model²) per token
+
+**Example: Mixtral-8x7B**
+- 8 experts × 7B = 56B total parameters
+- k=2 → 2 × 7B = 14B active per token
+- Computation: Only 14B parameters (not 56B!)
+
+**Reduction:**
+- Computation: (num_experts / k)× reduction
+- 8 experts, k=2 → 4× reduction
+- But total parameters: 8× more
+
+**Trade-off:**
+- More parameters (memory)
+- Less computation (speed)
+- Best of both worlds
+
+---
+
+### Q111: What is load balancing in MoE? Why is it important?
+
+**Answer:**
+
+**Load Balancing Problem:**
+- Without balancing, router might always select same experts
+- Some experts never used (waste)
+- Others overloaded (bottleneck)
+- Expert collapse: Only few experts ever used
+
+**Solution: Load Balancing Loss**
+```
+L_balance = (1/num_experts) * sum(load_i)²
+```
+
+Where load_i is fraction of tokens routed to expert i.
+
+**Goal:**
+- Minimize variance of expert usage
+- Distribute tokens evenly
+- All experts used roughly equally
+
+**Why Important:**
+- Without: Experts 0-2 always used, 3-7 never used
+- With: All experts used equally
+- Better parameter utilization
+- Prevents expert collapse
+
+---
+
+See `41_mixture_of_experts/moe_theory.md` for complete theory!
+See `41_mixture_of_experts/moe_code.py` for complete code!
+See `41_mixture_of_experts/moe_qa.md` for comprehensive Q&A!
+
+---
+
+## State Space Models (SSM)
+
+### Q112: What are State Space Models? How do they work?
+
+**Answer:**
+
+**State Space Models (SSMs):**
+- Sequence models using hidden state
+- Process sequences with linear recurrence
+- O(n) complexity (vs O(n²) for transformers)
+- Better for very long sequences
+
+**How They Work:**
+
+**1. Hidden State:**
+- Maintain state h[k] that evolves over time
+- State captures information from all previous inputs
+- Updated at each step
+
+**2. State Evolution:**
+```
+h[k+1] = A_d h[k] + B_d u[k]  # State update
+y[k] = C_d h[k] + D_d u[k]    # Output
+```
+
+**3. Linear Recurrence:**
+- Each step: O(1) computation
+- Total: O(n) for sequence of length n
+- Much faster than attention: O(n²)
+
+**Key Insight:**
+- State summarizes past information
+- Don't need to attend to all previous tokens
+- More efficient than attention
+
+---
+
+### Q113: What is Mamba? How does it differ from standard SSMs?
+
+**Answer:**
+
+**Mamba:**
+- Selective State Space Model
+- Makes parameters input-dependent
+- More expressive than fixed SSMs
+- State-of-the-art for long sequences
+
+**Key Difference:**
+
+**Standard SSM:**
+```
+h[k+1] = A h[k] + B u[k]  # Fixed A, B
+y[k] = C h[k]             # Fixed C
+```
+
+**Mamba (Selective):**
+```
+B[k] = Linear_B(u[k])  # Input-dependent B
+C[k] = Linear_C(u[k])  # Input-dependent C
+h[k+1] = A h[k] + B[k] u[k]
+y[k] = C[k] h[k]
+```
+
+**Why This Works:**
+- Different inputs need different transitions
+- B[k] controls how input affects state
+- C[k] controls what to extract
+- More expressive while maintaining O(n) complexity
+
+---
+
+### Q114: Compare SSMs (Mamba) with Transformers. When to use each?
+
+**Answer:**
+
+**Complexity:**
+
+| Aspect | Transformer | SSM (Mamba) |
+|--------|-------------|-------------|
+| **Time** | O(n²d) | O(nd) |
+| **Space** | O(n²) | O(nd) |
+| **Scaling** | Quadratic | Linear |
+
+**When to Use:**
+
+**Transformers:**
+- Short-medium sequences (< 8K tokens)
+- Need maximum quality
+- Established architecture
+
+**SSMs (Mamba):**
+- Very long sequences (> 8K tokens)
+- Need efficiency
+- Sequences of length 100K+
+
+**Crossover:**
+- < 2K: Transformers faster
+- > 8K: SSMs faster
+- > 100K: SSMs much better
+
+---
+
+See `42_state_space_models/ssm_theory.md` for complete theory!
+See `42_state_space_models/ssm_code.py` for complete code!
+See `42_state_space_models/ssm_qa.md` for comprehensive Q&A!
+
 ## More Questions
 
 See full `INTERVIEW_QA.md` for 100+ questions covering:
