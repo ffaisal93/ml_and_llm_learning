@@ -481,6 +481,11 @@ def gradient_clipping():
     loss.backward()
     
     # Clip gradients to max norm of 1.0
+    # explanation of gradient clipping in detail: Gradient Clipping is a technique used to prevent the exploding gradients problem in neural networks. It works by clipping the gradients to a maximum value. This is done by calculating the norm of the gradients and then clipping the gradients to the maximum value.
+    # The norm of a vector is the square root of the sum of the squares of the elements in the vector.
+    # The max norm is the maximum value of the norm of the gradients.
+    # The gradients are clipped to the max norm by the torch.nn.utils.clip_grad_norm_ function.
+    # The gradients are clipped to the max norm by the torch.nn.utils.clip_grad_norm_ function.
     torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
     
     optimizer.step()

@@ -48,7 +48,13 @@ class KNN:
         for x in X:
             neighbors = self._get_neighbors(x)
             # Majority vote
-            most_common = Counter(neighbors).most_common(1)[0][0]
+            most_common = Counter(neighbors).most_common(1)[0][0] ## explain the code line by line:
+            # Counter is a class that counts the number of times each element appears in a list
+            # most_common is a method that returns the most common element in a list
+            # most_common(1) returns the most common element in a list
+            # [0][0] returns the most common element in a list
+            # most_common(1)[0][0] returns the most common element in a list
+
             predictions.append(most_common)
         return np.array(predictions)
 

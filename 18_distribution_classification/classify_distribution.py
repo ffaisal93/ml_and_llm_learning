@@ -4,6 +4,7 @@ Interview question: "Given 2 distributions and a new number, which distribution?
 """
 import numpy as np
 from scipy import stats
+from typing import Dict, Tuple
 
 def classify_by_likelihood(new_value: float, 
                        dist1_samples: np.ndarray,
@@ -106,6 +107,66 @@ def classify_with_confidence(new_value: float,
         return (2, confidence2)
 
 
+def classify_gaussian_bayes(new_value: float,
+                            dist1_samples: np.ndarray,
+                            dist2_samples: np.ndarray,
+                            prior1: float = 0.5,
+                            prior2: float = 0.5) -> Dict[str, float]:
+    """
+    More interview-complete answer:
+    compare posterior scores under fitted Gaussian densities.
+
+    P(class | x) proportional to P(x | class) * P(class)
+    """
+    mu1 = float(np.mean(dist1_samples))
+    mu2 = float(np.mean(dist2_samples))
+    sigma1 = max(float(np.std(dist1_samples, ddof=0)), 1e-6)
+    sigma2 = max(float(np.std(dist2_samples, ddof=0)), 1e-6)
+
+    score1 = stats.norm.pdf(new_value, loc=mu1, scale=sigma1) * prior1
+    score2 = stats.norm.pdf(new_value, loc=mu2, scale=sigma2) * prior2
+    total = score1 + score2
+
+    posterior1 = float(score1 / total)
+    posterior2 = float(score2 / total)
+    predicted_class = 1 if posterior1 >= posterior2 else 2
+
+    return {
+        "mu1": mu1,
+        "sigma1": sigma1,
+        "mu2": mu2,
+        "sigma2": sigma2,
+        "posterior1": posterior1,
+        "posterior2": posterior2,
+        "predicted_class": float(predicted_class),
+    }
+
+
+def classify_kde(new_value: float,
+                 dist1_samples: np.ndarray,
+                 dist2_samples: np.ndarray,
+                 prior1: float = 0.5,
+                 prior2: float = 0.5) -> Dict[str, float]:
+    """
+    Nonparametric alternative when you do not want to assume a Gaussian family.
+    """
+    kde1 = stats.gaussian_kde(dist1_samples)
+    kde2 = stats.gaussian_kde(dist2_samples)
+
+    score1 = float(kde1(new_value)[0]) * prior1
+    score2 = float(kde2(new_value)[0]) * prior2
+    total = score1 + score2
+    posterior1 = float(score1 / total)
+    posterior2 = float(score2 / total)
+    predicted_class = 1 if posterior1 >= posterior2 else 2
+
+    return {
+        "posterior1": posterior1,
+        "posterior2": posterior2,
+        "predicted_class": float(predicted_class),
+    }
+
+
 # Usage Example
 if __name__ == "__main__":
     print("Distribution Classification")
@@ -137,3 +198,8 @@ if __name__ == "__main__":
     result4, confidence = classify_with_confidence(new_value, dist1_samples, dist2_samples)
     print(f"With confidence: Distribution {result4} (confidence: {confidence:.4f})")
 
+    print("\nInterview-ready Gaussian Bayes answer:")
+    print(classify_gaussian_bayes(new_value, dist1_samples, dist2_samples))
+
+    print("\nNonparametric KDE answer:")
+    print(classify_kde(new_value, dist1_samples, dist2_samples))

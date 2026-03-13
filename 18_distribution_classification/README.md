@@ -24,7 +24,52 @@ This topic teaches you:
 
 **Question**: You have 2 lists from 2 distributions. You get a new number. How do you determine which distribution it belongs to?
 
-**Answer**: Use likelihood ratio or maximum likelihood
+**Short Answer**: Use a generative classifier.
+
+That means:
+1. estimate each distribution from its samples
+2. compute how likely the new value is under each distribution
+3. include class priors if one distribution is more common
+4. choose the distribution with the larger posterior score
+
+In symbols:
+
+`choose dist1 if p(x | dist1) * P(dist1) > p(x | dist2) * P(dist2)`
+
+This is the cleanest interview answer because it shows:
+- probabilistic reasoning
+- awareness of assumptions
+- understanding of priors
+
+## How to Answer This in an Interview
+
+Say it in this order:
+
+### Case 1: If I Am Comfortable Assuming a Distribution Family
+
+If I assume both arrays come from Gaussians:
+- fit mean and variance for each array
+- compute Gaussian density of the new value under each fitted distribution
+- if priors are equal, choose the larger likelihood
+- if priors differ, choose the larger posterior score
+
+### Case 2: If I Do Not Want a Parametric Assumption
+
+If I do not want to assume Gaussian:
+- estimate density nonparametrically with KDE
+- or use a simple nearest-neighbor density intuition in 1D
+- then compare the estimated densities
+
+### Case 3: If the Distributions Overlap Heavily
+
+Then classification may be ambiguous.
+
+In that case, report:
+- predicted class
+- posterior/confidence
+- the fact that the point lies in an overlapping region
+
+This is a stronger answer than pretending every point can be classified confidently.
 
 ## Industry-Standard Boilerplate Code
 
@@ -130,15 +175,53 @@ def classify_bayesian(new_value: float,
 - Compute posterior: P(dist|x) ∝ P(x|dist) × P(dist)
 - More sophisticated
 
+### Important Interview Follow-Ups
+
+#### What assumptions are hidden here?
+
+You are assuming:
+- the training arrays are representative samples
+- the fitted family is reasonable if you use a parametric model
+- the new value is generated from one of those two candidate distributions
+
+#### What if both distributions have the same mean?
+
+Then variance still matters.
+
+Example:
+- one distribution may be narrow and concentrated
+- the other may be wide and diffuse
+
+A point near the shared mean may be more likely under the narrow one.
+A point far from the mean may be more likely under the wide one.
+
+#### What if you only have a few samples?
+
+Then parameter estimates are noisy.
+
+Good answer:
+- say confidence should be lower
+- consider Bayesian priors or bootstrap uncertainty
+- avoid overconfident claims
+
+#### What if the distributions are unknown?
+
+Then use:
+- KDE
+- histogram density estimate
+- nearest-neighbor density idea
+
+The principle is still the same: compare estimated densities.
+
 ## Exercises
 
 1. Implement likelihood ratio test
 2. Compare different methods
 3. Test on various distributions
 4. Handle edge cases
+5. Practice the spoken answer for the exact interview question above
 
 ## Next Steps
 
 - **Topic 19**: Advanced clustering
 - **Topic 20**: Multi-turn conversations
-

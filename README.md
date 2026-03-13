@@ -54,7 +54,13 @@ ml_and_llm_learning/
 ├── 10_optimizers/                # Optimizer implementations
 ├── 11_regularization/            # Regularization techniques
 ├── 12_theory/                    # Comprehensive theory
-└── 13_interview_qa/              # Interview questions & answers
+├── 13_interview_qa/              # Interview questions & answers
+├── ...
+├── 47_statistical_inference/     # Estimators, CIs, tests, Bayesian updates
+├── 48_optimization_and_matrix_calculus/  # Gradients, Hessians, conditioning
+├── 49_generalization_and_evaluation/     # Leakage, calibration, ablations
+├── 50_ml_coding_interview_patterns/      # Pressure-friendly coding templates
+└── 51_llm_research_interview_prep/       # LLM eval, ablations, research judgment
 ```
 
 ## 🚀 Quick Start
@@ -147,6 +153,23 @@ See `LEARNING_PATH.md` for the complete learning journey.
 37. **MLE and MAP Estimation** - Maximum Likelihood, Maximum A Posteriori (detailed derivations)
 38. **Multimodal Models & Embedding History** - CLIP, embedding training, NLP evolution (TF-IDF → Word2Vec → GloVe → BERT)
 39. **RAG (Retrieval-Augmented Generation)** - Industry-standard architecture, challenges, solutions, evaluation (production-ready)
+40. **Diffusion Models** - Complete theory, training, evaluation, NLP applications
+41. **Mixture of Experts (MoE)** - Architecture, routing, load balancing, efficiency
+42. **State Space Models (SSM)** - Mamba, linear complexity, long sequence modeling
+43. **Language Modeling Losses** - MLM, CLM, NSP implementations and explanations
+44. **Normalization Techniques** - BatchNorm and LayerNorm with detailed theory and implementations
+45. **Reinforcement Learning Fundamentals** - MDP, Q-Learning, Multi-Armed Bandit, Monte Carlo in easy language
+46. **RNN and LSTM** - Simple, short, precise implementations from scratch
+47. **Statistical Inference** - Estimators, MLE, confidence intervals, hypothesis tests, bootstrap, Bayesian updates
+48. **Optimization and Matrix Calculus** - Gradients, Jacobians, Hessians, convexity, conditioning, optimizer intuition
+49. **Generalization and Evaluation** - Leakage, calibration, class imbalance, distribution shift, ablations, metric uncertainty
+50. **ML Coding Interview Patterns** - Stable softmax, masking, vectorization, top-k/top-p, padding, k-means update templates
+51. **LLM Research Interview Prep** - Perplexity, pass@k, retrieval metrics, ablation reasoning, paper discussion structure
+52. **Statistical Learning Theory** - Empirical vs population risk, capacity, generalization gap, regularization as inductive bias
+53. **ML Debugging and Mock Coding** - Timed coding prompts, NaN/debugging patterns, leakage checks, training failure diagnosis
+54. **Data Manipulation for ML** - Pandas feature-table work, joins, groupby, normalization, preprocessing without leakage
+55. **Research Papers and Mock Interviews** - Paper discussion prompts, research judgment, and probability questions like distribution membership
+56. **Spoken Interview Question Bank** - Live-interview style model answers for ML theory, coding, probability, and LLM research questions
 
 ## 🎯 Prerequisites
 
@@ -167,4 +190,3 @@ By completing this repository, you'll be able to:
 ---
 
 **Ready to start?** Open `LEARNING_PATH.md` and begin your journey! 🚀
-

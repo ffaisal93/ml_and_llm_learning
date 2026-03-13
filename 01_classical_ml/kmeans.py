@@ -29,6 +29,7 @@ class KMeans:
     def _assign_clusters(self, X: np.ndarray) -> np.ndarray:
         """Assign each point to nearest centroid"""
         # Calculate distances from each point to each centroid
+        # newaxis is used to add a new axis to the centroids array, so that it can be broadcasted to the X array
         distances = np.sqrt(((X - self.centroids[:, np.newaxis])**2).sum(axis=2))
         # Assign to nearest centroid
         return np.argmin(distances, axis=0)
@@ -42,6 +43,11 @@ class KMeans:
     
     def _calculate_inertia(self, X: np.ndarray, labels: np.ndarray) -> float:
         """Calculate within-cluster sum of squares"""
+        ## what is the purpose of this function?
+        # The purpose of this function is to calculate the within-cluster sum of squares.
+        # The within-cluster sum of squares is the sum of the squared distances of each point to its centroid.
+        # This is used to measure the quality of the clustering.
+        # The lower the inertia, the better the clustering.
         inertia = 0
         for i in range(self.k):
             cluster_points = X[labels == i]
@@ -93,6 +99,9 @@ if __name__ == "__main__":
     # Cluster 3
     X3 = np.random.randn(n_samples//3, 2) + np.array([0, -2])
     
+    # vstack is used to stack the arrays vertically, so that the data is combined into a single array
+    # this is done to create a single dataset of all the data points from all the clusters
+    # examples: np.vstack([[1, 2], [3, 4], [5, 6]]) = [[1, 2], [3, 4], [5, 6]]
     X = np.vstack([X1, X2, X3])
     
     # Fit K-means

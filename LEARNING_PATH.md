@@ -404,19 +404,122 @@ This guide is organized by **learning topics** for coding interview preparation.
 - Vanishing gradient problem
 
 **Practice**: `46_rnn_lstm/`
-**What you'll learn**: Industry-standard RAG systems
-- RAG architecture and components
-- Document ingestion and chunking strategies
-- Embedding generation and vector databases
-- Retrieval strategies (dense, sparse, hybrid)
-- Re-ranking techniques
-- Context assembly and generation
-- Real-world challenges and solutions
-- Production considerations (scalability, latency, cost)
-- Evaluation metrics and frameworks
-- Industry-standard code implementations
 
-**Practice**: `39_rag_retrieval_augmented_generation/`
+### 47. **Statistical Inference**
+**What you'll learn**: How to reason about estimators and uncertainty
+- Population vs sample
+- Bias, variance, and MSE
+- Maximum likelihood estimation
+- Confidence intervals
+- Hypothesis testing and p-values
+- Bootstrap confidence intervals
+- Beta-Bernoulli Bayesian updating
+
+**Practice**: `47_statistical_inference/`
+
+### 48. **Optimization and Matrix Calculus**
+**What you'll learn**: Optimization intuition for ML interviews
+- Gradients, Jacobians, and Hessians
+- Chain rule for models
+- Common closed-form gradients
+- Convexity and conditioning
+- SGD, momentum, and Adam trade-offs
+- Numerical gradient checking
+- Constraint intuition with Lagrange multipliers
+
+**Practice**: `48_optimization_and_matrix_calculus/`
+
+### 49. **Generalization and Evaluation**
+**What you'll learn**: How to trust or challenge model results
+- Train / validation / test roles
+- Overfitting and underfitting
+- Data leakage
+- Class imbalance and metric choice
+- Calibration
+- Slice-based error analysis
+- Distribution shift
+- Ablations and metric confidence intervals
+
+**Practice**: `49_generalization_and_evaluation/`
+
+### 50. **ML Coding Interview Patterns**
+**What you'll learn**: Fast reusable patterns for coding rounds
+- Stable softmax
+- Masking and causal masks
+- Vectorized distance computation
+- Padding and batching
+- Top-k and top-p filtering
+- k-means update steps
+- Pressure-friendly implementation habits
+
+**Practice**: `50_ml_coding_interview_patterns/`
+
+### 51. **LLM Research Interview Prep**
+**What you'll learn**: How to reason like an LLM researcher in interviews
+- Pretraining objective discussion
+- Tokenization and scaling trade-offs
+- Perplexity, exact match, F1, pass@k, retrieval metrics
+- Pairwise preference evaluation
+- Ablation design and interpretation
+- RAG failure diagnosis
+- Paper discussion structure
+
+**Practice**: `51_llm_research_interview_prep/`
+
+### 52. **Statistical Learning Theory**
+**What you'll learn**: Why models generalize or fail to generalize
+- Empirical risk vs population risk
+- Generalization gap
+- Capacity and complexity intuition
+- VC/PAC-style interview intuition
+- Regularization as inductive bias
+- Why more data helps
+- Double descent intuition
+
+**Practice**: `52_statistical_learning_theory/`
+
+### 53. **ML Debugging and Mock Coding**
+**What you'll learn**: How to debug and code under interview pressure
+- Flat loss debugging
+- NaN and numerical stability checks
+- Leakage detection
+- Shape and mask debugging
+- Timed coding prompts
+- Training-step inspection habits
+
+**Practice**: `53_ml_debugging_and_mock_coding/`
+
+### 54. **Data Manipulation for ML**
+**What you'll learn**: Practical feature-table and preprocessing patterns
+- Filling missing values correctly
+- Z-scoring with training statistics only
+- Groupby aggregations
+- Joins and merge logic
+- One-hot encoding
+- Leakage-aware preprocessing
+
+**Practice**: `54_data_manipulation_for_ml/`
+
+### 55. **Research Papers and Mock Interviews**
+**What you'll learn**: Final-layer research interview reasoning
+- Paper discussion structure
+- Experiment criticism
+- Distribution-membership questions
+- Research judgment prompts
+- Oral mock interview questions
+
+**Practice**: `55_research_papers_and_mock_interviews/`
+
+### 56. **Spoken Interview Question Bank**
+**What you'll learn**: How to answer clearly out loud under interview pressure
+- Probability and statistics answers
+- Optimization and generalization answers
+- Coding and debugging verbal reasoning
+- LLM systems answers
+- Research judgment and paper discussion answers
+- Short quick-drill responses
+
+**Practice**: `56_spoken_interview_question_bank/`
 
 ## 🚀 Quick Start Guide
 
@@ -490,4 +593,3 @@ By the end, you'll be able to:
 - ✅ Understand advanced training techniques
 
 Let's start learning! 🚀
-
