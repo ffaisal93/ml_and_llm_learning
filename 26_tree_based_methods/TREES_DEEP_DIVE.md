@@ -28,7 +28,7 @@ For classification, two main impurity measures:
 **Gini impurity:**
 
 $$
-\operatorname{Gini}(S) = 1 - \sum_{c} p_c^2
+\mathrm{Gini}(S) = 1 - \sum_{c} p_c^2
 $$
 
 where $p_c$ is the fraction of class $c$ at node $S$. Equals the probability that two random samples from the node have different labels.
@@ -122,7 +122,7 @@ Bagging applied to decision trees, with feature randomization.
 The whole point: **decorrelation reduces variance**. The variance of an average of $B$ identically distributed but correlated random variables with correlation $\rho$ is:
 
 $$
-\operatorname{Var}\!\left(\frac{1}{B}\sum_b X_b\right) = \rho \sigma^2 + \frac{1 - \rho}{B} \sigma^2
+\mathrm{Var}\!\left(\frac{1}{B}\sum_b X_b\right) = \rho \sigma^2 + \frac{1 - \rho}{B} \sigma^2
 $$
 
 The second term decays as $1/B$, but the first is irreducible. Lower $\rho$ → lower asymptotic variance.

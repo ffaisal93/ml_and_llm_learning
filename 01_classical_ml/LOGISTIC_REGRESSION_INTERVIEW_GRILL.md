@@ -34,7 +34,7 @@ Two reasons. (a) MLE under Bernoulli gives cross-entropy, not MSE — different 
 $\nabla_w \mathcal{L} = X^\top (\sigma(Xw + b) - y)$. Form: input matrix transposed times residual. Same form as linear regression because both are GLMs with their canonical link.
 
 **8. Compute the Hessian.**
-$H = X^\top \operatorname{diag}(\sigma(z)(1 - \sigma(z))) X$. Positive semi-definite, so the loss is convex. Strictly positive definite if $X$ has full column rank and no point is perfectly classified.
+$H = X^\top \mathrm{diag}(\sigma(z)(1 - \sigma(z))) X$. Positive semi-definite, so the loss is convex. Strictly positive definite if $X$ has full column rank and no point is perfectly classified.
 
 **9. Is the loss convex?**
 Yes. Hessian is PSD as a weighted Gram matrix $X^\top D X$ with $D$ diagonal, positive entries. Strict convexity needs $X$ full rank and $0 < \sigma(z) < 1$ for all data points (so no perfectly-separable case).
@@ -196,7 +196,7 @@ Empirically, almost never. Both are S-shaped, both are between 0 and 1, predicti
 Poisson regression with log link: $\log(\lambda) = w^\top x + b$. The canonical link for the Poisson is the log. Same $X^\top (\hat\mu - y)$ gradient form. Used for count data (clicks, events, etc.).
 
 **50. Walk me through the canonical-link beauty.**
-For exponential-family distributions, the negative log-likelihood with canonical link gives $\partial \text{NLL}/\partial w = X^\top (\hat\mu - y)$. The Hessian is $X^\top \operatorname{diag}(V(\hat\mu)) X$ where $V$ is the variance function. This is why linear, logistic, and Poisson regressions all share the form "$X^\top \cdot \text{residual}$" — they're all GLMs with their canonical link. This is one of the deepest unifying results in classical statistics.
+For exponential-family distributions, the negative log-likelihood with canonical link gives $\partial \text{NLL}/\partial w = X^\top (\hat\mu - y)$. The Hessian is $X^\top \mathrm{diag}(V(\hat\mu)) X$ where $V$ is the variance function. This is why linear, logistic, and Poisson regressions all share the form "$X^\top \cdot \text{residual}$" — they're all GLMs with their canonical link. This is one of the deepest unifying results in classical statistics.
 
 ---
 

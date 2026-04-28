@@ -10,7 +10,7 @@
 Pure attention is permutation-equivariant: shuffle tokens and the output shuffles the same way. Attention has no innate notion of order. Positional encoding is the only mechanism by which transformers know what comes first.
 
 **2. State permutation equivariance formally.**
-For any permutation matrix $P$: $\operatorname{Attention}(P \cdot X) = P \cdot \operatorname{Attention}(X)$. This means the attention output depends only on the multiset of input tokens, not their order. Adding positional information breaks this.
+For any permutation matrix $P$: $\mathrm{Attention}(P \cdot X) = P \cdot \mathrm{Attention}(X)$. This means the attention output depends only on the multiset of input tokens, not their order. Adding positional information breaks this.
 
 **3. What are the main families of positional encoding?**
 Absolute (sinusoidal, learned), relative (T5 bias, Transformer-XL), rotary (RoPE), bias-based (ALiBi), and none (NoPE).
@@ -23,16 +23,16 @@ Absolute (sinusoidal, learned), relative (T5 bias, Transformer-XL), rotary (RoPE
 For each position $t$ and dimension $2i$ (even) or $2i+1$ (odd):
 
 $$
-\operatorname{PE}(t, 2i) = \sin(t / 10000^{2i/d}), \qquad \operatorname{PE}(t, 2i+1) = \cos(t / 10000^{2i/d})
+\mathrm{PE}(t, 2i) = \sin(t / 10000^{2i/d}), \qquad \mathrm{PE}(t, 2i+1) = \cos(t / 10000^{2i/d})
 $$
 
-Add $\operatorname{PE}(t)$ to the token embedding. Different dimensions oscillate at exponentially different frequencies, giving each position a unique signature.
+Add $\mathrm{PE}(t)$ to the token embedding. Different dimensions oscillate at exponentially different frequencies, giving each position a unique signature.
 
 **5. Why exponentially-spaced frequencies?**
 Spans many orders of magnitude (low frequencies for global structure, high frequencies for local). The base 10000 is empirical; not deeply principled. Could be 1000 or 100000 with similar results.
 
 **6. Why does sinusoidal in theory enable extrapolation?**
-The encoding is defined for any position $t$, including beyond training length. Plus the theoretical property: for any $\Delta t$, there exists a fixed linear transform $M_{\Delta t}$ such that $\operatorname{PE}(t + \Delta t) = M_{\Delta t} \cdot \operatorname{PE}(t)$, so relative positions can be computed by linear operations on absolute encodings.
+The encoding is defined for any position $t$, including beyond training length. Plus the theoretical property: for any $\Delta t$, there exists a fixed linear transform $M_{\Delta t}$ such that $\mathrm{PE}(t + \Delta t) = M_{\Delta t} \cdot \mathrm{PE}(t)$, so relative positions can be computed by linear operations on absolute encodings.
 
 **7. Why does sinusoidal extrapolation fail in practice?**
 The encoding is well-defined at long range, but the **learned weights** that work with it are trained only on positions seen in training. The model's attention patterns at position 5000 (when trained at 1024) are unreliable.

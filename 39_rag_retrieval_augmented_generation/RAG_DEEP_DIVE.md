@@ -87,7 +87,7 @@ Common: 10-20% overlap between adjacent chunks. Captures information that crosse
 Classic IR scoring:
 
 $$
-\operatorname{BM25}(q, d) = \sum_{w \in q} \operatorname{IDF}(w) \cdot \frac{\operatorname{tf}(w, d) \cdot (k+1)}{\operatorname{tf}(w, d) + k \cdot (1 - b + b \cdot |d| / \overline{|d|})}
+\mathrm{BM25}(q, d) = \sum_{w \in q} \mathrm{IDF}(w) \cdot \frac{\mathrm{tf}(w, d) \cdot (k+1)}{\mathrm{tf}(w, d) + k \cdot (1 - b + b \cdot |d| / \overline{|d|})}
 $$
 
 Term frequency × inverse document frequency, with normalizations. **Lexical match** — works for keywords, exact phrases, codes, IDs.
@@ -113,7 +113,7 @@ $$
 or use Reciprocal Rank Fusion (RRF):
 
 $$
-\operatorname{RRF}(d) = \sum_i \frac{1}{k + \operatorname{rank}_i(d)}
+\mathrm{RRF}(d) = \sum_i \frac{1}{k + \mathrm{rank}_i(d)}
 $$
 
 **Empirically dominant** for production RAG. Captures both lexical and semantic signals.
@@ -150,7 +150,7 @@ This two-stage retrieval is the modern production default.
 Train so positives (relevant pairs) have high similarity; negatives (irrelevant) have low.
 
 $$
-\mathcal{L} = -\log \frac{\exp(\operatorname{sim}(q, d_+))}{\sum_i \exp(\operatorname{sim}(q, d_i))}
+\mathcal{L} = -\log \frac{\exp(\mathrm{sim}(q, d_+))}{\sum_i \exp(\mathrm{sim}(q, d_i))}
 $$
 
 This is **InfoNCE** loss. Standard for retrieval embeddings. Negative mining matters: hard negatives (almost-relevant docs) train better than random negatives.

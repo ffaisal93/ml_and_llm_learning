@@ -69,7 +69,7 @@ $$
 $$
 
 $$
-\text{weights} = \operatorname{softmax}(\text{scores}) \in \mathbb{R}^{N \times N} \qquad \text{(row-wise)}
+\text{weights} = \mathrm{softmax}(\text{scores}) \in \mathbb{R}^{N \times N} \qquad \text{(row-wise)}
 $$
 
 $$
@@ -129,12 +129,12 @@ $$
 Q_i &= X W_Q^{(i)} \in \mathbb{R}^{N \times d_h} \\
 K_i &= X W_K^{(i)} \in \mathbb{R}^{N \times d_h} \\
 V_i &= X W_V^{(i)} \in \mathbb{R}^{N \times d_h} \\
-\text{head}_i &= \operatorname{softmax}\!\left(\frac{Q_i K_i^\top}{\sqrt{d_h}}\right) V_i
+\text{head}_i &= \mathrm{softmax}\!\left(\frac{Q_i K_i^\top}{\sqrt{d_h}}\right) V_i
 \end{aligned}
 $$
 
 $$
-\text{Output} = \operatorname{concat}(\text{head}_1, \ldots, \text{head}_h)\, W_O \in \mathbb{R}^{N \times d}
+\text{Output} = \mathrm{concat}(\text{head}_1, \ldots, \text{head}_h)\, W_O \in \mathbb{R}^{N \times d}
 $$
 
 Same total parameters as one big head (give or take $W_O$), but allows the model to attend to different patterns simultaneously: one head might track syntax, another semantics, another references, etc.
@@ -158,7 +158,7 @@ Empirical analyses (Voita et al., Clark et al.) show interpretable specializatio
 After attention mixes information across positions, the FFN does **per-token** computation. It's just a 2-layer MLP applied independently to each position's output.
 
 $$
-\operatorname{FFN}(x) = W_2 \cdot \operatorname{activation}(W_1 \cdot x + b_1) + b_2
+\mathrm{FFN}(x) = W_2 \cdot \mathrm{activation}(W_1 \cdot x + b_1) + b_2
 $$
 
 Standard activation: ReLU (original), GELU (BERT, GPT-2), SwiGLU (modern LLMs).
@@ -169,7 +169,7 @@ $W_1: \mathbb{R}^{d \times 4d}, W_2: \mathbb{R}^{4d \times d}$ — the inner dim
 
 ### Why FFN is necessary
 
-Without it, transformers are just stacks of attention. Attention is **linear** in the values: $\text{output} = \operatorname{softmax}(Q K^\top) V$ — the weights depend on inputs but the value mixing is linear. Stacking linear operations gives more linear operations. The FFN is where **non-linearity** enters and where **per-token feature transformation** happens.
+Without it, transformers are just stacks of attention. Attention is **linear** in the values: $\text{output} = \mathrm{softmax}(Q K^\top) V$ — the weights depend on inputs but the value mixing is linear. Stacking linear operations gives more linear operations. The FFN is where **non-linearity** enters and where **per-token feature transformation** happens.
 
 ### How the FFN is sometimes described
 
@@ -187,8 +187,8 @@ Every block has the form:
 
 $$
 \begin{aligned}
-x &\leftarrow x + \operatorname{Attention}(\operatorname{LayerNorm}(x)) \\
-x &\leftarrow x + \operatorname{FFN}(\operatorname{LayerNorm}(x))
+x &\leftarrow x + \mathrm{Attention}(\mathrm{LayerNorm}(x)) \\
+x &\leftarrow x + \mathrm{FFN}(\mathrm{LayerNorm}(x))
 \end{aligned}
 $$
 
@@ -212,9 +212,9 @@ In a residual stream, the magnitude of the stream grows with depth (each block a
 
 ## 7. LayerNorm: pre-LN vs post-LN
 
-The original transformer used **post-LN**: $x \leftarrow \operatorname{LayerNorm}(x + \operatorname{Sublayer}(x))$. The norm comes after the residual.
+The original transformer used **post-LN**: $x \leftarrow \mathrm{LayerNorm}(x + \mathrm{Sublayer}(x))$. The norm comes after the residual.
 
-Modern transformers use **pre-LN**: $x \leftarrow x + \operatorname{Sublayer}(\operatorname{LayerNorm}(x))$. The norm comes before the sublayer, and the residual is unnormed.
+Modern transformers use **pre-LN**: $x \leftarrow x + \mathrm{Sublayer}(\mathrm{LayerNorm}(x))$. The norm comes before the sublayer, and the residual is unnormed.
 
 ### Why pre-LN won
 
@@ -228,7 +228,7 @@ Empirically: pre-LN trains stably without elaborate warmup; post-LN does not at 
 
 LayerNorm: $x_{\text{norm}} = (x - \mu) / \sigma$. Two normalizations: zero-mean, unit-variance.
 
-RMSNorm: $x_{\text{norm}} = x / \operatorname{RMS}(x)$, where $\operatorname{RMS}(x) = \sqrt{\operatorname{mean}(x^2)}$. **Just unit-variance**, no mean subtraction. Cheaper (one fewer reduction) and empirically as good as LayerNorm. **LLaMA family uses RMSNorm; many modern open models follow.**
+RMSNorm: $x_{\text{norm}} = x / \mathrm{RMS}(x)$, where $\mathrm{RMS}(x) = \sqrt{\mathrm{mean}(x^2)}$. **Just unit-variance**, no mean subtraction. Cheaper (one fewer reduction) and empirically as good as LayerNorm. **LLaMA family uses RMSNorm; many modern open models follow.**
 
 See `44_normalization/` for the full deep dive on this.
 
@@ -242,10 +242,10 @@ Positional encoding injects order information. Three eras:
 
 ### Sinusoidal (original)
 
-Add a deterministic per-position vector $\operatorname{PE}(t)$ with sinusoids of varying frequencies:
+Add a deterministic per-position vector $\mathrm{PE}(t)$ with sinusoids of varying frequencies:
 
 $$
-\operatorname{PE}(t, 2i) = \sin\!\left(\frac{t}{10000^{2i/d}}\right), \qquad \operatorname{PE}(t, 2i+1) = \cos\!\left(\frac{t}{10000^{2i/d}}\right)
+\mathrm{PE}(t, 2i) = \sin\!\left(\frac{t}{10000^{2i/d}}\right), \qquad \mathrm{PE}(t, 2i+1) = \cos\!\left(\frac{t}{10000^{2i/d}}\right)
 $$
 
 Pros: extrapolates to longer sequences than seen at training (in theory). Cons: not as good empirically at length extrapolation as later methods.
@@ -315,7 +315,7 @@ K_{\text{enc}}, V_{\text{enc}} = \text{encoder\_output} \cdot W_K,\ W_V
 $$
 
 $$
-\text{output} = \operatorname{softmax}\!\left(\frac{Q_{\text{dec}}\, K_{\text{enc}}^\top}{\sqrt{d_k}}\right) V_{\text{enc}}
+\text{output} = \mathrm{softmax}\!\left(\frac{Q_{\text{dec}}\, K_{\text{enc}}^\top}{\sqrt{d_k}}\right) V_{\text{enc}}
 $$
 
 Pure decoder LLMs don't have cross-attention; they handle "looking at" inputs by putting them in the context window.

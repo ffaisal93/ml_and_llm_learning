@@ -84,7 +84,7 @@ L1's level sets are **diamonds** (in 2D) or cross-polytopes — corners on the a
 
 ### Why this gives sparsity
 
-At a corner of the diamond, the gradient of the data loss has to balance against a non-smooth penalty. The subgradient of $|w|$ is $\operatorname{sign}(w)$ for $w \neq 0$ and $[-1, 1]$ at $w = 0$. So if $|\partial \mathcal{L}_{\text{data}} / \partial w_j| < \lambda$, the optimum is $w_j = 0$ exactly (the gradient can't push past the penalty).
+At a corner of the diamond, the gradient of the data loss has to balance against a non-smooth penalty. The subgradient of $|w|$ is $\mathrm{sign}(w)$ for $w \neq 0$ and $[-1, 1]$ at $w = 0$. So if $|\partial \mathcal{L}_{\text{data}} / \partial w_j| < \lambda$, the optimum is $w_j = 0$ exactly (the gradient can't push past the penalty).
 
 ### Bayesian interpretation
 
@@ -136,7 +136,7 @@ mask = torch.bernoulli(torch.full_like(h, 1 - p))
 h_drop = h * mask / (1 - p)         # scale to keep expected value
 ```
 
-Equivalently, with $m_i \sim \operatorname{Bernoulli}(1-p)$ and $\tilde h_i = h_i \cdot m_i / (1 - p)$:
+Equivalently, with $m_i \sim \mathrm{Bernoulli}(1-p)$ and $\tilde h_i = h_i \cdot m_i / (1 - p)$:
 
 $$
 \mathbb{E}[\tilde h_i] = h_i \cdot \frac{(1-p)}{1-p} = h_i

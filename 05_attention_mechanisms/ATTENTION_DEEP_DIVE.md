@@ -25,7 +25,7 @@ A specific attention mechanism is a point in this space. "MHA + causal + full + 
 Already covered in `04_transformers/TRANSFORMERS_DEEP_DIVE.md`. One-line recap, for $h$ heads of dim $d_h = d/h$:
 
 $$
-\text{head}_i = \operatorname{softmax}\!\left(\frac{Q_i K_i^\top}{\sqrt{d_h}}\right) V_i, \qquad \text{Output} = \operatorname{concat}(\text{heads}) \cdot W_O
+\text{head}_i = \mathrm{softmax}\!\left(\frac{Q_i K_i^\top}{\sqrt{d_h}}\right) V_i, \qquad \text{Output} = \mathrm{concat}(\text{heads}) \cdot W_O
 $$
 
 The key memory cost: each layer caches $2 \cdot h \cdot d_h \cdot N = 2 \cdot d \cdot N$ bytes per sequence per layer. For long contexts and large models, this dominates.
@@ -39,7 +39,7 @@ The key memory cost: each layer caches $2 \cdot h \cdot d_h \cdot N = 2 \cdot d 
 All $h$ heads share **a single $K$ projection and a single $V$ projection**. Only $Q$ is per-head.
 
 $$
-\text{head}_i = \operatorname{softmax}\!\left(\frac{Q_i K^\top}{\sqrt{d_h}}\right) V \qquad (K, V \text{ shared across heads, dim} = d_h)
+\text{head}_i = \mathrm{softmax}\!\left(\frac{Q_i K^\top}{\sqrt{d_h}}\right) V \qquad (K, V \text{ shared across heads, dim} = d_h)
 $$
 
 ### KV cache savings
@@ -65,7 +65,7 @@ Compromise between MHA and MQA: $n_{\text{kv\_heads}}$ shared groups, where each
 For group $j$ (with $g$ query heads sharing $K_j, V_j$), for each query head $i$ in group $j$:
 
 $$
-\text{head}_i = \operatorname{softmax}\!\left(\frac{Q_i K_j^\top}{\sqrt{d_h}}\right) V_j
+\text{head}_i = \mathrm{softmax}\!\left(\frac{Q_i K_j^\top}{\sqrt{d_h}}\right) V_j
 $$
 
 ### KV cache savings
@@ -121,7 +121,7 @@ Q = \text{decoder\_state} \cdot W_Q, \qquad K, V = \text{encoder\_output} \cdot 
 $$
 
 $$
-\text{output} = \operatorname{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_k}}\right) V
+\text{output} = \mathrm{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_k}}\right) V
 $$
 
 ### Asymmetries
@@ -153,7 +153,7 @@ $$
 $$
 
 $$
-\text{weights} = \operatorname{softmax}(\text{scores}) \qquad \text{(masked positions become 0)}
+\text{weights} = \mathrm{softmax}(\text{scores}) \qquad \text{(masked positions become 0)}
 $$
 
 ### Why this works during training
@@ -245,10 +245,10 @@ The full softmax attention is $O(N^2)$. Linear attention removes the softmax to 
 
 ### The setup
 
-Replace $\operatorname{softmax}(Q K^\top) V$ with a kernel approximation:
+Replace $\mathrm{softmax}(Q K^\top) V$ with a kernel approximation:
 
 $$
-\operatorname{attention}(Q, K, V) = \frac{\phi(Q) \cdot (\phi(K)^\top V)}{\phi(Q) \cdot \phi(K)^\top \mathbf{1}}
+\mathrm{attention}(Q, K, V) = \frac{\phi(Q) \cdot (\phi(K)^\top V)}{\phi(Q) \cdot \phi(K)^\top \mathbf{1}}
 $$
 
 where $\phi$ is some feature map. Order of operations matters: compute $\phi(K)^\top V$ first (size $d \times d$), then $\phi(Q) \cdot \cdots$. The result is $O(N \cdot d^2)$ — linear in $N$.
@@ -256,7 +256,7 @@ where $\phi$ is some feature map. Order of operations matters: compute $\phi(K)^
 ### Common choices for $\phi$
 
 - **Performer** (Choromanski et al. 2020): random Fourier features approximating softmax kernel.
-- **Linear Transformer** (Katharopoulos et al. 2020): $\phi(x) = \operatorname{elu}(x) + 1$.
+- **Linear Transformer** (Katharopoulos et al. 2020): $\phi(x) = \mathrm{elu}(x) + 1$.
 - **RetNet, RWKV**: discrete kernel functions optimized for autoregressive generation.
 
 ### The autoregressive form

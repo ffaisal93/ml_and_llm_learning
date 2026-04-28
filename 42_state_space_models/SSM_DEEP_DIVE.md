@@ -137,15 +137,15 @@ In S4, the matrices $A$, $B$, $C$ are **shared across all positions** — a sing
 Mamba makes $B$, $C$, and $\Delta t$ **input-dependent**:
 
 $$
-B(x_t) = \operatorname{Linear}_B(x_t)
+B(x_t) = \mathrm{Linear}_B(x_t)
 $$
 
 $$
-C(x_t) = \operatorname{Linear}_C(x_t)
+C(x_t) = \mathrm{Linear}_C(x_t)
 $$
 
 $$
-\Delta t(x_t) = \operatorname{softplus}(\operatorname{Linear}_{\Delta t}(x_t))
+\Delta t(x_t) = \mathrm{softplus}(\mathrm{Linear}_{\Delta t}(x_t))
 $$
 
 The state update becomes:

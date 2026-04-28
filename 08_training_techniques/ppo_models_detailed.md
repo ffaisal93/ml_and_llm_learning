@@ -8,216 +8,206 @@ In PPO (Proximal Policy Optimization) used for RLHF, there are four key models/c
 
 ## Part 1: The Four Models in PPO/RLHF
 
-### Model 1: Policy Model (π_θ)
+### Model 1: Policy Model ($\pi_\theta$)
 
 **What it is:**
+
 - The main model being trained
 - Generates responses/actions
 - Outputs probability distribution over actions
 - This is what we're optimizing
 
-**Mathematical Role:**
-```
-π_θ(a|s): Probability of action a given state s
-```
+**Mathematical role.** $\pi_\theta(a \mid s)$ is the probability of action $a$ given state $s$.
 
-**In Language Models:**
-```
-π_θ(y|x): Probability of generating response y given prompt x
-```
+**In language models.** $\pi_\theta(y \mid x)$ is the probability of generating response $y$ given prompt $x$.
 
 **Outputs:**
-- Log probabilities: `log π_θ(a|s)`
-- Action probabilities: `π_θ(a|s)`
+
+- Log probabilities: $\log \pi_\theta(a \mid s)$
+- Action probabilities: $\pi_\theta(a \mid s)$
 - Can also include value estimate (if using actor-critic architecture)
 
 **Where it's used:**
-1. **Generation**: Generate responses during training
-2. **Loss computation**: Compute policy gradient
-3. **Importance sampling**: Compute ratio r(θ) = π_θ / π_θ_old
 
-**Mathematical Formulation in PPO:**
-```
-L^CLIP(θ) = E[min(r(θ)A, clip(r(θ), 1-ε, 1+ε)A)]
+1. **Generation:** generate responses during training.
+2. **Loss computation:** compute policy gradient.
+3. **Importance sampling:** compute the ratio $r(\theta) = \pi_\theta / \pi_{\theta_{\text{old}}}$.
 
-Where:
-r(θ) = π_θ(a|s) / π_θ_old(a|s)
-```
+**Mathematical formulation in PPO:**
 
-**Key Point:**
-- This is the model we're training
-- It learns to maximize reward
-- Constrained by KL penalty to stay close to reference
+$$
+L^{\text{CLIP}}(\theta) = \mathbb{E}\!\left[\min\!\big(r(\theta)\, A,\; \mathrm{clip}(r(\theta),\, 1-\epsilon,\, 1+\epsilon)\, A\big)\right]
+$$
+
+where
+
+$$
+r(\theta) \;=\; \frac{\pi_\theta(a \mid s)}{\pi_{\theta_{\text{old}}}(a \mid s)}.
+$$
+
+**Key point.** This is the model we're training. It learns to maximize reward, constrained by a KL penalty to stay close to the reference.
 
 ---
 
-### Model 2: Critic Model (Value Function V_φ)
+### Model 2: Critic Model (Value Function $V_\phi$)
 
 **What it is:**
+
 - Estimates the value of a state
 - Predicts expected future return
 - Used to compute advantages
-- Can be separate model or shared with policy
+- Can be a separate model or share parameters with the policy
 
-**Mathematical Role:**
-```
-V_φ(s): Expected return from state s
-V_φ(s) = E[∑_{t=0}^∞ γ^t r_t | s_0 = s]
-```
+**Mathematical role.**
 
-**In Language Models:**
-```
-V_φ(x): Expected reward for prompt x
-```
+$$
+V_\phi(s) \;=\; \mathbb{E}\!\left[\sum_{t=0}^{\infty} \gamma^{t}\, r_t \;\Big|\; s_0 = s\right].
+$$
+
+**In language models.** $V_\phi(x)$ is the expected reward for prompt $x$.
 
 **Outputs:**
-- Value estimate: `V(s)` (scalar)
-- Used to compute advantages: `A(s,a) = Q(s,a) - V(s)`
+
+- Scalar value estimate $V(s)$.
+- Used to compute advantages $A(s, a) = Q(s, a) - V(s)$.
 
 **Where it's used:**
-1. **Advantage computation**: A = Q - V
-2. **Value loss**: L^VF = (V_φ(s) - R)^2
-3. **Baseline**: Reduces variance in policy gradient
 
-**Mathematical Formulation:**
-```
-Advantage: A(s,a) = Q(s,a) - V(s)
+1. **Advantage computation:** $A = Q - V$.
+2. **Value loss:** $L^{\text{VF}} = (V_\phi(s) - R)^2$.
+3. **Baseline:** reduces variance in the policy gradient.
 
-Where:
-Q(s,a) = E[∑_{t=0}^∞ γ^t r_t | s_0 = s, a_0 = a]
-V(s) = E[∑_{t=0}^∞ γ^t r_t | s_0 = s]
-```
+**Mathematical formulation.**
 
-**Value Loss:**
-```
-L^VF = E[(V_φ(s) - R)^2]
+$$
+A(s, a) \;=\; Q(s, a) - V(s),
+$$
 
-Where:
-R = actual return (discounted sum of rewards)
-```
+with
 
-**Key Point:**
-- Estimates how good a state is
-- Used to compute advantages (how much better than average)
-- Trained with MSE loss against actual returns
+$$
+Q(s, a) \;=\; \mathbb{E}\!\left[\sum_{t=0}^{\infty} \gamma^{t}\, r_t \;\Big|\; s_0 = s,\, a_0 = a\right], \qquad
+V(s) \;=\; \mathbb{E}\!\left[\sum_{t=0}^{\infty} \gamma^{t}\, r_t \;\Big|\; s_0 = s\right].
+$$
 
-**Architecture Options:**
-1. **Separate Critic**: Independent model V_φ(s)
-2. **Shared Base**: Policy and critic share base layers, separate heads
-3. **Actor-Critic**: Single model with policy and value heads
+**Value loss.**
+
+$$
+L^{\text{VF}} \;=\; \mathbb{E}\!\left[\big(V_\phi(s) - R\big)^2\right],
+$$
+
+where $R$ is the actual return (discounted sum of rewards).
+
+**Key point.** Estimates how good a state is, used to compute advantages (how much better than average), trained with MSE loss against actual returns.
+
+**Architecture options:**
+
+1. **Separate critic:** independent model $V_\phi(s)$.
+2. **Shared base:** policy and critic share base layers, separate heads.
+3. **Actor-critic:** single model with policy and value heads.
 
 ---
 
-### Model 3: Reference Model (π_ref)
+### Model 3: Reference Model ($\pi_{\text{ref}}$)
 
 **What it is:**
-- Frozen copy of policy before RL training
-- Used to compute KL penalty
-- Prevents policy from deviating too much
-- Typically the SFT (Supervised Fine-Tuned) model
 
-**Mathematical Role:**
-```
-π_ref(a|s): Reference policy (frozen)
-```
+- Frozen copy of the policy before RL training
+- Used to compute the KL penalty
+- Prevents the policy from deviating too much
+- Typically the SFT (supervised fine-tuned) model
 
-**In Language Models:**
-```
-π_ref(y|x): Reference model's probability of response y
-```
+**Mathematical role.** $\pi_{\text{ref}}(a \mid s)$ is the (frozen) reference policy. For language models, $\pi_{\text{ref}}(y \mid x)$ is the reference model's probability of response $y$.
 
 **Outputs:**
-- Log probabilities: `log π_ref(a|s)`
-- Used to compute KL divergence
+
+- Log probabilities $\log \pi_{\text{ref}}(a \mid s)$.
+- Used to compute KL divergence.
 
 **Where it's used:**
-1. **KL penalty computation**: KL(π_θ || π_ref)
-2. **Importance sampling ratio**: r(θ) = π_θ / π_ref
-3. **Regularization**: Prevents policy collapse
 
-**Mathematical Formulation:**
-```
-KL Penalty: β * KL(π_θ || π_ref)
+1. **KL penalty computation:** $\mathrm{KL}(\pi_\theta \,\|\, \pi_{\text{ref}})$.
+2. **Importance sampling ratio:** $r(\theta) = \pi_\theta / \pi_{\text{ref}}$.
+3. **Regularization:** prevents policy collapse.
 
-Where:
-KL(π_θ || π_ref) = E[log(π_θ(a|s) / π_ref(a|s))]
-                 = E[log π_θ(a|s) - log π_ref(a|s)]
-```
+**Mathematical formulation.**
 
-**In PPO Loss:**
-```
-L_total = L^CLIP + β * KL(π_θ || π_ref)
+$$
+\text{KL penalty} \;=\; \beta \cdot \mathrm{KL}\!\big(\pi_\theta \,\|\, \pi_{\text{ref}}\big),
+$$
 
-Where:
-L^CLIP = E[min(r(θ)A, clip(r(θ), 1-ε, 1+ε)A)]
-r(θ) = π_θ(a|s) / π_ref(a|s)
-```
+where
 
-**Key Point:**
-- Frozen (not trained)
-- Provides stability and prevents mode collapse
-- Ensures policy doesn't forget SFT capabilities
+$$
+\mathrm{KL}\!\big(\pi_\theta \,\|\, \pi_{\text{ref}}\big)
+\;=\; \mathbb{E}_{\pi_\theta}\!\left[\log \frac{\pi_\theta(a \mid s)}{\pi_{\text{ref}}(a \mid s)}\right]
+\;=\; \mathbb{E}_{\pi_\theta}\!\left[\log \pi_\theta(a \mid s) - \log \pi_{\text{ref}}(a \mid s)\right].
+$$
 
-**Why Important:**
-1. **Prevents mode collapse**: Keeps policy diverse
-2. **Prevents reward hacking**: Constrains policy
-3. **Maintains capabilities**: Preserves SFT knowledge
-4. **Stability**: Prevents large policy changes
+**In the PPO loss.**
+
+$$
+L_{\text{total}} \;=\; L^{\text{CLIP}} \;+\; \beta \cdot \mathrm{KL}\!\big(\pi_\theta \,\|\, \pi_{\text{ref}}\big),
+$$
+
+with
+
+$$
+L^{\text{CLIP}} \;=\; \mathbb{E}\!\left[\min\!\big(r(\theta)\, A,\; \mathrm{clip}(r(\theta),\, 1-\epsilon,\, 1+\epsilon)\, A\big)\right], \qquad
+r(\theta) \;=\; \frac{\pi_\theta(a \mid s)}{\pi_{\text{ref}}(a \mid s)}.
+$$
+
+**Key point.** Frozen (not trained); provides stability, prevents mode collapse, and ensures the policy doesn't forget SFT capabilities.
+
+**Why important:**
+
+1. **Prevents mode collapse:** keeps the policy diverse.
+2. **Prevents reward hacking:** constrains the policy.
+3. **Maintains capabilities:** preserves SFT knowledge.
+4. **Stability:** prevents large policy changes.
 
 ---
 
-### Model 4: Reward Model (r_ψ)
+### Model 4: Reward Model ($r_\psi$)
 
 **What it is:**
-- Predicts reward for a response
+
+- Predicts a reward for a response
 - Trained on human preferences
 - Scores how good a response is
 - Used to compute rewards during RL training
 
-**Mathematical Role:**
-```
-r_ψ(x, y): Reward for response y to prompt x
-```
-
-**Outputs:**
-- Reward score: `r(x, y)` (scalar)
-- Higher = better response
+**Mathematical role.** $r_\psi(x, y)$ is the scalar reward for response $y$ to prompt $x$. Higher means better response.
 
 **Where it's used:**
-1. **Reward computation**: Score generated responses
-2. **Return computation**: R = ∑ γ^t r_t
-3. **Advantage computation**: A = Q - V
 
-**Mathematical Formulation:**
-```
-Reward: r_t = r_ψ(x_t, y_t)
+1. **Reward computation:** score generated responses.
+2. **Return computation:** $R = \sum_t \gamma^{t} r_t$.
+3. **Advantage computation:** $A = Q - V$.
 
-Return: R = ∑_{t=0}^T γ^t r_t
+**Mathematical formulation.**
 
-Advantage: A(s,a) = Q(s,a) - V(s)
-          = E[R | s, a] - V(s)
-```
+$$
+r_t = r_\psi(x_t, y_t), \qquad
+R = \sum_{t=0}^{T} \gamma^{t}\, r_t, \qquad
+A(s, a) = Q(s, a) - V(s) = \mathbb{E}[R \mid s, a] - V(s).
+$$
 
-**Training (Before RL):**
-```
-L_reward = -log σ(r_ψ(x, y_w) - r_ψ(x, y_l))
+**Training (before RL).** Bradley–Terry preference loss:
 
-Where:
-- y_w: Chosen (winning) response
-- y_l: Rejected (losing) response
-- σ: Sigmoid function
-```
+$$
+L_{\text{reward}} \;=\; -\,\log \sigma\!\big(r_\psi(x, y_w) - r_\psi(x, y_l)\big),
+$$
 
-**Key Point:**
-- Trained separately before RL
-- Captures human preferences
-- Used to score responses during RL training
-- Can be frozen or updated during RL
+where $y_w$ is the chosen (winning) response, $y_l$ is the rejected (losing) response, and $\sigma$ is the sigmoid function.
 
-**Why Important:**
-1. **Human preferences**: Encodes what humans want
-2. **Reward signal**: Provides learning signal for policy
-3. **Quality assessment**: Measures response quality
+**Key point.** Trained separately before RL; captures human preferences; used to score responses during RL training; can be frozen or updated during RL.
+
+**Why important:**
+
+1. **Human preferences:** encodes what humans want.
+2. **Reward signal:** provides the learning signal for the policy.
+3. **Quality assessment:** measures response quality.
 
 ---
 
@@ -225,224 +215,206 @@ Where:
 
 ### Complete PPO Training Loop
 
-**Step 1: Generate Responses**
-```
-Using Policy Model π_θ:
-responses = π_θ.generate(prompts)
-```
+**Step 1 — Generate responses.** Using policy model $\pi_\theta$:
 
-**Step 2: Score with Reward Model**
-```
-Using Reward Model r_ψ:
-rewards = r_ψ(prompts, responses)
-```
+$$
+\text{responses} \;=\; \pi_\theta.\text{generate}(\text{prompts}).
+$$
 
-**Step 3: Get Log Probabilities**
-```
-Using Policy Model π_θ:
-policy_logprobs = log π_θ(responses | prompts)
+**Step 2 — Score with reward model.** Using reward model $r_\psi$:
 
-Using Reference Model π_ref:
-ref_logprobs = log π_ref(responses | prompts)
-```
+$$
+\text{rewards} \;=\; r_\psi(\text{prompts}, \text{responses}).
+$$
 
-**Step 4: Compute Returns**
-```
-returns = compute_discounted_returns(rewards)
-```
+**Step 3 — Get log probabilities.**
 
-**Step 5: Compute Values**
-```
-Using Critic Model V_φ:
-values = V_φ(prompts)
-```
+$$
+\text{policy\_logprobs} \;=\; \log \pi_\theta(\text{responses} \mid \text{prompts}), \qquad
+\text{ref\_logprobs} \;=\; \log \pi_{\text{ref}}(\text{responses} \mid \text{prompts}).
+$$
 
-**Step 6: Compute Advantages**
-```
-advantages = returns - values  # A = Q - V
-```
+**Step 4 — Compute returns.**
 
-**Step 7: Compute PPO Loss**
-```
-ratio = exp(policy_logprobs - ref_logprobs)
-unclipped = ratio * advantages
-clipped = clip(ratio, 1-ε, 1+ε) * advantages
-policy_loss = -min(unclipped, clipped)
+$$
+\text{returns} \;=\; \text{compute\_discounted\_returns}(\text{rewards}).
+$$
 
-value_loss = (values - returns)^2
+**Step 5 — Compute values.** Using critic model $V_\phi$:
 
-kl_penalty = β * (policy_logprobs - ref_logprobs)
+$$
+\text{values} \;=\; V_\phi(\text{prompts}).
+$$
 
-total_loss = policy_loss + c_v * value_loss + kl_penalty
-```
+**Step 6 — Compute advantages.**
 
-**Step 8: Update Models**
-```
-Update Policy π_θ: optimize total_loss
-Update Critic V_φ: optimize value_loss
-Reference π_ref: frozen (no update)
-Reward r_ψ: typically frozen (can update)
-```
+$$
+\text{advantages} \;=\; \text{returns} - \text{values}, \qquad A = Q - V.
+$$
+
+**Step 7 — Compute PPO loss.**
+
+$$
+\begin{aligned}
+\text{ratio} &= \exp(\text{policy\_logprobs} - \text{ref\_logprobs}), \\
+\text{unclipped} &= \text{ratio} \cdot \text{advantages}, \\
+\text{clipped} &= \mathrm{clip}(\text{ratio}, 1-\epsilon, 1+\epsilon) \cdot \text{advantages}, \\
+\text{policy\_loss} &= -\min(\text{unclipped}, \text{clipped}), \\
+\text{value\_loss} &= (\text{values} - \text{returns})^2, \\
+\text{kl\_penalty} &= \beta \cdot (\text{policy\_logprobs} - \text{ref\_logprobs}), \\
+\text{total\_loss} &= \text{policy\_loss} + c_v \cdot \text{value\_loss} + \text{kl\_penalty}.
+\end{aligned}
+$$
+
+**Step 8 — Update models.**
+
+- Update policy $\pi_\theta$: optimize $\text{total\_loss}$.
+- Update critic $V_\phi$: optimize $\text{value\_loss}$.
+- Reference $\pi_{\text{ref}}$: frozen (no update).
+- Reward $r_\psi$: typically frozen (can be updated).
 
 ---
 
 ## Part 3: Mathematical Details for Each Model
 
-### Policy Model (π_θ) - Detailed Mathematics
+### Policy Model ($\pi_\theta$) — detailed mathematics
 
-**Forward Pass:**
-```
-Input: prompt x
-Output: response y with probability π_θ(y|x)
+**Forward pass.** Input prompt $x$, output response $y$ with probability $\pi_\theta(y \mid x)$. For each token:
 
-For each token:
-  logits = π_θ(x, y_{<t})
-  probs = softmax(logits)
-  y_t ~ Categorical(probs)
-```
+$$
+\text{logits} = \pi_\theta(x, y_{<t}), \qquad
+\text{probs} = \mathrm{softmax}(\text{logits}), \qquad
+y_t \sim \mathrm{Categorical}(\text{probs}).
+$$
 
-**Log Probability:**
-```
-log π_θ(y|x) = ∑_{t=1}^T log π_θ(y_t | x, y_{<t})
-```
+**Log probability.**
 
-**Policy Gradient:**
-```
-∇_θ L = E[r(θ) * A * ∇_θ log π_θ(a|s)]
+$$
+\log \pi_\theta(y \mid x) \;=\; \sum_{t=1}^{T} \log \pi_\theta(y_t \mid x, y_{<t}).
+$$
 
-Where:
-r(θ) = π_θ(a|s) / π_θ_old(a|s)
-A = advantage
-```
+**Policy gradient.**
 
-**PPO Clipping:**
-```
-L^CLIP = E[min(r(θ)A, clip(r(θ), 1-ε, 1+ε)A)]
+$$
+\nabla_\theta L \;=\; \mathbb{E}\!\left[r(\theta) \cdot A \cdot \nabla_\theta \log \pi_\theta(a \mid s)\right],
+$$
 
-Prevents:
-- Large policy updates
-- Over-optimization
-- Training instability
-```
+where $r(\theta) = \pi_\theta(a \mid s) / \pi_{\theta_{\text{old}}}(a \mid s)$ and $A$ is the advantage.
+
+**PPO clipping.**
+
+$$
+L^{\text{CLIP}} \;=\; \mathbb{E}\!\left[\min\!\big(r(\theta)\, A,\; \mathrm{clip}(r(\theta),\, 1-\epsilon,\, 1+\epsilon)\, A\big)\right].
+$$
+
+This prevents large policy updates, over-optimization, and training instability.
 
 ---
 
-### Critic Model (V_φ) - Detailed Mathematics
+### Critic Model ($V_\phi$) — detailed mathematics
 
-**Value Function:**
-```
-V_φ(s) = E_π[∑_{t=0}^∞ γ^t r_t | s_0 = s]
+**Value function.**
 
-Where:
-- γ: discount factor
-- r_t: reward at time t
-- π: current policy
-```
+$$
+V_\phi(s) \;=\; \mathbb{E}_\pi\!\left[\sum_{t=0}^{\infty} \gamma^{t}\, r_t \;\Big|\; s_0 = s\right],
+$$
 
-**Bellman Equation:**
-```
-V_φ(s) = E[r + γ V_φ(s') | s]
+where $\gamma$ is the discount factor, $r_t$ the reward at time $t$, and $\pi$ the current policy.
 
-In practice:
-V_φ(s) ≈ r + γ V_φ(s')
-```
+**Bellman equation.**
 
-**Value Loss:**
-```
-L^VF = E[(V_φ(s) - R)^2]
+$$
+V_\phi(s) \;=\; \mathbb{E}\!\left[r + \gamma\, V_\phi(s') \,\big|\, s\right] \;\;\;\Longrightarrow\;\;\; V_\phi(s) \;\approx\; r + \gamma\, V_\phi(s').
+$$
 
-Where:
-R = actual return = ∑_{t=0}^T γ^t r_t
-```
+**Value loss.**
 
-**Gradient:**
-```
-∇_φ L^VF = E[2(V_φ(s) - R) * ∇_φ V_φ(s)]
-```
+$$
+L^{\text{VF}} \;=\; \mathbb{E}\!\left[\big(V_\phi(s) - R\big)^2\right], \qquad R \;=\; \sum_{t=0}^{T} \gamma^{t}\, r_t.
+$$
 
-**Why Value Function:**
-1. **Baseline**: Reduces variance in policy gradient
-2. **Advantages**: A = Q - V (how much better than average)
-3. **Stability**: More stable than raw returns
+**Gradient.**
+
+$$
+\nabla_\phi L^{\text{VF}} \;=\; \mathbb{E}\!\left[2\,(V_\phi(s) - R) \cdot \nabla_\phi V_\phi(s)\right].
+$$
+
+**Why a value function:**
+
+1. **Baseline:** reduces variance in the policy gradient.
+2. **Advantages:** $A = Q - V$ — how much better than average.
+3. **Stability:** more stable than raw returns.
 
 ---
 
-### Reference Model (π_ref) - Detailed Mathematics
+### Reference Model ($\pi_{\text{ref}}$) — detailed mathematics
 
-**KL Divergence:**
-```
-KL(π_θ || π_ref) = E_{π_θ}[log(π_θ(a|s) / π_ref(a|s))]
-                 = E_{π_θ}[log π_θ(a|s) - log π_ref(a|s)]
-```
+**KL divergence.**
 
-**In Practice:**
-```
-KL_penalty = β * E[(log π_θ - log π_ref)]
-```
+$$
+\mathrm{KL}\!\big(\pi_\theta \,\|\, \pi_{\text{ref}}\big)
+\;=\; \mathbb{E}_{\pi_\theta}\!\left[\log \frac{\pi_\theta(a \mid s)}{\pi_{\text{ref}}(a \mid s)}\right]
+\;=\; \mathbb{E}_{\pi_\theta}\!\left[\log \pi_\theta(a \mid s) - \log \pi_{\text{ref}}(a \mid s)\right].
+$$
 
-**Properties:**
-- KL ≥ 0 (always non-negative)
-- KL = 0 if π_θ = π_ref
-- Asymmetric: KL(π_θ || π_ref) ≠ KL(π_ref || π_θ)
+**In practice.**
 
-**Why KL Penalty:**
-1. **Trust region**: Keeps policy close to reference
-2. **Prevents collapse**: Maintains diversity
-3. **Stability**: Prevents large changes
-4. **Capability preservation**: Keeps SFT knowledge
+$$
+\text{KL\_penalty} \;=\; \beta \cdot \mathbb{E}\!\left[\log \pi_\theta - \log \pi_{\text{ref}}\right].
+$$
 
-**Typical Values:**
-- β = 0.1 - 0.5 (KL coefficient)
-- Target KL: 0.1 - 0.5 nats per token
-- If KL too high: increase β
-- If KL too low: decrease β
+**Properties.**
+
+- $\mathrm{KL} \ge 0$ (always non-negative).
+- $\mathrm{KL} = 0$ iff $\pi_\theta = \pi_{\text{ref}}$.
+- Asymmetric: $\mathrm{KL}(\pi_\theta \,\|\, \pi_{\text{ref}}) \neq \mathrm{KL}(\pi_{\text{ref}} \,\|\, \pi_\theta)$.
+
+**Why a KL penalty:**
+
+1. **Trust region:** keeps the policy close to the reference.
+2. **Prevents collapse:** maintains diversity.
+3. **Stability:** prevents large changes.
+4. **Capability preservation:** keeps SFT knowledge.
+
+**Typical values.** $\beta \in [0.1, 0.5]$; target KL $\in [0.1, 0.5]$ nats per token. If KL is too high, increase $\beta$; if too low, decrease $\beta$.
 
 ---
 
-### Reward Model (r_ψ) - Detailed Mathematics
+### Reward Model ($r_\psi$) — detailed mathematics
 
-**Reward Function:**
-```
-r_ψ(x, y): R → R
+**Reward function.** $r_\psi(x, y) \colon \mathcal{X} \times \mathcal{Y} \to \mathbb{R}$ — maps (prompt, response) to a scalar reward.
 
-Maps (prompt, response) to scalar reward
-```
+**Training objective (Bradley–Terry).**
 
-**Training Objective:**
-```
-L_reward = -log σ(r_ψ(x, y_w) - r_ψ(x, y_l))
+$$
+L_{\text{reward}} \;=\; -\,\log \sigma\!\big(r_\psi(x, y_w) - r_\psi(x, y_l)\big),
+$$
 
-Where:
-- y_w: chosen (winning) response
-- y_l: rejected (losing) response
-- σ: sigmoid function
-```
+where $y_w$ is the chosen (winning) response, $y_l$ the rejected (losing) response, and $\sigma$ the sigmoid function.
 
-**Interpretation:**
-```
-P(y_w > y_l | x) = σ(r_ψ(x, y_w) - r_ψ(x, y_l))
+**Interpretation.**
 
-Probability that chosen is better than rejected
-```
+$$
+P(y_w \succ y_l \mid x) \;=\; \sigma\!\big(r_\psi(x, y_w) - r_\psi(x, y_l)\big),
+$$
 
-**During RL:**
-```
-For generated response y:
-  reward = r_ψ(x, y)
-  
-Used to compute:
-  - Returns: R = ∑ γ^t r_t
-  - Advantages: A = Q - V
-```
+the probability that the chosen response is preferred over the rejected one.
 
-**Reward Shaping (Optional):**
-```
-r_total = r_ψ(x, y) + r_KL(x, y) + r_length(x, y)
+**During RL.** For a generated response $y$:
 
-Where:
-- r_KL: KL penalty (can be in reward or loss)
-- r_length: Length penalty
-```
+$$
+\text{reward} = r_\psi(x, y),
+$$
+
+used to compute returns $R = \sum_t \gamma^{t} r_t$ and advantages $A = Q - V$.
+
+**Reward shaping (optional).**
+
+$$
+r_{\text{total}} \;=\; r_\psi(x, y) \;+\; r_{\text{KL}}(x, y) \;+\; r_{\text{length}}(x, y),
+$$
+
+where $r_{\text{KL}}$ is a KL penalty (can live in the reward or in the loss) and $r_{\text{length}}$ is a length penalty.
 
 ---
 
@@ -450,27 +422,29 @@ Where:
 
 ### Policy Model Architecture
 
-**Option 1: Separate Policy Network**
+**Option 1 — separate policy network:**
+
 ```python
 class PolicyModel(nn.Module):
     def __init__(self):
         self.base = Transformer(...)
         self.head = nn.Linear(d_model, vocab_size)
-    
+
     def forward(self, x):
         hidden = self.base(x)
         logits = self.head(hidden)
         return logits
 ```
 
-**Option 2: Actor-Critic (Shared Base)**
+**Option 2 — actor–critic (shared base):**
+
 ```python
 class ActorCritic(nn.Module):
     def __init__(self):
-        self.base = Transformer(...)  # Shared
+        self.base = Transformer(...)              # shared
         self.policy_head = nn.Linear(d_model, vocab_size)
-        self.value_head = nn.Linear(d_model, 1)
-    
+        self.value_head  = nn.Linear(d_model, 1)
+
     def forward(self, x):
         hidden = self.base(x)
         logits = self.policy_head(hidden)
@@ -480,52 +454,48 @@ class ActorCritic(nn.Module):
 
 ### Critic Model Architecture
 
-**Option 1: Separate Critic**
+**Option 1 — separate critic:**
+
 ```python
 class CriticModel(nn.Module):
     def __init__(self):
         self.base = Transformer(...)
         self.head = nn.Linear(d_model, 1)
-    
+
     def forward(self, x):
         hidden = self.base(x)
         value = self.head(hidden)
         return value
 ```
 
-**Option 2: Shared with Policy (Actor-Critic)**
-- Same as above, but shares base with policy
+**Option 2 — shared with policy (actor–critic):** same as above, but shares the base with the policy.
 
 ### Reference Model Architecture
 
-**Same as Policy Model:**
-- Copy of policy before RL training
-- Frozen (no gradients)
-- Used only for log probability computation
+Same as the policy model — a copy of the policy before RL training. Frozen (no gradients), used only for log-probability computation.
 
 ```python
 # Initialize reference model
 reference_model = copy.deepcopy(policy_model)
-reference_model.eval()  # Freeze
+reference_model.eval()  # freeze
 for param in reference_model.parameters():
     param.requires_grad = False
 ```
 
 ### Reward Model Architecture
 
-**Typical Architecture:**
 ```python
 class RewardModel(nn.Module):
     def __init__(self, base_model):
-        self.base = base_model  # Can use policy base
+        self.base = base_model        # can use policy base
         self.head = nn.Linear(d_model, 1)
-    
+
     def forward(self, x, y):
         # Concatenate prompt and response
         input_ids = concat(x, y)
         hidden = self.base(input_ids)
         # Use last token or mean pooling
-        reward = self.head(hidden[-1] or mean(hidden))
+        reward = self.head(hidden[-1])  # or mean(hidden)
         return reward
 ```
 
@@ -535,92 +505,93 @@ class RewardModel(nn.Module):
 
 ### Phase 1: Supervised Fine-Tuning (SFT)
 
-**Models Used:**
-- Policy Model π_θ (being trained)
+**Models used.** Policy model $\pi_\theta$ (being trained).
 
-**Objective:**
-```
-L_SFT = -log π_θ(y | x)
+**Objective (standard language modeling loss).**
 
-Standard language modeling loss
-```
+$$
+L_{\text{SFT}} \;=\; -\,\log \pi_\theta(y \mid x).
+$$
 
-**Result:**
-- Policy model that can follow instructions
-- This becomes the reference model π_ref
+**Result.** A policy model that can follow instructions; this becomes the reference model $\pi_{\text{ref}}$.
 
 ---
 
 ### Phase 2: Reward Model Training
 
-**Models Used:**
-- Reward Model r_ψ (being trained)
+**Models used.** Reward model $r_\psi$ (being trained).
 
-**Data:**
-- Preference pairs: (x, y_w, y_l)
+**Data.** Preference pairs $(x, y_w, y_l)$.
 
-**Objective:**
-```
-L_reward = -log σ(r_ψ(x, y_w) - r_ψ(x, y_l))
-```
+**Objective.**
 
-**Result:**
-- Reward model that scores responses
-- Trained to prefer chosen over rejected
+$$
+L_{\text{reward}} \;=\; -\,\log \sigma\!\big(r_\psi(x, y_w) - r_\psi(x, y_l)\big).
+$$
+
+**Result.** A reward model that scores responses, trained to prefer chosen over rejected.
 
 ---
 
 ### Phase 3: RL Optimization (PPO)
 
-**Models Used:**
-- Policy Model π_θ (being trained)
-- Critic Model V_φ (being trained)
-- Reference Model π_ref (frozen)
-- Reward Model r_ψ (typically frozen)
+**Models used.**
 
-**Objective:**
-```
-L_PPO = L^CLIP + c_v * L^VF + β * KL(π_θ || π_ref)
+- Policy model $\pi_\theta$ (being trained).
+- Critic model $V_\phi$ (being trained).
+- Reference model $\pi_{\text{ref}}$ (frozen).
+- Reward model $r_\psi$ (typically frozen).
 
-Where:
-L^CLIP = E[min(r(θ)A, clip(r(θ), 1-ε, 1+ε)A)]
-L^VF = E[(V_φ(s) - R)^2]
-KL = E[log π_θ - log π_ref]
-```
+**Objective.**
 
-**Training Loop:**
-1. Generate responses with π_θ
-2. Score with r_ψ
-3. Get logprobs from π_θ and π_ref
-4. Compute values with V_φ
-5. Compute advantages
-6. Update π_θ and V_φ
+$$
+L_{\text{PPO}} \;=\; L^{\text{CLIP}} \;+\; c_v \cdot L^{\text{VF}} \;+\; \beta \cdot \mathrm{KL}\!\big(\pi_\theta \,\|\, \pi_{\text{ref}}\big),
+$$
 
-**Result:**
-- Aligned policy model
-- Better at generating preferred responses
+with
+
+$$
+\begin{aligned}
+L^{\text{CLIP}} &= \mathbb{E}\!\left[\min\!\big(r(\theta)\, A,\; \mathrm{clip}(r(\theta), 1-\epsilon, 1+\epsilon)\, A\big)\right], \\
+L^{\text{VF}}   &= \mathbb{E}\!\left[(V_\phi(s) - R)^2\right], \\
+\mathrm{KL}     &= \mathbb{E}\!\left[\log \pi_\theta - \log \pi_{\text{ref}}\right].
+\end{aligned}
+$$
+
+**Training loop.**
+
+1. Generate responses with $\pi_\theta$.
+2. Score with $r_\psi$.
+3. Get logprobs from $\pi_\theta$ and $\pi_{\text{ref}}$.
+4. Compute values with $V_\phi$.
+5. Compute advantages.
+6. Update $\pi_\theta$ and $V_\phi$.
+
+**Result.** An aligned policy model, better at generating preferred responses.
 
 ---
 
 ## Part 6: Summary Table
 
-| Model | Role | Trained? | Used For | Mathematical Form |
+| Model | Role | Trained? | Used for | Mathematical form |
 |-------|------|----------|----------|-------------------|
-| **Policy π_θ** | Generate responses | Yes | Generation, loss | π_θ(a\|s) |
-| **Critic V_φ** | Estimate state value | Yes | Advantages | V_φ(s) = E[R\|s] |
-| **Reference π_ref** | Regularization | No (frozen) | KL penalty | π_ref(a\|s) |
-| **Reward r_ψ** | Score responses | Before RL | Rewards | r_ψ(x, y) |
+| **Policy $\pi_\theta$** | Generate responses | Yes | Generation, loss | $\pi_\theta(a \mid s)$ |
+| **Critic $V_\phi$** | Estimate state value | Yes | Advantages | $V_\phi(s) = \mathbb{E}[R \mid s]$ |
+| **Reference $\pi_{\text{ref}}$** | Regularization | No (frozen) | KL penalty | $\pi_{\text{ref}}(a \mid s)$ |
+| **Reward $r_\psi$** | Score responses | Before RL | Rewards | $r_\psi(x, y)$ |
 
-**Key Relationships:**
-- **Advantage**: A = Q - V = (R - V_φ)
-- **Ratio**: r(θ) = π_θ / π_ref
-- **KL**: KL = E[log π_θ - log π_ref]
-- **Reward**: r = r_ψ(x, y)
+**Key relationships.**
 
-**Training:**
-- **SFT**: Train π_θ
-- **Reward**: Train r_ψ
-- **RL**: Train π_θ and V_φ (π_ref and r_ψ frozen)
+- **Advantage:** $A = Q - V = R - V_\phi$.
+- **Ratio:** $r(\theta) = \pi_\theta / \pi_{\text{ref}}$.
+- **KL:** $\mathrm{KL} = \mathbb{E}\!\left[\log \pi_\theta - \log \pi_{\text{ref}}\right]$.
+- **Reward:** $r = r_\psi(x, y)$.
+
+**Training.**
+
+- **SFT:** train $\pi_\theta$.
+- **Reward:** train $r_\psi$.
+- **RL:** train $\pi_\theta$ and $V_\phi$ ($\pi_{\text{ref}}$ and $r_\psi$ frozen).
 
 ---
 
@@ -628,10 +599,9 @@ KL = E[log π_θ - log π_ref]
 
 Understanding these four models is crucial for PPO/RLHF:
 
-1. **Policy Model**: What we're optimizing, generates responses
-2. **Critic Model**: Estimates values, computes advantages
-3. **Reference Model**: Provides stability, prevents collapse
-4. **Reward Model**: Scores responses, provides learning signal
+1. **Policy model:** what we're optimizing; generates responses.
+2. **Critic model:** estimates values; computes advantages.
+3. **Reference model:** provides stability; prevents collapse.
+4. **Reward model:** scores responses; provides the learning signal.
 
 Each has a specific mathematical role and is used at different stages of training. Together, they enable stable and effective RLHF training.
-

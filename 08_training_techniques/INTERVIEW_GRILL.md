@@ -32,7 +32,7 @@ The trade-off between matching the reward model (low $\beta$, aggressive) and st
 ## B. PPO and RL specifics
 
 **8. Why PPO and not policy gradient?**
-PPO's clipped objective $\min(\rho_t \hat A_t, \operatorname{clip}(\rho_t, 1 \pm \varepsilon) \hat A_t)$ provides a soft trust region: it prevents updates that move the policy too far in one optimization step. Plain policy gradient is high-variance and unstable for the kinds of long horizons and large action spaces that LLMs have.
+PPO's clipped objective $\min(\rho_t \hat A_t, \mathrm{clip}(\rho_t, 1 \pm \varepsilon) \hat A_t)$ provides a soft trust region: it prevents updates that move the policy too far in one optimization step. Plain policy gradient is high-variance and unstable for the kinds of long horizons and large action spaces that LLMs have.
 
 **9. What models are in memory during PPO-RLHF?**
 Four: policy (training), reference policy (frozen, for KL), reward model (frozen, for rewards), value function (training, for advantages). For a 70B policy, this is ~1 TB of memory before optimizer state and KV cache.

@@ -7,7 +7,7 @@
 ## A. Algorithmic foundations
 
 **1. What's the relationship between optimizers and Newton's method?**
-Newton uses $H_t^{-1} g_t$ as the update direction — accounting for second-order curvature. Storing $H$ is $O(d^2)$ and inverting is $O(d^3)$, infeasible at scale. Every modern optimizer is some cheap approximation: SGD = identity preconditioner; Adam/RMSProp = diagonal $1/\sqrt{\hat v}$ preconditioner approximating $\operatorname{diag}(H)^{-1/2}$; Shampoo = block-Kronecker; Sophia = stochastic Hutchinson estimate of $\operatorname{diag}(H)$.
+Newton uses $H_t^{-1} g_t$ as the update direction — accounting for second-order curvature. Storing $H$ is $O(d^2)$ and inverting is $O(d^3)$, infeasible at scale. Every modern optimizer is some cheap approximation: SGD = identity preconditioner; Adam/RMSProp = diagonal $1/\sqrt{\hat v}$ preconditioner approximating $\mathrm{diag}(H)^{-1/2}$; Shampoo = block-Kronecker; Sophia = stochastic Hutchinson estimate of $\mathrm{diag}(H)$.
 
 **2. Walk me through SGD with classical momentum.**
 
@@ -92,7 +92,7 @@ Sign-based update:
 $$
 \begin{aligned}
 c_t &= \beta_1 m_{t-1} + (1-\beta_1) g_t \quad &\text{(interpolation)} \\
-\theta_{t+1} &= \theta_t - \eta \cdot \operatorname{sign}(c_t) - \eta \cdot \lambda \cdot \theta_t \\
+\theta_{t+1} &= \theta_t - \eta \cdot \mathrm{sign}(c_t) - \eta \cdot \lambda \cdot \theta_t \\
 m_t &= \beta_2 m_{t-1} + (1-\beta_2) g_t \quad &\text{(momentum)}
 \end{aligned}
 $$
@@ -109,14 +109,14 @@ Lion's optimal $\eta$ is typically 3–10x smaller than AdamW's, because sign up
 Adam-like, but uses a stochastic Hessian-diagonal estimate via Hutchinson's estimator instead of $\sqrt{\hat v}$:
 
 $$
-\hat h_t = \operatorname{clip}(\text{stoch\_hutchinson\_diag\_H}, \rho)
+\hat h_t = \mathrm{clip}(\text{stoch\_hutchinson\_diag\_H}, \rho)
 $$
 
 $$
 \theta_{t+1} = \theta_t - \eta \cdot \frac{\hat m_t}{\max(\gamma \cdot \hat h_t, \varepsilon)} - \eta \cdot \lambda \cdot \theta_t
 $$
 
-Hutchinson uses $\operatorname{diag}(H) \approx \mathbb{E}[v \odot Hv]$ for random $v$; $Hv$ is computed via Hessian-vector product (one extra backward pass). Reportedly converges in fewer steps than AdamW on language modeling. Cost: ~25% more compute per step.
+Hutchinson uses $\mathrm{diag}(H) \approx \mathbb{E}[v \odot Hv]$ for random $v$; $Hv$ is computed via Hessian-vector product (one extra backward pass). Reportedly converges in fewer steps than AdamW on language modeling. Cost: ~25% more compute per step.
 
 **18. Why isn't Sophia universally adopted?**
 (a) Per-step compute cost. (b) Implementation complexity (HVP via PyTorch isn't a one-liner). (c) Public benchmarks at 70B+ scale are scarce. (d) AdamW is "good enough" — frontier labs are conservative about changing the optimizer mid-training run.
@@ -184,7 +184,7 @@ SGD's mini-batch noise has scale $\eta/B$, biasing toward flat minima. Adam's pr
 Storage $O(d^2)$ and inversion $O(d^3)$. For $10^9$ parameters, that's $10^{18}$ Hessian entries and $10^{27}$ inversion operations — wildly infeasible. Stochastic-Hessian approximations (Sophia, K-FAC, Shampoo) trade exactness for tractability. Even those are expensive enough that AdamW remains dominant in production.
 
 **35. What's the natural gradient and how does it relate to optimizers?**
-Natural gradient is $F^{-1} g$, where $F$ is the Fisher information matrix (expected Hessian of log-likelihood). It's the steepest descent in distribution space rather than parameter space — optimal in an information-geometric sense. K-FAC approximates $F$ block-diagonally; SGD ignores it. The relationship: under specific assumptions, RMSProp's $1/\sqrt{\mathbb{E}[g^2]} \approx 1/\sqrt{\operatorname{diag}(F)}$, giving Adam an information-geometric interpretation.
+Natural gradient is $F^{-1} g$, where $F$ is the Fisher information matrix (expected Hessian of log-likelihood). It's the steepest descent in distribution space rather than parameter space — optimal in an information-geometric sense. K-FAC approximates $F$ block-diagonally; SGD ignores it. The relationship: under specific assumptions, RMSProp's $1/\sqrt{\mathbb{E}[g^2]} \approx 1/\sqrt{\mathrm{diag}(F)}$, giving Adam an information-geometric interpretation.
 
 **36. Why might $\varepsilon$ placement matter? $\sqrt{\hat v} + \varepsilon$ vs $\sqrt{\hat v + \varepsilon}$?**
 $\sqrt{\hat v} + \varepsilon$: $\varepsilon$ is added after the square root, so it's a floor on the divisor. Standard Adam.

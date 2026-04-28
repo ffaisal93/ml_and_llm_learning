@@ -37,7 +37,7 @@ Original BPE was a data compression algorithm (Gage 1994); Sennrich et al. (2015
 Similar to BPE but selects merges by likelihood improvement instead of raw frequency:
 
 $$
-\operatorname{score}(\text{pair}) = \frac{\operatorname{freq}(\text{pair})}{\operatorname{freq}(\text{left}) \cdot \operatorname{freq}(\text{right})}
+\mathrm{score}(\text{pair}) = \frac{\mathrm{freq}(\text{pair})}{\mathrm{freq}(\text{left}) \cdot \mathrm{freq}(\text{right})}
 $$
 
 Picks pairs whose merger is more "likely" than chance. Used in BERT, DistilBERT, ELECTRA. Less common in modern decoder LLMs.

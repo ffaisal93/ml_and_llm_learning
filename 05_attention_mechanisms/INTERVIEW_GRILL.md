@@ -28,7 +28,7 @@ Empirically ~1–2% on benchmarks. Larger drops on tasks needing fine-grained he
 MLA $\approx$ GQA-8 > GQA-16 > MHA, in terms of memory. Quality: MHA $\geq$ GQA-16 $\approx$ GQA-8 $\approx$ MLA > MQA. So GQA-8 and MLA Pareto-dominate.
 
 **8. Walk me through the MQA forward computation.**
-Given input $X \in \mathbb{R}^{N \times d}$, project: $Q = X W_Q \in \mathbb{R}^{N \times d}$ (split into $h$ heads of size $d_h$); $K = X W_K \in \mathbb{R}^{N \times d_h}$ (single, shared); $V = X W_V \in \mathbb{R}^{N \times d_h}$ (single, shared). For each head $i$: $\text{head}_i = \operatorname{softmax}(Q_i K^\top / \sqrt{d_h}) V$. Concatenate, project with $W_O$.
+Given input $X \in \mathbb{R}^{N \times d}$, project: $Q = X W_Q \in \mathbb{R}^{N \times d}$ (split into $h$ heads of size $d_h$); $K = X W_K \in \mathbb{R}^{N \times d_h}$ (single, shared); $V = X W_V \in \mathbb{R}^{N \times d_h}$ (single, shared). For each head $i$: $\text{head}_i = \mathrm{softmax}(Q_i K^\top / \sqrt{d_h}) V$. Concatenate, project with $W_O$.
 
 ---
 
@@ -79,7 +79,7 @@ Locality-Sensitive Hashing. Hash queries and keys; only attend within the same h
 ## D. Linear attention
 
 **21. What's linear attention?**
-Replace softmax with a kernel approximation: $\operatorname{attention}(Q, K, V) = \phi(Q) \cdot (\phi(K)^\top V) / (\phi(Q) \cdot \phi(K)^\top \mathbf{1})$ for some feature map $\phi$. Order: compute $\phi(K)^\top V$ first (size $d \times d$), then $\phi(Q) \cdot \cdots$. Result: $O(N \cdot d^2)$ — linear in $N$.
+Replace softmax with a kernel approximation: $\mathrm{attention}(Q, K, V) = \phi(Q) \cdot (\phi(K)^\top V) / (\phi(Q) \cdot \phi(K)^\top \mathbf{1})$ for some feature map $\phi$. Order: compute $\phi(K)^\top V$ first (size $d \times d$), then $\phi(Q) \cdot \cdots$. Result: $O(N \cdot d^2)$ — linear in $N$.
 
 **22. Why does linear attention enable RNN-style decoding?**
 The attention has the form $\text{output}_t = \phi(Q_t) \cdot S_t$, where $S_t = \sum_{i \leq t} \phi(K_i) V_i^\top$ is updated as $S_t = S_{t-1} + \phi(K_t) V_t^\top$. So decoding is a **recurrent state update** with constant memory $O(d^2)$ and constant time $O(d^2)$ per step — like an RNN.

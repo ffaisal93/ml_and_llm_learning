@@ -22,11 +22,11 @@ Every modern optimizer is some computationally tractable approximation to Newton
 |---|---|---|---|
 | SGD | $\eta \cdot I$ | 0 extra | "All directions are the same" |
 | Momentum | $\eta \cdot I$ (with velocity) | $O(d)$ | Accumulate past gradients |
-| RMSProp | $\eta \cdot \operatorname{diag}(1/\sqrt{\hat v})$ | $O(d)$ | $\operatorname{diag}(H) \approx \sqrt{g \cdot g}$ |
-| Adam | $\eta \cdot \operatorname{diag}(1/\sqrt{\hat v})$ (+ momentum) | $O(d)$ | Momentum + RMSProp |
+| RMSProp | $\eta \cdot \mathrm{diag}(1/\sqrt{\hat v})$ | $O(d)$ | $\mathrm{diag}(H) \approx \sqrt{g \cdot g}$ |
+| Adam | $\eta \cdot \mathrm{diag}(1/\sqrt{\hat v})$ (+ momentum) | $O(d)$ | Momentum + RMSProp |
 | AdamW | Same as Adam, decoupled WD | $O(d)$ | Adam with cleaner regularization |
-| Lion | $\eta \cdot \operatorname{sign}(m)$ | $O(d)$ | Sign-based; no second moment |
-| Sophia | $\eta \cdot \operatorname{diag}(1/\hat h)$ | $O(d)$ | Stochastic Hutchinson Hessian estimate |
+| Lion | $\eta \cdot \mathrm{sign}(m)$ | $O(d)$ | Sign-based; no second moment |
+| Sophia | $\eta \cdot \mathrm{diag}(1/\hat h)$ | $O(d)$ | Stochastic Hutchinson Hessian estimate |
 | Shampoo | Block-diagonal of Hessian | $O(d^{1.5})$ | Per-layer Kronecker factors |
 | K-FAC | Fisher block approx | $O(d^{1.5})$ | Per-layer Kronecker Fisher |
 
@@ -84,7 +84,7 @@ $$
 
 Per-parameter rescaling by the running RMS of gradients. $\beta = 0.99$ typical. **Adaptive** — parameters with consistently large gradients get smaller updates; rare parameters get larger updates. Originally proposed by Hinton in lecture slides; never published as a paper.
 
-**Why it works:** approximates the diagonal of the Hessian via $\mathbb{E}[g^2] \approx \operatorname{diag}(H)$ (true under specific assumptions — Fisher information for likelihood-based losses). Removes most of the LR-tuning sensitivity that plain SGD has.
+**Why it works:** approximates the diagonal of the Hessian via $\mathbb{E}[g^2] \approx \mathrm{diag}(H)$ (true under specific assumptions — Fisher information for likelihood-based losses). Removes most of the LR-tuning sensitivity that plain SGD has.
 
 **Modern usage:** rarely used standalone; lives on as a component of Adam.
 
@@ -139,14 +139,14 @@ In **AdamW**, weight decay is applied directly to $\theta$ after the Adam update
 $$
 \begin{aligned}
 c_t &= \beta_1\, m_{t-1} + (1-\beta_1)\, g_t \quad &\text{(interpolation, no bias correction)} \\
-\theta_{t+1} &= \theta_t - \eta\, \operatorname{sign}(c_t) - \eta\, \lambda\, \theta_t \quad &\text{(sign-based update)} \\
+\theta_{t+1} &= \theta_t - \eta\, \mathrm{sign}(c_t) - \eta\, \lambda\, \theta_t \quad &\text{(sign-based update)} \\
 m_t &= \beta_2\, m_{t-1} + (1-\beta_2)\, g_t \quad &\text{(momentum stored separately)}
 \end{aligned}
 $$
 
 Defaults: $\beta_1 = 0.9, \beta_2 = 0.99, \eta = 3 \times 10^{-5}$ (about 10x lower than Adam).
 
-The trick: replace $\hat m / \sqrt{\hat v}$ with $\operatorname{sign}(\hat m)$. Updates are always $\pm \eta$ per parameter (modulo weight decay).
+The trick: replace $\hat m / \sqrt{\hat v}$ with $\mathrm{sign}(\hat m)$. Updates are always $\pm \eta$ per parameter (modulo weight decay).
 
 **Why it works:** the sign function is a kind of extreme normalization — every parameter gets the same step size, regardless of gradient magnitude. This is similar in spirit to Adam's per-parameter rescaling but more aggressive.
 
@@ -166,14 +166,14 @@ The trick: replace $\hat m / \sqrt{\hat v}$ with $\operatorname{sign}(\hat m)$. 
 **Sophia (Liu et al. 2023):**
 
 $$
-\hat h_t = \operatorname{clip}(\text{stoch\_hessian\_estimate}, \rho)
+\hat h_t = \mathrm{clip}(\text{stoch\_hessian\_estimate}, \rho)
 $$
 
 $$
 \theta_{t+1} = \theta_t - \eta\, \frac{\hat m_t}{\max(\gamma \cdot \hat h_t, \varepsilon)} - \eta\, \lambda\, \theta_t
 $$
 
-Uses Hutchinson's stochastic estimator: $\operatorname{diag}(H) \approx \mathbb{E}[v \odot Hv]$ for random $v$. Compute $Hv$ via Hessian-vector product (one extra backward pass). Reportedly converges in fewer steps than AdamW on LLM pretraining. The catch: extra compute per step. Whether the per-step efficiency offsets the cost is the empirical question.
+Uses Hutchinson's stochastic estimator: $\mathrm{diag}(H) \approx \mathbb{E}[v \odot Hv]$ for random $v$. Compute $Hv$ via Hessian-vector product (one extra backward pass). Reportedly converges in fewer steps than AdamW on LLM pretraining. The catch: extra compute per step. Whether the per-step efficiency offsets the cost is the empirical question.
 
 **Shampoo (Anil et al. 2020):**
 

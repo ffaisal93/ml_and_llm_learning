@@ -29,7 +29,7 @@ This single assumption — that the **log-odds are linear in the features** — 
 Why do we transform $P$ to $\log(P/(1-P))$ before assuming linearity?
 
 - **Range matching.** $P \in [0, 1]$ is bounded. $P/(1-P) \in [0, \infty)$. $\log(P/(1-P)) \in (-\infty, \infty)$. The log-odds match the range of a linear function $w^\top x + b$. We don't have to constrain weights to keep predictions in $[0, 1]$.
-- **Symmetry.** $\operatorname{logit}(P) = -\operatorname{logit}(1-P)$. Swapping the class labels just flips the sign of the weights.
+- **Symmetry.** $\mathrm{logit}(P) = -\mathrm{logit}(1-P)$. Swapping the class labels just flips the sign of the weights.
 - **Connection to exponential families.** The Bernoulli distribution belongs to the exponential family with **natural parameter** equal to the log-odds. Logistic regression is, in this sense, "the natural" model for binary outcomes — analogous to linear regression as "the natural" model for Gaussian outcomes.
 
 This last point is the deepest. Generalized linear models (GLMs) use a "link function" to connect the linear predictor $w^\top x + b$ to the conditional mean of the response. The **canonical link** for the Bernoulli is the logit. That's why the gradient is so clean (see §6).
@@ -58,7 +58,7 @@ This is one of the highest-frequency interview questions in classical ML. The st
 
 ### Part (a): MLE derivation
 
-Treat each $y_i \in \{0, 1\}$ as drawn from $\operatorname{Bernoulli}(p_i)$ where $p_i = \sigma(w^\top x_i + b)$. The likelihood of the dataset is:
+Treat each $y_i \in \{0, 1\}$ as drawn from $\mathrm{Bernoulli}(p_i)$ where $p_i = \sigma(w^\top x_i + b)$. The likelihood of the dataset is:
 
 $$
 L(w, b) = \prod_i p_i^{y_i} \cdot (1 - p_i)^{1 - y_i}
@@ -123,7 +123,7 @@ $$
 **Hessian:**
 
 $$
-H = X^\top \operatorname{diag}\!\big(\sigma(z_i)(1 - \sigma(z_i))\big)\, X
+H = X^\top \mathrm{diag}\!\big(\sigma(z_i)(1 - \sigma(z_i))\big)\, X
 $$
 
 This is positive semi-definite, so the loss is convex.
@@ -162,7 +162,7 @@ For canonical-link GLMs, the gradient of the negative log-likelihood w.r.t. weig
 Logistic regression has a non-trivial Hessian, which means Newton's method is feasible and fast. The Newton update is:
 
 $$
-w_{t+1} = w_t - H^{-1}\, g = w_t - \big(X^\top \operatorname{diag}(\sigma(1-\sigma))\, X\big)^{-1}\, X^\top (\sigma - y)
+w_{t+1} = w_t - H^{-1}\, g = w_t - \big(X^\top \mathrm{diag}(\sigma(1-\sigma))\, X\big)^{-1}\, X^\top (\sigma - y)
 $$
 
 This is **iteratively reweighted least squares** (IRLS): each iteration is a weighted least-squares problem where the weights are $\sigma(1-\sigma)$ for each sample. Convergence is typically quadratic — IRLS converges in 5–10 iterations for well-conditioned problems.
@@ -178,7 +178,7 @@ This is **iteratively reweighted least squares** (IRLS): each iteration is a wei
 Cross-entropy with sigmoid (or, equivalently, the negative log-likelihood of Bernoulli + logit) is **convex** in $w$. Specifically:
 
 $$
-H = X^\top \operatorname{diag}\!\big(\sigma(z)(1 - \sigma(z))\big)\, X
+H = X^\top \mathrm{diag}\!\big(\sigma(z)(1 - \sigma(z))\big)\, X
 $$
 
 $\sigma(z)(1 - \sigma(z))$ is positive (it's a variance — Bernoulli with parameter $\sigma(z)$). So $H$ is a positive semi-definite weighted Gram matrix. Hessian PSD $\Rightarrow$ convex loss $\Rightarrow$ unique global minimum $\Rightarrow$ no local minima $\Rightarrow$ any optimization method converges to the same answer.
@@ -234,7 +234,7 @@ $$
 
 The single weight vector $w$ in binary logistic regression is $w_1 - w_0$ from the multinomial parameterization.
 
-**Interview gotcha.** "Are softmax outputs probabilities?" They sum to 1 and are non-negative, so technically yes. But **they are very poorly calibrated** in deep networks. A model that outputs $\operatorname{softmax} = [0.95, 0.05]$ is often wrong much more than 5% of the time. The probabilities are valid as relative scores; they may not be reliable as absolute probabilities. Calibration techniques (temperature scaling, Platt scaling) fix this.
+**Interview gotcha.** "Are softmax outputs probabilities?" They sum to 1 and are non-negative, so technically yes. But **they are very poorly calibrated** in deep networks. A model that outputs $\mathrm{softmax} = [0.95, 0.05]$ is often wrong much more than 5% of the time. The probabilities are valid as relative scores; they may not be reliable as absolute probabilities. Calibration techniques (temperature scaling, Platt scaling) fix this.
 
 ---
 
@@ -255,7 +255,7 @@ The single weight vector $w$ in binary logistic regression is $w_1 - w_0$ from t
 
 ## 13. The connection to SVM
 
-Both logistic regression and (linear, hinge-loss) SVM are linear classifiers — they share the form $\operatorname{sign}(w^\top x + b)$. Where they differ:
+Both logistic regression and (linear, hinge-loss) SVM are linear classifiers — they share the form $\mathrm{sign}(w^\top x + b)$. Where they differ:
 
 - **Loss function.** Logistic regression: $\log(1 + e^{-y \cdot z})$. SVM: $\max(0, 1 - y \cdot z)$ (hinge).
 - **Behavior on confidently-correct points.** Logistic regression keeps applying gradient ($\sigma - y$ is small but nonzero for correct, confident points). SVM's hinge loss is exactly zero for points outside the margin — those points contribute nothing to the gradient.
@@ -306,7 +306,7 @@ Decomposes as $\text{calibration error} + \text{refinement error}$. Lower is bet
 **Expected Calibration Error (ECE).** Weighted average distance between bin frequencies and bin probabilities:
 
 $$
-\text{ECE} = \sum_b \frac{|\text{bin}_b|}{N} \, \big| \operatorname{freq}(\text{bin}_b) - \overline{p}(\text{bin}_b) \big|
+\text{ECE} = \sum_b \frac{|\text{bin}_b|}{N} \, \big| \mathrm{freq}(\text{bin}_b) - \overline{p}(\text{bin}_b) \big|
 $$
 
 ### Why calibration matters

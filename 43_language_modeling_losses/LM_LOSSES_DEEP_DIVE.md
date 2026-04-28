@@ -274,18 +274,18 @@ These are mostly research-stage at frontier scale. Pure CLM remains the workhors
 For any of these objectives, the per-position loss is cross-entropy:
 
 $$
-\mathcal{L} = -\log p(\text{true token} \mid \text{model}) = -\log \operatorname{softmax}(\text{logits})[\text{true idx}] = -\!\left(z_{\text{true}} - \log \sum_v \exp(z_v)\right)
+\mathcal{L} = -\log p(\text{true token} \mid \text{model}) = -\log \mathrm{softmax}(\text{logits})[\text{true idx}] = -\!\left(z_{\text{true}} - \log \sum_v \exp(z_v)\right)
 $$
 
 The $\log \sum_v \exp(z_v)$ is the **log-sum-exp** (LSE) — numerically computed with the standard
 
 $$
-\operatorname{LSE}(z) = \max(z) + \log \sum_v \exp(z_v - \max(z))
+\mathrm{LSE}(z) = \max(z) + \log \sum_v \exp(z_v - \max(z))
 $$
 
 trick to avoid overflow.
 
-Cross-entropy is the same loss as binary cross-entropy in logistic regression generalized to $V$ classes. Same gradient form: $\operatorname{softmax}(\text{logits}) - \text{one\_hot}(\text{target})$.
+Cross-entropy is the same loss as binary cross-entropy in logistic regression generalized to $V$ classes. Same gradient form: $\mathrm{softmax}(\text{logits}) - \text{one\_hot}(\text{target})$.
 
 ---
 

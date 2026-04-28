@@ -29,7 +29,7 @@ Numerical stability. Prevents division by zero when variance is near zero. Stand
 For a 4D activation $[B, C, H, W]$, normalize per-channel across batch and spatial dims:
 
 $$
-\mu_c = \operatorname{mean}(X[:, c, :, :]), \qquad \sigma_c^2 = \operatorname{var}(X[:, c, :, :])
+\mu_c = \mathrm{mean}(X[:, c, :, :]), \qquad \sigma_c^2 = \mathrm{var}(X[:, c, :, :])
 $$
 
 $$
@@ -42,7 +42,7 @@ Per-channel $\gamma, \beta$. Maintains running averages of $\mu, \sigma^2$ for i
 For a 3D activation $[B, N, d]$, normalize per-sample per-token across features:
 
 $$
-\mu = \operatorname{mean}(X[b, n, :]), \qquad \sigma^2 = \operatorname{var}(X[b, n, :])
+\mu = \mathrm{mean}(X[b, n, :]), \qquad \sigma^2 = \mathrm{var}(X[b, n, :])
 $$
 
 $$
@@ -55,7 +55,7 @@ Single $\gamma, \beta$ (per-feature). No running averages needed.
 LayerNorm without mean subtraction:
 
 $$
-\operatorname{RMSNorm}(x) = \gamma \cdot x / \operatorname{RMS}(x), \qquad \operatorname{RMS}(x) = \sqrt{\operatorname{mean}(x^2) + \varepsilon}
+\mathrm{RMSNorm}(x) = \gamma \cdot x / \mathrm{RMS}(x), \qquad \mathrm{RMS}(x) = \sqrt{\mathrm{mean}(x^2) + \varepsilon}
 $$
 
 Just unit-variance normalization. ~30% cheaper. Empirically as good as LN for transformers. Used in LLaMA, Gemma, Mistral.
@@ -64,7 +64,7 @@ Just unit-variance normalization. ~30% cheaper. Empirically as good as LN for tr
 Compromise between LN and BN: normalize per-sample across groups of channels. For 4D $[B, C, H, W]$, split channels into $G$ groups, normalize each group separately:
 
 $$
-\mu = \operatorname{mean}(X[b, \text{group}, :, :]), \qquad \sigma^2 = \operatorname{var}(\cdots)
+\mu = \mathrm{mean}(X[b, \text{group}, :, :]), \qquad \sigma^2 = \mathrm{var}(\cdots)
 $$
 
 Used in vision when batch size is small. Some diffusion models use it.
@@ -101,10 +101,10 @@ For multi-GPU training with small per-GPU batch sizes, BN's per-GPU statistics a
 ## D. Pre-LN vs post-LN
 
 **15. What's post-LN?**
-The original transformer (Vaswani 2017): $x \leftarrow \operatorname{LayerNorm}(x + \operatorname{Sublayer}(x))$. Norm comes after the residual addition.
+The original transformer (Vaswani 2017): $x \leftarrow \mathrm{LayerNorm}(x + \mathrm{Sublayer}(x))$. Norm comes after the residual addition.
 
 **16. What's pre-LN?**
-Modern: $x \leftarrow x + \operatorname{Sublayer}(\operatorname{LayerNorm}(x))$. Norm comes before the sublayer; the residual is unnormed.
+Modern: $x \leftarrow x + \mathrm{Sublayer}(\mathrm{LayerNorm}(x))$. Norm comes before the sublayer; the residual is unnormed.
 
 **17. Why does pre-LN train more stably?**
 Two reasons. (a) Gradient flow: in pre-LN, the residual path is identity through LayerNorm, so gradients flow unchanged. In post-LN, every block applies LN to the gradient on the way back, which can attenuate signal. (b) Residual stream magnitude: pre-LN preserves the unnormed stream; post-LN renormalizes after every block, amplifying any perturbations.
@@ -170,7 +170,7 @@ Dropout zeros some activations during training, changing their distribution. BN 
 GPT-J style: compute attention and FFN in **parallel** from the same input rather than sequentially:
 
 $$
-x' = x + \operatorname{Attention}(\operatorname{LN}(x)) + \operatorname{FFN}(\operatorname{LN}(x))
+x' = x + \mathrm{Attention}(\mathrm{LN}(x)) + \mathrm{FFN}(\mathrm{LN}(x))
 $$
 
 Saves one dependency in the dataflow graph (slight speedup). Empirically comparable to standard pre-LN.

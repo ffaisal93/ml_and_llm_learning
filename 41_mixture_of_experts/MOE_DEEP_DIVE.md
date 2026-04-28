@@ -6,7 +6,7 @@
 
 ## 1. The big picture
 
-A standard transformer FFN does $\operatorname{FFN}(x) = W_2 \cdot \operatorname{activation}(W_1 \cdot x)$. Every FFN layer has the same parameters; every token uses all of them.
+A standard transformer FFN does $\mathrm{FFN}(x) = W_2 \cdot \mathrm{activation}(W_1 \cdot x)$. Every FFN layer has the same parameters; every token uses all of them.
 
 An **MoE FFN** replaces this single FFN with $E$ parallel "experts" — separate FFN modules with their own weights. A **router** picks $k$ experts per token (typically $k = 2$, sometimes $k = 1$). Only the selected experts run.
 
@@ -15,8 +15,8 @@ For each token:
 $$
 \begin{aligned}
 \text{scores} &= \text{router}(x) \in \mathbb{R}^E \quad &\text{(one score per expert)} \\
-\text{top}_k &= \operatorname{argmax}_k(\text{scores}) \\
-\text{weights} &= \operatorname{softmax}(\text{scores}[\text{top}_k]) \\
+\text{top}_k &= \mathrm{argmax}_k(\text{scores}) \\
+\text{weights} &= \mathrm{softmax}(\text{scores}[\text{top}_k]) \\
 \text{output} &= \sum_{i \in \text{top}_k} \text{weights}_i \cdot \text{expert}_i(x)
 \end{aligned}
 $$
@@ -56,8 +56,8 @@ Different experts learn different "skills" (math, code, multilingual, etc.). At 
 $$
 \begin{aligned}
 \text{scores} &= W_{\text{router}} \cdot x \in \mathbb{R}^E \\
-\text{top}_k\text{\_idx} &= \operatorname{topk}(\text{scores}, k) \\
-\text{gates} &= \operatorname{softmax}(\text{scores}[\text{top}_k\text{\_idx}]) \\
+\text{top}_k\text{\_idx} &= \mathrm{topk}(\text{scores}, k) \\
+\text{gates} &= \mathrm{softmax}(\text{scores}[\text{top}_k\text{\_idx}]) \\
 \text{output} &= \sum_{i \in \text{top}_k\text{\_idx}} \text{gates}_i \cdot \text{expert}_i(x)
 \end{aligned}
 $$
@@ -265,7 +265,7 @@ Auxiliary-loss-free MoE (DeepSeek) has matched dense stability. Earlier MoE was 
 ## 10. The 8 most-asked MoE interview questions
 
 1. **What is MoE?** Replace single FFN with $E$ experts; router picks $k$ per token. Active compute scales with $k$; total parameters scale with $E$.
-2. **Walk through routing.** $\text{scores} = W_{\text{router}} \cdot x$; $\operatorname{topk}$; softmax over selected; weighted combine of expert outputs.
+2. **Walk through routing.** $\text{scores} = W_{\text{router}} \cdot x$; $\mathrm{topk}$; softmax over selected; weighted combine of expert outputs.
 3. **What's load balancing for?** Prevent routing collapse where a few experts get all tokens. Aux loss $E \cdot \sum f \cdot P$ or DeepSeek-style bias adjustment.
 4. **What's a capacity factor?** Max tokens per expert per batch. Excess dropped via residual.
 5. **Top-1 vs top-2?** Top-1 cheaper, top-2 more stable. Mixtral and most modern use top-2.

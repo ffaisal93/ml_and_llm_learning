@@ -308,7 +308,7 @@ Increasing $N$ is essentially "scaling test-time compute." Recent work (o1, Deep
 
 ## 14. The 8 most-asked sampling interview questions
 
-1. **What does temperature do mathematically?** $\operatorname{softmax}(\text{logits}/T)$. Lower $T$ = sharper; higher $T$ = flatter.
+1. **What does temperature do mathematically?** $\mathrm{softmax}(\text{logits}/T)$. Lower $T$ = sharper; higher $T$ = flatter.
 2. **Top-k vs top-p?** Top-k: fixed count of best tokens. Top-p: smallest set with cumulative probability $\geq p$. Top-p adapts to confidence.
 3. **Why is greedy decoding bad for chat?** Repetitive, lacks diversity, often boring.
 4. **Why does beam search fail for LLMs?** Boring consensus text; length bias; repetition.

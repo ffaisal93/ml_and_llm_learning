@@ -151,7 +151,7 @@ Fine-tune diffusion models on small datasets to add new concepts (a person, a st
 ## I. Subtleties
 
 **37. What's variance-preserving (VP) vs variance-exploding (VE)?**
-VP: $\operatorname{Var}(x_t) \approx 1$ for all $t$ (DDPM standard). VE: $\operatorname{Var}(x_t)$ grows with $t$ (Song & Ermon original). Different parameterizations of the same idea. VP is more common in modern usage.
+VP: $\mathrm{Var}(x_t) \approx 1$ for all $t$ (DDPM standard). VE: $\mathrm{Var}(x_t)$ grows with $t$ (Song & Ermon original). Different parameterizations of the same idea. VP is more common in modern usage.
 
 **38. Why does the simplified DDPM loss work better than the weighted ELBO?**
 The ELBO prefactor weights early timesteps very heavily (where noise is small and predictions are easy) and late timesteps very lightly. Empirically, this distorts training. The simplified loss treats all timesteps equally and works better.

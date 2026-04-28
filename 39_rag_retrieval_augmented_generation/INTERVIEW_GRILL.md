@@ -51,7 +51,7 @@ Likely chunking — retrieval finds the right chunk but it's missing context (in
 Classic IR scoring:
 
 $$
-\sum_{w \in q} \operatorname{IDF}(w) \cdot \frac{\operatorname{tf}(w, d) \cdot (k + 1)}{\operatorname{tf}(w, d) + k \cdot (1 - b + b \cdot |d| / \overline{|d|})}
+\sum_{w \in q} \mathrm{IDF}(w) \cdot \frac{\mathrm{tf}(w, d) \cdot (k + 1)}{\mathrm{tf}(w, d) + k \cdot (1 - b + b \cdot |d| / \overline{|d|})}
 $$
 
 Term frequency × IDF with length normalization. Lexical match — strong on rare keywords, IDs, exact phrases.
@@ -85,7 +85,7 @@ Semantic similarity in vector space matches task-relevant similarity. Asymmetric
 OpenAI text-embedding-3 (paid, multilingual). BGE (BAAI/bge-large-en, bge-m3) — open-source, near-SOTA. E5 — open-source, instruction-tuned. Cohere Embed v3 — strong API. Voyage AI — domain specialized.
 
 **21. What's contrastive learning for embeddings?**
-Train so positives have high similarity, negatives have low: $\mathcal{L} = -\log[\exp(\operatorname{sim}(q, d_+)) / \sum \exp(\operatorname{sim}(q, d_i))]$. InfoNCE loss. Hard negatives (almost-relevant) train better than random negatives.
+Train so positives have high similarity, negatives have low: $\mathcal{L} = -\log[\exp(\mathrm{sim}(q, d_+)) / \sum \exp(\mathrm{sim}(q, d_i))]$. InfoNCE loss. Hard negatives (almost-relevant) train better than random negatives.
 
 **22. Embedding dimension trade-offs?**
 Larger: more expressive but slower retrieval, more memory. Smaller: faster, smaller index. 384-768 typical sweet spot. Matryoshka embeddings (recent): hierarchical so you can truncate.

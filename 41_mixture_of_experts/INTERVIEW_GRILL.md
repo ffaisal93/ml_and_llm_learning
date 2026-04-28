@@ -14,8 +14,8 @@ Replace dense FFN with $E$ parallel experts; a router picks $k$ experts per toke
 $$
 \begin{aligned}
 \text{scores} &= W_{\text{router}} \cdot x \in \mathbb{R}^E \\
-\text{top}_k\text{\_idx} &= \operatorname{topk}(\text{scores}, k) \\
-\text{gates} &= \operatorname{softmax}(\text{scores}[\text{top}_k\text{\_idx}]) \\
+\text{top}_k\text{\_idx} &= \mathrm{topk}(\text{scores}, k) \\
+\text{gates} &= \mathrm{softmax}(\text{scores}[\text{top}_k\text{\_idx}]) \\
 \text{output} &= \sum_i \text{gates}_i \cdot \text{expert}_i(x)
 \end{aligned}
 $$

@@ -221,7 +221,7 @@ The maximum probability of distinguishing $p$ and $q$ by any test. **Pinsker's i
 For a softmax classifier with logits $z$:
 
 $$
-p_\theta(\text{class} \mid \text{input}) = \operatorname{softmax}(z) = \frac{\exp(z)}{\sum_j \exp(z_j)}
+p_\theta(\text{class} \mid \text{input}) = \mathrm{softmax}(z) = \frac{\exp(z)}{\sum_j \exp(z_j)}
 $$
 
 $$
@@ -231,13 +231,13 @@ $$
 The $\log \sum_j \exp(z_j)$ is the log-partition function (also called log-sum-exp). Numerically computed via:
 
 $$
-\operatorname{LSE}(z) = \max(z) + \log \sum_j \exp(z_j - \max(z))
+\mathrm{LSE}(z) = \max(z) + \log \sum_j \exp(z_j - \max(z))
 $$
 
 ### Gradient w.r.t. logits
 
 $$
-\frac{\partial \mathcal{L}}{\partial z} = \operatorname{softmax}(z) - \mathbf{1}_{\text{true class}} = p_\theta - y
+\frac{\partial \mathcal{L}}{\partial z} = \mathrm{softmax}(z) - \mathbf{1}_{\text{true class}} = p_\theta - y
 $$
 
 This is the famous "logits minus targets" gradient. It's the canonical-link gradient for the categorical distribution in GLM theory. Same form as logistic regression's $(\sigma - y)$ extended to $K$ classes.

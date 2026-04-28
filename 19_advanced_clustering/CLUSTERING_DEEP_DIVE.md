@@ -121,7 +121,7 @@ If $\Sigma_k = \sigma^2 I$ for all $k$, mixing weights $\pi_k = 1/K$ are equal, 
 ### Covariance choices
 
 - **Spherical**: $\Sigma_k = \sigma_k^2 I$ — like K-means with per-cluster scale.
-- **Diagonal**: $\Sigma_k = \operatorname{diag}(\sigma_{k,1}^2, \ldots, \sigma_{k,d}^2)$ — axis-aligned ellipses.
+- **Diagonal**: $\Sigma_k = \mathrm{diag}(\sigma_{k,1}^2, \ldots, \sigma_{k,d}^2)$ — axis-aligned ellipses.
 - **Full**: arbitrary $\Sigma_k$ — full ellipsoidal clusters. Most expressive; needs most data per cluster to estimate reliably.
 
 ### When GMM beats K-means

@@ -157,7 +157,7 @@ Closed-form. Just like linear ridge but in kernel space.
 
 ### Gaussian processes
 
-Bayesian extension. $f \sim \operatorname{GP}(0, k)$. Posterior given data is also Gaussian, with mean $\mu(x) = k(x, X)(K + \sigma^2 I)^{-1} y$ and variance $\sigma^2(x) = k(x, x) - k(x, X)(K + \sigma^2 I)^{-1} k(X, x)$. Provides uncertainty estimates.
+Bayesian extension. $f \sim \mathrm{GP}(0, k)$. Posterior given data is also Gaussian, with mean $\mu(x) = k(x, X)(K + \sigma^2 I)^{-1} y$ and variance $\sigma^2(x) = k(x, x) - k(x, X)(K + \sigma^2 I)^{-1} k(X, x)$. Provides uncertainty estimates.
 
 ### Kernel PCA
 
@@ -219,7 +219,7 @@ The NTK theory describes wide networks at initialization. Real NNs at modest wid
 Attention computes:
 
 $$
-\operatorname{attention}(Q, K, V)_i = \sum_j \frac{\exp(q_i^\top k_j / \sqrt{d_k})}{\sum_{j'} \exp(q_i^\top k_{j'} / \sqrt{d_k})} v_j
+\mathrm{attention}(Q, K, V)_i = \sum_j \frac{\exp(q_i^\top k_j / \sqrt{d_k})}{\sum_{j'} \exp(q_i^\top k_{j'} / \sqrt{d_k})} v_j
 $$
 
 Compare to kernel ridge regression's prediction:

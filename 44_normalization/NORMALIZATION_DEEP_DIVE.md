@@ -37,7 +37,7 @@ For each feature channel, normalize across the **batch and spatial** dimensions.
 For a 4D activation $X[B, C, H, W]$ (vision), for each channel $c$:
 
 $$
-\mu_c = \operatorname{mean}(X[:, c, :, :]), \qquad \sigma_c^2 = \operatorname{var}(X[:, c, :, :])
+\mu_c = \mathrm{mean}(X[:, c, :, :]), \qquad \sigma_c^2 = \mathrm{var}(X[:, c, :, :])
 $$
 
 $$
@@ -57,7 +57,7 @@ For each sample, normalize across the **feature** dimension.
 For a 3D activation $X[B, N, d]$ (sequence), for each $(b, n)$:
 
 $$
-\mu = \operatorname{mean}(X[b, n, :]), \qquad \sigma^2 = \operatorname{var}(X[b, n, :])
+\mu = \mathrm{mean}(X[b, n, :]), \qquad \sigma^2 = \mathrm{var}(X[b, n, :])
 $$
 
 $$
@@ -75,7 +75,7 @@ Per-token, per-sample normalization. **No batch dimension**. Crucial for transfo
 LayerNorm without mean subtraction:
 
 $$
-\operatorname{RMSNorm}(x) = \gamma \cdot \frac{x}{\operatorname{RMS}(x)}, \qquad \operatorname{RMS}(x) = \sqrt{\operatorname{mean}(x^2) + \varepsilon}
+\mathrm{RMSNorm}(x) = \gamma \cdot \frac{x}{\mathrm{RMS}(x)}, \qquad \mathrm{RMS}(x) = \sqrt{\mathrm{mean}(x^2) + \varepsilon}
 $$
 
 Just unit-variance normalization. ~30% cheaper (one fewer reduction). Empirically as good as LayerNorm for transformers. **Used in LLaMA family, Gemma, Mistral, etc.**
@@ -85,7 +85,7 @@ Just unit-variance normalization. ~30% cheaper (one fewer reduction). Empiricall
 Compromise between LN and BN: normalize across groups of channels. For each $(b, \text{group } g)$:
 
 $$
-\mu_g = \operatorname{mean}(X[b, \text{channels in } g, :, :]), \qquad \sigma_g^2 = \operatorname{var}(\cdots)
+\mu_g = \mathrm{mean}(X[b, \text{channels in } g, :, :]), \qquad \sigma_g^2 = \mathrm{var}(\cdots)
 $$
 
 Used in vision when batch size is small (BN fails) but per-sample LN is too noisy. Some diffusion models use GroupNorm.
@@ -150,7 +150,7 @@ The defining architectural choice for transformers.
 ### Post-LN (original, 2017)
 
 $$
-x \leftarrow \operatorname{LayerNorm}(x + \operatorname{Sublayer}(x))
+x \leftarrow \mathrm{LayerNorm}(x + \mathrm{Sublayer}(x))
 $$
 
 Norm comes after the residual addition.
@@ -158,7 +158,7 @@ Norm comes after the residual addition.
 ### Pre-LN (modern)
 
 $$
-x \leftarrow x + \operatorname{Sublayer}(\operatorname{LayerNorm}(x))
+x \leftarrow x + \mathrm{Sublayer}(\mathrm{LayerNorm}(x))
 $$
 
 Norm comes before the sublayer; the residual is the unnormed input.
@@ -186,7 +186,7 @@ These are all variations on the pre-LN theme.
 ## 6. RMSNorm: why subtract the mean isn't necessary
 
 LayerNorm: $(x - \mu) / \sigma$. Two reductions.
-RMSNorm: $x / \operatorname{RMS}(x)$. One reduction.
+RMSNorm: $x / \mathrm{RMS}(x)$. One reduction.
 
 ### The argument
 

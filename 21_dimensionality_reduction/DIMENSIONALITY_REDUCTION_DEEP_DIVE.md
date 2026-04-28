@@ -33,7 +33,7 @@ Find directions in the input space along which the data varies most. Project ont
 Centered data $X \in \mathbb{R}^{N \times d}$ (subtract column means). Goal: find unit vector $u$ that maximizes the variance of projections:
 
 $$
-\max_{\|u\| = 1} \operatorname{Var}(X u) = \max_{\|u\| = 1} u^\top \Sigma u, \qquad \Sigma = \frac{1}{N} X^\top X
+\max_{\|u\| = 1} \mathrm{Var}(X u) = \max_{\|u\| = 1} u^\top \Sigma u, \qquad \Sigma = \frac{1}{N} X^\top X
 $$
 
 ### The solution

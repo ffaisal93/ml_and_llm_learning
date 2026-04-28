@@ -16,7 +16,7 @@ Project input $X$ into queries $Q = X W_Q$, keys $K = X W_K$, values $V = X W_V$
 **Without it, scores get huge in high dim, softmax saturates, gradients die.** The math: dot product of two $d_k$-dim unit-variance vectors has variance $d_k$, so entries grow as $\sqrt{d_k}$. Dividing by $\sqrt{d_k}$ keeps score variance $O(1)$ regardless of dimension → softmax stays in its linear regime, gradients flow.
 
 **4. Why softmax and not sigmoid?**
-Softmax produces a **probability distribution** over keys: non-negative weights summing to 1. This makes $\operatorname{softmax}(\text{scores}) \cdot V$ a proper convex combination — a weighted average. Sigmoid would give independent gates per key, not a normalized mixture, and you'd need ad-hoc renormalization. Softmax also sharpens: largest score dominates exponentially.
+Softmax produces a **probability distribution** over keys: non-negative weights summing to 1. This makes $\mathrm{softmax}(\text{scores}) \cdot V$ a proper convex combination — a weighted average. Sigmoid would give independent gates per key, not a normalized mixture, and you'd need ad-hoc renormalization. Softmax also sharpens: largest score dominates exponentially.
 
 **5. What's the computational complexity of attention?**
 $O(N^2 \cdot d)$ time and $O(N^2)$ memory for the attention matrix. The $N^2$ is the limiting factor for long contexts. FlashAttention reduces memory access but not FLOPs; linear attention variants try to reduce FLOPs at some quality cost.
@@ -28,13 +28,13 @@ Split $d$ into $h$ heads of size $d_h = d/h$. Run attention separately in each h
 Empirical analyses show some heads learn interpretable functions (positional, syntactic dependency, coreference) but most are not cleanly interpretable. Ablating individual heads usually costs little, suggesting heavy redundancy. Voita et al., Clark et al. for canonical analyses.
 
 **8. What does the FFN do?**
-Per-token non-linear computation. $\operatorname{FFN}(x) = W_2 \cdot \operatorname{activation}(W_1 \cdot x)$. The 4× expansion ($W_1: d \to 4d$, $W_2: 4d \to d$) is the standard ratio. Provides non-linearity (attention is linear in values) and acts as a key-value memory holding factual knowledge. Holds 2/3+ of all transformer parameters.
+Per-token non-linear computation. $\mathrm{FFN}(x) = W_2 \cdot \mathrm{activation}(W_1 \cdot x)$. The 4× expansion ($W_1: d \to 4d$, $W_2: 4d \to d$) is the standard ratio. Provides non-linearity (attention is linear in values) and acts as a key-value memory holding factual knowledge. Holds 2/3+ of all transformer parameters.
 
 **9. Why 4× expansion in the FFN?**
 Empirical choice from the original paper. Larger $d_{\text{ff}}/d$ improves quality up to a point; 4× is the sweet spot for vanilla FFN. Some modern architectures use 8/3 with SwiGLU activation (Llama). Going much larger increases parameters without proportional benefit.
 
 **10. What's SwiGLU and why is it used?**
-Gated activation: $\operatorname{SwiGLU}(x) = (\operatorname{Swish}(x W_1) \odot x W_2) W_3$. Adds a gating term that empirically outperforms ReLU/GELU for LLMs. Triples the FFN parameter count compared to single-matrix FFN, so the inner dimension is reduced (often to $8/3 \cdot d$) to keep total parameters comparable.
+Gated activation: $\mathrm{SwiGLU}(x) = (\mathrm{Swish}(x W_1) \odot x W_2) W_3$. Adds a gating term that empirically outperforms ReLU/GELU for LLMs. Triples the FFN parameter count compared to single-matrix FFN, so the inner dimension is reduced (often to $8/3 \cdot d$) to keep total parameters comparable.
 
 **11. What's the role of $W_O$ in multi-head attention?**
 The output projection. After $h$ heads each produce a $d_h$-dim output, you concatenate to get a $d$-dim vector, then project with $W_O: d \to d$. $W_O$ allows the model to mix information across heads — without it, each head's output would be confined to its own subspace.
@@ -50,15 +50,15 @@ Each token's representation flows through layers as a stream. Each block reads f
 ## B. Normalization placement
 
 **14. Pre-LN vs post-LN?**
-Post-LN (original, 2017): $x \leftarrow \operatorname{LayerNorm}(x + \operatorname{Sublayer}(x))$. Norm after residual.
-Pre-LN (modern): $x \leftarrow x + \operatorname{Sublayer}(\operatorname{LayerNorm}(x))$. Norm before sublayer; residual is unnormed.
+Post-LN (original, 2017): $x \leftarrow \mathrm{LayerNorm}(x + \mathrm{Sublayer}(x))$. Norm after residual.
+Pre-LN (modern): $x \leftarrow x + \mathrm{Sublayer}(\mathrm{LayerNorm}(x))$. Norm before sublayer; residual is unnormed.
 Pre-LN trains stably without elaborate warmup; post-LN does not at modern scales. Every modern LLM uses pre-LN or RMSNorm.
 
 **15. Why does pre-LN train more stably?**
 **Pre-LN keeps a clean signal flowing through the residual stream; post-LN keeps re-normalizing it and amplifies any wobble.** Mechanically: in pre-LN, the sublayer reads a normed input but writes back to the unnormed residual — the residual path's gradient flows unchanged. Post-LN renormalizes the stream every block, which can amplify small perturbations into instability.
 
 **16. What's RMSNorm and why is it used?**
-LayerNorm: $(x - \mu) / \sigma$. RMSNorm: $x / \operatorname{RMS}(x)$ where $\operatorname{RMS}(x) = \sqrt{\operatorname{mean}(x^2)}$. Just unit-variance normalization, no mean centering. ~30% cheaper (one fewer reduction). Empirically as good as LayerNorm. Used in LLaMA, Gemma, Mistral, etc.
+LayerNorm: $(x - \mu) / \sigma$. RMSNorm: $x / \mathrm{RMS}(x)$ where $\mathrm{RMS}(x) = \sqrt{\mathrm{mean}(x^2)}$. Just unit-variance normalization, no mean centering. ~30% cheaper (one fewer reduction). Empirically as good as LayerNorm. Used in LLaMA, Gemma, Mistral, etc.
 
 **17. Why not BatchNorm in transformers?**
 BN normalizes across the batch dimension, which is bad for sequences: (a) different sequence lengths in a batch, (b) at inference time you may want to process single sequences without batch statistics, (c) the running statistics lag during training. LayerNorm normalizes per-token, sidestepping all of these.
@@ -71,7 +71,7 @@ BN normalizes across the batch dimension, which is bad for sequences: (a) differ
 Pure attention is permutation-equivariant: shuffle the input tokens and the output is shuffled the same way. So attention has no notion of order. Positional encoding injects the position information that the architecture otherwise lacks.
 
 **19. What's sinusoidal positional encoding?**
-The original method. Add deterministic sinusoidal vectors per position: $\operatorname{PE}(t, 2i) = \sin(t / 10000^{2i/d})$, $\operatorname{PE}(t, 2i+1) = \cos(\cdots)$. Properties: same encoding regardless of training, in principle extrapolates to longer sequences than training (in practice, mediocre extrapolation).
+The original method. Add deterministic sinusoidal vectors per position: $\mathrm{PE}(t, 2i) = \sin(t / 10000^{2i/d})$, $\mathrm{PE}(t, 2i+1) = \cos(\cdots)$. Properties: same encoding regardless of training, in principle extrapolates to longer sequences than training (in practice, mediocre extrapolation).
 
 **20. What's learned positional encoding?**
 Treat position as a categorical feature; learn an embedding per position. Used in BERT, GPT-2. Simple, works well within max-position seen in training, **does not extrapolate** beyond.

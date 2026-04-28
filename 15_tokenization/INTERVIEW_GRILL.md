@@ -42,7 +42,7 @@ Decoder-only LLMs: GPT-2/3/4, LLaMA, Mistral, Mixtral, etc. Most modern decoder 
 ## C. Other algorithms
 
 **10. What's WordPiece?**
-Similar to BPE but selects merges by likelihood improvement: $\operatorname{score}(\text{pair}) = \operatorname{freq}(\text{pair}) / (\operatorname{freq}(\text{left}) \cdot \operatorname{freq}(\text{right}))$. Picks pairs whose merger is more "likely" than chance. Used in BERT family.
+Similar to BPE but selects merges by likelihood improvement: $\mathrm{score}(\text{pair}) = \mathrm{freq}(\text{pair}) / (\mathrm{freq}(\text{left}) \cdot \mathrm{freq}(\text{right}))$. Picks pairs whose merger is more "likely" than chance. Used in BERT family.
 
 **11. WordPiece vs BPE in practice?**
 Very similar at the level of resulting tokenizations. Choice rarely matters at scale; mostly historical/preference.

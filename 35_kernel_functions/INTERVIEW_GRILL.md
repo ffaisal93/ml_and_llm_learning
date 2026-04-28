@@ -86,7 +86,7 @@ Grid search over $C$ (log-scale, e.g., $10^{-3}$ to $10^3$) and $\gamma$ (also l
 $\hat f(x) = \sum_i \alpha_i k(x_i, x)$ with $\alpha = (K + \lambda I)^{-1} y$. Closed-form. Kernel version of linear ridge.
 
 **20. What's a Gaussian process?**
-Bayesian extension of kernel ridge. $f \sim \operatorname{GP}(0, k)$. Posterior given data is Gaussian with mean $\mu(x) = k(x, X)(K + \sigma^2 I)^{-1} y$ and variance from kernel structure. Provides uncertainty estimates.
+Bayesian extension of kernel ridge. $f \sim \mathrm{GP}(0, k)$. Posterior given data is Gaussian with mean $\mu(x) = k(x, X)(K + \sigma^2 I)^{-1} y$ and variance from kernel structure. Provides uncertainty estimates.
 
 **21. Kernel PCA?**
 PCA in feature space via the kernel trick. Compute kernel matrix; eigendecompose; extract top components. Useful for non-linear dimensionality reduction.

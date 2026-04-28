@@ -116,7 +116,7 @@ Closed-form solution to the RLHF objective: $\pi^* = \pi_{\text{ref}} \cdot \exp
 For $p = \mathcal{N}(\mu_1, \Sigma_1), q = \mathcal{N}(\mu_2, \Sigma_2)$:
 
 $$
-\mathrm{KL}(p \,\|\, q) = \tfrac{1}{2}\!\left[\log \frac{|\Sigma_2|}{|\Sigma_1|} - d + \operatorname{tr}(\Sigma_2^{-1} \Sigma_1) + (\mu_2 - \mu_1)^\top \Sigma_2^{-1} (\mu_2 - \mu_1)\right]
+\mathrm{KL}(p \,\|\, q) = \tfrac{1}{2}\!\left[\log \frac{|\Sigma_2|}{|\Sigma_1|} - d + \mathrm{tr}(\Sigma_2^{-1} \Sigma_1) + (\mu_2 - \mu_1)^\top \Sigma_2^{-1} (\mu_2 - \mu_1)\right]
 $$
 
 Closed form in dimensions and means. Famous formula; sometimes asked.

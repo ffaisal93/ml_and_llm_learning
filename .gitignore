@@ -70,3 +70,6 @@ practice/temp.*
 Thumbs.db
 .DS_Store
 
+# FUSE-mount tombstones (Cowork / FUSE workspace mounts)
+.fuse_hidden*
+

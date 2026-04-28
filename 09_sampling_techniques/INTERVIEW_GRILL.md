@@ -10,9 +10,9 @@
 At each position, the model produces logits $z \in \mathbb{R}^V$. We optionally rescale (temperature), truncate (top-k/top-p), apply penalties, softmax to get probabilities, sample a token, append, repeat.
 
 **2. What does temperature do?**
-$p = \operatorname{softmax}(z/T)$. Lower $T$ = sharper distribution (closer to argmax). Higher $T$ = flatter distribution (closer to uniform). $T = 1$: model's natural distribution. $T \to 0$: greedy. $T \to \infty$: uniform.
+$p = \mathrm{softmax}(z/T)$. Lower $T$ = sharper distribution (closer to argmax). Higher $T$ = flatter distribution (closer to uniform). $T = 1$: model's natural distribution. $T \to 0$: greedy. $T \to \infty$: uniform.
 
-**3. Why is the formula $\operatorname{softmax}(z/T)$?**
+**3. Why is the formula $\mathrm{softmax}(z/T)$?**
 Dividing logits by $T$ uniformly amplifies ($T < 1$) or attenuates ($T > 1$) all of them. After softmax, $\exp(z/T)$ emphasizes (or de-emphasizes) the highest-scoring tokens. $T < 1$ produces a sharper distribution; $T > 1$ produces a smoother one.
 
 **4. $T = 0$ means what?**

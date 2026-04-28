@@ -48,7 +48,7 @@ This direct sampling is critical: during training, you don't need to iterate the
 
 **Cosine** (Nichol & Dhariwal 2021): $\bar\alpha_t = \cos^2(\cdot)$. Smoother decay; better for high-resolution images.
 
-**Variance-preserving (VP) vs variance-exploding (VE):** different parameterizations of the diffusion process. VP keeps $\operatorname{Var}(x_t)$ near 1; VE lets it grow. VP (DDPM-style) is the more common choice.
+**Variance-preserving (VP) vs variance-exploding (VE):** different parameterizations of the diffusion process. VP keeps $\mathrm{Var}(x_t)$ near 1; VE lets it grow. VP (DDPM-style) is the more common choice.
 
 ---
 

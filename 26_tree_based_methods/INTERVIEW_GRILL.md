@@ -10,7 +10,7 @@
 Greedily: at each node, evaluate all candidate features × thresholds, pick the split that maximizes impurity reduction (information gain or variance reduction). Recurse on each child.
 
 **2. Define Gini impurity.**
-$\operatorname{Gini}(S) = 1 - \sum_c p_c^2$ where $p_c$ is the fraction of class $c$ at node $S$. Equals the probability that two random samples from $S$ have different labels.
+$\mathrm{Gini}(S) = 1 - \sum_c p_c^2$ where $p_c$ is the fraction of class $c$ at node $S$. Equals the probability that two random samples from $S$ have different labels.
 
 **3. Define entropy.**
 $H(S) = -\sum_c p_c \log p_c$. Information-theoretic uncertainty of the label distribution.

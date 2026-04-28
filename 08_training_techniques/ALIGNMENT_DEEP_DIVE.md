@@ -105,7 +105,7 @@ The KL penalty creates a budget for how far the policy can move from $\pi_{\text
 The objective is non-trivial to optimize because $y$ is sampled from the policy (you can't differentiate through sampling). The standard solution is policy gradient via PPO (Schulman et al. 2017):
 
 $$
-\mathcal{L}_{\text{PPO}} = \mathbb{E}\Big[ \min\!\big(\rho_t \, \hat A_t,\ \operatorname{clip}(\rho_t,\ 1 - \epsilon,\ 1 + \epsilon)\, \hat A_t\big) \Big]
+\mathcal{L}_{\text{PPO}} = \mathbb{E}\Big[ \min\!\big(\rho_t \, \hat A_t,\ \mathrm{clip}(\rho_t,\ 1 - \epsilon,\ 1 + \epsilon)\, \hat A_t\big) \Big]
 $$
 
 where $\rho_t = \pi_\theta(a_t \mid s_t) / \pi_{\theta_{\text{old}}}(a_t \mid s_t)$ is the importance ratio and $\hat A_t$ is the advantage estimate. The clip prevents updates that move the policy too far in one optimization step (a soft trust region).

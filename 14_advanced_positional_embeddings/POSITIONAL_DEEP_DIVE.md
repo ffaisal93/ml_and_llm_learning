@@ -9,7 +9,7 @@
 Pure scaled-dot-product attention has a striking property: **permutation equivariance**. If you permute the input tokens, the output is permuted the same way. Concretely, for any permutation matrix $P$:
 
 $$
-\operatorname{Attention}(P \cdot X) = P \cdot \operatorname{Attention}(X)
+\mathrm{Attention}(P \cdot X) = P \cdot \mathrm{Attention}(X)
 $$
 
 This means attention has no innate notion of order. From the model's perspective, "the cat sat on the mat" is identical to "mat the on sat cat the." For language — where order is everything — this is the wrong inductive bias.
@@ -38,18 +38,18 @@ We'll cover each.
 The original method. Add a deterministic positional vector to the input embedding:
 
 $$
-\operatorname{PE}(t, 2i) = \sin\!\left(\frac{t}{10000^{2i/d}}\right), \qquad \operatorname{PE}(t, 2i+1) = \cos\!\left(\frac{t}{10000^{2i/d}}\right)
+\mathrm{PE}(t, 2i) = \sin\!\left(\frac{t}{10000^{2i/d}}\right), \qquad \mathrm{PE}(t, 2i+1) = \cos\!\left(\frac{t}{10000^{2i/d}}\right)
 $$
 
 $$
-\text{input}_t = \text{embedding}(\text{token}_t) + \operatorname{PE}(t)
+\text{input}_t = \text{embedding}(\text{token}_t) + \mathrm{PE}(t)
 $$
 
 Each dimension oscillates at a different frequency, ranging from $2\pi$ (low dim) to $10000 \cdot 2\pi$ (high dim). Different positions get distinguishable signatures.
 
 ### Properties
 
-**Position invariance under linear transform.** For any fixed $\Delta t$, there exists a linear transform $M_{\Delta t}$ such that $\operatorname{PE}(t + \Delta t) = M_{\Delta t} \cdot \operatorname{PE}(t)$. This means relative positions can in principle be computed by linear operations on absolute encodings — which the model can learn.
+**Position invariance under linear transform.** For any fixed $\Delta t$, there exists a linear transform $M_{\Delta t}$ such that $\mathrm{PE}(t + \Delta t) = M_{\Delta t} \cdot \mathrm{PE}(t)$. This means relative positions can in principle be computed by linear operations on absolute encodings — which the model can learn.
 
 **Extrapolation in theory.** The encoding is defined for any $t$, including $t$ larger than training length. So extrapolation is mathematically possible.
 

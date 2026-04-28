@@ -121,11 +121,11 @@ QLoRA matches full fp16 fine-tuning quality on most tasks. On hardest tasks, sli
 The earlier PEFT method. Insert small MLPs ("adapters") into each transformer block:
 
 $$
-\operatorname{adapter}(x) = \operatorname{down\_project}(\operatorname{activation}(\operatorname{up\_project}(x)))
+\mathrm{adapter}(x) = \mathrm{down\_project}(\mathrm{activation}(\mathrm{up\_project}(x)))
 $$
 
 $$
-\text{output} = x + \operatorname{adapter}(x) \qquad \text{(residual)}
+\text{output} = x + \mathrm{adapter}(x) \qquad \text{(residual)}
 $$
 
 Adapter dimension $r$ (e.g., 64) is much smaller than the model dim. ~0.5–3% of total parameters.
