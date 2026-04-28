@@ -1,5 +1,9 @@
 # Topic 3: Evaluation Metrics
 
+> 🔥 **For interviews, read these first:**
+> - **`EVALUATION_METRICS_DEEP_DIVE.md`** — frontier-lab interview deep dive: classification (precision/recall/F1/AUROC/PR-AUC), regression (MSE/MAE/R²/quantile loss), ranking (MAP/NDCG/MRR), LLM-specific (PPL, pass@k, BLEU, LLM-as-judge biases), calibration (Brier/ECE/temperature scaling), Goodhart's Law and methodology pitfalls.
+> - **`INTERVIEW_GRILL.md`** — 50 active-recall questions with strong answers.
+
 ## What You'll Learn
 
 This topic teaches you to implement all common evaluation metrics from scratch:
@@ -37,6 +41,95 @@ This topic teaches you to implement all common evaluation metrics from scratch:
 **Use Case**: Recommendation systems
 - Search engines (NDCG)
 - Recommendations (MAP)
+
+## Core Intuition
+
+Metrics are not just for reporting a number after training.
+
+They define what "good" means for the problem.
+
+That is why interviewers care so much about them: if you choose the wrong metric, you can optimize the wrong behavior.
+
+### Classification
+
+For classification, different metrics care about different kinds of mistakes.
+
+- **Accuracy** treats all mistakes equally
+- **Precision** asks: when I predict positive, how often am I right?
+- **Recall** asks: among true positives, how many did I recover?
+- **F1** balances precision and recall
+
+### Regression
+
+For regression, the main question is how errors are penalized.
+
+- **MSE** punishes large errors more strongly
+- **MAE** treats errors linearly
+- **R2** measures variance explained relative to predicting the mean
+
+### Ranking
+
+Ranking metrics care about order, not just set membership.
+
+That is why search and recommendation systems need metrics like NDCG or MAP rather than plain classification accuracy.
+
+## Technical Details That Commonly Get Missed
+
+### Accuracy Can Be Misleading
+
+If positives are rare, accuracy can look great even for a useless model.
+
+Example:
+- 99% negative data
+- always predict negative
+- 99% accuracy
+- terrible recall for the positive class
+
+### Precision vs Recall Trade-Off
+
+You often improve one at the expense of the other by changing the threshold.
+
+That means the metric is not just about the model. It is also about:
+- threshold choice
+- business cost
+- tolerance for false positives vs false negatives
+
+### R2 Edge Case
+
+`R2 = 1 - SS_res / SS_tot`
+
+Important edge case:
+- if `SS_tot = 0`, the target has no variance
+- then R2 is not informative in the normal way
+
+### Ranking Metrics Need Position Sensitivity
+
+NDCG is useful because relevant items near the top matter more than relevant items buried lower in the list.
+
+That is usually what you want in retrieval and recommendation.
+
+## Common Failure Modes
+
+- using accuracy for heavy class imbalance
+- reporting F1 without saying threshold
+- comparing regression metrics across differently scaled targets without context
+- using perplexity or loss as if it directly captured downstream usefulness
+- forgetting confidence intervals for small evaluation sets
+
+## Edge Cases and Follow-Up Questions
+
+1. What if the positive class is only 0.1%?
+2. What if false negatives are much more costly than false positives?
+3. Why can precision rise when recall falls?
+4. Why might two models have similar accuracy but very different usefulness?
+5. Why is NDCG better than accuracy for search ranking?
+
+## What to Practice Saying Out Loud
+
+1. Why metric choice is really objective choice
+2. Why threshold matters for classification metrics
+3. Why MSE and MAE can disagree about which model is better
+4. Why ranking metrics need position sensitivity
 
 ## Industry-Standard Boilerplate Code
 
@@ -171,4 +264,3 @@ def r2_score(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 
 - **Topic 4**: Transformers
 - **Topic 5**: Attention mechanisms
-

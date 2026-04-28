@@ -1,5 +1,9 @@
 # Topic 14: Advanced Positional Embeddings (RoPE, ALiBi)
 
+> 🔥 **For interviews, read these first:**
+> - **`POSITIONAL_DEEP_DIVE.md`** — frontier-lab interview deep dive: sinusoidal/learned/T5-bias/RoPE/ALiBi/NoPE, full RoPE derivation showing relative-position from rotated dot products, NTK scaling, YaRN, length extrapolation.
+> - **`INTERVIEW_GRILL.md`** — 45 active-recall questions.
+
 ## What You'll Learn
 
 This topic teaches you advanced positional embedding methods:
@@ -33,6 +37,85 @@ This topic teaches you advanced positional embedding methods:
 - No positional embeddings needed
 - Add bias to attention scores
 - Works well for long sequences
+
+## Core Intuition
+
+Transformers need positional information because self-attention alone does not know token order.
+
+Basic sinusoidal encodings work, but modern LLMs often use alternatives because positional handling affects:
+- long-context behavior
+- extrapolation beyond training length
+- implementation simplicity
+- inductive bias about relative distance
+
+### RoPE
+
+RoPE injects position by rotating query and key vectors.
+
+The important intuition is:
+- position affects how queries and keys line up
+- relative offsets emerge naturally from the rotation structure
+
+That is why RoPE is often described as giving relative position behavior inside the attention computation itself.
+
+### ALiBi
+
+ALiBi does not add a positional vector to token embeddings.
+
+Instead, it changes attention scores directly using a distance-dependent bias.
+
+Intuition:
+- farther positions receive a stronger penalty
+- attention naturally prefers closer positions unless evidence is strong
+
+## Technical Details Interviewers Often Want
+
+### Why Modern LLMs Often Prefer RoPE
+
+RoPE is attractive because it:
+- integrates with attention cleanly
+- captures relative position effects
+- often extrapolates better than simple absolute schemes
+
+### Why ALiBi Is Interesting
+
+ALiBi is interesting because it is simple:
+- no learned positional embedding table
+- no explicit sinusoidal addition
+- just score biasing based on relative distance
+
+This simplicity is part of why it is a common interview discussion point.
+
+### Positional Method Trade-Off
+
+The real interview answer is not "RoPE is better."
+
+It is:
+- different methods encode order differently
+- some favor relative structure
+- some extrapolate better
+- some are simpler to implement or reason about
+
+## Common Failure Modes
+
+- describing RoPE as if it were just another additive embedding
+- ignoring that positional methods affect extrapolation behavior
+- assuming better long-context extrapolation on paper always means better end-task behavior
+- forgetting that context scaling tricks can interact with positional encoding choices
+
+## Edge Cases and Follow-Up Questions
+
+1. Why does self-attention need position information at all?
+2. Why is RoPE often described as relative rather than purely absolute?
+3. Why can positional encoding choice matter for long-context extrapolation?
+4. How is ALiBi different from adding learned position embeddings?
+5. Why is "works for longer context" not the same as "works better on all long-context tasks"?
+
+## What to Practice Saying Out Loud
+
+1. Why RoPE is useful in modern LLMs
+2. How ALiBi changes attention without explicit positional embeddings
+3. Why positional encoding choice is really an inductive-bias choice
 
 ## Industry-Standard Boilerplate Code
 
@@ -156,4 +239,3 @@ def alibi_attention_bias(seq_len: int, num_heads: int) -> np.ndarray:
 
 - **Topic 15**: Tokenization methods
 - **Topic 16**: Training behaviors
-

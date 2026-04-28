@@ -1,5 +1,9 @@
 # Topic 48: Optimization and Matrix Calculus
 
+> 🔥 **For interviews, read these first:**
+> - **`OPTIMIZATION_DEEP_DIVE.md`** — frontier-lab deep dive: convex/strongly-convex/smooth definitions, GD convergence rates, Nesterov acceleration, Newton/BFGS/Gauss-Newton, SGD scaling, Lagrangian + KKT (with SVM dual), deep-learning loss landscape (saddles dominate, flat minima, edge of stability).
+> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions.
+
 ## What You'll Learn
 
 This topic is for the part of interviews where people ask:
@@ -162,6 +166,64 @@ Easy intuition:
 - lambda is the price of violating the constraint
 
 KKT conditions are the structured way to reason about constrained optima. In ML interviews, you usually only need the intuition unless the role is mathematically heavy.
+
+## Common Failure Modes
+
+### 1. Losing Track of Shapes
+
+A derivation can look algebraically plausible and still be wrong if the dimensions do not line up.
+
+This happens a lot in matrix calculus and attention derivations.
+
+### 2. Forgetting Which Quantity Is Scalar
+
+Many gradient identities become easier only after you notice the loss is scalar.
+
+If you mix scalar, vector, and matrix outputs without saying which case you are in, the derivation becomes confusing quickly.
+
+### 3. Confusing Optimization Speed with Generalization
+
+Adam often reaches a low training loss quickly, but that does not automatically mean it is the best optimizer for final generalization or the best choice under every constraint.
+
+### 4. Talking About Convexity Too Broadly
+
+Some candidates state that optimization is easy or guaranteed just because part of the model is convex.
+
+In deep learning, the overall objective is usually non-convex, so you need to be precise about which statement applies to which model class.
+
+### 5. Ignoring Conditioning
+
+People often focus only on learning rate.
+
+But poor conditioning can make optimization hard even with a reasonable learning rate because different directions want very different step sizes.
+
+## Edge Cases and Follow-Up Questions
+
+### What if the Hessian is not positive definite?
+
+Then you are not at a strictly convex local minimum.
+
+You may be at a saddle point, a flat region, or a local maximum in some direction.
+
+### What if the interviewer asks for a gradient but you forget the closed form?
+
+Start from the objective and derive it step by step.
+
+That is usually better than trying to remember a memorized vector formula.
+
+### What if Adam is unstable in practice?
+
+Possible reasons include:
+- learning rate too high
+- poor epsilon choice
+- bad normalization
+- mixed-precision instability
+
+The point is that optimizer choice does not remove the need for numerical discipline.
+
+### What if the constraint is active only at the optimum?
+
+That is exactly the type of setting where Lagrange multipliers and KKT intuition become useful, because they tell you how constraint pressure shows up in the optimum conditions.
 
 ## Pressure-Friendly Derivation Pattern
 

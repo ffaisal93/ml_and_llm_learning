@@ -1,5 +1,9 @@
 # Topic 49: Generalization and Evaluation
 
+> 🔥 **For interviews, read these first:**
+> - **`GENERALIZATION_DEEP_DIVE.md`** — frontier-lab deep dive: data leakage (4 types), calibration (ECE, Platt/isotonic/temperature), distribution shift (covariate/label/concept), class imbalance, double descent, cross-validation done right, ablations, metric uncertainty.
+> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions.
+
 ## What You'll Learn
 
 This topic is about the questions that separate "I trained a model" from "I know whether the model actually works."
@@ -153,6 +157,66 @@ Bootstrap is often the easiest way to estimate uncertainty for:
 - exact match
 
 That is especially useful in research discussions where exact analytic variance is awkward.
+
+## Common Failure Modes
+
+### 1. Choosing a Convenient Metric Instead of the Right Metric
+
+Accuracy may look better than recall or PR-AUC on an imbalanced problem, but that does not make it the right metric.
+
+### 2. Hidden Leakage in the Pipeline
+
+Leakage often happens outside the model:
+- preprocessing fit on full data
+- duplicate rows across splits
+- future information in historical features
+- target-derived engineered columns
+
+### 3. Treating Average Performance as Complete Evidence
+
+Average metrics can hide failure on:
+- rare classes
+- long inputs
+- specific languages or user groups
+- safety-critical slices
+
+### 4. Ignoring Calibration
+
+A model can rank examples well and still assign misleading confidence values.
+
+That matters whenever downstream decisions use probabilities.
+
+### 5. Believing Tiny Metric Differences Without Uncertainty Estimates
+
+A small improvement may be real, or it may be noise.
+
+Without repeated runs or confidence intervals, you should be cautious.
+
+## Edge Cases and Follow-Up Questions
+
+### What if validation improves but test does not?
+
+Possible explanations include:
+- overfitting to the validation set
+- accidental tuning on the test set earlier
+- shift between validation and test
+- metric instability
+
+### What if calibration is poor but accuracy is strong?
+
+Then the model may still be risky in decision systems where confidence values affect actions.
+
+You might discuss temperature scaling or recalibration.
+
+### What if the positive class is extremely rare?
+
+Then accuracy becomes even less informative, and PR-focused metrics usually become more relevant.
+
+### What if one slice regresses badly while the overall average improves?
+
+Then the deployment decision depends on the application.
+
+For many real systems, a slice regression can matter more than the global average gain.
 
 ## Boilerplate Code
 

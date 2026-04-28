@@ -24,6 +24,71 @@ This topic covers real-world business problems with detailed solutions:
 - **Business impact**: ML drives business value
 - **System design**: Need to consider scalability, monitoring
 
+## Core Intuition
+
+Business ML questions are usually testing whether you can connect technical modeling to a real decision.
+
+A strong answer connects:
+- business objective
+- target definition
+- features
+- metric
+- intervention
+- deployment and measurement
+
+The interviewer usually cares less about the fanciest model than about whether the whole system makes sense.
+
+## Technical Details Interviewers Often Want
+
+### Target Definition Is Critical
+
+If the target is poorly defined, the rest of the pipeline is compromised.
+
+Examples:
+- churn window too short or too long
+- fraud labels delayed or noisy
+- forecast horizon misaligned with the decision horizon
+
+### Metrics Must Match Actionability
+
+The right metric depends on the action.
+
+Examples:
+- Precision@K for limited outreach budgets
+- recall for high-cost missed positives
+- ranking metrics for recommender surfaces
+
+### Intervention Matters
+
+A model is only valuable if there is a useful downstream action and a way to measure impact.
+
+That is why applied interview answers should mention:
+- intervention
+- cost
+- A/B testing or lift measurement
+
+## Common Failure Modes
+
+- choosing a model before defining the business problem
+- using the wrong evaluation metric
+- ignoring leakage or delayed labels
+- forgetting intervention cost
+- discussing deployment without monitoring or ROI measurement
+
+## Edge Cases and Follow-Up Questions
+
+1. Why is target definition often the hardest part?
+2. Why can a good offline metric still fail to create business value?
+3. How do you choose the right metric under a fixed intervention budget?
+4. Why is A/B testing often needed even after a strong offline result?
+5. Why is prediction quality not the same as business impact?
+
+## What to Practice Saying Out Loud
+
+1. How to frame a business problem before choosing a model
+2. Why metric choice depends on actionability and cost
+3. Why an ML system needs intervention and measurement, not just prediction
+
 ## Business Use Cases
 
 ### 1. Customer Churn Prediction
@@ -461,4 +526,3 @@ Retailer needs to forecast product demand to optimize inventory.
 
 - **Topic 29**: System design for ML
 - **Topic 30**: A/B testing and experimentation
-

@@ -59,6 +59,61 @@ Correct principle:
 - fit preprocessing on training data
 - apply the learned transform to validation/test
 
+## Common Failure Modes
+
+### 1. Wrong Join Semantics
+
+A merge can silently:
+- drop rows
+- duplicate rows
+- misalign labels and features
+
+That can completely change the dataset before modeling starts.
+
+### 2. Aggregating Over the Wrong Time Window
+
+This is a common source of leakage.
+
+If you compute a user feature using events that occur after the prediction timestamp, the model gets future information it should not have.
+
+### 3. Filling Missing Values Without Thinking About Meaning
+
+A missing value can mean:
+- zero
+- unknown
+- not applicable
+- sensor failure
+
+Treating all missing values the same can erase useful signal or create misleading artifacts.
+
+### 4. Fitting Preprocessing on the Full Dataset
+
+Normalization, imputation, encoding, and PCA should usually be fit on training data only.
+
+Otherwise evaluation is contaminated.
+
+## Edge Cases and Follow-Up Questions
+
+### What if a left join creates duplicate rows?
+
+That usually means the join key is not unique on the right-hand side.
+
+You should inspect key cardinality before trusting the result.
+
+### What if a category appears only at test time?
+
+Then one-hot encoding needs a policy for unseen categories.
+
+A good answer is to mention an "unknown" bucket or a learned fallback.
+
+### What if missingness itself is predictive?
+
+Then the missing-value indicator can be useful as its own feature.
+
+### What if normalization is done per batch instead of from training statistics?
+
+Then the feature meaning can drift across splits, and evaluation may become inconsistent.
+
 ## Files in This Topic
 
 - [data_manipulation.py](/Users/faisal/Projects/ml_and_llm_learning/54_data_manipulation_for_ml/data_manipulation.py): compact pandas and NumPy patterns

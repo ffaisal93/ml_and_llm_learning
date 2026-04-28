@@ -1,5 +1,9 @@
 # Topic 35: Kernel Functions
 
+> 🔥 **For interviews, read these first:**
+> - **`KERNELS_DEEP_DIVE.md`** — frontier-lab interview deep dive: kernel trick, Mercer's theorem, RBF/polynomial, SVM dual derivation, RKHS, NTK, attention-as-kernel.
+> - **`INTERVIEW_GRILL.md`** — 40 active-recall questions.
+
 ## What You'll Learn
 
 This topic covers kernel functions in detail:
@@ -24,6 +28,71 @@ This topic covers kernel functions in detail:
 - **SVM**: Kernels make SVM powerful
 - **Non-linear problems**: Kernels enable non-linear classification
 - **Feature engineering**: Kernels implicitly create features
+
+## Core Intuition
+
+Kernels let linear algorithms behave as if they were operating in a richer feature space without explicitly constructing that space.
+
+That is the essence of the kernel trick.
+
+### Why This Matters
+
+If a problem is not linearly separable in the original space, a nonlinear feature mapping may make it separable.
+
+Kernels let you get that benefit by computing inner products in the transformed space directly.
+
+### Different Kernels Imply Different Similarity Notions
+
+- linear kernel: ordinary dot-product similarity
+- polynomial kernel: similarity with interaction structure
+- RBF kernel: locality-based similarity
+
+So kernel choice is really an inductive-bias choice.
+
+## Technical Details Interviewers Often Want
+
+### Why the Kernel Trick Works
+
+Many learning algorithms only need dot products between examples.
+
+If you can replace `x^T y` with `K(x, y) = φ(x)^T φ(y)`, you can behave as if the model used the transformed feature space without building it explicitly.
+
+### RBF Gamma Trade-Off
+
+This is one of the most common kernel follow-ups.
+
+- high gamma -> very local influence, more complex boundary
+- low gamma -> smoother, broader similarity, simpler boundary
+
+### Linear Kernel Can Still Be Strong
+
+Candidates often over-romanticize nonlinear kernels.
+
+Linear kernels work very well when:
+- feature dimension is already high
+- representation is already informative
+- overfitting risk matters
+
+## Common Failure Modes
+
+- choosing kernels without considering data structure
+- using RBF as a default without thinking about gamma
+- thinking kernels are only about SVM rather than about similarity in transformed space
+- forgetting that nonlinear flexibility can overfit
+
+## Edge Cases and Follow-Up Questions
+
+1. Why is the kernel trick computationally valuable?
+2. Why can linear kernels still work very well in high-dimensional settings?
+3. What does gamma do in the RBF kernel?
+4. Why can polynomial kernels overfit at high degree?
+5. Why is kernel choice really a similarity assumption?
+
+## What to Practice Saying Out Loud
+
+1. The kernel trick in one clean sentence
+2. Why RBF creates local similarity behavior
+3. Why kernel selection is an inductive-bias decision
 
 ## Detailed Theory
 
@@ -334,4 +403,3 @@ The sigmoid kernel is similar to a neural network activation function. It's less
 - Use kernels in SVM
 - Understand kernel trick deeply
 - Choose right kernel for your problem
-

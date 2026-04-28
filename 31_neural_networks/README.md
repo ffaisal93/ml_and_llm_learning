@@ -1,5 +1,9 @@
 # Topic 31: Neural Networks from Scratch
 
+> 🔥 **For interviews, read these first:**
+> - **`NEURAL_NETWORKS_DEEP_DIVE.md`** — frontier-lab interview deep dive: MLP fundamentals, universal approximation, activations (ReLU/GELU/SwiGLU), loss-activation pairing, backpropagation derivation, He/Xavier init, vanishing/exploding gradients, residual connections, modern training tricks.
+> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions.
+
 ## What You'll Learn
 
 This topic teaches you to build and train neural networks from scratch:
@@ -21,6 +25,70 @@ This topic teaches you to build and train neural networks from scratch:
 - **Understanding**: Know how neural networks work internally
 - **Debugging**: Understand what's happening during training
 - **Customization**: Build custom architectures
+
+## Core Intuition
+
+A neural network is a composition of learnable functions that gradually transforms inputs into representations useful for prediction.
+
+The two core algorithmic ideas are:
+- forward pass computes outputs
+- backpropagation computes how each parameter affected the loss
+
+### Forward Pass
+
+A forward pass is repeated:
+- linear transform
+- nonlinearity
+
+Without nonlinearities, a deep network would collapse to a single linear transformation.
+
+### Backpropagation
+
+Backpropagation is repeated chain rule.
+
+It tells each layer how changing its outputs would affect the final loss, and from that computes parameter gradients.
+
+## Technical Details Interviewers Often Want
+
+### Why Activations Matter
+
+Nonlinear activations are what allow deep networks to model nonlinear patterns.
+
+### Why Gradients Vanish or Explode
+
+Backprop multiplies many derivatives across depth.
+
+If those derivatives are consistently:
+- too small -> gradients vanish
+- too large -> gradients explode
+
+### Why Shape Tracking Matters
+
+In interviews, shape mistakes are often the real bug, not the calculus.
+
+You need to know both the derivative logic and the tensor shapes.
+
+## Common Failure Modes
+
+- forgetting that no nonlinearity means the model stays linear
+- getting matrix dimensions wrong
+- deriving gradients mechanically without understanding dependencies
+- ignoring activation saturation
+- mismatching output activation and loss
+
+## Edge Cases and Follow-Up Questions
+
+1. Why would a deep network without nonlinearities still be linear?
+2. Why do gradients vanish or explode?
+3. Why is backprop really just repeated chain rule?
+4. Why does activation choice affect optimization?
+5. Why should output-layer activation match the task?
+
+## What to Practice Saying Out Loud
+
+1. The role of nonlinearity in neural networks
+2. Why backpropagation works conceptually
+3. Why shape tracking is part of the derivation
 
 ## Detailed Theory
 
@@ -141,4 +209,3 @@ See `neural_network.py` for complete implementation.
 
 - **Topic 32**: Isolation Forest and Anomaly Detection
 - Review neural network fundamentals
-

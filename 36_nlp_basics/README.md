@@ -1,5 +1,9 @@
 # Topic 36: NLP Basics
 
+> 🔥 **For interviews, read these first:**
+> - **`NLP_BASICS_DEEP_DIVE.md`** — frontier-lab deep dive: TF-IDF, n-gram language models, smoothing (Laplace, Good-Turing, Kneser-Ney with continuation count), perplexity, Zipf's law, Heaps' law, edit distance DP, BM25 with hyperparameter intuition.
+> - **`INTERVIEW_GRILL.md`** — 50 active-recall questions.
+
 ## What You'll Learn
 
 This topic covers fundamental NLP concepts:
@@ -20,6 +24,79 @@ This topic covers fundamental NLP concepts:
 - **Text classification**: TF-IDF for feature extraction
 - **Language models**: N-grams for next word prediction
 - **Search engines**: TF-IDF for ranking
+
+## Core Intuition
+
+These methods matter because they show how NLP worked before large contextual neural models and why modern embeddings were such a big improvement.
+
+They also still matter because they teach:
+- sparse lexical representations
+- local sequence statistics
+- smoothing for rare events
+
+### TF-IDF
+
+TF-IDF tries to highlight words that are important for one document but not common everywhere.
+
+That makes it useful for:
+- text classification
+- search
+- simple document similarity
+
+### N-grams
+
+N-grams model local context.
+
+They answer:
+- given the previous word or words, what usually comes next?
+
+### Laplace Smoothing
+
+Smoothing exists because language is sparse.
+
+If an n-gram never appears in training, assigning it zero probability is usually too brittle.
+
+## Technical Details Interviewers Often Want
+
+### TF-IDF Is About Specificity
+
+Frequent words inside a document are not automatically useful.
+
+If a word is frequent in every document, it does not help distinguish one document from another.
+
+That is exactly what IDF corrects.
+
+### N-Gram Trade-Off
+
+Higher-order n-grams capture more context, but they also:
+- need more data
+- become sparser
+- create many unseen events
+
+### Why Smoothing Is Necessary
+
+Without smoothing, one unseen n-gram can make the probability of an entire sentence become zero in a classical language model.
+
+## Common Failure Modes
+
+- treating TF-IDF as semantic understanding rather than lexical weighting
+- forgetting that n-gram models become sparse very quickly
+- assuming smoothing is optional in small-data language models
+- over-interpreting n-gram frequency as deep language understanding
+
+## Edge Cases and Follow-Up Questions
+
+1. Why does TF-IDF downweight common words?
+2. Why do higher-order n-gram models need more data?
+3. Why is zero probability such a problem in language modeling?
+4. Why is smoothing redistributing probability mass?
+5. Why can TF-IDF still be surprisingly strong for some tasks?
+
+## What to Practice Saying Out Loud
+
+1. Why TF-IDF is about document-specific importance
+2. Why n-gram models capture local context but not global understanding
+3. Why smoothing is required in classical language modeling
 
 ## Detailed Theory
 
@@ -311,4 +388,3 @@ See `evaluation_metrics.py`, `nlp_tasks_and_solutions.md`, `nlp_problems_detaile
 - Apply smoothing in practice
 - Evaluate NLP models with appropriate metrics
 - Solve different NLP tasks using standard procedures
-

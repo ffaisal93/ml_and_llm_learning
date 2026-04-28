@@ -1,5 +1,11 @@
 # Topic 6: LLM Inference Techniques
 
+> 🔥 **For interviews, read these first:**
+> - **`LLM_INFERENCE_DEEP_DIVE.md`** — frontier-lab interview deep dive: prefill vs decode dichotomy, KV memory math, PagedAttention, continuous batching, FlashAttention, speculative decoding (with rejection-sampling proof), quantization (GPTQ/AWQ/SmoothQuant/FP8), MQA/GQA, TTFT vs TPOT, cost-per-token model.
+> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions with strong answers. Drill until you can answer 40+ cold.
+>
+> The README below is the conceptual overview. The two files above are where the interview-grade depth lives.
+
 ## What You'll Learn
 
 This topic teaches you LLM inference optimization:
@@ -40,6 +46,109 @@ This topic teaches you LLM inference optimization:
 - Generate multiple tokens
 - Verify with main model
 - Faster generation
+
+## Core Intuition
+
+Inference is expensive because autoregressive models repeatedly do similar work.
+
+At every decoding step, the model:
+- reads the prefix
+- computes attention
+- predicts the next token
+
+The main inference optimizations are all trying to reduce one of three costs:
+- repeated computation
+- memory footprint
+- latency per token
+
+### KV Cache
+
+Without a cache, the model recomputes old keys and values over and over.
+
+With a cache:
+- old keys and values are stored
+- only the new token's query, key, and value need fresh work
+- this trades memory for speed
+
+### Quantization
+
+Quantization reduces precision so the model uses less memory and often runs faster.
+
+The core trade-off is:
+- lower memory / higher speed
+- possible quality degradation
+
+### Speculative Decoding
+
+Speculative decoding tries to produce several candidate tokens cheaply, then verify them with the stronger model.
+
+The intuition is:
+- use a cheaper draft model for speed
+- use the main model for correctness checks
+
+## Technical Details Interviewers Often Want
+
+### Why KV Cache Helps So Much
+
+Autoregressive decoding revisits the whole prefix at every step.
+
+If sequence length grows from `1` to `n`, naive decoding keeps recomputing work for earlier tokens. KV caching changes the total computation pattern from repeatedly rebuilding the whole past to incrementally extending it.
+
+### Why KV Cache Also Hurts
+
+It is not free.
+
+KV caching increases memory usage with:
+- batch size
+- sequence length
+- number of layers
+- number of heads
+
+This is why long-context serving can become memory-bound even when caching improves speed.
+
+### Quantization Edge Cases
+
+Quantization works best when:
+- weights and activations can be approximated well at lower precision
+- the task is not extremely sensitive to small numeric errors
+
+It can struggle with:
+- delicate reasoning or quality-sensitive generations
+- outlier-heavy layers
+- badly calibrated quantization ranges
+
+### Continuous Batching
+
+In production, batching is not only about throughput.
+
+It also affects:
+- queueing delay
+- tail latency
+- fairness across requests
+
+That is why "bigger batch = better" is not always true at serving time.
+
+## Common Failure Modes
+
+- stale or wrongly indexed KV cache
+- cache memory exploding with long context
+- quantization harming specific tasks more than average metrics suggest
+- batching policy improving throughput but hurting user-visible latency
+- speculative decoding overhead canceling the theoretical speedup
+
+## Edge Cases and Follow-Up Questions
+
+1. Why does KV caching improve speed but not reduce attention memory enough for very long contexts?
+2. When would quantization hurt more than it helps?
+3. Why can throughput go up while latency gets worse?
+4. Why might speculative decoding fail to produce a practical speedup?
+5. What determines KV cache memory growth?
+
+## What to Practice Saying Out Loud
+
+1. Why inference is different from training optimization
+2. Why serving usually has latency and memory constraints at the same time
+3. Why long context is expensive even with a KV cache
 
 ## Industry-Standard Boilerplate Code
 
@@ -229,4 +338,4 @@ K = concatenate([K_cache, K_new])  # Reuses cache!
 
 - **Topic 7**: LLM problem solving
 - **Topic 8**: Training techniques
-
+- **Topic 63**: Paged attention and LLM serving internals

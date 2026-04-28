@@ -1,5 +1,9 @@
 # Topic 42: State Space Models (SSM)
 
+> 🔥 **For interviews, read these first:**
+> - **`SSM_DEEP_DIVE.md`** — frontier-lab interview deep dive: continuous SSM ODE, discretization, recurrent vs convolutional view, HiPPO, S4 (DPLR parameterization), Mamba (selectivity + parallel scan), hybrid models (Jamba), why SSMs haven't fully replaced transformers.
+> - **`INTERVIEW_GRILL.md`** — 35 active-recall questions.
+
 ## What You'll Learn
 
 This topic teaches you State Space Models comprehensively:
@@ -42,6 +46,65 @@ This topic teaches you State Space Models comprehensively:
 - Better inductive bias
 - State-of-the-art results
 
+## Core Intuition
+
+State Space Models process sequences by maintaining and updating a hidden state over time.
+
+That makes them conceptually closer to recurrent sequence processing than to full pairwise attention.
+
+The reason they matter now is that modern SSMs try to keep:
+- strong long-range sequence modeling
+- lower cost than quadratic attention
+
+### Why SSMs Matter
+
+Transformers are powerful, but attention cost grows quickly with sequence length.
+
+SSMs are attractive because they offer a different scaling profile, often closer to linear-time sequence processing.
+
+## Technical Details Interviewers Often Want
+
+### Why Linear Complexity Matters
+
+For very long sequences, asymptotic scaling matters a lot.
+
+A method with better scaling can become preferable even if its short-context behavior is not always better.
+
+### Why SSMs Need Better Modern Parameterization
+
+Classic recurrent/state-space ideas existed before, but newer models made them more expressive and trainable at scale.
+
+That is why architectures like S4 and Mamba are interesting.
+
+### Different Inductive Bias Than Attention
+
+Attention directly compares tokens with tokens.
+
+SSMs update a state over time.
+
+That gives a different modeling bias and different systems trade-offs.
+
+## Common Failure Modes
+
+- describing SSMs only as "faster transformers"
+- ignoring the fact that they model sequences differently, not just more cheaply
+- assuming linear complexity always means better end-task performance
+- forgetting that modern SSM success depends on architecture details, not only the state-space idea
+
+## Edge Cases and Follow-Up Questions
+
+1. Why are SSMs attractive for long sequences?
+2. Why are they not just drop-in transformer replacements conceptually?
+3. Why does better asymptotic complexity matter more at long context lengths?
+4. What is the key high-level difference between attention and state evolution?
+5. Why did modern SSMs become interesting again recently?
+
+## What to Practice Saying Out Loud
+
+1. Why SSMs are an alternative sequence-modeling paradigm
+2. Why linear complexity is attractive but not the whole story
+3. Why inductive bias differs between SSMs and transformers
+
 ## Theory
 
 ### What are State Space Models?
@@ -80,4 +143,3 @@ See detailed files for complete implementations:
 - Review transformer architecture
 - Compare with attention mechanisms
 - Explore long sequence modeling
-

@@ -1,5 +1,9 @@
 # Topic 30: A/B Testing & Experimentation
 
+> 🔥 **For interviews, read these first:**
+> - **`AB_TESTING_DEEP_DIVE.md`** — frontier-lab deep dive: hypothesis tests (z/t/Mann-Whitney/bootstrap), sample size formulas, CUPED, peeking and sequential testing, SUTVA / network effects, SRM check, novelty effects, multiple testing, Bayesian A/B, ML-specific (interleaving, holdback, off-policy / IPS).
+> - **`INTERVIEW_GRILL.md`** — 55 active-recall questions.
+
 ## What You'll Learn
 
 This topic covers A/B testing for ML:
@@ -22,6 +26,70 @@ This topic covers A/B testing for ML:
 - **Model deployment**: Test new models before full rollout
 - **Feature testing**: Test new features
 - **Business decisions**: Data-driven decisions
+
+## Core Intuition
+
+A/B testing is about causal evidence, not just comparing two averages.
+
+The real question is:
+- did the intervention cause the observed difference?
+- is that difference large enough to matter?
+
+### Why Randomization Matters
+
+Randomization helps make treatment and control comparable.
+
+Without it, observed differences may come from:
+- selection bias
+- seasonality
+- user-segment imbalance
+
+### Statistical vs Practical Significance
+
+This distinction matters a lot in interviews.
+
+- statistical significance asks whether the effect is unlikely under the null
+- practical significance asks whether the effect is worth acting on
+
+## Technical Details Interviewers Often Want
+
+### Power and Sample Size
+
+An underpowered experiment can miss a real effect.
+
+So "not significant" does not automatically mean "no effect."
+
+### Multiple Metrics
+
+Testing many metrics increases false positives unless you:
+- predefine a primary metric
+- correct for multiple testing
+
+### Peeking
+
+Repeatedly checking results and stopping early inflates false positive risk in fixed-horizon testing.
+
+## Common Failure Modes
+
+- declaring victory from a tiny but significant effect
+- running an underpowered experiment
+- testing many metrics without correction or prioritization
+- peeking early and treating the p-value as valid
+- confusing causal lift with observational correlation
+
+## Edge Cases and Follow-Up Questions
+
+1. Why is randomization so important?
+2. Why can a p-value below 0.05 still be uninteresting?
+3. Why does peeking break naive fixed-horizon inference?
+4. Why do multiple metrics increase false positives?
+5. Why can an experiment fail to show significance even when a useful effect exists?
+
+## What to Practice Saying Out Loud
+
+1. The difference between statistical and practical significance
+2. Why sample size and power matter
+3. Why A/B testing is really about causal inference in product decisions
 
 ## Theory
 
@@ -152,4 +220,3 @@ Where:
 - Review all topics
 - Practice system design
 - Prepare for interviews
-

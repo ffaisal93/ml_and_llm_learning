@@ -21,6 +21,89 @@ This topic covers common linear algebra questions:
 - **Neural networks**: Matrix operations
 - **PCA, SVD**: Dimensionality reduction
 
+## Core Intuition
+
+Linear algebra matters in ML because models operate on vectors, matrices, and linear transformations almost everywhere.
+
+If you understand the geometry, many formulas become easier to reason about.
+
+### Eigenvectors and Eigenvalues
+
+An eigenvector is a direction that a matrix transforms without changing its direction.
+
+The eigenvalue tells you how much that direction is scaled.
+
+This matters because eigenvectors often reveal the most important directions of action of a matrix.
+
+### SVD
+
+SVD is powerful because it works for any matrix, not just square ones.
+
+A good intuition is:
+- one rotation
+- one scaling
+- another rotation
+
+That is why SVD appears in PCA, compression, denoising, and low-rank approximation.
+
+### Rank
+
+Rank tells you how many independent directions or independent pieces of information are really present.
+
+Low rank often means:
+- redundancy
+- compressibility
+- reduced intrinsic dimensionality
+
+## Technical Details Interviewers Often Want
+
+### Why SVD Is So Useful
+
+SVD provides the best low-rank approximation of a matrix in a least-squares sense.
+
+This is one of the most important conceptual reasons it shows up in ML.
+
+### Invertibility
+
+A matrix is invertible only if it has full rank.
+
+Equivalent views:
+- determinant nonzero
+- no zero eigenvalues
+- columns are linearly independent
+
+Interviewers often like hearing those equivalences cleanly.
+
+### Positive Definite Matrices
+
+Positive definite matrices matter in optimization and covariance reasoning.
+
+They are associated with:
+- strictly positive quadratic forms
+- positive curvature
+- stable covariance structure
+
+## Common Failure Modes
+
+- memorizing definitions without geometric meaning
+- confusing eigenvalue decomposition with SVD
+- forgetting that eigenvalue decomposition does not apply generally to all matrices
+- treating rank as just a formula rather than a measure of independent information
+
+## Edge Cases and Follow-Up Questions
+
+1. Why does SVD work for non-square matrices while eigen decomposition does not in the same way?
+2. Why does low rank imply redundancy?
+3. Why does invertibility require full rank?
+4. Why are positive definite matrices important in optimization?
+5. Why is SVD central to PCA?
+
+## What to Practice Saying Out Loud
+
+1. A geometric explanation of eigenvectors
+2. Why SVD is more general than eigendecomposition
+3. Why rank matters in ML and numerical stability
+
 ## Common Interview Questions
 
 ### Q1: What are eigenvalues and eigenvectors?
@@ -106,4 +189,3 @@ See `linear_algebra_qa.py` for implementations.
 
 - **Topic 25**: Final review
 - Practice all topics
-

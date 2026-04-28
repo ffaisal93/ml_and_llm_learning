@@ -1,5 +1,9 @@
 # Topic 47: Statistical Inference
 
+> 🔥 **For interviews, read these first:**
+> - **`STATISTICAL_INFERENCE_DEEP_DIVE.md`** — frontier-lab deep dive: estimators (unbiased/consistent/efficient + CRLB), MLE asymptotics, CIs (Wald/bootstrap/credible), hypothesis testing, multiple testing (Bonferroni/BH), Bayesian updates with conjugate priors, MAP-as-regularization.
+> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions.
+
 ## What You'll Learn
 
 This topic fills an important interview gap: how to reason about data, estimators, uncertainty, and evidence.
@@ -174,6 +178,70 @@ Interpretation:
 - `beta - 1` acts like prior failures
 
 This is easy to explain under pressure because the update rule is simple and intuitive.
+
+## Common Failure Modes
+
+### 1. Confusing an Estimate with the Truth
+
+Candidates often talk about a sample statistic as if it were the population parameter.
+
+A better answer explicitly separates:
+- the unknown quantity you care about
+- the finite-sample estimate you observed
+
+### 2. Misinterpreting p-values
+
+One of the most common mistakes is saying:
+
+"The p-value is the probability that the null hypothesis is true."
+
+That is not the frequentist meaning.
+
+### 3. Mixing Up `n` and `n - 1`
+
+Interviewers often use this to test whether you understand the difference between:
+- maximum-likelihood estimation
+- unbiased variance estimation
+
+### 4. Using Large-Sample Formulas Without Checking Assumptions
+
+Normal approximations can be fine for large samples, but not always for:
+- small `n`
+- heavy-tailed data
+- highly skewed distributions
+
+### 5. Reporting Confidence Intervals Without Saying What Procedure Generated Them
+
+A confidence interval only makes sense relative to a sampling procedure and a method.
+
+If you do not mention assumptions or the resampling method, the interval can sound more certain than it really is.
+
+## Edge Cases and Follow-Up Questions
+
+### What if the sample size is very small?
+
+Then large-sample approximations may be weak.
+
+A stronger answer might mention:
+- t-based intervals
+- bootstrap with caution
+- stronger distributional assumptions if justified
+
+### What if the data are heavy-tailed or contain outliers?
+
+Then the sample mean and variance may be unstable.
+
+You might discuss robust alternatives, trimmed means, or bootstrap-based uncertainty summaries.
+
+### What if two models differ by a tiny amount on a noisy metric?
+
+Then you should talk about uncertainty, repeated runs, bootstrap intervals, or significance testing instead of treating the difference as obviously meaningful.
+
+### What if the interviewer asks for a Bayesian answer instead?
+
+Then reframe the problem in terms of prior, likelihood, and posterior.
+
+That is often enough to show flexibility even without a long derivation.
 
 ## What to Practice Saying Out Loud
 

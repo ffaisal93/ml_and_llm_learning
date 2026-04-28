@@ -27,10 +27,20 @@ def compute_perplexity(log_probs: torch.Tensor, mask: Optional[torch.Tensor] = N
         num_tokens = mask.sum().item()
     else:
         num_tokens = log_probs.numel()
+        # explain log_probs.numel() with same example
+        # Example:
+        # log_probs = [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9]]
+        # log_probs.numel() = 9
+        # log_probs.numel() is used to get the number of elements in the tensor
     
     # Average negative log-likelihood
     avg_nll = -log_probs.sum().item() / num_tokens
-    
+    #sum.item() is used to get the sum of the tensor as a scalar
+    # Example:
+    # log_probs = [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9]]
+    # log_probs.sum().item() = 4.5
+    # log_probs.sum().item() is used to get the sum of the tensor as a scalar
+
     # Perplexity = exp(avg_nll)
     perplexity = np.exp(avg_nll)
     

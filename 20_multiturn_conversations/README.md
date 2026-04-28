@@ -34,6 +34,75 @@ This topic teaches you:
 - Analyze long documents
 - Multi-document reasoning
 
+## Core Intuition
+
+Multi-turn systems are not just long prompts.
+
+They are memory-management systems.
+
+The hard part is not storing everything. It is deciding:
+- what to keep verbatim
+- what to summarize
+- what to retrieve when needed
+
+### Multi-Turn Conversations
+
+The model needs to track:
+- user goals
+- entities and references
+- unresolved questions
+- prior commitments or constraints
+
+### Long Context
+
+Long context helps only when the extra tokens are actually relevant.
+
+More raw history can also create:
+- distraction
+- higher memory cost
+- worse focus
+
+## Technical Details Interviewers Often Want
+
+### History Management Is a Selection Problem
+
+A good system may keep:
+- recent turns verbatim
+- older turns summarized
+- key facts in structured memory
+
+### Retrieval vs Raw Inclusion
+
+For large histories or corpora, retrieval-based selection is often better than forcing the model to read everything every time.
+
+### Summarization Trade-Off
+
+Summaries save tokens but can:
+- omit detail
+- distort commitments
+- lose exact wording needed later
+
+## Common Failure Modes
+
+- appending everything forever without prioritization
+- summarizing too aggressively and losing important commitments
+- retrieving poorly and missing the truly relevant context
+- assuming longer history always improves answer quality
+
+## Edge Cases and Follow-Up Questions
+
+1. Why is raw long context not enough for good memory?
+2. Why can summarization hurt even when it saves tokens?
+3. How do you decide what to keep verbatim vs summarize?
+4. Why can retrieval be better than full-history inclusion?
+5. Why is multi-turn conversation partly a memory-management problem?
+
+## What to Practice Saying Out Loud
+
+1. Why multi-turn systems need selection, not just storage
+2. Why long context and conversation memory are related but not identical
+3. Why good context management is about relevance and fidelity
+
 ## Industry-Standard Boilerplate Code
 
 ### Multi-Turn Conversation Design
@@ -218,4 +287,3 @@ def increase_context_length():
 
 - **Topic 21**: Dimensionality reduction
 - **Topic 22**: Recommendation systems
-

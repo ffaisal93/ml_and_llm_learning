@@ -431,6 +431,10 @@ y (actual vector)
 **Normal equation problems:**
 - (XᵀX)⁻¹ expensive to compute (O(p³))
 - Doesn't work if XᵀX not invertible
+  - Happens with perfect multicollinearity (one feature is linear combination of others)
+  - Happens with duplicate/redundant features or dummy variable trap (all one-hot columns + intercept)
+  - Happens when features > samples (p > n), so full column rank is impossible
+  - Practical fixes: drop collinear columns, use pseudo-inverse `X⁺` (`np.linalg.pinv`), or use Ridge regression
 - Doesn't scale to very large datasets
 
 **Gradient descent:**

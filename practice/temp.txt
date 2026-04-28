@@ -1,0 +1,39 @@
+import numpy as np
+
+def precision(y_true, y_pred):
+    tp = np.sum((y_true==positive_label) & (y_pred==positive_label))
+    fp = np.sum((y_true!=positive_label) & (y_pred==positive_label))
+    fn = np.sum((y_true==positive_label) & (y_pred!=positive_label))
+    precision = tp/(tp+fp)
+    recall = tp/(tp+fn)
+    f1 = 2* (precision*recall)/(precision+recall)
+
+
+
+def attention(Q,K,V,mask,d_k):
+    scores=Q@K.T/np.sqrt(d_k)
+    if mask is not None:
+        scores=np.where(mask==0,-1e9,scores)
+    exp_scores=np.exp(scores-np.max(scores,axis=-1,keepdims=True))
+    attention_weights=exp_scores/np.sum(exp_scores,axis=-1,keepdims=True)
+    output=attention_outputs@V
+    return output, attention_weights
+
+def multi_head_attention(x,d_model,W_k,W_q,W_v,mask):
+    seq_len,_=x.shape
+    d_k=d_model//num_heads
+    Q=x@W_q  [seq_len,d_model]x[d_model,d_model]=[seq_len, d_model]
+    K=x@W_k
+    V=x@W_v
+
+    Q=Q.reshape(seq_len,num_heads,d_k).transpose(1,0,2)
+    K=K.reshape(seq_len,num_heads,d_k).transpose(1,0,2)
+    V=V.reshape(seq_len,num_heads,d_k).transpose(1,0,2)
+
+    attention_outputs=[]
+    for head in range(num_heads):
+        output,_=self_attention(Q[head],K[head],V[head],d_k,mask)
+        attention_outputs.append(output)
+    concat = np.concatenate(attention_outputs,axis=-1)
+    output=concat@W_o
+    return output

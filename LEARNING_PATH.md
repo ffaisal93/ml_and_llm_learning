@@ -521,6 +521,90 @@ This guide is organized by **learning topics** for coding interview preparation.
 
 **Practice**: `56_spoken_interview_question_bank/`
 
+### 57. **Meta-Style Mock Interviews**
+**What you'll learn**: How the full interview loop feels in practice
+- Theory rounds with interruption
+- Coding rounds with follow-ups
+- Research judgment rounds
+- Systems fluency rounds
+- Self-scoring rubric
+
+**Practice**: `57_meta_style_mock_interviews/`
+
+### 58. **Whiteboard Derivations**
+**What you'll learn**: Must-master derivations from memory
+- Logistic regression gradient
+- Softmax plus cross-entropy
+- Bernoulli and Gaussian MLE
+- Sample variance `n` vs `n - 1`
+- Confidence interval structure
+- Attention shapes
+
+**Practice**: `58_whiteboard_derivations/`
+
+### 59. **Blind Coding Drills**
+**What you'll learn**: How to code from memory under pressure
+- Stable softmax
+- Logistic regression step
+- Masked attention
+- K-means update
+- Decision-tree split
+- Beam search skeleton
+
+**Practice**: `59_blind_coding_drills/`
+
+### 60. **Research Judgment Rounds**
+**What you'll learn**: How to evaluate evidence like a researcher
+- Metric mismatch reasoning
+- Seed variance
+- Weak baseline detection
+- Retrieval vs generation failure separation
+- Small-gain skepticism
+- Contamination and leakage checks
+
+**Practice**: `60_research_judgment_rounds/`
+
+### 61. **Large-Scale LLM Systems**
+**What you'll learn**: Systems fluency for research interviews at scale
+- Training memory breakdown
+- Gradient accumulation
+- Mixed precision
+- Activation checkpointing
+- FSDP and ZeRO intuition
+- Data, tensor, and pipeline parallelism
+- Serving trade-offs and KV cache memory
+
+**Practice**: `61_large_scale_llm_systems/`
+
+### 62. **Frontier Training Playbook**
+**What you'll learn**: How strong labs think about training methodology
+- Architecture trade-offs: dense vs MoE, GQA vs MHA or MQA
+- Stability choices and what failure modes they target
+- Data mixture and curriculum reasoning
+- Long-context trade-offs
+- Fair ablations and strongest-justified-conclusion thinking
+
+**Practice**: `62_frontier_training_playbook/`
+
+### 63. **Paged Attention and LLM Serving Internals**
+**What you'll learn**: Serving-engine reasoning for strong LLM systems interviews
+- Why serving is often memory-bound
+- KV-cache cost and fragmentation
+- Paged allocation and block tables
+- Prefix sharing and copy-on-write
+- Continuous batching and scheduling trade-offs
+
+**Practice**: `63_paged_attention_and_llm_serving/`
+
+### 64. **Integrated AI and ML Interview Synthesis**
+**What you'll learn**: How to connect theory, coding, systems, and research judgment
+- Recognizing the real question type
+- Picking the right answer structure
+- Moving between abstraction levels
+- Bridging architecture, evaluation, and systems implications
+
+**Practice**: `64_integrated_ai_ml_interview_synthesis/`
+
 ## 🚀 Quick Start Guide
 
 ### Step 1: Start with Classical ML

@@ -1,5 +1,9 @@
 # Topic 11: Regularization
 
+> 🔥 **For interviews, read these first:**
+> - **`REGULARIZATION_DEEP_DIVE.md`** — frontier-lab interview deep dive: bias-variance trade-off, L1/L2 geometry and Bayesian priors, dropout (3 stories), early stopping ≈ L2, MixUp/CutMix, label smoothing, SAM, implicit regularization of SGD, why modern LLMs use no dropout.
+> - **`INTERVIEW_GRILL.md`** — 50 active-recall questions.
+
 ## What You'll Learn
 
 This topic teaches you regularization techniques:
@@ -40,6 +44,98 @@ This topic teaches you regularization techniques:
 - Prevents co-adaptation
 - Improves generalization
 - Standard in deep learning
+
+## Core Intuition
+
+Regularization is about controlling how the model fits the data, not just adding a penalty term mechanically.
+
+The deeper idea is:
+- models can fit patterns that are real
+- models can also fit noise, shortcuts, or accidental correlations
+
+Regularization pushes learning toward more stable solutions.
+
+### L2 Regularization
+
+L2 discourages very large weights.
+
+Intuition:
+- if a solution needs extreme parameter values to fit the data, it may be too brittle
+- smaller weights usually correspond to smoother functions
+
+### L1 Regularization
+
+L1 encourages sparsity.
+
+That makes it useful when:
+- many features may be irrelevant
+- interpretability matters
+- you want the model to rely on a smaller subset of features
+
+### Dropout
+
+Dropout randomly removes activations during training.
+
+The core intuition is:
+- the network should not rely too heavily on any one hidden pathway
+- multiple redundant, more robust pathways are encouraged
+
+### Early Stopping
+
+Early stopping is also regularization.
+
+It works because:
+- later optimization steps may fit noise more aggressively
+- stopping at the right point can reduce overfitting
+
+## Technical Details Interviewers Often Want
+
+### L1 vs L2 Difference
+
+This is a very common question.
+
+- **L1** can drive weights exactly to zero
+- **L2** usually shrinks weights continuously but not exactly to zero
+
+That is why L1 is associated with feature selection.
+
+### Why Dropout Uses Scaling
+
+During training, units are dropped randomly.
+
+To keep expected activation magnitude consistent, dropout implementations usually scale activations appropriately. Otherwise train-time and test-time behavior would not match.
+
+### Regularization Is an Inductive Bias
+
+This is a stronger interview answer than "it prevents overfitting."
+
+Regularization says:
+- prefer simpler or more stable explanations
+- prefer smaller weights
+- prefer less co-adaptation
+- prefer solutions that transfer better
+
+## Common Failure Modes
+
+- too much regularization causing underfitting
+- using dropout mechanically where it does not help much
+- confusing L2 regularization with all forms of weight decay in adaptive optimizers
+- claiming regularization always improves test performance
+- forgetting that data augmentation is also a form of regularization
+
+## Edge Cases and Follow-Up Questions
+
+1. Why can L1 produce sparse solutions?
+2. Why is L2 often the default regularizer?
+3. Why can too much regularization hurt performance?
+4. Why is early stopping considered regularization?
+5. Why may dropout help in some networks more than others?
+
+## What to Practice Saying Out Loud
+
+1. Why regularization is really about inductive bias
+2. The conceptual difference between L1, L2, dropout, and early stopping
+3. Why preventing overfitting is not the same as blindly increasing regularization
 
 ## Industry-Standard Boilerplate Code
 
@@ -146,4 +242,3 @@ def dropout(x: np.ndarray, dropout_rate: float, training: bool = True) -> np.nda
 
 - **Topic 12**: Comprehensive theory
 - **Topic 13**: Interview Q&A
-

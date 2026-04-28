@@ -1,5 +1,9 @@
 # Topic 41: Mixture of Experts (MoE)
 
+> 🔥 **For interviews, read these first:**
+> - **`MOE_DEEP_DIVE.md`** — frontier-lab interview deep dive: top-k routing, load balancing loss derivation, capacity factor / token dropping, expert parallelism + all-to-all, Switch/Mixtral/DeepSeek-V3, auxiliary-loss-free balancing, fine-grained vs coarse experts.
+> - **`INTERVIEW_GRILL.md`** — 40 active-recall questions.
+
 ## What You'll Learn
 
 This topic teaches you Mixture of Experts comprehensively:
@@ -41,6 +45,71 @@ This topic teaches you Mixture of Experts comprehensively:
 - Different experts for different tasks
 - Better specialization
 - Improved quality
+
+## Core Intuition
+
+Mixture of Experts tries to scale parameter count without paying full dense-compute cost on every token.
+
+The key idea is:
+- have many experts available
+- route each token to only a few of them
+
+That means the model can be large in total capacity while staying sparse in computation.
+
+### Experts
+
+Experts are separate subnetworks, often feed-forward blocks.
+
+### Router
+
+The router decides which experts a token should use.
+
+That means MoE performance depends not only on expert quality, but also on routing quality.
+
+## Technical Details Interviewers Often Want
+
+### Capacity vs Compute
+
+This is the central MoE trade-off.
+
+MoE increases parameter capacity, but each token only uses a subset of that capacity.
+
+### Load Balancing Matters
+
+If the router sends too many tokens to the same experts:
+- some experts overload
+- others under-train
+- efficiency and quality both suffer
+
+That is why load-balancing losses matter in MoE training.
+
+### Sparse Activation Does Not Mean Free Scaling
+
+MoE improves compute efficiency, but it introduces:
+- routing complexity
+- communication overhead
+- expert imbalance risk
+
+## Common Failure Modes
+
+- explaining MoE as just "more parameters" without sparse routing
+- ignoring load balancing
+- assuming MoE always lowers latency in practice
+- forgetting communication overhead in distributed settings
+
+## Edge Cases and Follow-Up Questions
+
+1. Why does MoE increase capacity without full dense computation?
+2. Why is router quality so important?
+3. Why do load-balancing losses matter?
+4. Why can MoE introduce systems complexity even if math looks simple?
+5. Why is sparse activation not the same as free scaling?
+
+## What to Practice Saying Out Loud
+
+1. The difference between total parameters and active parameters
+2. Why routing quality is central to MoE
+3. Why MoE is a capacity-compute trade-off, not just a bigger model trick
 
 ## Theory
 
@@ -85,4 +154,3 @@ See detailed files for complete implementations:
 - Review transformer architecture
 - Compare with dense models
 - Explore state space models
-

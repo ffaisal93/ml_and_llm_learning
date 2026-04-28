@@ -1,5 +1,11 @@
 # Topic 4: Transformers
 
+> 🔥 **For interviews, read these first:**
+> - **`TRANSFORMERS_DEEP_DIVE.md`** — frontier-lab interview deep dive: scaled dot-product derivation, multi-head reasoning, FFN role, residual stream, pre-LN vs post-LN, encoder/decoder/cross-attention, scaling laws, training instabilities.
+> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions with strong answers.
+>
+> The README below is the conceptual overview; the two files above hold the interview-grade depth.
+
 ## What You'll Learn
 
 This topic teaches you transformer architecture from scratch:
@@ -38,6 +44,105 @@ This topic teaches you transformer architecture from scratch:
 **Use Case**: CLIP, DALL-E
 - Text-image understanding
 - Cross-modal tasks
+
+## Core Intuition
+
+Transformers solved a major limitation of older sequence models: they can relate any token to any other token directly.
+
+Before transformers, recurrent models had to process tokens one by one, which made:
+- long-range dependencies hard to learn
+- parallel training difficult
+- gradient flow harder across long sequences
+
+The transformer replaces recurrence with attention.
+
+That means:
+- every token can look at all relevant tokens
+- all tokens can be processed in parallel during training
+- the model can build context-dependent representations more easily
+
+### Why Attention Is the Core Idea
+
+Attention lets each token ask:
+- what information do I need?
+- where in the sequence is that information?
+
+That is why the `Q`, `K`, and `V` language matters:
+- **Query**: what this position is looking for
+- **Key**: what this position offers
+- **Value**: the content to pass along if relevant
+
+### Why Multi-Head Attention Exists
+
+One attention pattern is often too limited.
+
+Different heads can focus on:
+- local syntax
+- long-range references
+- positional relationships
+- task-specific patterns
+
+The model then combines those views.
+
+## Technical Details Interviewers Often Want
+
+### Why Scale by `sqrt(d_k)`?
+
+If the key dimension is large, raw dot products can become large in magnitude.
+
+That causes:
+- softmax to become too peaky
+- gradients to become less useful
+
+Scaling by `sqrt(d_k)` keeps the score distribution in a more stable range.
+
+### Why Positional Information Is Necessary
+
+Self-attention alone does not know order.
+
+If you shuffle the inputs, the same token content would otherwise look the same to the model.
+
+That is why positional encodings or rotary/relative schemes are needed.
+
+### Encoder vs Decoder Difference
+
+- **Encoder-style attention** can usually look bidirectionally
+- **Decoder-style attention** must use a causal mask to avoid seeing future tokens
+
+This distinction is one of the most common interview follow-ups.
+
+### Transformer Cost
+
+Vanilla attention builds a score matrix of shape `(seq_len, seq_len)`.
+
+That means:
+- time grows quadratically with sequence length
+- memory also becomes expensive as context grows
+
+This is why long-context efficiency work matters so much in LLM research.
+
+## Common Failure Modes
+
+- masking the wrong positions
+- using the wrong softmax axis
+- forgetting positional information
+- shape mistakes when splitting or concatenating heads
+- long-context memory blowups from quadratic attention
+
+## Edge Cases and Follow-Up Questions
+
+1. Why does self-attention need positional information?
+2. Why does decoder attention need a causal mask?
+3. Why does longer context become expensive so quickly?
+4. What does a head learn that a single-head model may miss?
+5. Why is attention parallelizable during training but autoregressive decoding is still sequential?
+
+## What to Practice Saying Out Loud
+
+1. Why transformers replaced RNNs for large language modeling
+2. What `Q`, `K`, and `V` mean intuitively
+3. Why `sqrt(d_k)` scaling matters
+4. Why vanilla transformers struggle with very long contexts
 
 ## Industry-Standard Boilerplate Code
 
@@ -213,4 +318,3 @@ def positional_encoding(seq_len: int, d_model: int) -> np.ndarray:
 
 - **Topic 5**: Different attention mechanisms (with complexity analysis)
 - **Topic 6**: LLM inference techniques
-

@@ -64,3 +64,68 @@ This topic covers:
 
 See detailed files for complete explanations!
 
+## Core Intuition
+
+Embedding history matters because it shows how NLP moved from sparse symbolic representations to dense learned representations and then to contextual foundation models.
+
+Multimodal models matter because modern systems increasingly need to align information across:
+- text
+- vision
+- audio
+- structured knowledge
+
+### Embedding Evolution
+
+The big story is:
+- TF-IDF and count methods capture lexical frequency
+- Word2Vec and GloVe learn dense semantic similarity
+- contextual models make token meaning depend on context
+
+### Multimodal Models
+
+Multimodal models matter because "meaning" is often shared across modalities.
+
+CLIP is important because it learns aligned text and image representations with a contrastive objective.
+
+## Technical Details Interviewers Often Want
+
+### Why Contextual Embeddings Were a Big Shift
+
+Static embeddings assign one vector per word type.
+
+Contextual embeddings assign token representations that depend on surrounding words.
+
+That solves problems like polysemy much better.
+
+### Why Contrastive Learning Matters in CLIP
+
+CLIP learns by pulling matched image-text pairs together and pushing mismatched pairs apart in embedding space.
+
+That gives a shared representation space across modalities.
+
+### Multimodal Integration Is Alignment Plus Architecture
+
+A strong interview answer should mention both:
+- representation alignment
+- how the model actually consumes or fuses modalities
+
+## Common Failure Modes
+
+- treating embedding history as just a chronology instead of an evolution of representation assumptions
+- confusing static embeddings with contextual embeddings
+- describing multimodal systems without saying how modalities are aligned
+- assuming multimodal automatically means better without discussing fusion and grounding
+
+## Edge Cases and Follow-Up Questions
+
+1. Why are contextual embeddings better than static embeddings for polysemous words?
+2. Why is CLIP's contrastive setup so effective?
+3. Why is multimodal modeling more than just concatenating features?
+4. Why did dense embeddings overtake sparse lexical features for many tasks?
+5. Why can shared embedding spaces be useful across modalities?
+
+## What to Practice Saying Out Loud
+
+1. The story from TF-IDF to contextual embeddings
+2. Why CLIP learns aligned multimodal representations
+3. Why representation choice changes what a model can generalize

@@ -1,5 +1,9 @@
 # Topic 25: Adapters & LoRA (Parameter-Efficient Fine-tuning)
 
+> 🔥 **For interviews, read these first:**
+> - **`LORA_DEEP_DIVE.md`** — frontier-lab interview deep dive: LoRA math (ΔW = B·A), intrinsic-dimension hypothesis, α/r scaling, QLoRA's three innovations (NF4, double quantization, paged optimizer), adapter modules, prefix tuning, IA³, DoRA, GaLore, multi-LoRA serving (S-LoRA, Punica).
+> - **`INTERVIEW_GRILL.md`** — 40 active-recall questions.
+
 ## What You'll Learn
 
 This topic teaches you parameter-efficient fine-tuning:
@@ -34,6 +38,83 @@ This topic teaches you parameter-efficient fine-tuning:
 - Low-rank decomposition
 - Train only small matrices
 - Can combine multiple LoRAs
+
+## Core Intuition
+
+Parameter-efficient fine-tuning exists because full fine-tuning of large models is expensive in:
+- memory
+- optimizer state
+- storage
+- deployment complexity
+
+The key idea is:
+- keep most pretrained weights frozen
+- learn a small set of task-specific updates
+
+### Adapters
+
+Adapters insert small trainable modules into the network.
+
+The intuition is:
+- the backbone already knows a lot
+- a small bottleneck module can steer behavior for a task
+
+### LoRA
+
+LoRA does not insert a whole new transformation in the same way adapters do.
+
+Instead, it learns a low-rank update to an existing weight matrix.
+
+That is why LoRA feels lightweight:
+- frozen base weight
+- small trainable update
+- task adaptation with far fewer parameters
+
+## Technical Details Interviewers Often Want
+
+### Why Low Rank Might Work
+
+LoRA assumes the important task-specific update can often be represented in a much lower-rank subspace than a full dense update.
+
+That is the key modeling assumption behind the method.
+
+### Why LoRA Is Operationally Attractive
+
+LoRA is popular because it often gives:
+- very low trainable parameter count
+- lower optimizer memory
+- easy swapping of task-specific adapters
+
+### Adapter vs LoRA
+
+This is a common follow-up.
+
+- **Adapters** add trainable modules to the network path
+- **LoRA** modifies an existing linear transform through a low-rank update
+
+Both are PEFT, but they intervene differently.
+
+## Common Failure Modes
+
+- treating PEFT as always equivalent to full fine-tuning
+- choosing rank too low and underfitting the task
+- applying LoRA to the wrong target modules
+- ignoring inference-time or deployment composition issues with many adapters
+- assuming fewer trainable parameters always means equal final quality
+
+## Edge Cases and Follow-Up Questions
+
+1. Why can LoRA work with so few trainable parameters?
+2. What does the rank `r` control?
+3. Why might full fine-tuning still outperform PEFT?
+4. How are adapters different from LoRA conceptually?
+5. Why is PEFT especially valuable for multi-task or resource-constrained setups?
+
+## What to Practice Saying Out Loud
+
+1. Why PEFT exists at all
+2. The core idea behind low-rank adaptation
+3. The difference between "cheaper training" and "equally expressive training"
 
 ## Theory
 
@@ -273,4 +354,3 @@ class LoRALinear(nn.Module):
 
 - **Topic 26**: Tree-based methods
 - Review parameter-efficient methods
-

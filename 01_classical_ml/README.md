@@ -65,6 +65,135 @@ This topic teaches you to implement classical ML algorithms from scratch:
   - Decision boundary
   - See `logistic_regression_derivation.md`
 
+### 🔥 Logistic Regression — Interview-Grade Files (READ THESE FOR INTERVIEWS)
+
+The base derivation file is fine for understanding. But if you're prepping for applied scientist or ML engineer interviews, the bar is much higher. The two files below cover the deep, intuitive, gotcha-style questions that interviewers actually ask:
+
+- **`LOGISTIC_REGRESSION_DEEP_DIVE.md`** — Frontier-lab interview deep dive: linear log-odds assumption, MLE derivation, why CE not MSE (likelihood + convexity), separability and divergence, IRLS, calibration, multicollinearity, L1/L2 geometry, max entropy, connections to softmax/NB/SVM/neural networks. **Read this whole document before any classical-ML interview.**
+- **`LOGISTIC_REGRESSION_INTERVIEW_GRILL.md`** — 60 active-recall questions with strong answers. Drill until you can answer 40+ cold.
+
+## Core Intuition
+
+Classical ML is still high-value interview material because it exposes the basic logic that more complex models build on.
+
+### Linear Regression
+
+Linear regression tries to fit a straight-line or linear relationship between input features and a continuous target.
+
+Easy way to think about it:
+- each feature gets a weight
+- the prediction is a weighted sum plus a bias
+- learning means adjusting those weights to reduce squared error
+
+Why least squares?
+- large mistakes should hurt more than small mistakes
+- the math becomes clean and differentiable
+- the closed-form solution and gradient solution are both easy to explain
+
+### Logistic Regression
+
+Logistic regression is not "linear regression but for labels."
+
+The key difference is that it models probability:
+
+`P(y = 1 | x) = sigmoid(w^T x + b)`
+
+Why sigmoid?
+- it maps any real number to `[0, 1]`
+- it gives a probabilistic interpretation
+- it connects naturally to Bernoulli likelihood and cross-entropy
+
+### KNN
+
+KNN does not learn parameters in the usual sense.
+
+Instead:
+- store the dataset
+- compare a new point to stored points
+- let nearby points vote or average
+
+This is useful in interviews because it helps explain the idea of local similarity very directly.
+
+### K-Means
+
+K-means is trying to summarize a dataset using a small number of centroids.
+
+The loop is simple:
+1. assign each point to the nearest centroid
+2. move each centroid to the mean of the assigned points
+3. repeat
+
+The main intuition is that it alternates between:
+- deciding cluster membership
+- refining cluster representatives
+
+## Technical Details Interviewers Often Care About
+
+### Linear Regression
+
+- Objective: minimize mean squared error
+- Gradients: `dw = X^T (y_pred - y) / n`, `db = mean(y_pred - y)`
+- Closed-form solution exists for small well-behaved problems
+- Sensitive to collinearity and outliers
+
+### Logistic Regression
+
+- Uses sigmoid plus cross-entropy
+- Decision boundary is linear in feature space
+- The gradient simplifies nicely because BCE with sigmoid gives `p - y`
+- Still a linear classifier even though the output is probabilistic
+
+### KNN
+
+- Prediction cost is high because you compare with stored points
+- Distance metric choice matters
+- Feature scaling matters a lot
+- Small `k` means high variance; large `k` means high bias
+
+### K-Means
+
+- Assumes roughly spherical clusters
+- Sensitive to initialization
+- Uses Euclidean-style geometry
+- Empty clusters are a real edge case in implementation
+
+## Common Failure Modes
+
+### Linear / Logistic Regression
+
+- unscaled features slow or distort optimization
+- collinear features make weights unstable
+- outliers can dominate the fit
+- using the wrong loss for the task
+
+### KNN
+
+- bad feature scaling breaks nearest-neighbor behavior
+- large datasets make prediction slow
+- irrelevant features pollute distance
+
+### K-Means
+
+- non-spherical clusters are handled poorly
+- wrong number of clusters
+- bad initialization leads to poor local minima
+- empty clusters during updates
+
+## What the Interviewer May Ask Next
+
+1. Why does logistic regression use cross-entropy instead of MSE?
+2. Why is KNN called a lazy learner?
+3. Why does feature scaling matter for KNN and K-means?
+4. When would linear regression beat a larger nonlinear model?
+5. What assumptions make linear regression a reasonable model?
+
+## What to Practice Saying Out Loud
+
+1. Why is logistic regression still a linear classifier?
+2. Why does K-means converge, and what does it converge to?
+3. Why can KNN be strong as a baseline but weak at scale?
+4. What is the geometric interpretation of linear regression?
+
 ## Industry-Standard Boilerplate Code
 
 ### Linear Regression (From Scratch)
@@ -411,4 +540,3 @@ class KMeans:
 
 - **Topic 2**: Gradient descent variants
 - **Topic 3**: Evaluation metrics
-

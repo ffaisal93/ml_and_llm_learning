@@ -39,11 +39,16 @@ def self_attention(Q: np.ndarray, K: np.ndarray, V: np.ndarray,
     scores = Q @ K.T / np.sqrt(d_k)
     
     # Apply mask if provided (set masked positions to -inf)
+    # why?
+    # because we want to mask out the future positions, so that the model cannot attend to future positions
+    # we do this by setting the scores of the future positions to -1e9, so that the softmax function will output 0 for the future positions
+    # this is done to prevent the model from attending to future positions
     if mask is not None:
         scores = np.where(mask == 0, -1e9, scores)
     
     # Softmax over last dimension
     # Subtract max for numerical stability
+    # explain the following code line by line:
     exp_scores = np.exp(scores - np.max(scores, axis=-1, keepdims=True))
     attention_weights = exp_scores / np.sum(exp_scores, axis=-1, keepdims=True)
     
@@ -75,6 +80,12 @@ def multi_head_attention(x: np.ndarray, d_model: int, num_heads: int,
     V = x @ W_v
     
     # Reshape for multi-head: (num_heads, seq_len, d_k)
+    # explain transpose function:
+    # transpose function is used to transpose the array, so that the shape of the array is changed
+    # for example, if the array is (2,3,4), then the transpose function will change the shape to (4,3,2)
+    # this is done to make the array easier to understand and work with
+    # in this case, we are reshaping the array to (num_heads, seq_len, d_k) and then transposing it to (seq_len, num_heads, d_k)
+    # this is done to make the array easier to understand and work with
     Q = Q.reshape(seq_len, num_heads, d_k).transpose(1, 0, 2)
     K = K.reshape(seq_len, num_heads, d_k).transpose(1, 0, 2)
     V = V.reshape(seq_len, num_heads, d_k).transpose(1, 0, 2)
@@ -104,6 +115,17 @@ def positional_encoding(seq_len: int, d_model: int) -> np.ndarray:
     PE(pos, 2i+1) = cos(pos / 10000^(2i/d_model))
     """
     pe = np.zeros((seq_len, d_model))
+    
+    ## explain the following with example values:
+    # seq_len = 10
+    # d_model = 64
+    # position = np.arange(seq_len).reshape(-1, 1) = [[0], [1], [2], [3], [4], [5], [6], [7], [8], [9]]
+    # div_term = np.exp(np.arange(0, d_model, 2) * 
+    #                  -(np.log(10000.0) / d_model)) = [10000^(0/64), 10000^(2/64), 10000^(4/64), 10000^(6/64), 10000^(8/64), 10000^(10/64), 10000^(12/64), 10000^(14/64), 10000^(16/64), 10000^(18/64)]
+    # pe[:, 0::2] = np.sin(position * div_term) = [[sin(0*10000^(0/64)), sin(1*10000^(0/64)), sin(2*10000^(0/64)), sin(3*10000^(0/64)), sin(4*10000^(0/64)), sin(5*10000^(0/64)), sin(6*10000^(0/64)), sin(7*10000^(0/64)), sin(8*10000^(0/64)), sin(9*10000^(0/64))]]
+    # pe[:, 1::2] = np.cos(position * div_term) = [[cos(0*10000^(0/64)), cos(1*10000^(0/64)), cos(2*10000^(0/64)), cos(3*10000^(0/64)), cos(4*10000^(0/64)), cos(5*10000^(0/64)), cos(6*10000^(0/64)), cos(7*10000^(0/64)), cos(8*10000^(0/64)), cos(9*10000^(0/64))]]  
+    # pe = [[sin(0*10000^(0/64)), cos(0*10000^(0/64)), sin(1*10000^(0/64)), cos(1*10000^(0/64)), sin(2*10000^(0/64)), cos(2*10000^(0/64)), sin(3*10000^(0/64)), cos(3*10000^(0/64)), sin(4*10000^(0/64)), cos(4*10000^(0/64)), sin(5*10000^(0/64)), cos(5*10000^(0/64)), sin(6*10000^(0/64)), cos(6*10000^(0/64)), sin(7*10000^(0/64)), cos(7*10000^(0/64)), sin(8*10000^(0/64)), cos(8*10000^(0/64)), sin(9*10000^(0/64)), cos(9*10000^(0/64))]]
+    # return pe
     
     position = np.arange(seq_len).reshape(-1, 1)
     div_term = np.exp(np.arange(0, d_model, 2) * 

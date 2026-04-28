@@ -93,6 +93,97 @@ User Requests → Feature Store → Model Serving → Predictions
 - Alert on anomalies
 - Dashboard for visualization
 
+## Core Intuition
+
+System design questions are not asking for the fanciest architecture.
+
+They are usually asking whether you can reason about constraints.
+
+For ML systems, the core constraints are:
+- latency
+- throughput
+- correctness
+- cost
+- reliability
+- offline/online consistency
+
+The strongest answers start by naming which of those matter most for the problem.
+
+### Training vs Serving
+
+One of the easiest mistakes is to mix training concerns with serving concerns.
+
+Training systems optimize for:
+- throughput
+- reproducibility
+- experiment tracking
+
+Serving systems optimize for:
+- latency
+- availability
+- safe rollouts
+- observability
+
+### Feature Stores Matter Because Consistency Matters
+
+A feature store is not just a database of features.
+
+Its real purpose is to reduce training-serving skew:
+- the feature definition should mean the same thing offline and online
+- the transformation path should be consistent
+- timestamps and freshness matter
+
+## Technical Details Interviewers Often Want
+
+### Real-Time Serving Trade-Offs
+
+If you batch requests aggressively:
+- throughput usually improves
+- tail latency can worsen
+
+If you cache aggressively:
+- latency and cost can improve
+- freshness and personalization can worsen
+
+### Monitoring Needs Multiple Layers
+
+It is not enough to monitor infrastructure only.
+
+A real ML system needs:
+- system metrics: latency, error rate, CPU/GPU, queue depth
+- data metrics: drift, null rates, feature freshness
+- model metrics: accuracy, calibration, business KPIs
+
+### Rollout Safety
+
+A strong answer often mentions:
+- canary or shadow deployment
+- rollback plan
+- model versioning
+- experiment analysis before full rollout
+
+## Common Failure Modes
+
+- optimizing average latency while ignoring tail latency
+- forgetting training-serving skew
+- no rollback or versioning strategy
+- monitoring only infrastructure and not model quality
+- underestimating feature freshness issues in online systems
+
+## Edge Cases and Follow-Up Questions
+
+1. What if latency and accuracy goals conflict?
+2. What if online features arrive late or are missing?
+3. Why can a model pass offline validation but fail in production?
+4. What is the difference between canary, shadow, and A/B deployment?
+5. Why is monitoring data quality as important as monitoring service uptime?
+
+## What to Practice Saying Out Loud
+
+1. How you would structure a serving answer from requirements to architecture
+2. How you would prevent training-serving skew
+3. What you would monitor in the first week after deployment
+
 ## Design Patterns
 
 ### Pattern 1: Real-Time Serving
@@ -167,4 +258,3 @@ Request → Experiment Service → Model A (50%) / Model B (50%)
 
 - **Topic 30**: A/B testing and experimentation
 - Review all system design patterns
-

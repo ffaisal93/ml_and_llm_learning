@@ -58,20 +58,20 @@ class MultiHeadAttention(nn.Module):
         super().__init__()
         assert d_model % num_heads == 0
         
-        self.d_model = d_model
-        self.num_heads = num_heads
-        self.d_k = d_model // num_heads  # Dimension per head
+        self.d_model = d_model # (512)
+        self.num_heads = num_heads # (8)
+        self.d_k = d_model // num_heads  # Dimension per head # (512/8 = 64)
         
         # Linear projections for Q, K, V
-        self.W_q = nn.Linear(d_model, d_model)
-        self.W_k = nn.Linear(d_model, d_model)
-        self.W_v = nn.Linear(d_model, d_model)
-        
+        self.W_q = nn.Linear(d_model, d_model) # (d_model, d_model) # (512, 512)
+        self.W_k = nn.Linear(d_model, d_model) # (d_model, d_model) # (512, 512)
+        self.W_v = nn.Linear(d_model, d_model) # (d_model, d_model) # (512, 512)
+
         # Output projection
-        self.W_o = nn.Linear(d_model, d_model)
+        self.W_o = nn.Linear(d_model, d_model) # ( d_model, d_model) # (512, 512)
         
         # Scale factor for attention scores
-        self.scale = math.sqrt(self.d_k)
+        self.scale = math.sqrt(self.d_k) # (1)
     
     def forward(self, x, mask=None):
         """
@@ -84,42 +84,49 @@ class MultiHeadAttention(nn.Module):
         batch_size, seq_len, d_model = x.size()
         
         # 1. Linear projections: Q, K, V
-        Q = self.W_q(x)  # (batch_size, seq_len, d_model)
-        K = self.W_k(x)  # (batch_size, seq_len, d_model)
-        V = self.W_v(x)  # (batch_size, seq_len, d_model)
+        Q = self.W_q(x)  # (batch_size, seq_len, d_model) # (batch_size, seq_len, 512)
+        K = self.W_k(x)  # (batch_size, seq_len, d_model) # (batch_size, seq_len, 512)
+        V = self.W_v(x)  # (batch_size, seq_len, d_model) # (batch_size, seq_len, 512)
         
         # 2. Reshape for multi-head: split into num_heads
-        Q = Q.view(batch_size, seq_len, self.num_heads, self.d_k).transpose(1, 2)
+        # explain transpose(1, 2):
+        # transpose(1, 2) is used to transpose the array, so that the shape of the array is changed
+        # for example, if the array is (2,3,4), then the transpose function will change the shape to (4,3,2)
+        # this is done to make the array easier to understand and work with
+        # in this case, we are reshaping the array to (batch_size, seq_len, num_heads, d_k) and then transposing it to (batch_size, num_heads, seq_len, d_k)
+        # this is done to make the array easier to understand and work with
+        Q = Q.view(batch_size, seq_len, self.num_heads, self.d_k).transpose(1, 2) # (batch_size, seq_len, 8, 64)    
         # Shape: (batch_size, num_heads, seq_len, d_k)
-        K = K.view(batch_size, seq_len, self.num_heads, self.d_k).transpose(1, 2)
-        V = V.view(batch_size, seq_len, self.num_heads, self.d_k).transpose(1, 2)
+        K = K.view(batch_size, seq_len, self.num_heads, self.d_k).transpose(1, 2) # (batch_size, seq_len, 8, 64)
+        V = V.view(batch_size, seq_len, self.num_heads, self.d_k).transpose(1, 2) # (batch_size, seq_len, 8, 64)
         
         # 3. Compute attention scores
         # Q @ K^T: (batch_size, num_heads, seq_len, d_k) @ (batch_size, num_heads, d_k, seq_len)
         # Result: (batch_size, num_heads, seq_len, seq_len)
-        scores = torch.matmul(Q, K.transpose(-2, -1)) / self.scale
+        scores = torch.matmul(Q, K.transpose(-2, -1)) / self.scale # (batch_size, 8, seq_len, seq_len) / (1) = (batch_size, 8, seq_len, seq_len)
         
         # 4. Apply mask if provided (for causal attention in GPT)
         if mask is not None:
-            scores = scores.masked_fill(mask == 0, -1e9)
+            scores = scores.masked_fill(mask == 0, -1e9) # (batch_size, 8, seq_len, seq_len)
         
         # 5. Apply softmax to get attention weights
-        attention_weights = F.softmax(scores, dim=-1)
+        # F.softmax = exp(scores) / sum(exp(scores))
+        attention_weights = F.softmax(scores, dim=-1) # (batch_size, 8, seq_len, seq_len)
         # Shape: (batch_size, num_heads, seq_len, seq_len)
         
         # 6. Apply attention to values
-        # attention_weights @ V: (batch_size, num_heads, seq_len, seq_len) @ (batch_size, num_heads, seq_len, d_k)
+        # attention_weights @ V: (batch_size, num_heads, seq_len, seq_len) @ (batch_size, num_heads, seq_len, d_k) = (batch_size, 8, seq_len, 64)
         # Result: (batch_size, num_heads, seq_len, d_k)
-        attended = torch.matmul(attention_weights, V)
+        attended = torch.matmul(attention_weights, V) # (batch_size, 8, seq_len, 64)
         
         # 7. Concatenate heads
         # Transpose and reshape: (batch_size, num_heads, seq_len, d_k) -> (batch_size, seq_len, d_model)
-        attended = attended.transpose(1, 2).contiguous().view(
+        attended = attended.transpose(1, 2).contiguous().view( # (batch_size, seq_len, 512)
             batch_size, seq_len, d_model
         )
         
         # 8. Output projection
-        output = self.W_o(attended)
+        output = self.W_o(attended) # (batch_size, seq_len, 512)
         
         return output
 
@@ -193,9 +200,32 @@ def create_causal_mask(seq_len, device='cpu'):
     
     Returns upper triangular matrix of -inf (masked) and 0 (allowed)
     """
-    mask = torch.triu(torch.ones(seq_len, seq_len), diagonal=1)
-    mask = mask.masked_fill(mask == 1, float('-inf'))
-    return mask.to(device)
+
+    # explain the following code line by line:
+    # torch.triu = upper triangular matrix
+    # torch.ones = create a matrix of ones
+    # diagonal = 1 = create a matrix of ones with 1 on the diagonal
+    # masked_fill = fill the matrix with -inf where the matrix is 1
+    # to(device) = move the matrix to the device
+    # return the matrix
+    mask = torch.triu(torch.ones(seq_len, seq_len), diagonal=1) # 
+    # [[0, 1, 1, 1],    
+    #  [0, 0, 1, 1],    # row 1: mask out positions 2,3 (future)
+    #  [0, 0, 0, 1],    # row 2: mask out position 3 (future)
+    #  [0, 0, 0, 0]]    # row 3: no future
+    mask = mask.masked_fill(mask == 1, float('-inf')) # 
+    # [[0, -inf, -inf, -inf],
+    #  [0, 0, -inf, -inf],
+    #  [0, 0, 0, -inf],
+    #  [0, 0, 0, 0]]
+    return mask.to(device) # [[0, -inf, -inf, -inf],
+    #  [0, 0, -inf, -inf],
+    #  [0, 0, 0, -inf],
+    #  [0, 0, 0, 0]] on cpu
+
+    # why 0 and -inf?
+    # 0 = no future, allow the current token to attend to the future tokens
+    # -inf = mask out the future
 
 
 # ==================== 6. COMPLETE GPT MODEL ====================

@@ -1,5 +1,9 @@
 # Topic 18: Distribution Classification
 
+> 🔥 **For interviews, read these first:**
+> - **`DISTRIBUTIONS_DEEP_DIVE.md`** — frontier-lab deep dive: which distribution to use for which data type, exponential family unification, GLMs and canonical links, heavy-tailed distributions, common pitfalls.
+> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions.
+
 ## What You'll Learn
 
 This topic teaches you:
@@ -19,6 +23,27 @@ This topic teaches you:
 - **Data analysis**: Understand data distribution
 - **Model selection**: Choose right distribution
 - **Anomaly detection**: Identify outliers
+
+## Core Intuition
+
+This is a probabilistic classification problem.
+
+You have:
+- two candidate data-generating sources
+- one new observation
+
+You want to know which source makes that observation more plausible.
+
+That is why likelihood or posterior comparison is the right mental model, not just mean comparison.
+
+### Why Means Are Not Enough
+
+Two distributions can have:
+- the same mean
+- different variances
+- different tail behavior
+
+A point can be closer to one mean but still more likely under another density.
 
 ## Problem Statement
 
@@ -40,6 +65,23 @@ This is the cleanest interview answer because it shows:
 - probabilistic reasoning
 - awareness of assumptions
 - understanding of priors
+
+## Technical Details Interviewers Often Want
+
+### Likelihood vs Posterior
+
+If priors are equal, likelihood comparison is enough.
+
+If priors differ, posterior comparison is more correct.
+
+### Parametric vs Nonparametric
+
+Parametric:
+- assume a family like Gaussian
+- estimate a few parameters
+
+Nonparametric:
+- estimate the density more flexibly with KDE or related methods
 
 ## How to Answer This in an Interview
 
@@ -212,6 +254,20 @@ Then use:
 - nearest-neighbor density idea
 
 The principle is still the same: compare estimated densities.
+
+## Common Failure Modes
+
+- comparing only means instead of densities
+- ignoring class priors
+- being overconfident when distributions overlap heavily
+- assuming Gaussian without stating the assumption
+- forgetting how noisy the answer can be with few samples
+
+## What to Practice Saying Out Loud
+
+1. Why this is really a Bayes classification problem
+2. Why density comparison is stronger than mean comparison
+3. Why overlap and priors both matter
 
 ## Exercises
 

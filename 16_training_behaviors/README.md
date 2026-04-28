@@ -1,5 +1,9 @@
 # Topic 16: Training Behaviors & Single GPU Optimization
 
+> 🔥 **For interviews, read these first:**
+> - **`TRAINING_BEHAVIORS_DEEP_DIVE.md`** — frontier-lab deep dive: healthy loss curves and pathologies, LR (warmup, decay, finder), batch size effects (linear scaling, critical batch, generalization gap), gradient norm tracking, mixed precision (FP16/BF16/FP8), loss spike recovery, catastrophic forgetting + mitigations.
+> - **`INTERVIEW_GRILL.md`** — 45 active-recall questions.
+
 ## What You'll Learn
 
 This topic teaches you:
@@ -41,6 +45,92 @@ This topic teaches you:
 - Identify causes
 - Fix training issues
 - Improve stability
+
+## Core Intuition
+
+Training instability is usually not one mysterious bug.
+
+It is usually one of a small number of things:
+- the step size is wrong
+- gradients are too large or too noisy
+- the batch is problematic
+- precision or normalization is unstable
+- memory pressure forces a bad training configuration
+
+Good interview answers in this area are procedural.
+
+You should sound like you know how to isolate causes, not just list buzzwords.
+
+### Why Single-GPU Optimization Matters
+
+A lot of real experiments start with resource constraints.
+
+If a model does not fit in memory, you need to decide which trade-off to make:
+- smaller batch
+- more accumulation
+- lower precision
+- shorter context
+- checkpointing
+
+Each one changes a different part of the training system.
+
+## Technical Details Interviewers Often Want
+
+### Gradient Accumulation
+
+Gradient accumulation does **not** change instantaneous memory for activations of one microbatch very much.
+
+What it does is:
+- keep microbatches small enough to fit
+- accumulate their gradients
+- update less often
+
+That gives a larger effective batch size while respecting memory limits.
+
+### Mixed Precision
+
+Mixed precision helps because many tensors can safely use lower precision.
+
+But it introduces risks:
+- underflow
+- overflow
+- gradient-scaling issues
+
+So the correct explanation is:
+- saves memory
+- often improves throughput
+- can require careful stability handling
+
+### Gradient Checkpointing
+
+Checkpointing saves memory by recomputing some activations during backward pass.
+
+The trade-off is simple:
+- lower memory
+- more compute
+- slower wall-clock in exchange for larger trainable configuration
+
+## Common Failure Modes
+
+- accumulation used incorrectly so effective learning-rate assumptions break
+- mixed precision producing NaNs without gradient scaling or stable ops
+- checkpointing expected to reduce all memory, when activations were not the main bottleneck
+- loss spikes caused by a few bad batches rather than the whole run
+- blaming the optimizer when the real issue is data or targets
+
+## Edge Cases and Follow-Up Questions
+
+1. Why can loss spike even if average training looks stable?
+2. Why does reducing batch size not always fix OOM?
+3. What if the model fits but optimizer states do not?
+4. Why can mixed precision help throughput but hurt stability?
+5. What is the difference between effective batch size and microbatch size?
+
+## What to Practice Saying Out Loud
+
+1. How you would debug a sudden loss spike
+2. How you would fit a slightly larger model on the same GPU
+3. Which memory lever you would try first, and why
 
 ## Industry-Standard Boilerplate Code
 
@@ -235,4 +325,3 @@ Total GPU Memory (e.g., 24GB):
 
 - **Topic 17**: Probability math Q&A
 - **Topic 18**: Distribution classification
-

@@ -51,6 +51,83 @@ This topic teaches you reinforcement learning fundamentals in easy language:
 - Model-free learning
 - Used in many RL algorithms
 
+## Core Intuition
+
+Reinforcement learning is about learning from interaction rather than from fixed labeled targets.
+
+The core challenge is:
+- actions affect future states
+- rewards can be delayed
+- exploration matters
+
+That is why RL feels different from ordinary supervised learning.
+
+### MDP
+
+The MDP is the formal framework for sequential decision-making.
+
+It defines:
+- states
+- actions
+- transitions
+- rewards
+
+### Q-Learning
+
+Q-learning learns action values:
+- how good is action `a` in state `s` if I continue optimally afterward?
+
+### Multi-Armed Bandit
+
+Bandits are the simplest version of the exploration-exploitation problem.
+
+They are useful because the core idea appears in larger RL systems too.
+
+## Technical Details Interviewers Often Want
+
+### Exploration vs Exploitation
+
+This is one of the most common RL interview themes.
+
+You need to balance:
+- using what seems best now
+- gathering information that might improve decisions later
+
+### Why Q-Learning Is Off-Policy
+
+Q-learning updates toward the greedy future value regardless of the behavior policy that collected the transition.
+
+That is the key reason it is called off-policy.
+
+### Monte Carlo vs Temporal Difference
+
+Monte Carlo waits until episode end for full returns.
+
+TD methods bootstrap from current value estimates earlier.
+
+That distinction is a very common follow-up.
+
+## Common Failure Modes
+
+- confusing supervised labels with delayed reward signals
+- not being able to explain exploration vs exploitation
+- forgetting what makes Q-learning off-policy
+- treating bandits and full RL as identical problems
+
+## Edge Cases and Follow-Up Questions
+
+1. Why is RL harder than supervised learning?
+2. Why do delayed rewards make credit assignment difficult?
+3. Why is Q-learning off-policy?
+4. What is the difference between a bandit and a full MDP?
+5. Why do Monte Carlo and TD methods differ?
+
+## What to Practice Saying Out Loud
+
+1. The components of an MDP
+2. Why exploration is necessary
+3. The conceptual difference between Monte Carlo, TD, and Q-learning
+
 ## Theory
 
 ### Markov Decision Process (MDP)
@@ -101,4 +178,3 @@ See detailed files for complete implementations:
 - Review PPO and RLHF
 - Explore deep RL
 - Understand policy gradients
-

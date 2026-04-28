@@ -1,5 +1,11 @@
 # Topic 8: Training Techniques (RLHF, DPO, PPO, GRPO)
 
+> 🔥 **For interviews, read these first:**
+> - **`ALIGNMENT_DEEP_DIVE.md`** — frontier-lab interview deep dive: full RLHF math, Bradley-Terry preference model, complete DPO derivation (whiteboard-ready), the alphabet soup (IPO/KTO/ORPO/SimPO/GRPO), Constitutional AI, RLAIF, process vs outcome supervision, reward hacking, KL blowup, mode collapse, sycophancy, alignment tax, Goodhart curves.
+> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions with strong answers covering the full post-training stack. Drill until you can answer 40+ cold.
+>
+> The README below is the conceptual overview. The two files above are where the interview-grade depth lives.
+
 ## What You'll Learn
 
 This topic teaches you advanced LLM training techniques:
@@ -40,6 +46,97 @@ This topic teaches you advanced LLM training techniques:
 - Stable policy updates
 - Used in RLHF pipeline
 - General RL algorithm
+
+## Core Intuition
+
+These training techniques exist because next-token prediction alone does not fully capture desired assistant behavior.
+
+A base language model can be:
+- fluent
+- knowledgeable
+- still not aligned with user preferences
+
+Alignment methods try to push the model toward preferred behavior without letting it drift arbitrarily far from a useful reference policy.
+
+### RLHF
+
+RLHF breaks the problem into stages:
+1. supervised fine-tuning on demonstrations
+2. reward modeling from preference data
+3. policy optimization using the reward signal
+
+The intuition is:
+- first learn how to answer at all
+- then learn what humans prefer
+- then optimize behavior against that preference signal
+
+### DPO
+
+DPO skips the explicit reward-model-plus-RL loop and directly optimizes relative preference between chosen and rejected responses.
+
+That makes it easier to train and reason about in many settings.
+
+### PPO
+
+PPO is mainly about making policy updates stable.
+
+Its clipping mechanism is trying to stop the new policy from moving too far in one step.
+
+That is why PPO appears in RLHF even though RLHF is the bigger pipeline.
+
+## Technical Details Interviewers Often Want
+
+### Why a Reference Model Matters
+
+Without a reference or KL-style constraint, the policy can drift too far:
+- exploit reward model quirks
+- become unstable
+- collapse into weird outputs
+
+The reference model acts like an anchor.
+
+### Why Reward Models Are Risky
+
+A reward model is only an approximation of human preference.
+
+That means the policy can learn to:
+- game the reward
+- sound good without being correct
+- optimize style more than truth
+
+This is one of the most important conceptual follow-ups in alignment interviews.
+
+### Why DPO Is Attractive
+
+DPO is appealing because it:
+- avoids explicit on-policy RL optimization
+- is simpler to implement and train
+- often works well with preference pairs directly
+
+But it is not "strictly better" in all cases. It just changes the optimization setup.
+
+## Common Failure Modes
+
+- reward hacking
+- over-optimizing preference style while hurting factuality
+- too-weak KL control causing drift
+- too-strong KL control preventing meaningful improvement
+- claiming DPO and RLHF are identical when they are not
+
+## Edge Cases and Follow-Up Questions
+
+1. Why can preference optimization hurt factual accuracy?
+2. Why do we need a reference model or KL penalty?
+3. Why might DPO be simpler than PPO-based RLHF?
+4. What happens if the reward model is misspecified?
+5. Why is SFT still needed before preference optimization in many pipelines?
+
+## What to Practice Saying Out Loud
+
+1. The three-stage RLHF pipeline
+2. The conceptual difference between SFT, reward modeling, and PPO
+3. Why DPO is simpler but not universally better
+4. Why alignment metrics must be paired with truthfulness and robustness checks
 
 ## Industry-Standard Boilerplate Code
 
@@ -208,4 +305,3 @@ def dpo_loss(policy_logprobs_chosen: torch.Tensor,
 
 - **Topic 9**: Sampling techniques
 - **Topic 10**: Optimizers
-

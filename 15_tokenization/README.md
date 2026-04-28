@@ -1,5 +1,9 @@
 # Topic 15: Tokenization Methods
 
+> 🔥 **For interviews, read these first:**
+> - **`TOKENIZATION_DEEP_DIVE.md`** — frontier-lab interview deep dive: BPE/WordPiece/Unigram/SentencePiece, byte-level BPE, vocabulary trade-offs, arithmetic and multilingual quirks, glitch tokens, special tokens, multimodal extensions.
+> - **`INTERVIEW_GRILL.md`** — 45 active-recall questions.
+
 ## What You'll Learn
 
 This topic teaches you different tokenization methods:
@@ -42,6 +46,102 @@ This topic teaches you different tokenization methods:
 - Language-agnostic
 - Handles multiple languages
 - Used in multilingual models
+
+## Core Intuition
+
+Tokenization decides how raw text becomes model input units.
+
+That sounds like a preprocessing detail, but it affects:
+- vocabulary size
+- sequence length
+- memory cost
+- softmax cost
+- how well rare words and multilingual text are handled
+
+This is why tokenization shows up in serious LLM interviews.
+
+### Why Not Word-Level Tokens?
+
+Word-level vocabularies have a major problem:
+- too many rare or unseen words
+
+Character-level vocabularies avoid that problem, but sequences become much longer.
+
+Subword tokenization is the compromise:
+- shorter than characters
+- more flexible than words
+
+### BPE
+
+BPE repeatedly merges the most useful symbol pairs.
+
+Intuition:
+- common fragments become single units
+- rare words can still be decomposed into smaller pieces
+
+### WordPiece
+
+WordPiece is similar in spirit to BPE, but the scoring of merges differs.
+
+The interview-safe answer is:
+- both build subwords
+- they differ in how they choose which merges to keep
+
+### SentencePiece
+
+SentencePiece is useful because it can operate without assuming whitespace-separated words in the same way many older tokenizers do.
+
+That makes it strong for:
+- multilingual data
+- languages with different segmentation properties
+
+## Technical Details Interviewers Often Want
+
+### Vocabulary Size Trade-Off
+
+Large vocabulary:
+- shorter sequences
+- larger embedding and output layers
+
+Small vocabulary:
+- longer sequences
+- more compositional coverage
+
+This is one of the most important tokenization trade-offs to explain clearly.
+
+### Tokenization Affects Everything Downstream
+
+Bad tokenization can hurt:
+- efficiency
+- context length usage
+- handling of code or multilingual text
+- alignment between pretraining and downstream tasks
+
+### "Unknown Word" Handling
+
+Subword tokenization is powerful because it avoids a hard unknown-word failure mode for many tokens by decomposing unfamiliar words into smaller known pieces.
+
+## Common Failure Modes
+
+- treating tokenization as an unimportant preprocessing detail
+- confusing BPE and WordPiece as identical
+- ignoring the cost trade-off between vocab size and sequence length
+- choosing tokenization poorly for multilingual or code data
+- assuming more tokens always means more information rather than just more fragmentation
+
+## Edge Cases and Follow-Up Questions
+
+1. Why not use pure word-level tokens?
+2. Why not use pure character-level tokens?
+3. How does vocabulary size trade off against sequence length?
+4. Why can tokenization matter a lot for multilingual models?
+5. Why can tokenization affect both quality and cost?
+
+## What to Practice Saying Out Loud
+
+1. Why subword tokenization became dominant
+2. The practical trade-off between vocabulary size and sequence length
+3. Why tokenization is a modeling choice, not just a preprocessing choice
 
 ## Industry-Standard Boilerplate Code
 
@@ -202,4 +302,3 @@ class WordPiece:
 
 - **Topic 16**: Training behaviors
 - **Topic 17**: Probability math
-

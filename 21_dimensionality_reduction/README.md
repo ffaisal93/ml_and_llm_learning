@@ -1,5 +1,9 @@
 # Topic 21: Dimensionality Reduction
 
+> 🔥 **For interviews, read these first:**
+> - **`DIMENSIONALITY_REDUCTION_DEEP_DIVE.md`** — frontier-lab interview deep dive: PCA derivation (variance maximization → eigendecomposition), SVD connection, Eckart-Young, kernel PCA, t-SNE (KL with Student-t), UMAP (fuzzy simplicial complex), autoencoders, VAE, ICA, NMF, method-selection guide.
+> - **`INTERVIEW_GRILL.md`** — 60+ active-recall questions.
+
 ## What You'll Learn
 
 This topic teaches you dimensionality reduction:
@@ -39,6 +43,84 @@ This topic teaches you dimensionality reduction:
 - Better than t-SNE
 - Faster
 - Preserves global structure
+
+## Core Intuition
+
+Dimensionality reduction is about compressing data while keeping the most useful structure.
+
+That structure might be:
+- variance
+- neighborhood geometry
+- cluster separation
+- visualization-friendly layout
+
+Different methods preserve different notions of structure.
+
+### PCA
+
+PCA is the most important method to understand deeply because it is mathematically clean and frequently asked in interviews.
+
+Its intuition is:
+- find orthogonal directions of greatest variance
+- project the data onto those directions
+
+This is useful when redundant dimensions can be replaced by a smaller number of informative directions.
+
+### t-SNE
+
+t-SNE is mostly a visualization method.
+
+Its goal is to preserve local neighborhoods rather than give a globally faithful geometric map.
+
+That is why pretty t-SNE plots can be useful but also misleading if over-interpreted.
+
+### UMAP
+
+UMAP is also mainly used for visualization and low-dimensional structure discovery.
+
+Compared with t-SNE, it is often faster and may preserve more global structure, but it is still not a drop-in replacement for linear methods like PCA.
+
+## Technical Details Interviewers Often Want
+
+### Why PCA Uses Eigenvectors
+
+The covariance matrix tells you how directions in feature space vary together.
+
+Its eigenvectors give principal directions, and eigenvalues tell you how much variance each direction explains.
+
+### PCA Also Minimizes Reconstruction Error
+
+This is a key follow-up.
+
+PCA is not only "maximize variance." It also gives the best low-rank linear approximation in the least-squares sense.
+
+### PCA Needs Centering
+
+If you do not center the data first, the first component can be dominated by the mean offset rather than the true variation structure.
+
+That is a common interview implementation bug.
+
+## Common Failure Modes
+
+- using PCA without centering
+- interpreting t-SNE distances globally as if they were metric-faithful
+- using PCA when the key structure is strongly nonlinear
+- assuming explained variance always equals downstream usefulness
+- choosing dimensionality only by visualization aesthetics
+
+## Edge Cases and Follow-Up Questions
+
+1. Why must PCA center the data first?
+2. Why can PCA fail on nonlinear manifolds?
+3. Why is t-SNE mainly a visualization tool rather than a general feature extractor?
+4. Why can the first two PCs fail to separate classes even when the full space is predictive?
+5. What is the difference between preserving variance and preserving neighborhoods?
+
+## What to Practice Saying Out Loud
+
+1. Why PCA is both a variance-maximization and reconstruction-minimization method
+2. Why PCA is linear and what that implies
+3. Why visualization methods can be useful but also misleading
 
 ## Industry-Standard Boilerplate Code
 
@@ -127,4 +209,3 @@ def pca(X: np.ndarray, n_components: int) -> tuple:
 
 - **Topic 22**: Recommendation systems
 - **Topic 23**: Clustering evaluation
-

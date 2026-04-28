@@ -1,5 +1,11 @@
 # Topic 5: Attention Mechanisms
 
+> 🔥 **For interviews, read these first:**
+> - **`ATTENTION_DEEP_DIVE.md`** — frontier-lab interview deep dive: MHA → MQA → GQA → MLA hierarchy, sliding window receptive-field math, sparse attention, linear attention (Performer, RWKV, SSM connection), induction heads, attention sinks.
+> - **`INTERVIEW_GRILL.md`** — 50 active-recall questions.
+>
+> See also `04_transformers/TRANSFORMERS_DEEP_DIVE.md` for foundational scaled-dot-product attention.
+
 ## What You'll Learn
 
 This topic teaches you different attention mechanisms:
@@ -41,6 +47,104 @@ This topic teaches you different attention mechanisms:
 - Translation
 - Question answering
 - Cross-modal tasks
+
+## Core Intuition
+
+Different attention mechanisms exist because "let every token attend to every token" is not always the right answer.
+
+The right attention pattern depends on the task:
+- do you need bidirectional context?
+- do you need causality?
+- do you need to connect two sequences?
+- do you need long-context efficiency?
+
+### Self-Attention
+
+Self-attention is the default when tokens in one sequence need to interact with each other.
+
+Use it when:
+- a sequence needs internal contextualization
+- every token may depend on far-away tokens
+
+### Causal Attention
+
+Causal attention is self-attention with a future mask.
+
+It is used when:
+- you are generating left-to-right
+- the model must not cheat by looking ahead
+
+### Cross-Attention
+
+Cross-attention is used when one sequence should read from another sequence.
+
+Classic example:
+- decoder queries
+- encoder keys and values
+
+That lets the decoder decide which encoded information matters at each step.
+
+### Sparse Attention
+
+Sparse attention changes the connectivity pattern so not every token attends to every token.
+
+This matters because full attention becomes expensive for long sequences.
+
+## Technical Details Interviewers Often Want
+
+### Causal Mask Orientation
+
+A very common interview bug is using the wrong triangular mask.
+
+Correct intuition:
+- token `i` can attend to tokens `<= i`
+- token `i` cannot attend to tokens `> i`
+
+So the mask must keep the lower triangle.
+
+### Why Sparse Attention Helps
+
+Sparse attention reduces the number of token-to-token interactions.
+
+The exact complexity depends on the sparsity pattern, but the main idea is:
+- spend compute only where useful structure is expected
+
+Examples:
+- local window attention
+- global tokens
+- block or pattern-based sparsity
+
+### Cross-Attention Shape Logic
+
+The most important shape fact is:
+- the query length and key/value length do not need to be the same
+
+That is why cross-attention works naturally across:
+- encoder vs decoder sequence lengths
+- text vs image patches
+- question vs context
+
+## Common Failure Modes
+
+- wrong mask orientation in causal attention
+- misunderstanding cross-attention as if it were ordinary self-attention
+- assuming sparse attention is automatically better than full attention
+- forgetting that sparse patterns can lose useful long-range interactions
+- softmax applied on the wrong axis
+
+## Edge Cases and Follow-Up Questions
+
+1. Why is lower-triangular masking correct for causal attention?
+2. When would sparse attention hurt quality?
+3. Why is cross-attention useful in multimodal systems?
+4. What happens if important dependencies fall outside the sparse pattern?
+5. Why is full attention still often preferred when context length is manageable?
+
+## What to Practice Saying Out Loud
+
+1. The difference between self-attention and cross-attention
+2. Why causal attention is essential for autoregressive generation
+3. Why sparse attention is a compute trade-off, not a free improvement
 
 ## Industry-Standard Boilerplate Code
 
@@ -312,4 +416,3 @@ def cross_attention(Q_encoder, K_decoder, V_decoder, d_k):
 
 - **Topic 6**: LLM inference techniques
 - **Topic 7**: LLM problem solving
-

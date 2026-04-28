@@ -1,5 +1,9 @@
 # Topic 9: Sampling Techniques
 
+> 🔥 **For interviews, read these first:**
+> - **`SAMPLING_DEEP_DIVE.md`** — frontier-lab interview deep dive: greedy/beam/temperature/top-k/top-p/min-p/typical/Mirostat/penalties, why beam search fails for LLMs, speculative decoding, best-of-N for test-time scaling.
+> - **`INTERVIEW_GRILL.md`** — 45 active-recall questions.
+
 ## What You'll Learn
 
 This topic teaches you text generation sampling:
@@ -41,6 +45,110 @@ This topic teaches you text generation sampling:
 - Low temp = more deterministic
 - High temp = more creative
 - Adjustable per use case
+
+## Core Intuition
+
+Sampling is the step where model probabilities become actual generated tokens.
+
+That means decoding controls the model's behavior a lot more than many people first realize.
+
+Even with the same model:
+- greedy decoding may look repetitive
+- high temperature may look creative but unstable
+- top-p may feel more natural than top-k
+
+So decoding is not just a post-processing detail. It is part of system behavior.
+
+### Greedy Decoding
+
+Greedy decoding always takes the highest-probability token.
+
+That makes it:
+- deterministic
+- simple
+- often too repetitive or myopic
+
+### Top-k Sampling
+
+Top-k keeps only the `k` most likely options and samples from them.
+
+This gives some diversity while preventing very low-probability tokens from being chosen.
+
+### Top-p Sampling
+
+Top-p keeps the smallest set of tokens whose cumulative probability mass exceeds `p`.
+
+This is adaptive:
+- if the distribution is sharp, the candidate set stays small
+- if the distribution is broad, the candidate set can grow
+
+That is why top-p often feels more natural than fixed top-k.
+
+### Temperature
+
+Temperature reshapes the distribution before sampling.
+
+- low temperature sharpens the distribution
+- high temperature flattens it
+
+That means temperature is not choosing tokens by itself. It changes the probability landscape first.
+
+## Technical Details Interviewers Often Want
+
+### Why Greedy Can Be Weak
+
+Greedy decoding is locally optimal, not globally optimal for quality or diversity.
+
+It can:
+- lock into repetitive loops
+- over-commit early
+- miss good but slightly lower-probability branches
+
+### Top-k vs Top-p
+
+This is a classic follow-up.
+
+- **Top-k**: fixed candidate count
+- **Top-p**: variable candidate count based on probability mass
+
+Top-p adapts to uncertainty better, which is why it is common in LLM products.
+
+### Temperature Edge Cases
+
+If temperature is very low:
+- output approaches greedy decoding
+
+If temperature is very high:
+- the distribution becomes too flat
+- low-quality tokens become more likely
+
+### Beam Search
+
+Beam search is different from random sampling.
+
+It tries to keep multiple high-probability partial sequences alive, which is useful in structured tasks like translation but not always ideal for open-ended chat generation.
+
+## Common Failure Modes
+
+- high temperature causing nonsense generations
+- greedy decoding causing repetition
+- forgetting to renormalize probabilities after top-k or top-p filtering
+- claiming one sampling method is always best
+- using beam search for tasks where diversity matters more than likelihood
+
+## Edge Cases and Follow-Up Questions
+
+1. Why is top-p often preferred over top-k?
+2. Why can greedy decoding be repetitive?
+3. What happens when temperature approaches zero?
+4. Why does beam search often look better for translation than for creative chat?
+5. Why must probabilities be renormalized after filtering?
+
+## What to Practice Saying Out Loud
+
+1. Why decoding strategy changes behavior even with the same model
+2. The difference between temperature and top-p
+3. Why "more randomness" is not the same as "better creativity"
 
 ## Industry-Standard Boilerplate Code
 
@@ -225,4 +333,3 @@ def sample_token(logits: np.ndarray,
 
 - **Topic 10**: Optimizers
 - **Topic 11**: Regularization
-

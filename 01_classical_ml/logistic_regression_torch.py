@@ -35,11 +35,25 @@ if __name__ == "__main__":
     X1 = np.random.randn(n_samples//2, 2).astype(np.float32) + np.array([2, 2])
     y1 = np.ones(n_samples//2, dtype=np.float32)
     
+    #explain vstack and hstack with same example
+    # X0 = [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]
+    # X1 = [[11, 12], [13, 14], [15, 16], [17, 18], [19, 20]]
+    #y0 = [0, 0, 0, 0, 0]
+    #y1 = [1, 1, 1, 1, 1]
+    # np.vstack([X0, X1]) = [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10], [11, 12], [13, 14], [15, 16], [17, 18], [19, 20]]
+    # np.hstack([X0, X1]) = [[1, 2, 11, 12], [3, 4, 13, 14], [5, 6, 15, 16], [7, 8, 17, 18], [9, 10, 19, 20]]
+    # np.vstack is used to stack the arrays vertically
+    # np.hstack is used to stack the arrays horizontally
     X = np.vstack([X0, X1])
     y = np.hstack([y0, y1])
     
     # Convert to PyTorch tensors
     X_tensor = torch.from_numpy(X)
+    #explain unsqueeze with same example
+    # X = [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]
+    # y = [0, 0, 0, 0, 0]
+    # torch.from_numpy(y).unsqueeze(1) = [[0], [0], [0], [0], [0]]
+    # torch.from_numpy(y).unsqueeze(1) is used to add a dimension to the array to make it a column vector
     y_tensor = torch.from_numpy(y).unsqueeze(1)
     
     # Create model

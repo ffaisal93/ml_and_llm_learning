@@ -1,5 +1,9 @@
 # Topic 52: Statistical Learning Theory
 
+> 🔥 **For interviews, read these first:**
+> - **`STATISTICAL_LEARNING_THEORY_DEEP_DIVE.md`** — frontier-lab deep dive: ERM, PAC learning, VC dimension, Rademacher complexity, bias-variance, double descent, NFL theorem, regularization-as-inductive-bias, modern bounds (PAC-Bayes, stability, compression).
+> - **`INTERVIEW_GRILL.md`** — 50 active-recall questions.
+
 ## What You'll Learn
 
 This topic covers the theory layer that often appears in stronger ML research interviews:
@@ -112,6 +116,52 @@ Classical bias-variance stories are useful, but modern systems sometimes show **
 Useful interview answer:
 
 "The simple U-shaped bias-variance picture is still helpful, but modern overparameterized models can behave differently, especially with large data and implicit regularization from optimization."
+
+## Common Failure Modes
+
+### 1. Treating Train Loss as Proof of Generalization
+
+A model can fit the observed sample extremely well and still generalize badly.
+
+That is the whole reason population risk matters.
+
+### 2. Reducing Complexity to Parameter Count Alone
+
+Raw parameter count is not the only notion of effective complexity.
+
+Regularization, optimization, data distribution, and architecture also affect what functions the model effectively learns.
+
+### 3. Saying "More Data Always Fixes It"
+
+More data usually helps, but not if:
+- labels are wrong
+- the distribution is shifted
+- the hypothesis class is badly chosen
+- the measurement setup is flawed
+
+### 4. Using Learning-Theory Terms Without the Intuition
+
+Interviewers usually care more that you can explain why a richer hypothesis class needs more data than that you can state a formal theorem from memory.
+
+## Edge Cases and Follow-Up Questions
+
+### What if the model interpolates the training data perfectly?
+
+Then classical intuition says overfitting risk should rise, but modern systems can still generalize reasonably well depending on data scale and implicit regularization.
+
+That is a good place to mention double descent carefully.
+
+### What if two models have the same train loss but different test loss?
+
+Then their effective inductive biases differ, even if both fit the training data equally well.
+
+### What if the interviewer asks why regularization helps?
+
+A strong answer is that regularization changes the set of solutions the optimizer prefers, often biasing toward simpler or more stable functions.
+
+### What if the data distribution changes after training?
+
+Then the original generalization story no longer applies directly, because the population risk has changed.
 
 ## What to Practice Saying Out Loud
 

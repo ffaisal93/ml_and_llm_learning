@@ -1,5 +1,9 @@
 # Topic 27: Advanced ML Theory
 
+> 🔥 **For interviews, read these first:**
+> - **`ADVANCED_THEORY_DEEP_DIVE.md`** — frontier-lab deep dive: bias-variance decomposition with proof, cross-validation theory (k-fold/stratified/group/time-series/nested with LOO closed form), learning curves (high bias vs high variance signatures), AIC vs BIC, ROC/PR curves with cost-aware operating points, F-beta scores.
+> - **`INTERVIEW_GRILL.md`** — 50 active-recall questions.
+
 ## What You'll Learn
 
 This topic covers advanced theory needed for research scientist interviews:
@@ -23,6 +27,64 @@ This topic covers advanced theory needed for research scientist interviews:
 - **Model selection**: Choose right model complexity
 - **Debugging**: Understand why models fail
 - **Optimization**: Improve model performance
+
+## Core Intuition
+
+Advanced theory questions are usually about diagnosis.
+
+The interviewer often wants to know whether you can look at a modeling situation and identify:
+- bias problem
+- variance problem
+- leakage problem
+- data-size problem
+- validation-design problem
+
+This topic is therefore not just "more theory." It is the theory you use to reason about failures.
+
+## Technical Details Interviewers Often Want
+
+### Cross-Validation Is About Estimation Reliability
+
+Cross-validation is not just a ritual for model selection.
+
+Its purpose is to reduce dependence on one arbitrary split and give a more stable estimate of out-of-sample performance.
+
+### Learning Curves Diagnose the Bottleneck
+
+Learning curves help answer:
+- do I need more data?
+- do I need a stronger model?
+- am I overfitting?
+
+That makes them one of the most useful theory-to-practice tools in interviews.
+
+### Feature Engineering Can Dominate Model Choice
+
+This is a very practical interview insight:
+- a better feature representation can beat a more complicated model
+- bad features can make strong models look weak
+
+## Common Failure Modes
+
+- using cross-validation carelessly with leakage
+- interpreting validation improvements without checking variance across folds
+- assuming more complexity always reduces bias in a helpful way
+- using learning curves without understanding what the gap means
+- treating feature engineering as secondary to model choice
+
+## Edge Cases and Follow-Up Questions
+
+1. Why can cross-validation still be misleading if preprocessing leaks?
+2. Why are learning curves so useful for deciding whether more data will help?
+3. Why can a simple model with better features beat a more complex model?
+4. Why is model selection really about expected generalization, not training fit?
+5. Why can hyperparameter tuning itself overfit the validation process?
+
+## What to Practice Saying Out Loud
+
+1. How to diagnose bias vs variance from train and validation behavior
+2. Why cross-validation helps and what it does not fix
+3. Why leakage can invalidate even careful model selection
 
 ## Detailed Theory
 
@@ -319,4 +381,3 @@ Computing statistics (mean, median, etc.) on full dataset before splitting.
 
 - **Topic 28**: Business use cases
 - **Topic 29**: System design for ML
-

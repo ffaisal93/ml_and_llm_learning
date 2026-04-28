@@ -24,7 +24,17 @@ class KMeans:
         """Initialize centroids randomly"""
         np.random.seed(self.random_state)
         n_samples, n_features = X.shape
+        ## explain the line below with an example clearly   
+        # Example:
+        # X = [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]
+        # n_samples = 5
+        # n_features = 2
+        # self.k = 2
+        # np.random.choice(n_samples, self.k, replace=False) = [0, 1]
+        # self.centroids = X[[0, 1]] = [[1, 2], [3, 4]]
+
         self.centroids = X[np.random.choice(n_samples, self.k, replace=False)]
+        
     
     def _assign_clusters(self, X: np.ndarray) -> np.ndarray:
         """Assign each point to nearest centroid"""

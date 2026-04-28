@@ -1,5 +1,9 @@
 # Topic 19: Advanced Clustering Methods
 
+> 🔥 **For interviews, read these first:**
+> - **`CLUSTERING_DEEP_DIVE.md`** — frontier-lab interview deep dive: K-means as coordinate descent, GMM with EM derivation, DBSCAN core/border/noise, hierarchical linkage, spectral clustering, curse of dimensionality.
+> - **`INTERVIEW_GRILL.md`** — 45 active-recall questions.
+
 ## What You'll Learn
 
 This topic teaches you different clustering algorithms:
@@ -47,6 +51,76 @@ This topic teaches you different clustering algorithms:
 - Overlapping clusters
 - Probability-based
 
+## Core Intuition
+
+Clustering methods differ because they assume different cluster structure.
+
+That is why the real interview question is often:
+- what kind of geometry does each method assume?
+- when is that assumption reasonable?
+
+### K-Means
+
+K-means is best for compact centroid-like clusters.
+
+### Hierarchical Clustering
+
+Hierarchical clustering is useful when you want nested structure or do not want to commit to one fixed `k` immediately.
+
+### DBSCAN
+
+DBSCAN defines clusters by density, not by centroids.
+
+That makes it good for:
+- arbitrary shapes
+- outlier detection
+- settings where `k` is unknown
+
+### GMM
+
+GMM is probabilistic and gives soft assignments.
+
+That matters when cluster membership is ambiguous or overlapping.
+
+## Technical Details Interviewers Often Want
+
+### DBSCAN Parameter Sensitivity
+
+DBSCAN is powerful but sensitive to:
+- `eps`
+- `min_samples`
+
+### Hierarchical Clustering Cost
+
+Hierarchical methods can be very interpretable but often scale poorly.
+
+### GMM Assumption
+
+GMM assumes the data can be modeled as a mixture of Gaussian components.
+
+That gives flexibility, but it is still a modeling assumption.
+
+## Common Failure Modes
+
+- using K-means on arbitrary-shaped clusters
+- using DBSCAN without tuning density parameters
+- treating GMM as if it were just K-means with probabilities
+- picking a method without thinking about geometry
+
+## Edge Cases and Follow-Up Questions
+
+1. Why is DBSCAN good for outliers?
+2. Why can K-means fail on non-spherical clusters?
+3. Why is GMM stronger than K-means for overlapping clusters?
+4. Why is hierarchical clustering useful when `k` is uncertain?
+5. Why is there no universally best clustering algorithm?
+
+## What to Practice Saying Out Loud
+
+1. How clustering assumptions differ across methods
+2. Why density-based clustering is conceptually different from centroid-based clustering
+3. Why soft clustering can be more realistic than hard assignment
+
 ## Industry-Standard Boilerplate Code
 
 ### Hierarchical Clustering
@@ -59,7 +133,9 @@ import numpy as np
 
 def hierarchical_clustering(X: np.ndarray, n_clusters: int) -> np.ndarray:
     """
-    Simple hierarchical clustering (agglomerative)
+    Naive O(n^3) agglomerative clustering — recomputes centroid distances each merge.
+    Production use scipy.cluster.hierarchy or sklearn's AgglomerativeClustering (Ward
+    default; uses cached pairwise distance updates instead of recomputing).
     
     Algorithm:
     1. Start with each point as cluster
@@ -102,60 +178,43 @@ def hierarchical_clustering(X: np.ndarray, n_clusters: int) -> np.ndarray:
 
 ```python
 """
-DBSCAN: Density-based clustering
-Finds clusters of arbitrary shape
+DBSCAN: Density-based clustering. Finds clusters of arbitrary shape + noise.
+Two parameters: eps (neighborhood radius), min_samples (density threshold).
+Output: labels[i] = cluster_id (>=0) or -1 for noise.
 """
-def dbscan(X: np.ndarray, eps: float, min_samples: int) -> np.ndarray:
-    """
-    DBSCAN: Density-Based Spatial Clustering
-    
-    Args:
-        eps: Maximum distance for neighbors
-        min_samples: Minimum points to form cluster
-    """
-    n_samples = X.shape[0]
-    labels = np.full(n_samples, -1)  # -1 = noise
+def dbscan(X, eps, min_samples):
+    n = X.shape[0]
+    labels = np.full(n, -2)              # -2 = unvisited; -1 = noise; >=0 = cluster id
     cluster_id = 0
-    
-    def get_neighbors(point_idx: int) -> list:
-        """Get neighbors within eps"""
-        neighbors = []
-        for i in range(n_samples):
-            if np.linalg.norm(X[point_idx] - X[i]) <= eps:
-                neighbors.append(i)
-        return neighbors
-    
-    for i in range(n_samples):
-        if labels[i] != -1:  # Already processed
+
+    def neighbors(i):
+        return [j for j in range(n) if np.linalg.norm(X[i] - X[j]) <= eps]
+
+    for i in range(n):
+        if labels[i] != -2:               # already visited
             continue
-        
-        neighbors = get_neighbors(i)
-        
-        if len(neighbors) < min_samples:
-            labels[i] = -1  # Noise
+        N_i = neighbors(i)
+        if len(N_i) < min_samples:
+            labels[i] = -1                # mark as noise (may be relabeled later)
             continue
-        
-        # Start new cluster
+
+        # Start new cluster from core point i
         labels[i] = cluster_id
-        seed_set = neighbors.copy()
-        
-        # Expand cluster
-        j = 0
-        while j < len(seed_set):
-            neighbor = seed_set[j]
-            
-            if labels[neighbor] == -1:  # Noise -> border point
-                labels[neighbor] = cluster_id
-            elif labels[neighbor] == -1:  # Unvisited
-                labels[neighbor] = cluster_id
-                neighbor_neighbors = get_neighbors(neighbor)
-                if len(neighbor_neighbors) >= min_samples:
-                    seed_set.extend(neighbor_neighbors)
-            
-            j += 1
-        
+        seeds = list(N_i)
+        k = 0
+        while k < len(seeds):
+            q = seeds[k]
+            if labels[q] == -1:           # noise → flip to border (no expansion)
+                labels[q] = cluster_id
+            elif labels[q] == -2:         # unvisited
+                labels[q] = cluster_id
+                N_q = neighbors(q)
+                if len(N_q) >= min_samples:   # core: expand the seed set
+                    seeds.extend(N_q)
+            k += 1
         cluster_id += 1
-    
+
+    labels[labels == -2] = -1             # any still-unvisited become noise
     return labels
 ```
 
@@ -184,30 +243,34 @@ def gmm_clustering(X: np.ndarray, n_components: int,
     covariances = [np.eye(n_features) for _ in range(n_components)]
     weights = np.ones(n_components) / n_components
     
+    eps_reg = 1e-6                        # covariance regularization (singular fix)
+
     for _ in range(max_iter):
-        # E-step: Compute responsibilities
+        # E-step: posterior responsibilities γ_{ik}
         responsibilities = np.zeros((n_samples, n_components))
         for k in range(n_components):
-            diff = X - means[k]
-            inv_cov = np.linalg.inv(covariances[k])
-            exp_term = np.exp(-0.5 * np.sum(diff @ inv_cov * diff, axis=1))
-            responsibilities[:, k] = weights[k] * exp_term
-        
-        responsibilities /= responsibilities.sum(axis=1, keepdims=True)
-        
-        # M-step: Update parameters
+            cov_k = covariances[k] + eps_reg * np.eye(n_features)
+            diff = X - means[k]                                          # [N, d]
+            inv_cov = np.linalg.inv(cov_k)
+            mahal = np.sum(diff @ inv_cov * diff, axis=1)                # [N]
+            # Full Gaussian PDF (with normalization constant)
+            norm = ((2 * np.pi) ** (n_features / 2)) * np.sqrt(np.linalg.det(cov_k))
+            pdf = np.exp(-0.5 * mahal) / norm
+            responsibilities[:, k] = weights[k] * pdf
+        responsibilities /= responsibilities.sum(axis=1, keepdims=True)  # normalize per row
+
+        # M-step: weighted MLE updates
         for k in range(n_components):
             resp_k = responsibilities[:, k]
-            weights[k] = resp_k.sum() / n_samples
-            means[k] = (resp_k[:, None] * X).sum(axis=0) / resp_k.sum()
-            
+            Nk = resp_k.sum()
+            weights[k] = Nk / n_samples
+            means[k] = (resp_k[:, None] * X).sum(axis=0) / Nk
             diff = X - means[k]
-            covariances[k] = (resp_k[:, None, None] * 
-                            diff[:, :, None] * diff[:, None, :]).sum(axis=0) / resp_k.sum()
-    
-    # Assign to most likely cluster
-    labels = responsibilities.argmax(axis=1)
-    return labels
+            covariances[k] = (resp_k[:, None, None]
+                              * diff[:, :, None] * diff[:, None, :]).sum(axis=0) / Nk
+
+    # Hard assignment to most likely cluster
+    return responsibilities.argmax(axis=1)
 ```
 
 ## Theory
@@ -232,4 +295,3 @@ def gmm_clustering(X: np.ndarray, n_components: int,
 
 - **Topic 20**: Multi-turn conversations
 - **Topic 21**: Dimensionality reduction
-

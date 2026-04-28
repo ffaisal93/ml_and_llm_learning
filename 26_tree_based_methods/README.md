@@ -1,5 +1,9 @@
 # Topic 26: Tree-Based Methods
 
+> 🔥 **For interviews, read these first:**
+> - **`TREES_DEEP_DIVE.md`** — frontier-lab interview deep dive: Gini/entropy splits, RF decorrelation math, gradient boosting derivation, XGBoost regularized objective + second-order trick, LightGBM/CatBoost innovations, categorical handling, missing values.
+> - **`INTERVIEW_GRILL.md`** — 55 active-recall questions.
+
 ## What You'll Learn
 
 This topic teaches you tree-based algorithms:
@@ -48,6 +52,91 @@ This topic teaches you tree-based algorithms:
 - Fast and efficient
 - Handles large datasets
 - Industry standard
+
+## Core Intuition
+
+Tree-based methods are powerful because they model nonlinear decision rules without requiring heavy feature preprocessing.
+
+They are especially strong on tabular data because they can naturally handle:
+- nonlinear feature interactions
+- thresholds
+- mixed feature importance
+
+### Decision Trees
+
+A decision tree recursively asks simple threshold questions.
+
+Intuition:
+- split the space into regions
+- make each region more pure or more predictable
+
+### Random Forest
+
+Random forest improves a single tree by averaging many de-correlated trees.
+
+The key idea is variance reduction:
+- one tree is unstable
+- many randomized trees averaged together are much more stable
+
+### Gradient Boosting
+
+Gradient boosting improves predictions sequentially.
+
+Each new tree tries to correct what the current ensemble is still getting wrong.
+
+That is why boosting often gets very strong accuracy but can overfit if pushed too hard.
+
+## Technical Details Interviewers Often Want
+
+### Why Trees Overfit Easily
+
+Deep trees can carve the feature space into very specific regions.
+
+That gives low training error, but it can memorize noise.
+
+### Why Random Forest Helps
+
+Bootstrap sampling plus random feature subsets make trees less correlated.
+
+Averaging less-correlated estimators is what reduces variance.
+
+### Why Boosting Is Different from Bagging
+
+This is a classic interview question.
+
+- **Bagging / Random Forest**: train many models independently, then average
+- **Boosting**: train sequentially so later models fix earlier errors
+
+### XGBoost Advantage
+
+XGBoost is not just "gradient boosting but faster."
+
+Important points:
+- second-order optimization information
+- regularization
+- system-level efficiency
+- handling of sparse or missing data
+
+## Common Failure Modes
+
+- growing trees too deep and overfitting
+- assuming random forests and boosting solve the same problem in the same way
+- using boosting without enough tuning on noisy data
+- over-interpreting feature importance without care
+
+## Edge Cases and Follow-Up Questions
+
+1. Why are trees so strong on tabular data?
+2. Why is a single decision tree unstable?
+3. Why does random forest reduce variance?
+4. Why can gradient boosting outperform random forest but overfit more easily?
+5. What is the conceptual difference between bagging and boosting?
+
+## What to Practice Saying Out Loud
+
+1. Why tree methods model nonlinear interactions well
+2. Why random forest and boosting are fundamentally different ensemble ideas
+3. Why XGBoost became so dominant in tabular ML
 
 ## Theory
 
@@ -342,4 +431,3 @@ class RandomForest:
 
 - Review all tree methods
 - Practice implementations
-

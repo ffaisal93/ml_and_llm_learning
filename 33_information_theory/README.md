@@ -1,5 +1,9 @@
 # Topic 33: Information Theory & Probability Metrics
 
+> 🔥 **For interviews, read these first:**
+> - **`INFORMATION_THEORY_DEEP_DIVE.md`** — frontier-lab interview deep dive: entropy/cross-entropy/KL/MI, forward vs reverse KL (mean-seeking vs mode-seeking), why MLE = forward KL, MI for InfoNCE/CLIP, KL in VAE/RLHF/distillation, f-divergences, Wasserstein, source coding theorem.
+> - **`INTERVIEW_GRILL.md`** — 45 active-recall questions.
+
 ## What You'll Learn
 
 This topic covers essential information theory and probability concepts:
@@ -25,6 +29,97 @@ This topic covers essential information theory and probability concepts:
 - **Regularization**: KL divergence in RLHF, VAEs
 - **Feature selection**: Mutual information
 - **Decision trees**: Gini impurity, entropy
+
+## Core Intuition
+
+Information theory gives a precise language for talking about:
+- uncertainty
+- surprise
+- compression
+- distribution mismatch
+
+That is why it appears all over ML.
+
+### Entropy
+
+Entropy measures uncertainty in a distribution.
+
+High entropy means:
+- the outcome is hard to predict
+
+Low entropy means:
+- the distribution is concentrated
+- the outcome is more predictable
+
+### Cross-Entropy
+
+Cross-entropy tells you how costly it is to encode data from a true distribution using a model distribution.
+
+In ML language:
+- it is a natural loss for probabilistic prediction
+
+### KL Divergence
+
+KL divergence measures how one distribution differs from another.
+
+It is especially useful when you want to penalize mismatch from a reference distribution.
+
+### Mutual Information
+
+Mutual information measures how much knowing one variable reduces uncertainty about another.
+
+That is why it is useful for:
+- feature selection
+- dependence analysis
+- representation learning
+
+## Technical Details Interviewers Often Want
+
+### Why Cross-Entropy Appears Everywhere
+
+Cross-entropy is not an arbitrary loss choice.
+
+It arises naturally from maximum likelihood when predicting a probability distribution.
+
+### Why KL Is Not a True Distance Metric
+
+This is a classic follow-up.
+
+KL divergence is:
+- non-negative
+- zero when distributions match
+
+But it is not symmetric, so it is not a true metric.
+
+### Gini vs Entropy
+
+Both measure impurity.
+
+The important interview answer is:
+- they behave similarly in many tree settings
+- Gini is often a bit cheaper to compute
+- entropy has a more explicit information-theoretic interpretation
+
+## Common Failure Modes
+
+- treating KL divergence like a symmetric distance
+- memorizing formulas without knowing what uncertainty or divergence mean
+- not being able to connect cross-entropy to classification loss
+- using mutual information language without explaining dependence reduction
+
+## Edge Cases and Follow-Up Questions
+
+1. Why is entropy highest for a uniform distribution?
+2. Why is cross-entropy always at least as large as entropy of the true distribution?
+3. Why is KL divergence asymmetric?
+4. Why are Gini and entropy both useful impurity measures?
+5. Why does mutual information become zero under independence?
+
+## What to Practice Saying Out Loud
+
+1. Why entropy is really about uncertainty
+2. Why cross-entropy is a natural loss for probabilistic models
+3. Why KL divergence is useful even though it is not a true metric
 
 ## Detailed Theory
 
@@ -253,4 +348,3 @@ See `information_theory.py` for complete implementations.
 
 - Use these in decision trees, neural networks, RLHF
 - Reference when implementing algorithms
-

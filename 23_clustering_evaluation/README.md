@@ -1,5 +1,9 @@
 # Topic 23: Clustering Evaluation
 
+> 🔥 **For interviews, read these first:**
+> - **`CLUSTERING_EVALUATION_DEEP_DIVE.md`** — frontier-lab deep dive: internal metrics (silhouette, Davies-Bouldin, Calinski-Harabasz, Dunn), external metrics (ARI, NMI, V-measure, purity, pairwise F), choosing $K$ (elbow, silhouette, gap statistic, stability), bootstrap stability validation, common pitfalls.
+> - **`INTERVIEW_GRILL.md`** — 45 active-recall questions.
+
 ## What You'll Learn
 
 This topic teaches you how to evaluate clustering:
@@ -40,6 +44,81 @@ This topic teaches you how to evaluate clustering:
 - Measures shared information
 - Normalized to [0, 1]
 - Higher is better
+
+## Core Intuition
+
+Clustering is unsupervised, which makes evaluation harder than standard classification.
+
+The main question is:
+- what does "good clustering" even mean?
+
+Different metrics answer different versions of that question.
+
+### Silhouette Score
+
+Silhouette measures two things at once:
+- how close a point is to its own cluster
+- how far it is from the nearest competing cluster
+
+That makes it useful when you do not have labels.
+
+### Inertia
+
+Inertia measures compactness inside clusters.
+
+It is useful, but it has an important limitation:
+- inertia almost always decreases as you increase `k`
+
+So it cannot be interpreted alone without comparing model complexity.
+
+### ARI and NMI
+
+When ground-truth labels exist, ARI and NMI compare the clustering to a reference labeling.
+
+That makes them external evaluation metrics rather than purely intrinsic clustering scores.
+
+## Technical Details Interviewers Often Want
+
+### Why Silhouette Is Not Always Enough
+
+A clustering can have reasonable silhouette and still be wrong for the business or scientific task.
+
+Why?
+- clusters may be geometrically neat but semantically useless
+- some data structures are not well captured by distance-based cohesion/separation
+
+### Why Inertia Needs Context
+
+Since inertia usually decreases with more clusters, a lower inertia does not automatically mean a better clustering.
+
+This is why the elbow method is heuristic rather than a theorem.
+
+### External vs Internal Metrics
+
+This is a useful interview distinction:
+- **internal metrics** use only the clustering and geometry
+- **external metrics** compare against ground-truth labels
+
+## Common Failure Modes
+
+- treating inertia as a standalone model-selection criterion
+- interpreting a high clustering metric as proof of business usefulness
+- comparing clusterings without checking whether the metric matches the use case
+- forgetting that some metrics need ground truth and some do not
+
+## Edge Cases and Follow-Up Questions
+
+1. Why does inertia almost always improve when `k` increases?
+2. Why can silhouette be misleading for irregular cluster shapes?
+3. When should you use ARI or NMI instead of silhouette?
+4. Why is cluster evaluation more ambiguous than classification evaluation?
+5. Why is the elbow method only a heuristic?
+
+## What to Practice Saying Out Loud
+
+1. The difference between intrinsic and extrinsic clustering metrics
+2. Why lower inertia is not automatically better
+3. Why clustering quality depends on the task definition
 
 ## Industry-Standard Boilerplate Code
 
@@ -201,4 +280,3 @@ def adjusted_rand_index(labels_true: np.ndarray,
 
 - **Topic 24**: Linear algebra Q&A
 - **Topic 25**: Final review
-

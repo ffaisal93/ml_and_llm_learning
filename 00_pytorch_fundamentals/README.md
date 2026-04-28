@@ -26,6 +26,88 @@ This topic covers all essential PyTorch concepts you need to write code in this 
 - **Practical knowledge**: Shows you can use PyTorch
 - **Code writing**: Need to write PyTorch code in interviews
 
+## Core Intuition
+
+PyTorch gives you the core building blocks of deep learning in a way that is easy to compose:
+- tensors hold data
+- autograd computes gradients
+- modules organize learnable computation
+- optimizers update parameters
+
+If you understand those pieces, most PyTorch code becomes understandable instead of feeling like boilerplate magic.
+
+### Tensors
+
+Tensors are just arrays with extra capabilities:
+- GPU support
+- datatype control
+- gradient tracking compatibility
+
+### Autograd
+
+Autograd is what makes backprop practical in modern frameworks.
+
+The key idea is:
+- define the forward computation
+- let the framework build the graph
+- call backward to get gradients
+
+### Modules and Parameters
+
+An `nn.Module` bundles:
+- parameters
+- submodules
+- forward logic
+
+That means PyTorch models are really compositions of reusable parameterized functions.
+
+## Technical Details Interviewers Often Want
+
+### Why `zero_grad()` Matters
+
+PyTorch accumulates gradients by default.
+
+That is useful for gradient accumulation, but a bug in ordinary training loops if you forget to clear gradients.
+
+### Why `train()` vs `eval()` Matters
+
+Some layers behave differently during training and inference:
+- dropout
+- batch normalization
+
+If you do not set the correct mode, model behavior and metrics can be wrong in subtle ways.
+
+### Why `torch.no_grad()` Matters
+
+During inference, you usually do not want gradient tracking.
+
+Turning it off:
+- saves memory
+- speeds execution
+- avoids unnecessary graph construction
+
+## Common Failure Modes
+
+- forgetting `optimizer.zero_grad()`
+- forgetting `model.train()` or `model.eval()`
+- mismatching tensor devices (CPU vs GPU)
+- using the wrong tensor shape for the loss
+- tracking gradients during inference unnecessarily
+
+## Edge Cases and Follow-Up Questions
+
+1. Why does PyTorch accumulate gradients by default?
+2. Why do dropout and BatchNorm need different train and eval behavior?
+3. Why can code run but still fail when tensors live on different devices?
+4. What is the conceptual difference between `view` and `reshape`?
+5. Why is autograd useful but not free?
+
+## What to Practice Saying Out Loud
+
+1. The standard PyTorch training loop
+2. What autograd is doing conceptually
+3. Why mode switching and gradient control matter
+
 ## Core Concepts
 
 ### 1. Tensors
@@ -367,4 +449,3 @@ See `pytorch_basics.py` for complete code examples.
 
 - Use these concepts in all neural network topics
 - Reference this when writing PyTorch code
-

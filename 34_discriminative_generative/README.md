@@ -22,6 +22,80 @@ This topic covers fundamental ML model types:
 - **Understanding**: Know what assumptions models make
 - **Debugging**: Understand why models fail
 
+## Core Intuition
+
+The main distinction is simple:
+
+- **Discriminative models** learn how to predict the target from the input
+- **Generative models** learn how the data itself is generated
+
+That difference affects:
+- what probability object is modeled
+- what assumptions are made
+- whether the model can generate samples
+
+### Discriminative Models
+
+Discriminative models focus directly on the decision boundary or conditional distribution `P(Y | X)`.
+
+They are often preferred when:
+- prediction is the only goal
+- data is limited
+- you want a more direct supervised objective
+
+### Generative Models
+
+Generative models learn `P(X, Y)` or `P(X | Y)` plus priors.
+
+They are useful when:
+- you want to generate data
+- you want to model missingness or likelihood
+- you want a fuller view of the data-generating process
+
+## Technical Details Interviewers Often Want
+
+### Why Discriminative Models Often Win on Pure Prediction
+
+Because they spend model capacity directly on the prediction problem instead of also modeling the full input distribution.
+
+### Why Generative Models Can Be More Flexible Conceptually
+
+Generative models can:
+- sample data
+- reason about likelihood
+- sometimes handle missing inputs more naturally
+
+But that flexibility comes with stronger modeling assumptions and often more data requirements.
+
+### Model Assumptions Matter
+
+This is one of the highest-value follow-ups.
+
+Good answers do not stop at naming the model class. They also ask:
+- what assumption makes this model reasonable?
+- what happens if that assumption fails?
+
+## Common Failure Modes
+
+- saying generative models are always better because they are more powerful
+- saying discriminative models are always better because they predict directly
+- not being able to state what probability object each model is learning
+- ignoring assumption violations in linear/logistic/SVM-style examples
+
+## Edge Cases and Follow-Up Questions
+
+1. Why can a discriminative model outperform a generative one on classification?
+2. Why can generative modeling be useful even when the main task is prediction?
+3. What probability does logistic regression model?
+4. What probability does Naive Bayes model?
+5. Why do assumptions matter more than labels like "generative" or "discriminative"?
+
+## What to Practice Saying Out Loud
+
+1. The difference between modeling `P(Y | X)` and `P(X, Y)`
+2. Why generative models can sample while discriminative models usually cannot
+3. Why model assumptions drive when each family works well
+
 ## Detailed Theory
 
 ### Discriminative Models
@@ -298,4 +372,3 @@ See `models_comparison.py` for implementations.
 - Use this knowledge to choose right model type
 - Understand why models fail (assumption violations)
 - Apply Bayes' theorem in practice
-

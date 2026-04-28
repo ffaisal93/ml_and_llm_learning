@@ -1,5 +1,9 @@
 # Topic 40: Diffusion Models
 
+> 🔥 **For interviews, read these first:**
+> - **`DIFFUSION_DEEP_DIVE.md`** — frontier-lab interview deep dive: forward/reverse processes, why predict noise, score-matching connection, DDIM/DPM-Solver/Consistency Models, classifier-free guidance, latent diffusion, DiT, flow matching, ControlNet/LoRA conditioning.
+> - **`INTERVIEW_GRILL.md`** — 45 active-recall questions.
+
 ## What You'll Learn
 
 This topic teaches you diffusion models comprehensively:
@@ -48,6 +52,67 @@ This topic teaches you diffusion models comprehensively:
 - Diffusion for discrete data (tokens)
 - Better than continuous diffusion for text
 - State-of-the-art results
+
+## Core Intuition
+
+Diffusion models generate data by learning to reverse gradual corruption.
+
+That is a very different generation story from autoregressive models.
+
+### Forward Process
+
+Take a real sample and slowly corrupt it until it becomes noise.
+
+### Reverse Process
+
+Learn how to undo that corruption step by step.
+
+### Why This Is Interesting
+
+Instead of predicting the next token or pixel directly, the model learns a denoising process.
+
+That gives a different trade-off:
+- strong sample quality in many settings
+- iterative generation cost
+
+## Technical Details Interviewers Often Want
+
+### Why Noise Prediction Is the Standard Objective
+
+Predicting the added noise often gives a convenient and stable training objective.
+
+### Why Diffusion Can Be Slow at Inference
+
+Generation usually requires many denoising steps.
+
+That is one of the main practical trade-offs versus autoregressive models.
+
+### Why Text Diffusion Is Harder
+
+Text is discrete, while classic diffusion is most natural in continuous spaces like images.
+
+That is why discrete diffusion methods are a special research area.
+
+## Common Failure Modes
+
+- explaining diffusion only as "add noise then remove noise" without why that helps
+- ignoring the iterative cost of generation
+- assuming image-style diffusion transfers trivially to text
+- comparing diffusion and autoregressive models without discussing quality-speed trade-offs
+
+## Edge Cases and Follow-Up Questions
+
+1. Why is diffusion generation slower than one-shot generation?
+2. Why is noise prediction a natural training objective?
+3. Why is text diffusion harder than image diffusion?
+4. When might diffusion be preferable to autoregressive generation?
+5. Why is the reverse process learned rather than derived exactly?
+
+## What to Practice Saying Out Loud
+
+1. The forward and reverse processes in one clean explanation
+2. Why diffusion is powerful but iterative
+3. Why continuous and discrete diffusion differ
 
 ## Theory
 
@@ -131,4 +196,3 @@ Diffusion models are generative models that learn to reverse a gradual noising p
 - Review generative models
 - Compare with autoregressive models
 - Explore multimodal applications
-

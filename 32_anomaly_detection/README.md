@@ -1,5 +1,9 @@
 # Topic 32: Anomaly Detection & Isolation Forest
 
+> 🔥 **For interviews, read these first:**
+> - **`ANOMALY_DETECTION_DEEP_DIVE.md`** — frontier-lab deep dive: statistical methods (z-score, Mahalanobis), density-based (KDE, LOF), Isolation Forest score derivation, One-Class SVM, autoencoder reconstruction, embedding-based AD with foundation models, time-series anomalies (point/contextual/collective), evaluation (AUPRC > AUC for imbalance).
+> - **`INTERVIEW_GRILL.md`** — 50 active-recall questions.
+
 ## What You'll Learn
 
 This topic covers anomaly detection in detail:
@@ -22,6 +26,28 @@ This topic covers anomaly detection in detail:
 - **Quality control**: Find defective products
 - **Network security**: Detect intrusions
 
+## Core Intuition
+
+Anomaly detection is about finding points that do not fit the usual pattern of the data.
+
+The challenge is that anomalies are often:
+- rare
+- diverse
+- poorly labeled
+
+That is why unsupervised approaches like Isolation Forest are useful.
+
+### Why Isolation Forest Is Different
+
+Many anomaly methods ask:
+- how far is this point from normal data?
+- how low is the local density?
+
+Isolation Forest asks:
+- how quickly can random partitioning isolate this point?
+
+That difference in viewpoint is the core idea.
+
 ## Isolation Forest: Detailed Explanation
 
 ### What is Isolation Forest?
@@ -32,6 +58,27 @@ This topic covers anomaly detection in detail:
 - Normal points are in dense regions (hard to isolate)
 - Anomalies are in sparse regions (easy to isolate)
 - Anomalies have shorter path lengths in isolation trees
+
+## Technical Details Interviewers Often Want
+
+### Why Short Path Length Signals Anomaly
+
+If a point is unusual, random splits tend to separate it quickly because there are fewer nearby points keeping it inside a dense region.
+
+### Why the Forest Helps
+
+A single random tree is noisy.
+
+Using many trees:
+- reduces variance
+- stabilizes the score
+- avoids over-interpreting one random partition
+
+### What Contamination Controls
+
+Contamination mainly affects the threshold for calling something anomalous.
+
+It is not the anomaly detector itself.
 
 ### How It Works (Step-by-Step)
 
@@ -151,6 +198,27 @@ If E(h(x)) >> c(n): s → 0 (very normal)
 - Need to understand why something is anomalous (use other methods)
 - Data has clear clusters (K-Means might be better)
 
+## Common Failure Modes
+
+- assuming anomaly detection works well when anomalies are common
+- treating contamination as ground truth rather than a thresholding choice
+- using Isolation Forest when interpretability of the anomaly cause is the main requirement
+- treating rare-but-valid behavior as automatically anomalous
+
+## Edge Cases and Follow-Up Questions
+
+1. Why are anomalies easier to isolate than normal points?
+2. Why does averaging many trees help?
+3. What does the contamination parameter really do?
+4. Why is anomaly detection difficult when anomalies are common?
+5. Why is anomaly detection often unsupervised in practice?
+
+## What to Practice Saying Out Loud
+
+1. The intuition behind path length in Isolation Forest
+2. Why dense regions make normal points harder to isolate
+3. Why anomaly detection remains hard even with a simple algorithm
+
 ### Parameters
 
 **n_estimators:**
@@ -238,4 +306,3 @@ If E(h(x)) >> c(n): s → 0 (very normal)
 
 - Review anomaly detection methods
 - Practice on real datasets
-
