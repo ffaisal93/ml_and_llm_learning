@@ -63,6 +63,9 @@ tmp/
 temp/
 *.tmp
 
+# Local scratch (do not commit)
+practice/temp.*
+
 # OS
 Thumbs.db
 .DS_Store
