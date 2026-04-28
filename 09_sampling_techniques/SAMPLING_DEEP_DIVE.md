@@ -136,7 +136,7 @@ Sometimes the model is very confident (top-1 has 95% probability); then $k = 50$
 
 ### When to use
 
-Combined with temperature. $\text{temperature} = 0.8, \text{top\_k} = 40$ is a common default for chat.
+Combined with temperature. $\text{temperature} = 0.8, \text{top-k} = 40$ is a common default for chat.
 
 ---
 
@@ -164,7 +164,7 @@ This is **dynamic truncation** based on the actual probability distribution, not
 
 ### Common choices
 
-$\text{temperature} = 0.7, \text{top\_p} = 0.9$ is a standard chat default. Many production systems use this.
+$\text{temperature} = 0.7, \text{top-p} = 0.9$ is a standard chat default. Many production systems use this.
 
 ### Failure modes
 
@@ -203,11 +203,11 @@ Increasingly popular for creative writing and chat. Some LLM serving frameworks 
 Sample tokens whose conditional information content is close to the expected information content (entropy):
 
 $$
-\text{expected\_info} = H(p)
+\text{expected-info} = H(p)
 $$
 
 $$
-\text{deviation}_v = |{-\log p_v} - \text{expected\_info}|
+\text{deviation}_v = |{-\log p_v} - \text{expected-info}|
 $$
 
 $$
@@ -258,7 +258,7 @@ Binary penalty: appeared or not.
 
 ### When to use
 
-For long-form generation where the model would otherwise loop or repeat phrases. $\text{frequency\_penalty} = 0.5$–$1.0$ is a typical chat setting.
+For long-form generation where the model would otherwise loop or repeat phrases. $\text{frequency-penalty} = 0.5$–$1.0$ is a typical chat setting.
 
 ### Failure modes
 

@@ -166,7 +166,7 @@ The trick: replace $\hat m / \sqrt{\hat v}$ with $\mathrm{sign}(\hat m)$. Update
 **Sophia (Liu et al. 2023):**
 
 $$
-\hat h_t = \mathrm{clip}(\text{stoch\_hessian\_estimate}, \rho)
+\hat h_t = \mathrm{clip}(\text{stoch-hessian-estimate}, \rho)
 $$
 
 $$

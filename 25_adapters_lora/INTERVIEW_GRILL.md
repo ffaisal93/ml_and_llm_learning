@@ -70,7 +70,7 @@ A 70B model: 140GB at fp16. QLoRA: ~35GB (4-bit weights) + small overhead for Lo
 ## D. Other PEFT methods
 
 **18. What are adapter modules?**
-Houlsby et al. 2019. Insert small bottleneck MLPs in each transformer block: $\text{down\_project} \to \text{activation} \to \text{up\_project} + \text{residual}$. ~0.5–3% of total parameters. Replaced by LoRA in production.
+Houlsby et al. 2019. Insert small bottleneck MLPs in each transformer block: $\text{down-project} \to \text{activation} \to \text{up-project} + \text{residual}$. ~0.5–3% of total parameters. Replaced by LoRA in production.
 
 **19. LoRA vs adapter — why is LoRA mergeable?**
 LoRA's update $B A$ can be added to $W_0$ to form a new dense weight matrix. No extra inference computation. Adapters add a sublayer with its own matmul; mandatory inference latency overhead.

@@ -72,10 +72,10 @@ The exponential frequency spacing $10000^{2i/d}$ was chosen so frequencies span 
 Treat position as a categorical variable; learn a $d$-dim embedding per position:
 
 $$
-\text{input}_t = \text{embedding}(\text{token}_t) + \text{position\_embedding}[t]
+\text{input}_t = \text{embedding}(\text{token}_t) + \text{position-embedding}[t]
 $$
 
-$\text{position\_embedding} \in \mathbb{R}^{\text{max\_position} \times d}$.
+$\text{position-embedding} \in \mathbb{R}^{\text{max-position} \times d}$.
 
 ### Pros
 

@@ -101,7 +101,7 @@ Simpler architecture (one tower not two), one objective (next-token), naturally 
 A lower-triangular matrix $M$ with $0$ on/below diagonal and $-\infty$ above, added to the attention scores: $\text{scores} = Q K^\top / \sqrt{d_k} + M$. The $-\infty$ entries become $0$ after softmax, so position $i$ cannot attend to position $j > i$. Implements autoregressive constraint without changing the attention algorithm.
 
 **27. What's cross-attention?**
-The mechanism in encoder-decoder models. Decoder queries: $Q = \text{decoder\_state} \cdot W_Q$. Encoder keys/values: $K, V = \text{encoder\_output} \cdot W_K, W_V$. The decoder attends to the encoder output. Pure decoder LLMs don't have cross-attention; they handle inputs via in-context.
+The mechanism in encoder-decoder models. Decoder queries: $Q = \text{decoder-state} \cdot W_Q$. Encoder keys/values: $K, V = \text{encoder-output} \cdot W_K, W_V$. The decoder attends to the encoder output. Pure decoder LLMs don't have cross-attention; they handle inputs via in-context.
 
 **28. What's masked language modeling (MLM)?**
 BERT's pretraining objective. Mask 15% of tokens; train the model to predict them from bidirectional context. Bidirectional → encoder. Doesn't directly enable generation; the model learns rich representations but can't be sampled token-by-token.
@@ -153,7 +153,7 @@ For $N \gg d$, attention dominates; for $N \ll d$, FFN dominates. With vanilla 2
 **39. Memory breakdown for a forward pass?**
 Activations: $O(L \cdot N \cdot d)$ for stream + intermediate FFN states + attention scores $O(N^2)$ per layer.
 Weights: roughly $12 d^2 L + d V$ ($V$ = vocab size) for a vanilla transformer.
-KV cache (during decode): $2 L \cdot n_{\text{kv\_heads}} \cdot d_{\text{head}} \cdot N$ per sequence.
+KV cache (during decode): $2 L \cdot n_{\text{kv-heads}} \cdot d_{\text{head}} \cdot N$ per sequence.
 
 **40. What are scaling laws?**
 Kaplan et al. 2020, Hoffmann et al. 2022 (Chinchilla): loss scales as a power law in compute, parameters, and tokens. Chinchilla optimal: ~20 tokens per parameter (Llama-2 increased this further). Scaling laws guide compute allocation between model size and training data.

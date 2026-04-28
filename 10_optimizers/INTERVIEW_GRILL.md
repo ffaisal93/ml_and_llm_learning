@@ -109,7 +109,7 @@ Lion's optimal $\eta$ is typically 3–10x smaller than AdamW's, because sign up
 Adam-like, but uses a stochastic Hessian-diagonal estimate via Hutchinson's estimator instead of $\sqrt{\hat v}$:
 
 $$
-\hat h_t = \mathrm{clip}(\text{stoch\_hutchinson\_diag\_H}, \rho)
+\hat h_t = \mathrm{clip}(\text{stoch-hutchinson-diag-H}, \rho)
 $$
 
 $$

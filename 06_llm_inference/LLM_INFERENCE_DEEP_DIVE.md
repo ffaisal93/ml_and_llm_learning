@@ -59,10 +59,10 @@ Keys and values for every layer, every head, for every position seen so far. Reu
 For one sequence:
 
 $$
-\text{KV\_size} = 2 \cdot n_{\text{layers}} \cdot n_{\text{heads}} \cdot d_{\text{head}} \cdot \text{seq\_len} \cdot \text{bytes\_per\_element}
+\text{KV-size} = 2 \cdot n_{\text{layers}} \cdot n_{\text{heads}} \cdot d_{\text{head}} \cdot \text{seq-len} \cdot \text{bytes-per-element}
 $$
 
-(factor of 2 for $K$ and $V$). With $n_{\text{heads}} \cdot d_{\text{head}} = d_{\text{model}}$ in standard MHA, this simplifies to $2 \cdot n_{\text{layers}} \cdot d_{\text{model}} \cdot \text{seq\_len} \cdot \text{bytes}$.
+(factor of 2 for $K$ and $V$). With $n_{\text{heads}} \cdot d_{\text{head}} = d_{\text{model}}$ in standard MHA, this simplifies to $2 \cdot n_{\text{layers}} \cdot d_{\text{model}} \cdot \text{seq-len} \cdot \text{bytes}$.
 
 For batch size $B$: multiply by $B$.
 
@@ -190,10 +190,10 @@ This rule guarantees the **distribution of accepted tokens is exactly the target
 ### What determines speedup
 
 $$
-\text{speedup} \approx \frac{1 + \alpha + \alpha^2 + \cdots + \alpha^k}{1 + (\text{draft\_cost} / \text{target\_cost}) \cdot k}
+\text{speedup} \approx \frac{1 + \alpha + \alpha^2 + \cdots + \alpha^k}{1 + (\text{draft-cost} / \text{target-cost}) \cdot k}
 $$
 
-where $\alpha$ is the per-token acceptance rate. When $\alpha$ is high (e.g. 0.7+) and $\text{draft\_cost} \ll \text{target\_cost}$, you can get 2–3x speedup. When $\alpha$ is low, you waste forward passes verifying rejected tokens.
+where $\alpha$ is the per-token acceptance rate. When $\alpha$ is high (e.g. 0.7+) and $\text{draft-cost} \ll \text{target-cost}$, you can get 2–3x speedup. When $\alpha$ is low, you waste forward passes verifying rejected tokens.
 
 ### Variants
 
@@ -317,7 +317,7 @@ PagedAttention's block-level reference counting makes this natural. Anthropic an
 For interview-grade reasoning about serving cost:
 
 $$
-\text{Cost per output token} \approx \frac{\text{model\_params} \cdot \text{bytes\_per\_param} + \text{KV\_cache\_bytes\_per\_token}}{\text{memory\_bandwidth}} + \text{overhead}
+\text{Cost per output token} \approx \frac{\text{model-params} \cdot \text{bytes-per-param} + \text{KV-cache-bytes-per-token}}{\text{memory-bandwidth}} + \text{overhead}
 $$
 
 Concretely, for a 70B fp16 model at $70\text{B} \times 2 = 140$ GB. (Note: 140 GB doesn't fit on a single 80 GB H100 — this analysis assumes the weights are sharded across $\geq 2$ GPUs via tensor parallelism, with aggregate HBM bandwidth scaling roughly linearly.)
@@ -437,7 +437,7 @@ Cost: extra inter-GPU communication. Pairs naturally with FlashAttention.
 (Brief answers; full grilling in `INTERVIEW_GRILL.md`.)
 
 1. **Why is decode memory-bound?** You read the full model weights for one token of compute → arithmetic intensity ≈ 1.
-2. **What does KV cache cost in memory?** $2 \cdot n_{\text{layers}} \cdot d_{\text{model}} \cdot \text{seq\_len} \cdot \text{bytes} \cdot \text{batch}$.
+2. **What does KV cache cost in memory?** $2 \cdot n_{\text{layers}} \cdot d_{\text{model}} \cdot \text{seq-len} \cdot \text{bytes} \cdot \text{batch}$.
 3. **What's PagedAttention?** Block-wise KV allocation eliminating fragmentation; enables 2-4x more concurrent users.
 4. **What's continuous batching?** Iteration-level scheduling: rebuild the batch every decode step.
 5. **Walk me through speculative decoding.** Draft model proposes; target model verifies in one pass; rejection sampling guarantees exact target distribution.

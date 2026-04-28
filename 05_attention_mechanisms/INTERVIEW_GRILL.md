@@ -13,7 +13,7 @@ Multi-Head Attention. $h$ attention heads each with their own $Q, K, V$ projecti
 Multi-Query Attention (Shazeer 2019). All $h$ query heads share **one** $K$ projection and **one** $V$ projection. KV cache: $2 \cdot d_h \cdot N \cdot L$. Reduction factor of $h$ (typically 8–64×).
 
 **3. What's GQA?**
-Grouped-Query Attention (Ainslie et al. 2023). Compromise: $n_{\text{kv\_heads}}$ shared groups; each group's $K/V$ used by $g = h / n_{\text{kv\_heads}}$ query heads. Reduction factor $g$. LLaMA-2 70B: $n_{\text{kv\_heads}} = 8, h = 64$ → 8× reduction with negligible quality loss.
+Grouped-Query Attention (Ainslie et al. 2023). Compromise: $n_{\text{kv-heads}}$ shared groups; each group's $K/V$ used by $g = h / n_{\text{kv-heads}}$ query heads. Reduction factor $g$. LLaMA-2 70B: $n_{\text{kv-heads}} = 8, h = 64$ → 8× reduction with negligible quality loss.
 
 **4. What's MLA?**
 Multi-Latent Attention (DeepSeek-V2 2024). Compress KV into a low-rank latent $c_t = x \cdot W_{DKV}$ (dim $d_c \ll d$). Cache only $c_t$; reconstruct $K = c_t \cdot W_{UK}, V = c_t \cdot W_{UV}$ on use. Memory savings comparable to GQA, sometimes better quality. Trade-off: extra compute at attention time.
@@ -142,7 +142,7 @@ KV cache allocation in fixed-size blocks (vLLM). Eliminates fragmentation. Block
 Pre-fill: process the entire prompt in one parallel forward pass. Compute-bound (large matmuls). Decode: one-token-at-a-time autoregressive. Memory-bound (read full weights for one token). Different optimal kernels for each phase (FlashAttention vs FlashDecoding).
 
 **38. Why does the KV cache grow linearly with context?**
-Each new token contributes one $K$ vector and one $V$ vector per layer per head. KV cache size for a sequence of length $N$: $2 \cdot n_{\text{kv\_heads}} \cdot d_h \cdot N \cdot L \cdot \text{bytes}$. Linear in $N$. This is the fundamental memory cost of long context.
+Each new token contributes one $K$ vector and one $V$ vector per layer per head. KV cache size for a sequence of length $N$: $2 \cdot n_{\text{kv-heads}} \cdot d_h \cdot N \cdot L \cdot \text{bytes}$. Linear in $N$. This is the fundamental memory cost of long context.
 
 **39. What's the receptive field of layer $L$ in a sliding-window-$W$ transformer?**
 $L \cdot W$. Each layer extends the effective receptive field by $W$ because layer $L+1$ can attend to layer $L$'s outputs at positions $i, i-1, \ldots, i-W$, each of which represents $i-W, i-2W$, etc.
@@ -158,7 +158,7 @@ Sliding window gives $O(N \cdot W)$ compute and bounded KV memory. Global tokens
 **42.** *MQA paper?* Shazeer 2019.
 **43.** *GQA paper?* Ainslie et al. 2023.
 **44.** *MLA paper?* DeepSeek-V2, 2024.
-**45.** *Standard $n_{\text{kv\_heads}}$ for LLaMA-2 70B?* 8.
+**45.** *Standard $n_{\text{kv-heads}}$ for LLaMA-2 70B?* 8.
 **46.** *Default Mistral sliding window?* 4096 tokens.
 **47.** *Linear attention sequence complexity?* $O(N \cdot d^2)$.
 **48.** *FlashAttention sequence complexity?* Same $O(N^2 \cdot d)$ FLOPs as standard, lower memory access.

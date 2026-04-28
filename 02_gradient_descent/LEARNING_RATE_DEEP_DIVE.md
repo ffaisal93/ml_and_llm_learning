@@ -269,7 +269,7 @@ The take-home: the noise-to-signal ratio $\eta / B$ is the relevant quantity. Th
 Closely related to learning rate; sometimes confused with it. Gradient clipping is:
 
 $$
-g \leftarrow g \cdot \min\!\left(1, \frac{\text{clip\_norm}}{\|g\|}\right)
+g \leftarrow g \cdot \min\!\left(1, \frac{\text{clip-norm}}{\|g\|}\right)
 $$
 
 It caps the *magnitude* of the gradient (or update), independent of $\eta$. The two main reasons to use it:
@@ -277,7 +277,7 @@ It caps the *magnitude* of the gradient (or update), independent of $\eta$. The 
 1. **Spike protection.** A single bad batch can produce a $\|g\|$ 100x typical; clipping prevents that one batch from blowing up training.
 2. **RNN-specific.** Vanilla RNNs/LSTMs produce gradients that grow exponentially with sequence length (the "exploding gradient" problem). Clipping is essentially mandatory.
 
-Clip-by-norm with $\text{clip\_norm} = 1.0$ is the LLM-pretraining default. Clip-by-value is used less. Be aware that clipping interacts with the learning rate: a very loose clip is a no-op; a very tight clip effectively reduces $\eta$.
+Clip-by-norm with $\text{clip-norm} = 1.0$ is the LLM-pretraining default. Clip-by-value is used less. Be aware that clipping interacts with the learning rate: a very loose clip is a no-op; a very tight clip effectively reduces $\eta$.
 
 **Interview trap.** Someone says "I have loss spikes; I'll lower $\eta$." A better first move is "I'll add gradient clipping at norm 1.0," because that targets the spike specifically without slowing the rest of training.
 

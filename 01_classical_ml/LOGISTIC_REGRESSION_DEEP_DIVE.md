@@ -312,7 +312,7 @@ $$
 ### Why calibration matters
 
 - **Medical / financial decisions.** Threshold-based decisions need accurate probabilities, not just rankings.
-- **Cost-sensitive prediction.** Expected cost is $(1-p) \cdot \text{FP\_cost} + p \cdot \text{FN\_cost}$; needs reliable $p$.
+- **Cost-sensitive prediction.** Expected cost is $(1-p) \cdot \text{FP-cost} + p \cdot \text{FN-cost}$; needs reliable $p$.
 - **Ensembling.** Combining multiple models requires comparable confidences.
 
 ### Calibration of logistic regression

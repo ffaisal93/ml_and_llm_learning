@@ -56,9 +56,9 @@ Different experts learn different "skills" (math, code, multilingual, etc.). At 
 $$
 \begin{aligned}
 \text{scores} &= W_{\text{router}} \cdot x \in \mathbb{R}^E \\
-\text{top}_k\text{\_idx} &= \mathrm{topk}(\text{scores}, k) \\
-\text{gates} &= \mathrm{softmax}(\text{scores}[\text{top}_k\text{\_idx}]) \\
-\text{output} &= \sum_{i \in \text{top}_k\text{\_idx}} \text{gates}_i \cdot \text{expert}_i(x)
+\text{top}_k\text{-idx} &= \mathrm{topk}(\text{scores}, k) \\
+\text{gates} &= \mathrm{softmax}(\text{scores}[\text{top}_k\text{-idx}]) \\
+\text{output} &= \sum_{i \in \text{top}_k\text{-idx}} \text{gates}_i \cdot \text{expert}_i(x)
 \end{aligned}
 $$
 
@@ -94,7 +94,7 @@ f_i = \frac{1}{N} \sum_t \mathbf{1}[\text{expert}_i \in \text{top}_k(t)] \quad \
 $$
 
 $$
-P_i = \frac{1}{N} \sum_t \text{softmax\_score}_i(t) \quad \text{(average router prob for expert } i\text{)}
+P_i = \frac{1}{N} \sum_t \text{softmax-score}_i(t) \quad \text{(average router prob for expert } i\text{)}
 $$
 
 $$
@@ -108,7 +108,7 @@ Minimized when $f_i \approx P_i \approx 1/E$ for all $i$. The $E$ factor sets th
 Each expert has a fixed capacity per batch — the maximum tokens it processes. If too many tokens route to one expert, the **excess tokens are dropped** (skipped or sent through a residual). This bounds the work per expert.
 
 $$
-\text{capacity} = \text{capacity\_factor} \cdot \frac{\text{batch\_size} \cdot \text{seq\_len}}{E} \cdot k
+\text{capacity} = \text{capacity-factor} \cdot \frac{\text{batch-size} \cdot \text{seq-len}}{E} \cdot k
 $$
 
 `capacity_factor = 1.0` is exact balance; `1.25` is common (allows 25% slack); higher reduces dropping but wastes compute.
@@ -122,7 +122,7 @@ When experts overflow, excess tokens skip the expert and pass through unchanged 
 DeepSeek-V3's contribution: replace the auxiliary loss with **dynamic bias adjustments**. For each expert, maintain a bias $b_i$:
 
 $$
-\text{Score}(\text{token}, \text{expert } i) = \text{router\_score}_i + b_i
+\text{Score}(\text{token}, \text{expert } i) = \text{router-score}_i + b_i
 $$
 
 After each step, adjust $b_i$: increase if expert was underutilized, decrease if overutilized.

@@ -91,7 +91,7 @@ Encoder-only LLMs are not gone; they're just niche compared to decoder-only LLMs
 Original BERT included an auxiliary objective: given two sentences, predict if sentence B follows sentence A in the original text.
 
 $$
-\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{MLM}} + \mathcal{L}_{\text{NSP}}, \qquad \mathcal{L}_{\text{NSP}} = -\log P(\text{is\_next} \mid \text{sentence}_A, \text{sentence}_B)
+\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{MLM}} + \mathcal{L}_{\text{NSP}}, \qquad \mathcal{L}_{\text{NSP}} = -\log P(\text{is-next} \mid \text{sentence}_A, \text{sentence}_B)
 $$
 
 50% of training pairs were "next sentence"; 50% were random.
@@ -285,7 +285,7 @@ $$
 
 trick to avoid overflow.
 
-Cross-entropy is the same loss as binary cross-entropy in logistic regression generalized to $V$ classes. Same gradient form: $\mathrm{softmax}(\text{logits}) - \text{one\_hot}(\text{target})$.
+Cross-entropy is the same loss as binary cross-entropy in logistic regression generalized to $V$ classes. Same gradient form: $\mathrm{softmax}(\text{logits}) - \text{one-hot}(\text{target})$.
 
 ---
 

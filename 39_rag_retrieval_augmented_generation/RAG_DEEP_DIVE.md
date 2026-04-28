@@ -107,7 +107,7 @@ Embed query and documents into a shared vector space; retrieve by cosine similar
 Combine scores:
 
 $$
-\text{score} = \alpha \cdot \text{BM25\_score} + (1 - \alpha) \cdot \text{dense\_score}
+\text{score} = \alpha \cdot \text{BM25-score} + (1 - \alpha) \cdot \text{dense-score}
 $$
 
 or use Reciprocal Rank Fusion (RRF):

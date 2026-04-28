@@ -230,14 +230,14 @@ $$
 **Step 3 — Get log probabilities.**
 
 $$
-\text{policy\_logprobs} \;=\; \log \pi_\theta(\text{responses} \mid \text{prompts}), \qquad
-\text{ref\_logprobs} \;=\; \log \pi_{\text{ref}}(\text{responses} \mid \text{prompts}).
+\text{policy-logprobs} \;=\; \log \pi_\theta(\text{responses} \mid \text{prompts}), \qquad
+\text{ref-logprobs} \;=\; \log \pi_{\text{ref}}(\text{responses} \mid \text{prompts}).
 $$
 
 **Step 4 — Compute returns.**
 
 $$
-\text{returns} \;=\; \text{compute\_discounted\_returns}(\text{rewards}).
+\text{returns} \;=\; \text{compute-discounted-returns}(\text{rewards}).
 $$
 
 **Step 5 — Compute values.** Using critic model $V_\phi$:
@@ -256,20 +256,20 @@ $$
 
 $$
 \begin{aligned}
-\text{ratio} &= \exp(\text{policy\_logprobs} - \text{ref\_logprobs}), \\
+\text{ratio} &= \exp(\text{policy-logprobs} - \text{ref-logprobs}), \\
 \text{unclipped} &= \text{ratio} \cdot \text{advantages}, \\
 \text{clipped} &= \mathrm{clip}(\text{ratio}, 1-\epsilon, 1+\epsilon) \cdot \text{advantages}, \\
-\text{policy\_loss} &= -\min(\text{unclipped}, \text{clipped}), \\
-\text{value\_loss} &= (\text{values} - \text{returns})^2, \\
-\text{kl\_penalty} &= \beta \cdot (\text{policy\_logprobs} - \text{ref\_logprobs}), \\
-\text{total\_loss} &= \text{policy\_loss} + c_v \cdot \text{value\_loss} + \text{kl\_penalty}.
+\text{policy-loss} &= -\min(\text{unclipped}, \text{clipped}), \\
+\text{value-loss} &= (\text{values} - \text{returns})^2, \\
+\text{kl-penalty} &= \beta \cdot (\text{policy-logprobs} - \text{ref-logprobs}), \\
+\text{total-loss} &= \text{policy-loss} + c_v \cdot \text{value-loss} + \text{kl-penalty}.
 \end{aligned}
 $$
 
 **Step 8 — Update models.**
 
-- Update policy $\pi_\theta$: optimize $\text{total\_loss}$.
-- Update critic $V_\phi$: optimize $\text{value\_loss}$.
+- Update policy $\pi_\theta$: optimize $\text{total-loss}$.
+- Update critic $V_\phi$: optimize $\text{value-loss}$.
 - Reference $\pi_{\text{ref}}$: frozen (no update).
 - Reward $r_\psi$: typically frozen (can be updated).
 
@@ -360,7 +360,7 @@ $$
 **In practice.**
 
 $$
-\text{KL\_penalty} \;=\; \beta \cdot \mathbb{E}\!\left[\log \pi_\theta - \log \pi_{\text{ref}}\right].
+\text{KL-penalty} \;=\; \beta \cdot \mathbb{E}\!\left[\log \pi_\theta - \log \pi_{\text{ref}}\right].
 $$
 
 **Properties.**

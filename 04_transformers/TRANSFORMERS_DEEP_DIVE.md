@@ -297,7 +297,7 @@ The original transformer was encoder-decoder (for translation). Modern LLMs are 
 The causal (autoregressive) mask is a lower-triangular matrix $M$ with $0$ on and below the diagonal and $-\infty$ above:
 
 $$
-\text{attention\_scores} = \frac{Q K^\top}{\sqrt{d_k}} + M
+\text{attention-scores} = \frac{Q K^\top}{\sqrt{d_k}} + M
 $$
 
 The $-\infty$ entries become $0$ after softmax, ensuring position $i$ cannot attend to position $j > i$. This is the entire mechanism of "causal attention."
@@ -307,11 +307,11 @@ The $-\infty$ entries become $0$ after softmax, ensuring position $i$ cannot att
 In encoder-decoder: the decoder's queries come from the decoder's previous layer; the keys and values come from the **encoder's** output. This is how the decoder "looks at" the source while generating the target.
 
 $$
-Q_{\text{dec}} = \text{decoder\_state} \cdot W_Q
+Q_{\text{dec}} = \text{decoder-state} \cdot W_Q
 $$
 
 $$
-K_{\text{enc}}, V_{\text{enc}} = \text{encoder\_output} \cdot W_K,\ W_V
+K_{\text{enc}}, V_{\text{enc}} = \text{encoder-output} \cdot W_K,\ W_V
 $$
 
 $$

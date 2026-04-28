@@ -60,7 +60,7 @@ PaLM-1 used MQA. Some smaller models still do. Mostly superseded by GQA, which g
 
 ### The change
 
-Compromise between MHA and MQA: $n_{\text{kv\_heads}}$ shared groups, where each group's $K/V$ is shared by $g = h / n_{\text{kv\_heads}}$ query heads.
+Compromise between MHA and MQA: $n_{\text{kv-heads}}$ shared groups, where each group's $K/V$ is shared by $g = h / n_{\text{kv-heads}}$ query heads.
 
 For group $j$ (with $g$ query heads sharing $K_j, V_j$), for each query head $i$ in group $j$:
 
@@ -70,11 +70,11 @@ $$
 
 ### KV cache savings
 
-Factor of $g = h / n_{\text{kv\_heads}}$. Typical: $n_{\text{kv\_heads}} = 8$, $h = 64$ → 8× reduction.
+Factor of $g = h / n_{\text{kv-heads}}$. Typical: $n_{\text{kv-heads}} = 8$, $h = 64$ → 8× reduction.
 
 ### Quality cost
 
-Almost zero with $n_{\text{kv\_heads}} \geq 8$. The original GQA paper and subsequent ablations show GQA-8 essentially matches MHA quality.
+Almost zero with $n_{\text{kv-heads}} \geq 8$. The original GQA paper and subsequent ablations show GQA-8 essentially matches MHA quality.
 
 ### Use cases
 
@@ -117,7 +117,7 @@ DeepSeek-V2 and DeepSeek-V3. Reportedly state-of-the-art KV memory efficiency.
 The mechanism in encoder-decoder models. Decoder queries attend to encoder outputs.
 
 $$
-Q = \text{decoder\_state} \cdot W_Q, \qquad K, V = \text{encoder\_output} \cdot W_K, W_V
+Q = \text{decoder-state} \cdot W_Q, \qquad K, V = \text{encoder-output} \cdot W_K, W_V
 $$
 
 $$
@@ -132,7 +132,7 @@ $$
 
 ### Why pure decoder LLMs don't have cross-attention
 
-They handle "looking at" inputs by putting the input in the context window. The model uses self-attention over $[\text{input}, \text{output\_so\_far}]$. Architecturally simpler; functionally similar.
+They handle "looking at" inputs by putting the input in the context window. The model uses self-attention over $[\text{input}, \text{output-so-far}]$. Architecturally simpler; functionally similar.
 
 ### Used in
 

@@ -10,7 +10,7 @@
 $\text{Accuracy} = (TP + TN)/(TP + TN + FP + FN)$. $\text{Precision} = TP/(TP + FP)$. $\text{Recall} = TP/(TP + FN)$. $F_1 = 2PR/(P + R)$ — harmonic mean of $P$ and $R$.
 
 **2. Why is accuracy bad on imbalanced data?**
-Predicting majority class trivially gets $1 - \text{minority\_fraction}$ accuracy. With 99:1 imbalance, predicting all-majority gets 99% accuracy without learning anything. Model could be useless yet "high accuracy."
+Predicting majority class trivially gets $1 - \text{minority-fraction}$ accuracy. With 99:1 imbalance, predicting all-majority gets 99% accuracy without learning anything. Model could be useless yet "high accuracy."
 
 **3. When is precision the right metric?**
 When false positives hurt: spam (legitimate email blocked), recommendations (showing bad items burns trust), content moderation (false flags = censorship complaints), ads (FP = wasted budget).

@@ -76,7 +76,7 @@ Sample from the smallest set of tokens whose cumulative probability $\geq p$. Th
 Adapts to the model's confidence. Confident model: nucleus is tiny. Uncertain model: nucleus is larger. Always grabs "the most probable mass" rather than fixed count.
 
 **20. Typical $p$?**
-$0.9$ or $0.95$. $\text{top\_p} = 0.9$, $\text{temperature} = 0.7$ is a common chat default.
+$0.9$ or $0.95$. $\text{top-p} = 0.9$, $\text{temperature} = 0.7$ is a common chat default.
 
 **21. Walk me through top-p with a concrete example.**
 Suppose probs after softmax = $[0.5, 0.3, 0.1, 0.05, 0.03, 0.02]$. With $p = 0.9$: cumulative = $[0.5, 0.8, 0.9, 0.95, 0.98, 1.0]$. Smallest set $\geq 0.9$ = $[0.5, 0.3, 0.1]$ (first three). Renormalize: $[0.556, 0.333, 0.111]$. Sample.

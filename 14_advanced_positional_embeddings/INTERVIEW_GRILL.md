@@ -45,7 +45,7 @@ Learned positional embeddings (BERT, GPT-2/3) for simplicity, then RoPE for rela
 ## C. Learned positional embeddings
 
 **9. What's a learned positional embedding?**
-A $\text{max\_position} \times d$ matrix; the $t$-th row is the position embedding for position $t$. Added to token embeddings: $\text{input}_t = \text{embedding}(\text{token}_t) + \text{position\_embedding}[t]$. Used in BERT, GPT-2, GPT-3.
+A $\text{max-position} \times d$ matrix; the $t$-th row is the position embedding for position $t$. Added to token embeddings: $\text{input}_t = \text{embedding}(\text{token}_t) + \text{position-embedding}[t]$. Used in BERT, GPT-2, GPT-3.
 
 **10. Pros of learned positional embeddings?**
 Simple. Empirically strong within training range. No hand-designed function.

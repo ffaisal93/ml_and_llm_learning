@@ -13,7 +13,7 @@ Prefill: process the entire prompt in one parallel forward pass. Compute-bound o
 Each decode step reads all model weights from HBM but performs only enough math for one token's worth of forward pass. Arithmetic intensity is ~1–2 ops/byte; H100's balance point is ~330 ops/byte. Tensor cores sit idle waiting for memory. The fix is batching: more concurrent decodes amortize the weight read.
 
 **3. What's the theoretical lower bound on decode latency?**
-$(\text{model\_size\_bytes} / \text{HBM\_bandwidth}) + (\text{KV\_cache\_per\_token} / \text{HBM\_bandwidth}) + \text{overhead}$. For 70B fp16 = 140 GB (doesn't fit on a single 80 GB H100, so assume TP$\geq 2$): each GPU reads ~70 GB at ~3 TB/s ≈ 23 ms per token. No software optimization can beat this without reducing bytes per step (quantization, speculation).
+$(\text{model-size-bytes} / \text{HBM-bandwidth}) + (\text{KV-cache-per-token} / \text{HBM-bandwidth}) + \text{overhead}$. For 70B fp16 = 140 GB (doesn't fit on a single 80 GB H100, so assume TP$\geq 2$): each GPU reads ~70 GB at ~3 TB/s ≈ 23 ms per token. No software optimization can beat this without reducing bytes per step (quantization, speculation).
 
 **4. Why is prefill compute-bound while decode is memory-bound?**
 Prefill batches $P$ tokens into a single forward pass, so weights are reused across $P$ queries → arithmetic intensity scales with $P$. Decode has one token at a time → intensity is $\sim 1$. The same hardware behaves entirely differently in the two regimes.
@@ -23,7 +23,7 @@ Prefill batches $P$ tokens into a single forward pass, so weights are reused acr
 ## B. KV cache
 
 **5. Write the KV cache memory formula.**
-$\text{KV\_size} = 2 \cdot n_{\text{layers}} \cdot d_{\text{model}} \cdot \text{seq\_len} \cdot \text{bytes} \cdot \text{batch\_size}$. Factor of 2 for $K$ and $V$. $d_{\text{model}} = n_{\text{heads}} \cdot d_{\text{head}}$. With GQA, replace $d_{\text{model}}$ with $n_{\text{kv\_heads}} \cdot d_{\text{head}}$.
+$\text{KV-size} = 2 \cdot n_{\text{layers}} \cdot d_{\text{model}} \cdot \text{seq-len} \cdot \text{bytes} \cdot \text{batch-size}$. Factor of 2 for $K$ and $V$. $d_{\text{model}} = n_{\text{heads}} \cdot d_{\text{head}}$. With GQA, replace $d_{\text{model}}$ with $n_{\text{kv-heads}} \cdot d_{\text{head}}$.
 
 **6. Compute the KV cache size for LLaMA-2 70B at 8K context, batch 32, fp16.**
 $80 \text{ layers} \times 8192 \text{ } d_{\text{model}} \times 8192 \text{ seq} \times 2 \text{ bytes} \times 2 \text{ } (K, V) \times 32 \text{ batch} \approx 687$ GB without GQA. LLaMA-2 70B uses GQA with 8 KV heads (vs 64 attention heads), so divide by 8: $\sim 86$ GB. Still substantial.
@@ -79,10 +79,10 @@ Use a small **draft model** to autoregressively propose $k$ tokens. Run the targ
 Acceptance rate $\alpha$ and the draft-to-target compute ratio.
 
 $$
-\text{Speedup} \approx \frac{1 + \alpha + \alpha^2 + \cdots + \alpha^k}{1 + (\text{draft\_cost} / \text{target\_cost}) \cdot k}
+\text{Speedup} \approx \frac{1 + \alpha + \alpha^2 + \cdots + \alpha^k}{1 + (\text{draft-cost} / \text{target-cost}) \cdot k}
 $$
 
-High $\alpha$ (close draft to target) and small $\text{draft\_cost} / \text{target\_cost}$ give big speedups. Typical: 2–3x with a 7B draft for a 70B target.
+High $\alpha$ (close draft to target) and small $\text{draft-cost} / \text{target-cost}$ give big speedups. Typical: 2–3x with a 7B draft for a 70B target.
 
 **21. When does speculative decoding NOT help?**
 
@@ -195,7 +195,7 @@ Reuse computed KV cache for shared prompt prefixes across requests. Particularly
 Each token only activates a subset of experts (typically 2 out of 8). Compute per token is reduced, but routing introduces overhead and load-balancing problems. Expert parallelism: experts spread across GPUs, all-to-all communication on routing. Memory still scales with total expert count, not active expert count. So MoE saves compute but not memory.
 
 **50. Walk me through the cost-per-token mental model.**
-$\text{cost} \approx (\text{weight\_bytes} + \text{KV\_bytes\_for\_step}) / \text{HBM\_bandwidth} + \text{compute\_overhead}$. For a 70B fp16 model sharded across 2× H100 (TP=2): each GPU reads ~70 GB at ~3 TB/s ≈ 23 ms per decode step → ~43 tok/s/request floor. Quantize to W4A16 (35 GB total → fits on one H100): ~12 ms → ~80 tok/s. Add speculation with 0.6 acceptance: another ~2x. This is how to reason quantitatively about latency budgets.
+$\text{cost} \approx (\text{weight-bytes} + \text{KV-bytes-for-step}) / \text{HBM-bandwidth} + \text{compute-overhead}$. For a 70B fp16 model sharded across 2× H100 (TP=2): each GPU reads ~70 GB at ~3 TB/s ≈ 23 ms per decode step → ~43 tok/s/request floor. Quantize to W4A16 (35 GB total → fits on one H100): ~12 ms → ~80 tok/s. Add speculation with 0.6 acceptance: another ~2x. This is how to reason quantitatively about latency budgets.
 
 ---
 

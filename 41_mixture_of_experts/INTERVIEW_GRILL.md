@@ -14,8 +14,8 @@ Replace dense FFN with $E$ parallel experts; a router picks $k$ experts per toke
 $$
 \begin{aligned}
 \text{scores} &= W_{\text{router}} \cdot x \in \mathbb{R}^E \\
-\text{top}_k\text{\_idx} &= \mathrm{topk}(\text{scores}, k) \\
-\text{gates} &= \mathrm{softmax}(\text{scores}[\text{top}_k\text{\_idx}]) \\
+\text{top}_k\text{-idx} &= \mathrm{topk}(\text{scores}, k) \\
+\text{gates} &= \mathrm{softmax}(\text{scores}[\text{top}_k\text{-idx}]) \\
 \text{output} &= \sum_i \text{gates}_i \cdot \text{expert}_i(x)
 \end{aligned}
 $$
@@ -51,7 +51,7 @@ Sets the right scale: at perfect balance ($f_i = P_i = 1/E$ for all $i$), $E \cd
 $\alpha \approx 0.01$ (very small). Strong enough to prevent collapse but weak enough to not interfere with the main loss.
 
 **11. What's a capacity factor?**
-Maximum tokens an expert can process per batch. $\text{capacity} = \text{capacity\_factor} \cdot (\text{batch} \cdot \text{seq} / E) \cdot k$. CF $= 1.0$ is exact balance; CF $= 1.25$ is common with 25% slack.
+Maximum tokens an expert can process per batch. $\text{capacity} = \text{capacity-factor} \cdot (\text{batch} \cdot \text{seq} / E) \cdot k$. CF $= 1.0$ is exact balance; CF $= 1.25$ is common with 25% slack.
 
 **12. What happens to overflow tokens?**
 They're dropped — skipped via residual connection. Necessary for fixed shape compute. Quality cost.

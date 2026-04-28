@@ -54,7 +54,7 @@ Parallel scan (Blelloch-style). The associative operation $(a_1, b_1) \oplus (a_
 Some tokens carry information worth remembering (large $\Delta t$ accumulates state); others are noise (small $\Delta t$ fades quickly). The model learns per-token "memory decisions." Without selectivity, all tokens contribute equally — too rigid.
 
 **14. Mamba vs transformer at decode?**
-Mamba: $O(d)$ per token, constant memory in $d$. Transformer: $O(\text{seq\_len} \cdot d)$ per token, KV cache grows with sequence. For long contexts, Mamba's memory advantage is huge.
+Mamba: $O(d)$ per token, constant memory in $d$. Transformer: $O(\text{seq-len} \cdot d)$ per token, KV cache grows with sequence. For long contexts, Mamba's memory advantage is huge.
 
 **15. Mamba vs transformer at training?**
 Mamba: $O(N \cdot d)$ via parallel scan. Transformer: $O(N^2 \cdot d)$ via attention. Mamba's compute scales linearly; transformer's quadratically.
@@ -105,7 +105,7 @@ Mamba's CUDA kernel keeps the state in SRAM during the scan (similar to FlashAtt
 Empirically, SSMs are weaker at copying tokens from earlier in the context (the "induction head" behavior). Transformers' attention naturally implements this; SSMs must approximate. Hybrid layers (one attention layer per few SSM) often suffice to close the gap.
 
 **27. Can Mamba do beam search / batched generation efficiently?**
-Yes — but the state per beam is $O(d)$, so memory scales with $d \times \text{beam\_count}$ not $\text{seq\_len} \times \text{beam\_count}$. Better than attention's KV cache for batched generation at long context.
+Yes — but the state per beam is $O(d)$, so memory scales with $d \times \text{beam-count}$ not $\text{seq-len} \times \text{beam-count}$. Better than attention's KV cache for batched generation at long context.
 
 ---
 

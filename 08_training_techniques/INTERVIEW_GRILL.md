@@ -44,7 +44,7 @@ Estimates the expected discounted reward $V(s)$ from each state. Used to compute
 Variance: rewards are sparse (one reward per response). Distribution shift: as the policy improves, the value function lags. Compute: another full-size model. GRPO eliminates the value function by replacing it with a group-mean baseline.
 
 **12. What's GRPO?**
-Group Relative Policy Optimization (introduced in DeepSeekMath, Shao et al. 2024; popularized by DeepSeek-R1). Sample $K$ rollouts of the same prompt; advantage $= (\text{reward} - \text{group\_mean}) / \text{group\_std}$. Replaces the value function with a Monte Carlo group baseline. Cheaper, more stable for LLMs.
+Group Relative Policy Optimization (introduced in DeepSeekMath, Shao et al. 2024; popularized by DeepSeek-R1). Sample $K$ rollouts of the same prompt; advantage $= (\text{reward} - \text{group-mean}) / \text{group-std}$. Replaces the value function with a Monte Carlo group baseline. Cheaper, more stable for LLMs.
 
 **13. When is GRPO especially well-suited?**
 Verifiable-reward settings where you can sample many candidates and grade them deterministically (math, code). The group mean gives a clean per-prompt baseline. For preference-based rewards (helpfulness, safety) GRPO works but offers less obvious advantages over PPO.

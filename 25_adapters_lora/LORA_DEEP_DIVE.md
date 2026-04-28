@@ -164,7 +164,7 @@ Trainable: $K_{\text{prefix}}, V_{\text{prefix}}$ per layer.
 Simpler version: prepend trainable tokens at the **input** layer only. The rest of the model processes these tokens normally.
 
 $$
-\text{input\_embeddings} = [\text{prompt\_embeddings}; \text{word\_embeddings}(\text{input\_ids})]
+\text{input-embeddings} = [\text{prompt-embeddings}; \text{word-embeddings}(\text{input-ids})]
 $$
 
 Trainable: prompt embeddings only.

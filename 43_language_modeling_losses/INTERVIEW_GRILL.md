@@ -119,7 +119,7 @@ $\text{PPL} = \exp(\text{cross-entropy})$. Geometric inverse of average per-toke
 PPL is per-token. Different tokenizers split text into different numbers of tokens. A tokenizer with finer splits gets lower PPL on the same text purely from having more easy predictions. Compare per-byte/per-character likelihood for fair comparison.
 
 **30. Cross-entropy gradient w.r.t. logits?**
-$\nabla \mathcal{L} / \nabla z = \mathrm{softmax}(z) - \text{one\_hot}(\text{target})$. Same form as logistic regression. Clean because softmax is the canonical link function for the categorical distribution (GLM theory).
+$\nabla \mathcal{L} / \nabla z = \mathrm{softmax}(z) - \text{one-hot}(\text{target})$. Same form as logistic regression. Clean because softmax is the canonical link function for the categorical distribution (GLM theory).
 
 ---
 
