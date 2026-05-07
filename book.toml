@@ -1,0 +1,51 @@
+[book]
+title = "ML & LLM Interview Prep — Deep Dives"
+authors = ["Fahim Faisal"]
+description = "Frontier-lab interview-grade deep dives on classical ML, transformers, attention, LLM inference, alignment / RLHF / RLVR / reasoning models, scaling laws, AI infrastructure, LLM security, NeetCode patterns, and more."
+language = "en"
+src = "."
+
+[output.html]
+default-theme = "navy"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/ffaisal93/ml_and_llm_learning"
+edit-url-template = "https://github.com/ffaisal93/ml_and_llm_learning/edit/main/{path}"
+mathjax-support = true
+no-section-label = false
+additional-css = []
+additional-js = []
+
+[output.html.search]
+enable = true
+limit-results = 30
+teaser-word-count = 30
+use-boolean-and = true
+boost-title = 2
+boost-hierarchy = 1
+boost-paragraph = 1
+expand = true
+heading-split-level = 3
+
+[output.html.fold]
+enable = true
+level = 1
+
+[output.html.print]
+enable = true
+
+# === Optional: better LaTeX rendering via mdbook-katex ===
+# Uncomment after running `cargo install mdbook-katex`.
+# KaTeX renders much faster than the default MathJax and supports more macros.
+#
+[preprocessor.katex]
+optional = true
+after = ["links"]
+macros = ""
+leqno = false
+fleqn = false
+throw-on-error = false
+error-color = "#cc0000"
+min-rule-thickness = -1
+max-size = "infinity"
+max-expand = 1000
+trust = false

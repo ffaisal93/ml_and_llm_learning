@@ -81,7 +81,7 @@ Some efficient encoder models. Doesn't directly support generation, so not relev
 T5/BART objective. Mask contiguous spans of tokens (~3 tokens average); replace each span with a sentinel; encoder-decoder predicts the masked spans as output. Encoder is bidirectional; decoder is causal.
 
 **20. Walk me through span corruption with an example.**
-Input: "The <X> jumped over the <Y> dog". Target: "<X> quick brown fox <Y> lazy <eos>". Each `<X>` etc. is a sentinel token marking a masked span. Decoder generates the spans in order.
+Input: "The <X> jumped over the <Y> dog". Target: "<X> quick brown fox <Y> lazy `<eos>`". Each `<X>` etc. is a sentinel token marking a masked span. Decoder generates the spans in order.
 
 **21. Pros and cons of span corruption?**
 Pros: efficient (whole spans contribute), captures phrase-level semantics, encoder-decoder architecture flexible. Cons: encoder-decoder is heavier than decoder-only; doesn't directly enable free-form generation as cleanly as CLM. Modern LLMs prefer CLM.

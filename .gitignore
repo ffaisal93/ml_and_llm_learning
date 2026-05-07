@@ -73,3 +73,6 @@ Thumbs.db
 # FUSE-mount tombstones (Cowork / FUSE workspace mounts)
 .fuse_hidden*
 
+# mdBook output
+/book/
+

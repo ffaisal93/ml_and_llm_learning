@@ -1,0 +1,1005 @@
+# AI Infrastructure Engineer — Production Playbook
+
+> A production-flavored counterpart to the research-scientist chapters in this repo. Built around the 8 areas a production AI infrastructure engineer is expected to know cold (per Md Ismail Sojal's checklist + industry hiring patterns):
+>
+> 1. GPU / VRAM fundamentals, quantization & batching
+> 2. vLLM / TensorRT-LLM / inference optimization
+> 3. KV caching, speculative decoding, token throughput
+> 4. Distributed training basics (DDP / FSDP / DeepSpeed)
+> 5. Model serving & autoscaling
+> 6. Vector DB retrieval pipelines
+> 7. Prompt caching & cost optimization
+> 8. Observability for LLM apps
+>
+> The research-scientist focus elsewhere in this repo covers the *what* and *why*. This chapter is the *how to actually run it in production* layer — what AI infra engineers at OpenAI, Anthropic, Cohere, Together, Fireworks, Anyscale, Modal, Baseten, Replicate, etc. ship and operate.
+>
+> Pair with `61_large_scale_llm_systems/EFFICIENT_TRAINING_INFERENCE_PLAYBOOK.md` (algorithmic depth), `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md` (inference internals), `63_paged_attention_and_llm_serving/` (paged attention deep dive).
+
+---
+
+## Table of contents
+
+1. The job — what an AI Infra Engineer actually does
+2. GPU / VRAM fundamentals (hardware-level mental model)
+3. Quantization in production
+4. Batching strategies (static / dynamic / continuous / chunked)
+5. Inference engines: vLLM, TensorRT-LLM, TGI, SGLang, LMDeploy
+6. KV caching in production (PagedAttention, prefix caching, eviction)
+7. Speculative decoding in production
+8. Token-throughput metrics and SLOs (TTFT, TPOT, TPS, ITL)
+9. Distributed training infrastructure (DDP, FSDP, DeepSpeed, Megatron, slurm/k8s/Ray)
+10. Model serving and autoscaling (Triton, KServe, BentoML, Ray Serve, Modal, Baseten)
+11. Vector DB retrieval pipelines (Pinecone, Weaviate, Qdrant, Milvus, pgvector)
+12. Prompt caching and cost optimization
+13. Observability for LLM apps (LangSmith, Langfuse, Helicone, Arize)
+14. Capacity planning and cost modeling
+15. Reliability — checkpointing, fault tolerance, blue-green
+16. Security — secrets, network, prompt-injection at the infra layer
+17. The full production stack — how it fits together
+18. Senior signals
+19. References
+20. Interview grill — 100 questions
+
+---
+
+## 1. The job
+
+An AI Infrastructure Engineer makes LLMs **fast, cheap, reliable, and scalable** in production. Not training new models from scratch (that's research). Not building product features (that's product). The role is the operational layer between research artifacts (model weights) and product traffic.
+
+Day-to-day responsibilities:
+- Take a checkpoint, deploy it on the right hardware with the right inference engine.
+- Hit latency SLOs (p50, p95, p99) at projected QPS.
+- Hit cost targets ($/1M tokens, $/request, $/active user).
+- Ensure reliability (uptime, failover, rolling deploys).
+- Set up observability: traces, metrics, logs, eval.
+- Capacity-plan for growth.
+- Optimize for KV cache, batching, quantization, speculative decoding.
+- Operate multi-tenant or multi-model serving fleets.
+- Wire up vector DBs and retrieval for RAG products.
+- Manage cost (prompt caching, model routing, batch APIs).
+
+The interview probes whether you've **shipped this stack** (and which parts you've personally touched), not whether you've published papers about it.
+
+---
+
+## 2. GPU / VRAM Fundamentals
+
+The hardware mental model. You can't reason about inference without it.
+
+### 2.1 GPU architecture (NVIDIA-centric, since 95% of LLM serving runs on NVIDIA)
+
+- **Streaming Multiprocessors (SMs).** Independent compute units. H100 has 132 SMs.
+- **CUDA cores.** Per-SM execution units for FP32/FP16. Not the bottleneck for LLMs.
+- **Tensor Cores.** Specialized matrix-multiply units. Operate on 4x4 or 16x16 fragments. The actual workhorse for LLM inference.
+- **Memory hierarchy:**
+  - **Registers** (~256 KB per SM, fastest, per-thread)
+  - **Shared memory / L1** (~256 KB per SM, ~19 TB/s bandwidth — what FlashAttention exploits)
+  - **L2 cache** (~50 MB across chip, ~3 TB/s)
+  - **HBM (High Bandwidth Memory) / VRAM** (40-141 GB on H100/H200, ~3.35 TB/s on H100 SXM)
+  - **CPU DRAM** (slow, ~30 GB/s via PCIe — avoid touching during decode)
+
+### 2.2 The two regimes
+
+LLM inference has two compute regimes:
+
+- **Compute-bound (prefill).** Long input → many tokens to score in parallel → tensor cores saturate. Throughput limited by FLOPS (~989 TFLOPS BF16 on H100).
+- **Memory-bandwidth-bound (decode).** One token at a time → must load all weights from HBM → throughput limited by HBM bandwidth (~3.35 TB/s on H100 SXM).
+
+**Hook.** "Prefill compute-bound; decode memory-bandwidth-bound. Most production cost is decode."
+
+### 2.3 Frontier GPU specs (2025-2026)
+
+| GPU | VRAM | HBM BW | FP16 TFLOPS | TDP | List $ |
+|---|---|---|---|---|---|
+| A100 80GB SXM | 80 GB | 2 TB/s | 312 | 400W | ~$15K |
+| H100 80GB SXM | 80 GB | 3.35 TB/s | 989 | 700W | ~$30K |
+| H100 NVL 94GB | 94 GB | 3.9 TB/s | 1979 | 350W | ~$40K |
+| H200 141GB | 141 GB | 4.8 TB/s | 989 | 700W | ~$40K |
+| B100/B200 | 192 GB | 8 TB/s | ~2500 (FP4 is 9k) | 1000-1200W | ~$50K+ |
+| GB200 NVL72 (rack) | 72 × 192 GB | massive | massive | massive | ~$3M+ |
+
+Cloud renting (rough order of magnitude):
+- A100: $1.5-3 / hour
+- H100: $3-6 / hour
+- H200: $4-8 / hour
+- B200: $7-12 / hour
+
+**Why memory matters most.** A 70B model in BF16 is 140 GB. In FP8, 70 GB. In INT4, 35 GB. The choice between A100 (80GB), H100 (80GB), H200 (141GB), B200 (192GB) is mostly about **what fits**.
+
+### 2.4 NVLink / NVSwitch / InfiniBand
+
+- **NVLink.** GPU-to-GPU within a node. H100: 900 GB/s bidirectional (NVLink 4). Used for tensor parallelism (which is NVLink-bound).
+- **NVSwitch.** Switch fabric making all GPUs in a server (8 typically) NVLink-connected.
+- **InfiniBand (NDR).** Cross-node networking. ~400 Gbps. Slower than NVLink, used for data parallelism / pipeline parallelism across nodes.
+
+**Implication.** Tensor parallel within a node (TP=8 on a DGX H100). Data/Pipeline parallel across nodes.
+
+### 2.5 What an interview-ready answer looks like
+
+> "For 70B BF16, that's 140 GB of weights + KV cache. Doesn't fit on one 80GB H100; needs TP=2 or H200 (141GB). For decode at long context, KV cache might add 10-30 GB on top, pushing toward TP=2 or 4 even on H200. Decode is memory-bandwidth-bound at ~3.35 TB/s on H100, so per-GPU per-second I can scan ~3.35 TB / 140 GB = ~24 token/s before TP. With TP=2, weights split, BW per token halves → ~48 token/s. PagedAttention + continuous batching gets total throughput up by sharing prefill and overlapping. With INT4 quantization, weights drop to 35 GB, single H100 fits, and per-GPU TPS gets to ~95."
+
+That's a senior answer.
+
+---
+
+## 3. Quantization in Production
+
+(Short recap — full coverage in `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`.)
+
+### 3.1 The standard production menu (2025-2026)
+
+| Format | Bytes/param | Quality loss | Hardware | Tools |
+|---|---|---|---|---|
+| BF16 | 2 | None (baseline) | A100+ | Default |
+| FP8 (E4M3 / E5M2) | 1 | <0.5% on most tasks | H100+ | TensorRT-LLM, vLLM |
+| INT8 (W8A8) | 1 (W) | ~0.5-1% | All | SmoothQuant, TensorRT |
+| INT8 weight-only (W8A16) | 1 (W) | ~0.3% | All | LLM.int8() |
+| INT4 weight-only (W4A16) | 0.5 (W) | ~1-3% | All | GPTQ, AWQ |
+| FP4 | 0.5 | ~1-2% | B200 only | TensorRT, vLLM |
+| INT4 KV cache | 0.5 | <1% | All | vLLM `kv_cache_dtype="fp8"` |
+
+**The default 2025 production setup:** weights INT8 or FP8, KV cache FP8, activations BF16, TensorRT-LLM or vLLM as engine.
+
+### 3.2 Calibration and post-training quantization
+
+- **Calibration set.** ~128 samples from production traffic distribution. Capture per-layer activation min/max.
+- **Per-channel** (weight-by-output-channel) is standard; smoother than per-tensor.
+- **Per-group** (groups of 128 weights) further reduces outlier impact for INT4.
+- **SmoothQuant.** Migrate quantization difficulty from activations to weights via a per-channel scaling. Critical for INT8 W8A8.
+- **GPTQ, AWQ.** PTQ algorithms for INT4 weight-only that minimize layer-wise output error.
+
+### 3.3 Quality validation
+
+Always validate on:
+- Held-out perplexity (relative to BF16 baseline).
+- Task benchmarks (MMLU, HumanEval, MT-Bench).
+- Production-traffic eval (sample 1k requests, run BF16 and quantized, judge for divergence).
+
+A common production policy: **don't ship if perplexity gap > 1% or task benchmark gap > 2%.**
+
+---
+
+## 4. Batching Strategies
+
+The single biggest throughput lever in production.
+
+### 4.1 Static batching
+
+Wait for B requests, run them as one batch with right-padding. Simple, but:
+- Fast requests wait for slow ones (head-of-line blocking).
+- Wasted compute on padding.
+- No good for variable-length workloads.
+
+Used only in low-throughput dev or batch-API contexts.
+
+### 4.2 Dynamic batching
+
+Group requests arriving within a time window (e.g., 50ms) into a batch. Better than static but still has padding waste and sync issues.
+
+### 4.3 Continuous batching (a.k.a. in-flight batching, iteration-level scheduling)
+
+The breakthrough. From Orca (2022) and used by vLLM, TGI, TensorRT-LLM today.
+
+**Idea.** At each decode iteration, the scheduler can:
+- Add new requests (prefill) to the running batch.
+- Remove finished requests immediately (don't wait for the slowest).
+- Mix prefill and decode in the same iteration (with chunked prefill).
+
+**Result.** GPU utilization stays high; tail latency from slow requests doesn't block fast ones; throughput often 5-10× static batching.
+
+### 4.4 Chunked prefill
+
+Long prompt prefill can take seconds, blocking decode. **Chunked prefill** splits a long prefill into chunks (e.g., 1k tokens each); each iteration does part of the prefill plus decode for other requests.
+
+vLLM's `--enable-chunked-prefill` flag is now default. Critical for low-TTFT serving with mixed long+short prompts.
+
+### 4.5 Disaggregated serving (Mooncake, DistServe)
+
+Separate prefill and decode onto different GPU pools. Prefill is compute-bound (use B200/H100); decode is memory-bound (could use cheaper but high-BW GPU). Send KV cache between pools over high-speed network.
+
+State-of-the-art for very-large-scale deployments. Used by Anthropic, OpenAI, Together.
+
+### 4.6 Hook ladder
+
+"Static < dynamic < continuous + chunked prefill < disaggregated."
+
+---
+
+## 5. Inference Engines
+
+Pick one. Stick with it. Master its config.
+
+### 5.1 vLLM
+
+- **What.** Open-source, originally Berkeley/UCB, now wide community.
+- **Strengths.** PagedAttention (best KV cache management), continuous batching, chunked prefill, prefix caching, broad model support, easy quantization (GPTQ, AWQ, FP8), Python-first API.
+- **Weaknesses.** No NVIDIA-specific kernel-level squeeze; H100 FP8 throughput slightly behind TRT-LLM.
+- **Best for.** OSS fleet, fast iteration, multi-model.
+
+### 5.2 TensorRT-LLM
+
+- **What.** NVIDIA's optimized inference engine.
+- **Strengths.** Best raw throughput on NVIDIA HW. Custom kernels per model. FP8 / FP4 first-class. Tight integration with Triton Inference Server.
+- **Weaknesses.** Build per model (compile-time graph optimization). Less flexible. Tied to NVIDIA stack.
+- **Best for.** Stable production at huge scale where 10-30% throughput matters.
+
+### 5.3 TGI (Text Generation Inference, HuggingFace)
+
+- **What.** HF's serving engine.
+- **Strengths.** Tight HF Hub integration, Rust-based front-end (low overhead).
+- **Weaknesses.** Has lagged vLLM/TRT-LLM on bleeding-edge features.
+- **Best for.** HuggingFace-shop ecosystems.
+
+### 5.4 SGLang
+
+- **What.** UC Berkeley project, late 2024.
+- **Strengths.** Excellent for **structured outputs** (JSON, regex, function calling) and **complex tool-call workflows**. RadixAttention prefix caching.
+- **Best for.** Agentic or RAG workloads where prefix caching dominates.
+
+### 5.5 LMDeploy
+
+- **What.** Shanghai AI Lab.
+- **Strengths.** Strong on Chinese deployments, good INT4 support.
+- **Best for.** Chinese-market deployments.
+
+### 5.6 DeepSpeed-FastGen / MII
+
+- Microsoft. Less prominent now; vLLM has overtaken.
+
+### 5.7 Decision matrix
+
+| You want | Pick |
+|---|---|
+| Easiest open-source | vLLM |
+| Max throughput on NVIDIA | TensorRT-LLM |
+| HF ecosystem | TGI |
+| Heavy structured outputs / RAG | SGLang |
+| Multi-region multi-cloud | vLLM (more portable) |
+| Custom kernels for niche model | TRT-LLM |
+
+**Hook.** "vLLM is the OSS default; TRT-LLM if you need the last 10-20% throughput."
+
+---
+
+## 6. KV Caching in Production
+
+(Algorithm covered in `06_llm_inference/`. Production focus here.)
+
+### 6.1 PagedAttention (vLLM)
+
+- KV cache split into fixed-size **blocks** (typically 16 tokens).
+- A **block table** maps logical sequence positions → physical block locations.
+- Like virtual memory: avoid fragmentation, share blocks across requests.
+
+### 6.2 Prefix caching
+
+- Hash-based cache of (prefix tokens → KV blocks).
+- New request: find longest prefix match, reuse blocks, compute only suffix.
+- vLLM `--enable-prefix-caching`. SGLang RadixAttention.
+- **Massive** wins on chat workloads (system prompt + history reused across turns).
+
+### 6.3 KV cache eviction policies
+
+When VRAM is full and you can't admit a new request:
+- **Drop oldest unfinished sequence** (LRU on requests).
+- **Recompute from prompt** (preserve correctness, expensive).
+- **Swap to CPU memory** (vLLM `--swap-space` flag) — pull back when needed.
+
+### 6.4 KV quantization
+
+`--kv-cache-dtype fp8` in vLLM. Halves KV memory at <0.5% quality loss. Almost always a win.
+
+### 6.5 Cross-request KV sharing
+
+For tenant deployments where many users share a system prompt: prefix caching captures this. For LoRA-multi-tenant: shared base KV + LoRA-specific deltas (S-LoRA).
+
+### 6.6 The KV math you should be able to do
+
+```
+KV cache size per token = 2 (K, V) * num_layers * num_kv_heads * head_dim * bytes_per_elem
+```
+
+**Llama 3 70B (BF16):** 2 × 80 × 8 × 128 × 2 = **327 KB / token**. At 32K context: 10.5 GB / sequence. At batch=8: 84 GB just for KV cache. **This is why GQA matters.**
+
+---
+
+## 7. Speculative Decoding in Production
+
+(Algorithm covered in `06_llm_inference/`. Production focus here.)
+
+### 7.1 What you actually deploy
+
+- **Vanilla speculative.** Tiny same-family draft (e.g., 1B → 70B). Memory cost: ~1.5GB extra per replica.
+- **Self-speculative (Medusa, EAGLE).** No separate draft; extra decoding heads. No extra weights. Used by together.ai, fireworks.
+- **N-gram speculative (Chain Speculation).** Draft from prompt itself for repetitive content (code, structured outputs). Free.
+
+### 7.2 Production gotchas
+
+- **Acceptance rate matters more than spec count.** Tune draft / speculation length to maximize accepted-tokens-per-second.
+- **Batching interaction.** Speculative decoding throughput drops as batch size grows (the verifier's parallel benefit shrinks). Sweet spot: low-to-medium batch sizes.
+- **KV cache duplication.** Both target and draft need their own cache for the same sequence. Memory cost.
+- **Quality.** 100% lossless if implemented correctly (target verifies). Watch for subtle samplers (temperature, top-p) that can break verification.
+
+### 7.3 vLLM / TRT-LLM speculative settings
+
+- vLLM: `--speculative-model EAGLE-Llama-3-8B --num-speculative-tokens 5`
+- TRT-LLM: built-in for Medusa, EAGLE.
+
+---
+
+## 8. Token-throughput Metrics and SLOs
+
+The four numbers you live and die by.
+
+| Metric | What | Typical SLO |
+|---|---|---|
+| **TTFT** (Time To First Token) | Latency from request to first decoded token. Dominated by prefill. | p50 < 0.5s, p99 < 2s |
+| **TPOT** / **ITL** (Time Per Output Token / Inter-Token Latency) | After first token, latency per next token. | p50 < 30 ms (chat), < 50 ms (long context) |
+| **TPS** (Tokens Per Second) | Total output tokens / second. | Per request: > 30 tps (good UX). Total throughput: depends on capacity. |
+| **Throughput (req/s)** | Concurrent users × completion rate. | Site-dependent. |
+
+### 8.1 Tradeoffs
+
+- **Smaller batch** → lower TTFT, higher TPOT (less amortized weight loading).
+- **Larger batch** → higher TTFT (queuing), lower per-request TPS (sharing GPU).
+- **Disaggregated prefill/decode** → both improve.
+- **Chunked prefill** → TTFT consistent at long context.
+
+### 8.2 SLO design
+
+1. Pick TTFT target (e.g., p95 < 1s).
+2. Pick TPOT target (e.g., p95 < 50ms).
+3. Pick concurrency target (e.g., 100 concurrent decodes).
+4. Provision GPUs to meet all three.
+5. Monitor and autoscale on the most-violated metric.
+
+### 8.3 Useful telemetry per request
+
+- Tokens in / out.
+- TTFT, TPOT, total latency.
+- Engine queue time vs actual compute time.
+- Cache hit rate (prefix).
+- Speculative acceptance rate.
+- VRAM utilization.
+
+---
+
+## 9. Distributed Training Infrastructure
+
+The training side. Detailed coverage in `61_large_scale_llm_systems/EFFICIENT_TRAINING_INFERENCE_PLAYBOOK.md` — production focus here.
+
+### 9.1 The library landscape
+
+- **PyTorch DDP.** Default for single-node multi-GPU and small multi-node.
+- **PyTorch FSDP.** ZeRO-3 for production. Default at Meta / Anthropic for training.
+- **DeepSpeed.** Microsoft library. ZeRO 1/2/3, ZeRO-Infinity (CPU/NVMe offload), pipeline parallelism, MoE support.
+- **Megatron-LM.** NVIDIA library. Best-in-class tensor parallelism + pipeline. Used by Bloom, MT-NLG, many internal models.
+- **Megatron-DeepSpeed.** Combines both. NVIDIA + Microsoft hybrid.
+- **NeMo Framework.** NVIDIA wrapper around Megatron + Triton + others. Production-grade.
+- **MosaicML Composer / LLM Foundry.** Now Databricks. Optimized Llama-style training.
+
+### 9.2 The job-launch stack
+
+- **Slurm.** HPC-style scheduler. Most common at academic + many cloud LLM teams.
+- **Kubernetes.** With KubeFlow, Volcano, or Run:ai. More common at startups.
+- **Ray.** Python-native distributed framework. Anyscale's product. Increasingly common for training + serving in one stack.
+- **AWS / GCP / Azure managed services.** SageMaker HyperPod, Vertex AI, Azure ML.
+
+### 9.3 Reliability essentials
+
+- **Frequent async checkpointing.** Every 30-60 minutes; async write to remote storage so training doesn't pause.
+- **Fast checkpoint restore.** Sharded parallel reads. < 5 min target on a 70B+ model.
+- **Hardware fault tolerance.** A 1000-GPU run sees daily failures. Use libraries (Megatron, NeMo) with built-in retry-and-restart-from-checkpoint.
+- **Loss-spike detection.** Auto-rollback to last good checkpoint if loss spikes > N×.
+- **Slow-worker / straggler detection.** Replace lagging GPUs.
+- **Network fabric monitoring.** InfiniBand link flaps cause silent perf drops.
+
+### 9.4 Cost / capacity planning
+
+- Training a 7B model from scratch: ~50-200 H100-days. ~$4-15K cloud.
+- 70B from scratch: ~5K-15K H100-days. $400K-$1.5M.
+- 400B+: 100K+ H100-days. $10M+.
+- Fine-tuning: 10-100× cheaper than from-scratch.
+
+---
+
+## 10. Model Serving and Autoscaling
+
+Where rubber meets road.
+
+### 10.1 The platform layer
+
+- **NVIDIA Triton Inference Server.** Production gold standard. Multi-model, multi-framework, dynamic batching, model ensembles.
+- **KServe (formerly KFServing).** Kubernetes-native. Standard CRDs for InferenceService.
+- **BentoML.** Python-first model packaging + serving.
+- **Ray Serve.** Ray's serving layer. Good for complex pipelines (multi-step inference, RAG).
+- **Modal, Baseten, Replicate.** Serverless GPU services. Pay per second of GPU use. Good for variable workloads.
+- **Together AI / Fireworks / Anyscale Endpoints.** Hosted inference for popular OSS models. Cheaper than self-hosting at moderate scale.
+
+### 10.2 Multi-model serving
+
+- **Single replica per model.** Wasteful at low QPS.
+- **Multi-model on one GPU.** Multiple checkpoints in VRAM; dispatch by request. Tradeoff with KV cache.
+- **LoRA multi-tenancy.** One base model + many LoRA adapters. S-LoRA (Punica), vLLM `--enable-lora`. Massive cost win for fine-tune-per-customer products.
+- **Model swap on demand.** Pull weights from S3 when needed; cold start cost. Used for long-tail models.
+
+### 10.3 Autoscaling
+
+The hard part of GPU autoscaling: **GPUs take 60-300s to come up (provision + model load)**, far slower than CPU autoscaling. Strategies:
+
+- **Provision to peak.** Expensive but reliable.
+- **Predictive autoscaling.** Provision for forecasted demand (e.g., based on time of day).
+- **Warm pool.** Keep N spare GPUs ready (idle cost).
+- **Burst to spot/on-demand mix.** Baseline reserved, peak on-demand.
+- **Serverless GPU (Modal, Baseten, Replicate, Cloudflare Workers AI).** Sub-second cold starts via shared base model + per-request adapter.
+
+### 10.4 Routing
+
+- **Latency-aware routing.** Send request to least-loaded replica (queue depth, in-flight tokens).
+- **Affinity routing.** Send to replica with hot prefix cache for this user (common with LangChain + vLLM).
+- **Model routing.** Route easy queries to cheap small model, hard queries to expensive big one (RouteLLM, Martian).
+
+### 10.5 Deployment patterns
+
+- **Blue-green.** Two parallel deployments; cut over instantly.
+- **Canary.** New version gets 1-5% of traffic; monitor; ramp.
+- **Shadow.** Mirror traffic to new version; compare outputs offline; no impact.
+- **A/B for quality.** Random assignment; collect quality signals.
+
+---
+
+## 11. Vector DB Retrieval Pipelines
+
+The retrieval side of RAG products. Detailed RAG coverage in `39_rag_retrieval_augmented_generation/`. Infrastructure focus here.
+
+### 11.1 The vector DB landscape
+
+| DB | Type | Strengths |
+|---|---|---|
+| **Pinecone** | Managed | Easy, serverless, popular. Pricier. |
+| **Weaviate** | Self-hosted / managed | GraphQL, hybrid search built-in. |
+| **Qdrant** | Self-hosted / managed | Rust, fast, payload filters. |
+| **Milvus** | Self-hosted | Scales to billions of vectors. Open source. |
+| **pgvector** (Postgres) | Self-hosted | If you already have Postgres. Limited at scale (>10M). |
+| **Chroma** | Self-hosted | Easy local dev. Not for prod scale. |
+| **Vespa** | Self-hosted | Full-text + vector + ranking, used by Yahoo. |
+| **Elasticsearch / OpenSearch** | Self-hosted / managed | Lexical + dense hybrid. |
+| **LanceDB** | Embedded | Single-binary, fast for moderate scale. |
+| **Turbopuffer** | Managed | Cost-optimized for cold storage. |
+
+### 11.2 Index types
+
+- **Flat.** Brute-force exact search. Up to ~100K vectors.
+- **HNSW (Hierarchical Navigable Small World).** Graph-based. Default for most DBs. Trades memory for accuracy.
+- **IVF (Inverted File).** Cluster, search nearest clusters. More memory-efficient than HNSW.
+- **IVF-PQ (Product Quantization).** IVF + compressed vectors. Best memory efficiency. Some recall loss.
+- **DiskANN.** Disk-based ANN. Billion-vector scale on a single machine.
+
+**Hook.** "HNSW for moderate scale, IVF-PQ for billion-scale, flat only for tiny indexes."
+
+### 11.3 Retrieval pipeline architecture
+
+```
+Query
+  ↓
+Embedding model (e.g., text-embedding-3-small, BGE, Cohere embed)
+  ↓
+Vector DB → top-K candidates (often K=50-100)
+  ↓                     ↘
+Lexical (BM25) → top-K   Hybrid retrieval (RRF / weighted)
+  ↓                     ↙
+Reranker (Cohere, BGE-reranker, ColBERT)
+  ↓ top-N (often N=5-20)
+LLM generator with retrieved context
+```
+
+### 11.4 Production gotchas
+
+- **Embedding model versioning.** Re-embed everything when you change models. Coordinate across services.
+- **Sharding.** Vectors by tenant or by topic. Per-tenant indexes for isolation.
+- **Replication.** Read replicas for high QPS.
+- **Index rebuilds.** Most DBs need offline rebuild on schema change. Plan for double the storage during rebuild.
+- **Latency budget.** Retrieval is on the critical path → 50-100ms p95 for retrieval+rerank.
+- **Hybrid retrieval.** Almost always wins over pure dense. RRF or per-query weighting.
+
+### 11.5 Embedding models (production menu)
+
+- **OpenAI text-embedding-3-small/large.** Easy, paid.
+- **Cohere embed-multilingual-v3.** Strong multilingual.
+- **BGE (BAAI General Embedding).** Open weights, strong performance.
+- **E5 (Microsoft).** Open weights.
+- **Jina embeddings.** Multilingual, multimodal.
+- **NV-Embed.** NVIDIA's massive embedding model.
+- **Domain-specific finetunes** of any of the above.
+
+---
+
+## 12. Prompt Caching and Cost Optimization
+
+Where production money lives.
+
+### 12.1 Prefix / prompt caching
+
+- **Lexical prefix caching.** Hash-based cache; system prompt + chat history reused identically. vLLM, SGLang, Anthropic, OpenAI offer this. **Often 50-90% cost reduction** on chat workloads.
+- **Semantic caching.** Look up similar past queries; if a near-match exists with a previous answer, return cached answer. Risk: false positives.
+- **OpenAI / Anthropic Cached Tokens API.** First-party prompt caching with 50-90% discount on cache hits.
+
+### 12.2 Model routing
+
+- **Cheap model first.** Try a small model; if confidence low, escalate.
+- **Task-based routing.** Code → coding model; chat → chat model; etc.
+- **RouteLLM, Martian, NotDiamond.** Productized routing layers. ~50-90% cost cut at minimal quality loss.
+
+### 12.3 Batch APIs
+
+OpenAI Batch API, Anthropic Batches: half-price for non-realtime workloads. Use for:
+- Bulk embedding generation.
+- Offline data labeling.
+- Synthetic data generation.
+- Eval runs.
+
+### 12.4 Output limiting
+
+- Set max_tokens aggressively.
+- Stop sequences.
+- Structured outputs (JSON schema) are typically shorter than free-form.
+
+### 12.5 Tenant cost attribution
+
+- Token counts per request, per tenant.
+- Aggregated dashboards.
+- Per-tenant budgets / rate limits.
+- Cost-plus billing for B2B SaaS.
+
+### 12.6 Cost-optimization checklist
+
+1. Enable prompt caching everywhere.
+2. Route to smallest viable model.
+3. Use batch API for non-realtime.
+4. Quantize aggressively (FP8 weights, FP8 KV cache).
+5. Use speculative decoding.
+6. Set tight output token limits.
+7. Cache embeddings (don't re-embed identical content).
+8. Cache final responses for FAQ-style queries.
+9. Track cost per (user, route, day).
+10. Set alarms on outlier-cost requests.
+
+---
+
+## 13. Observability for LLM Apps
+
+This is the half nobody teaches but interviewers care about.
+
+### 13.1 The core trace
+
+For a chat / agent request, you want a trace that captures:
+
+```
+Request (user_id, conversation_id, request_id)
+├── LLM call 1 (model, tokens_in, tokens_out, ttft, tpot, cache_hit)
+│   ├── Prompt (with PII redacted)
+│   └── Response
+├── Tool call 1 (tool_name, args, latency, status)
+│   └── Tool response
+├── LLM call 2 ...
+├── Retrieval call (query, top-K results, hybrid weights)
+└── Final response
+```
+
+### 13.2 The platform menu
+
+- **LangSmith (LangChain).** Most popular for LangChain users. Trace + eval + dataset management.
+- **Langfuse.** Open source LangSmith alternative. Self-host or cloud.
+- **Helicone.** Drop-in proxy that logs everything. Easy adoption.
+- **Arize Phoenix.** Open source. Strong eval features.
+- **Weights & Biases Weave.** From W&B. Trace + eval.
+- **Datadog LLM Observability.** Enterprise.
+- **Honeycomb.** Generic distributed tracing; works for LLM with custom spans.
+- **OpenTelemetry GenAI semantic conventions.** Vendor-neutral standard. Use this for portability.
+
+### 13.3 Online + offline eval
+
+- **Online (production traffic).** Sample N% of requests, run eval pipeline (LLM-judge, programmatic checks). Alert on regression.
+- **Offline (golden set).** 500-5000 hand-curated examples. Run on every model swap.
+- **A/B (canary).** Compare new model on live traffic with quality metrics.
+
+### 13.4 Drift detection
+
+- **Input drift.** User-prompt distribution shift. Detect via embedding drift on prompts.
+- **Output drift.** Response distribution shift. Length, refusal rate, formatting.
+- **Latency drift.** Sudden p95 jumps.
+- **Cost drift.** $/request creeping up.
+
+### 13.5 Logging — privacy and compliance
+
+- **PII redaction** before logging. Use Presidio, AWS Comprehend, or in-house regex+NER.
+- **Retention policy.** GDPR, HIPAA, SOC2.
+- **Per-tenant isolation.** Don't mix logs across customers.
+- **Encryption at rest.**
+- **Access audit logs.** Who looked at what, when.
+
+### 13.6 Production alarm set
+
+- TTFT p95 > SLO.
+- TPOT p95 > SLO.
+- Error rate > 0.5%.
+- Cache hit rate dropped > 10%.
+- Cost per request > 1.5× baseline.
+- Quality eval score dropped > 2 points.
+- Refusal rate spiked > 20%.
+- VRAM utilization > 95% for > 5 min.
+
+---
+
+## 14. Capacity Planning and Cost Modeling
+
+The senior task: estimate hardware for a planned product.
+
+### 14.1 The estimation flow
+
+1. **QPS forecast.** Daily active users × avg requests per user / 86400. Add headroom (2-3×).
+2. **Avg input + output tokens** per request.
+3. **Throughput per GPU** = experimental measurement on the inference engine. Run benchmarks at expected batch size and context length.
+4. **GPUs needed** = QPS × avg tokens-out / TPS-per-GPU. Add 30-50% buffer.
+5. **VRAM check.** Model + KV cache (peak concurrency × max context × KV/token) ≤ available VRAM.
+6. **Cost** = GPUs × $/hour × hours. Add storage, network egress, observability tools.
+
+### 14.2 A worked example
+
+Building a coding assistant for 100K DAU. Each user makes 10 requests/day, avg 2k input + 500 output tokens.
+
+- QPS = 100K × 10 / 86400 ≈ 12 req/s. Peak ~30 req/s.
+- Total output tokens/s at peak = 30 × 500 = 15,000 tps.
+- On Llama 3 70B FP8 with vLLM on H100, measured throughput ≈ 8000 tps per GPU at batch=64.
+- GPUs needed ≈ 15,000 / 8,000 × 1.5 (buffer) ≈ 3 GPUs.
+- TP=2 for memory → 6 GPUs total = 1 DGX node.
+- Cost: ~$5/hour/GPU × 6 = $30/hour = ~$22K/month.
+- Per user: $22K / 100K = $0.22/user/month. Need to charge ≥ $1/user/month for healthy margin.
+
+That's the calculation.
+
+### 14.3 Common interview question
+
+> "We have a chatbot product with 1M MAU, 10% DAU. Estimate GPU costs for a Llama 3 70B deployment."
+
+Walk the flow above. Show your work. State assumptions (avg session length, avg QPS per user, etc.).
+
+---
+
+## 15. Reliability — Checkpointing, Fault Tolerance, Blue-Green
+
+The survival skills.
+
+### 15.1 Inference reliability
+
+- **Multi-replica per model.** N+1 redundancy. Loss of one replica doesn't break service.
+- **Multi-AZ.** Replicas across availability zones.
+- **Circuit breakers.** If model is timing out → fail fast, don't queue.
+- **Graceful degradation.** Big model down → fall back to smaller model.
+- **Request retries with backoff** at the client.
+- **Health checks.** Liveness + readiness probes. Auto-restart on failure.
+
+### 15.2 Training reliability
+
+(Already covered in §9.3.) Async checkpointing, retry-on-failure, slow-worker replacement, loss-spike auto-rollback.
+
+### 15.3 Blue-Green / Canary deploys for inference
+
+- **Blue-green.** Deploy new version on parallel cluster; flip load balancer; keep old as instant rollback for ~24h.
+- **Canary.** 1% → 5% → 25% → 100% over hours; monitor error rate, latency, quality at each step.
+- **Shadow.** New version sees 100% mirrored traffic, returns ignored. Compare outputs offline. Useful before any user-facing rollout.
+
+### 15.4 Disaster recovery
+
+- **Model artifact backups.** Multiple regions, with checksums.
+- **Config-as-code.** All deploy config in git. Reproducible deploys.
+- **Runbook.** Documented procedures: model swap, region failover, full service restart.
+- **Game days.** Practice failure scenarios.
+
+---
+
+## 16. Security at the Infrastructure Layer
+
+(Cross-reference: `65_llm_security/LLM_SECURITY_DEEP_DIVE.md` covers prompt injection, jailbreaks, lethal trifecta. Here, infra-layer concerns.)
+
+- **Secrets management.** Vault, AWS KMS, GCP Secret Manager. Never bake API keys into images.
+- **Network isolation.** Private VPC, no public LLM endpoints unless authenticated.
+- **API gateway.** Rate limiting, auth (OAuth/JWT), IP allowlists.
+- **Per-tenant isolation.** Don't leak data across tenants in shared cache, retrieval, logs.
+- **Output sanitization.** Strip prompt-injection payloads from rendered output (HTML escape, markdown sanitize).
+- **Egress filtering.** Tool-using agents → allowlist destinations, deny private IPs / cloud metadata.
+- **Sandbox for code execution.** gVisor / Firecracker / nsjail per request. Read-only fs except scratch. Time limits. No network unless allowlisted.
+- **Audit logs.** Who deployed what, when. SOC 2 / ISO 27001.
+- **Vulnerability scanning.** Container scanning, dependency scanning. SBOM.
+- **Compliance.** GDPR, HIPAA, SOC 2, FedRAMP — depending on customer base.
+
+---
+
+## 17. The Full Production Stack — How It Fits Together
+
+The senior interview question: *"Walk me through the full architecture of a production LLM product."*
+
+```
+                 ┌─────────────────┐
+                 │ Client / SDK    │
+                 └────────┬────────┘
+                          │
+                 ┌────────▼────────┐
+                 │  API Gateway    │  ← Auth, rate limit, request validation
+                 └────────┬────────┘
+                          │
+                 ┌────────▼────────┐
+                 │  Router         │  ← Model routing, A/B, feature flags
+                 └────────┬────────┘
+                 ┌────────▼────────┐  ┌──────────────┐
+                 │  Pre-process    │←→│ Embedding    │
+                 │  (PII redact,   │  │ service      │
+                 │   prompt build) │  └──────┬───────┘
+                 └────────┬────────┘         │
+                          │            ┌─────▼────┐
+                          │            │ Vector   │
+                          │            │ DB       │
+                          │            └──────────┘
+                 ┌────────▼────────┐
+                 │  LLM Engine     │  ← vLLM / TRT-LLM
+                 │  (multi-replica)│
+                 └────────┬────────┘
+                 ┌────────▼────────┐
+                 │  Tool / Agent   │
+                 │  orchestration  │
+                 └────────┬────────┘
+                 ┌────────▼────────┐
+                 │  Post-process   │  ← Sanitize, cite, format
+                 └────────┬────────┘
+                          │
+                 ┌────────▼────────┐
+                 │  Response       │
+                 └─────────────────┘
+
+  Cross-cutting:
+  - Observability (LangSmith / Langfuse / Helicone)
+  - Cost tracking
+  - Online eval sampling
+  - Audit logs
+  - Cache (prompt prefix + final response)
+```
+
+**Components:**
+- API gateway (Kong, Tyk, AWS API Gateway).
+- Auth (Auth0, Cognito, internal OAuth).
+- Rate limiting per (tenant, endpoint, time).
+- Router (custom, RouteLLM, Martian).
+- Pre-process: PII detection (Presidio), prompt assembly (Jinja).
+- Inference engine cluster (Triton, KServe).
+- Vector DB (Pinecone, Qdrant, etc.).
+- Reranker (Cohere reranker, BGE, ColBERT).
+- Cache (Redis, in-engine prefix cache).
+- Observability stack (OpenTelemetry → Datadog / Langfuse / Honeycomb).
+- Eval pipeline (offline golden + online sample → LangSmith / custom).
+- Logging (S3, Snowflake) with PII redaction.
+- Multi-region / multi-AZ deployment.
+- Blue-green or canary deployer (Argo Rollouts, Spinnaker).
+
+That's the full picture.
+
+---
+
+## 18. Senior Signals
+
+What separates "knows the words" from "has shipped this."
+
+- **You start with constraints.** SLO targets first, then design.
+- **You name the inference engine and version.** "vLLM 0.6 with --enable-chunked-prefill --kv-cache-dtype fp8 on H100s."
+- **You quantify with KV math.** "70B BF16 KV cache is 327 KB/token; 32K context × batch 8 = 84 GB."
+- **You distinguish prefill from decode regimes** and their bottlenecks.
+- **You name PagedAttention, continuous batching, chunked prefill** by name and explain why each matters.
+- **You distinguish vLLM, TRT-LLM, TGI, SGLang** — what each is best at.
+- **You name observability platforms** beyond "we log it" (LangSmith, Langfuse, OpenTelemetry).
+- **You think about cost** at the per-request and per-tenant level.
+- **You bring up disaggregated serving** for very-large-scale.
+- **You discuss multi-tenancy** (S-LoRA, prefix caching for shared system prompts).
+- **You're cautious about quantization** (validate quality, don't blindly enable).
+- **You design for failure** (multi-replica, blue-green, circuit breakers, fallback model).
+- **You quantify GPU economics** (rent vs reserved, spot, H100 vs H200 vs B200).
+- **You separate experiment / staging / prod** environments and config.
+
+---
+
+## 19. References
+
+### Inference engines
+- vLLM — github.com/vllm-project/vllm
+- TensorRT-LLM — github.com/NVIDIA/TensorRT-LLM
+- TGI (HuggingFace) — github.com/huggingface/text-generation-inference
+- SGLang — github.com/sgl-project/sglang
+- LMDeploy — github.com/InternLM/lmdeploy
+
+### Serving platforms
+- NVIDIA Triton — github.com/triton-inference-server/server
+- KServe — kserve.github.io
+- Ray Serve — docs.ray.io/en/latest/serve
+- BentoML — bentoml.com
+
+### Vector DBs
+- Pinecone, Weaviate, Qdrant, Milvus (each has docs)
+- pgvector — github.com/pgvector/pgvector
+- DiskANN — github.com/microsoft/DiskANN
+
+### Observability
+- LangSmith — smith.langchain.com
+- Langfuse — langfuse.com
+- Helicone — helicone.ai
+- Arize Phoenix — github.com/Arize-ai/phoenix
+- OpenTelemetry GenAI — opentelemetry.io/docs/specs/semconv/gen-ai/
+
+### Foundational papers
+- Orca (continuous batching) — Yu et al. 2022.
+- PagedAttention — Kwon et al., vLLM, 2023.
+- Speculative Decoding — Leviathan et al. 2023, Chen et al. 2023.
+- SmoothQuant — Xiao et al. 2022.
+- AWQ — Lin et al. 2023.
+- GPTQ — Frantar et al. 2022.
+- S-LoRA — Sheng et al. 2023.
+- Mooncake (disaggregated) — Qin et al. 2024.
+- DistServe — Zhong et al. 2024.
+
+### Tutorials / blogs
+- vLLM blog — blog.vllm.ai
+- NVIDIA Triton tutorials
+- Anyscale blog (Ray + serving)
+- Together AI engineering blog
+- Fireworks blog
+- Lilian Weng — *Inference Optimization* (2023).
+- Sebastian Raschka — *Building LLMs from Scratch*.
+
+### Cross-references in this repo
+- `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`
+- `61_large_scale_llm_systems/EFFICIENT_TRAINING_INFERENCE_PLAYBOOK.md`
+- `63_paged_attention_and_llm_serving/`
+- `41_mixture_of_experts/MOE_DEEP_DIVE.md`
+- `39_rag_retrieval_augmented_generation/RAG_DEEP_DIVE.md`
+- `65_llm_security/LLM_SECURITY_DEEP_DIVE.md`
+
+---
+
+## 20. Interview Grill — 100 questions
+
+### A. GPU / VRAM (Q1–10)
+1. What's the difference between SRAM, L2, HBM on a GPU?
+2. Compare A100 / H100 / H200 / B200 on VRAM and HBM bandwidth.
+3. What is NVLink and when does it matter?
+4. Why is decode memory-bandwidth-bound but prefill compute-bound?
+5. Why does TP usually stay within a node?
+6. What's the FP16 TFLOPS of an H100 SXM?
+7. How much VRAM does a 70B BF16 model take? FP8? INT4?
+8. What's the rough $ / hour for an H100 on cloud?
+9. What's NVSwitch?
+10. When would you pick H200 over H100?
+
+### B. Quantization (Q11–18)
+11. What are FP8 E4M3 and E5M2?
+12. SmoothQuant — what problem does it solve?
+13. AWQ vs GPTQ — when each?
+14. Per-tensor vs per-channel vs per-group quantization?
+15. INT8 W8A8 vs INT8 W8A16?
+16. KV cache quantization — quality risk?
+17. How do you validate quantized model quality?
+18. When would you NOT quantize?
+
+### C. Batching (Q19–25)
+19. Compare static / dynamic / continuous batching.
+20. What's chunked prefill?
+21. Why is continuous batching 5-10× faster than static?
+22. What's disaggregated serving?
+23. How does batch size affect TTFT vs TPOT?
+24. What's iteration-level scheduling?
+25. Where does Orca fit historically?
+
+### D. Inference engines (Q26–34)
+26. What's vLLM's killer feature?
+27. When do you pick TRT-LLM over vLLM?
+28. What does SGLang excel at?
+29. What's TGI?
+30. Compare vLLM vs TRT-LLM in 30 seconds.
+31. What does PagedAttention solve?
+32. What's RadixAttention (SGLang)?
+33. What's the typical inference engine config for a 70B production deploy?
+34. What inference engine would you pick for an agentic workload with heavy structured output?
+
+### E. KV cache (Q35–42)
+35. KV cache size formula?
+36. How does GQA shrink KV cache?
+37. How does MLA shrink KV cache?
+38. What's prefix caching and when does it help most?
+39. What KV eviction policies exist?
+40. CPU swap-space — when to use?
+41. KV quantization to FP8 — quality cost?
+42. How does PagedAttention compare to flat allocation?
+
+### F. Speculative decoding (Q43–48)
+43. Sketch speculative decoding.
+44. What's Medusa?
+45. What's EAGLE?
+46. Why does speculative decoding speedup decrease at large batch?
+47. How do you tune speculative tokens?
+48. Memory cost of running speculative?
+
+### G. Throughput / SLO (Q49–55)
+49. Define TTFT, TPOT, TPS, ITL.
+50. Typical chat-product TTFT and TPOT SLOs?
+51. Tradeoff: small batch vs large batch?
+52. What's a good chat TPS for user UX?
+53. How do you tune for low TTFT?
+54. How do you tune for high throughput?
+55. Why monitor cache hit rate?
+
+### H. Distributed training (Q56–63)
+56. Difference between DDP and FSDP?
+57. ZeRO 1 vs 2 vs 3?
+58. When use DeepSpeed vs Megatron vs FSDP?
+59. What's slurm vs k8s for training?
+60. Async vs sync checkpoint?
+61. How do you handle a 1000-GPU run failure?
+62. Why is loss-spike detection important?
+63. Cost of training a 70B from scratch — order of magnitude?
+
+### I. Serving / autoscaling (Q64–71)
+64. Compare Triton, KServe, Ray Serve, BentoML.
+65. Why is GPU autoscaling slow?
+66. What's a warm pool?
+67. What's S-LoRA / multi-tenant LoRA?
+68. Compare blue-green / canary / shadow deploy.
+69. Latency-aware vs affinity routing?
+70. When is serverless GPU appropriate?
+71. How do you handle cold start?
+
+### J. Vector DBs (Q72–78)
+72. HNSW vs IVF-PQ — tradeoffs?
+73. When does pgvector stop being enough?
+74. What's hybrid retrieval?
+75. What's RRF?
+76. How do you handle embedding-model versioning?
+77. Latency budget for retrieval+rerank?
+78. What's a reranker and which would you use?
+
+### K. Cost optimization (Q79–86)
+79. What's prompt caching?
+80. What's the OpenAI / Anthropic cached-tokens discount?
+81. When use Batch API?
+82. What's model routing? Tools (RouteLLM, Martian)?
+83. Why is per-tenant cost attribution important?
+84. Five ways to cut LLM cost.
+85. When is quantization not worth it?
+86. What's semantic caching, and what's the risk?
+
+### L. Observability (Q87–93)
+87. Compare LangSmith / Langfuse / Helicone.
+88. What does an LLM trace look like?
+89. What's OpenTelemetry GenAI?
+90. Online eval vs offline eval?
+91. How do you detect drift?
+92. What metrics trigger alarms?
+93. PII redaction strategies?
+
+### M. Capacity / reliability / security (Q94–100)
+94. Estimate GPUs for 100K DAU coding-assistant on Llama 3 70B.
+95. What's a circuit breaker?
+96. Multi-AZ deployment essentials?
+97. How do you handle a model rollback?
+98. Secrets management?
+99. Egress filtering for tool-using agents?
+100. SBOM and why does it matter?
+
+---
+
+## 21. Drill plan
+
+- **Day 1:** §2-4 (GPU, quantization, batching). Drill A, B, C.
+- **Day 2:** §5-8 (engines, KV, speculative, SLO). Drill D, E, F, G.
+- **Day 3:** §9-10 (training infra, serving). Drill H, I.
+- **Day 4:** §11-12 (vector DBs, cost). Drill J, K.
+- **Day 5:** §13-16 (observability, capacity, reliability, security). Drill L, M.
+- **Day 6:** §17 (full stack architecture diagram drilled). Whiteboard a production stack from memory.
+- **Day 7:** Mixed mock — interviewer picks any of 100 questions; you answer in <60 seconds.
+
+Single sentence to remember: **AI infra engineering = pick engine + quantization + batching for the SLO budget; KV math determines hardware; PagedAttention + continuous batching + prompt caching are the throughput trinity; multi-replica + canary + observability are the reliability trinity.**

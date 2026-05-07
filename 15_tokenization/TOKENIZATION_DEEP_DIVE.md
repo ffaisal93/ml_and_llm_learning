@@ -114,7 +114,7 @@ LLaMA-3 introduced **per-digit tokenization**: numbers are split into single dig
 ### Whitespace
 Most tokenizers treat leading whitespace as part of the token: " hello" and "hello" are different tokens. This means model output starting with " hello" requires the prompt to end without trailing whitespace; otherwise the model has to "transition" through tokens that may not exist.
 
-This is the source of many subtle prompting issues. "What is your name? <space>" leaves the tokenizer in an awkward state.
+This is the source of many subtle prompting issues. "What is your name? `<space>`" leaves the tokenizer in an awkward state.
 
 ### Code tokenization
 Code uses lots of indentation, brackets, common keywords. A tokenizer trained on natural-language-heavy data will tokenize Python inefficiently (each space is a token, each `(` is a token). Code-specific tokenizers (Codex, StarCoder) include tokens for common code patterns: 4-space indent, `def`, `import`, `for i in range`, etc.

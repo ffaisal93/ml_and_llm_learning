@@ -26,18 +26,18 @@ The model should NOT have access to:
 ### Example: Generating "The cat sat"
 
 **Step 1: Generate "The"**
-- Input: [<start>]
-- Model should only see: <start>
+- Input: [`<start>`]
+- Model should only see: `<start>`
 - Cannot see: "The", "cat", "sat" (they don't exist yet)
 
 **Step 2: Generate "cat"**
-- Input: [<start>, "The"]
-- Model should only see: <start>, "The"
+- Input: [`<start>`, "The"]
+- Model should only see: `<start>`, "The"
 - Cannot see: "cat", "sat" (they don't exist yet)
 
 **Step 3: Generate "sat"**
-- Input: [<start>, "The", "cat"]
-- Model should only see: <start>, "The", "cat"
+- Input: [`<start>`, "The", "cat"]
+- Model should only see: `<start>`, "The", "cat"
 - Cannot see: "sat" (it doesn't exist yet)
 
 ### What Happens Without Causal Masking?
