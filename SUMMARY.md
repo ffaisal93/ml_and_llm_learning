@@ -517,6 +517,30 @@
 - [70_scaling_laws](70_scaling_laws/README.md)
   - [Scaling Laws Deep Dive](70_scaling_laws/SCALING_LAWS_DEEP_DIVE.md)
 
+# 71 Claude Certified Architect
+
+- [71_claude_certified_architect](71_claude_certified_architect/README.md)
+  - [Exam Guide](71_claude_certified_architect/EXAM_GUIDE.md)
+  - [Claude Api Deep Dive](71_claude_certified_architect/CLAUDE_API_DEEP_DIVE.md)
+  - [Mcp Deep Dive](71_claude_certified_architect/MCP_DEEP_DIVE.md)
+  - [Claude Code Deep Dive](71_claude_certified_architect/CLAUDE_CODE_DEEP_DIVE.md)
+  - [Agent Sdk Deep Dive](71_claude_certified_architect/AGENT_SDK_DEEP_DIVE.md)
+  - [Agentic Patterns Deep Dive](71_claude_certified_architect/AGENTIC_PATTERNS_DEEP_DIVE.md)
+  - [Context And Reliability Deep Dive](71_claude_certified_architect/CONTEXT_AND_RELIABILITY_DEEP_DIVE.md)
+  - [Practice Questions](71_claude_certified_architect/PRACTICE_QUESTIONS.md)
+
+# 72 Claude Certified Developer
+
+- [72_claude_certified_developer](72_claude_certified_developer/README.md)
+  - [Applications Integration Deep Dive](72_claude_certified_developer/APPLICATIONS_INTEGRATION_DEEP_DIVE.md)
+  - [Model Selection Optimization](72_claude_certified_developer/MODEL_SELECTION_OPTIMIZATION.md)
+  - [Agents And Workflows](72_claude_certified_developer/AGENTS_AND_WORKFLOWS.md)
+  - [Prompt And Context Engineering](72_claude_certified_developer/PROMPT_AND_CONTEXT_ENGINEERING.md)
+  - [Tools And Mcp](72_claude_certified_developer/TOOLS_AND_MCP.md)
+  - [Security And Safety](72_claude_certified_developer/SECURITY_AND_SAFETY.md)
+  - [Claude Code And Debugging](72_claude_certified_developer/CLAUDE_CODE_AND_DEBUGGING.md)
+  - [Practice Questions](72_claude_certified_developer/PRACTICE_QUESTIONS.md)
+
 # 99 Personal
 
 - [99_personal](99_personal/knoxville_apartment_search.md)
