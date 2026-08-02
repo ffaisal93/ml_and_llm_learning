@@ -11,7 +11,7 @@ preferred-dark-theme = "navy"
 git-repository-url = "https://github.com/ffaisal93/ml_and_llm_learning"
 edit-url-template = "https://github.com/ffaisal93/ml_and_llm_learning/edit/main/{path}"
 mathjax-support = true
-no-section-label = false
+no-section-label = true
 additional-css = []
 additional-js = []
 
