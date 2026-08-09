@@ -126,7 +126,55 @@ $$
 H = X^\top \mathrm{diag}\!\big(\sigma(z_i)(1 - \sigma(z_i))\big)\, X
 $$
 
-This is positive semi-definite, so the loss is convex.
+This is positive semi-definite, so the loss is convex. That sentence is doing a lot of work, so it is
+worth unpacking — interviewers ask about it precisely because most candidates recite it without being
+able to justify it.
+
+**What the Hessian is.** The gradient is the slope: which way to nudge the weights to reduce loss. The
+Hessian is the *curvature* — how that slope changes as you move. Standing on a hillside, the gradient
+says "downhill is that way," and the Hessian says whether the ground around you curves up like a bowl,
+away like a ridge, or both at once like a saddle.
+
+**What positive semi-definite means.** A matrix $H$ is positive semi-definite (PSD) when
+$v^\top H v \ge 0$ for every vector $v$. For a Hessian this has a physical reading: **there is no
+direction you can walk in where the surface curves downward.** Every direction curves upward or is
+flat — no ridges, no saddles. A surface with that property everywhere is convex, and a convex surface
+has exactly one lowest point.
+
+**Why this particular $H$ is PSD — the two-line proof.** Take any direction $v$ and expand:
+
+$$
+v^\top H v \;=\; v^\top X^\top D X v \;=\; (Xv)^\top D (Xv) \;=\; \sum_i d_i (Xv)_i^2
+\;\ge\; 0
+$$
+
+where $d_i = \sigma(z_i)(1 - \sigma(z_i))$. Since $\sigma$ lies strictly between 0 and 1, every
+$d_i > 0$; and $(Xv)_i^2$ is a square, so it is never negative. A sum of positive weights times
+non-negative squares cannot be negative. That is the whole argument, and it is what an interviewer is
+listening for.
+
+**Why convexity is the payoff.** It is a guarantee that **gradient descent cannot get stuck**. There are
+no local minima to fall into, so wherever you initialise, you converge to the same global optimum — the
+answer is a property of the data, not of your starting point or random seed. Contrast neural networks,
+which are non-convex: a landscape of valleys and saddles where initialisation changes where you land.
+Convexity is a large part of why logistic regression remains so dependable.
+
+**Why "semi" is not pedantry.** Semi-definite allows flat directions: $v^\top H v = 0$ whenever
+$Xv = 0$ for some non-zero $v$. That happens with collinear features, or with more features than
+samples. A flat direction means infinitely many weight vectors achieve identical loss, so there is no
+unique solution and the weights can drift toward infinity. This is exactly the **perfect separation**
+pathology: the model keeps inflating $\|w\|$ to push predictions closer to 0 and 1, the loss keeps
+inching down, and nothing stops it. Adding $L_2$ regularisation contributes $2\lambda I$ to the
+Hessian, adding curvature in *every* direction and turning semi-definite into strictly definite — which
+is why the penalised problem always has a unique finite solution.
+
+**One more reading of $d_i$.** The term $\sigma(1-\sigma)$ is the variance of a Bernoulli trial with
+success probability $\sigma$. It peaks at $0.25$ when $\sigma = 0.5$ and collapses toward zero as
+$\sigma$ approaches either extreme. So **points near the decision boundary supply almost all the
+curvature, and confidently-classified points supply almost none** — another way of seeing why
+well-separated data yields a flat, ill-conditioned problem, and why the Hessian is cheap to reason about
+but can be numerically nasty in practice.
+
 
 A clean whiteboard derivation of these three things — the loss, the gradient, and the Hessian — is a very strong signal in interviews. The whole derivation is six lines.
 
