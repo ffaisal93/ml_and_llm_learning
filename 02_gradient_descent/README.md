@@ -36,9 +36,136 @@ The deep-dive file goes section by section through these topics with the right l
 
 ---
 
-## Core intuition: gradient descent in one paragraph
+## Start here: the whole idea, without the notation
 
-You have a loss $L(\theta)$ and you want to find $\theta$ that makes it small. The gradient $\nabla L(\theta)$ points in the direction of steepest *increase*; subtract a small multiple of it from $\theta$ and you decrease the loss. Repeat. The "small multiple" is the learning rate $\eta$. The reason this isn't trivial: the loss surface in real deep learning is non-convex, ill-conditioned (curvature varies massively across directions), and stochastic (we use mini-batch estimates of $\nabla L$). Every interesting question in this folder follows from one of these three properties.
+Before any symbols, here is the entire concept.
+
+You are standing somewhere on a hilly landscape, in thick fog, and you want to reach the lowest point.
+You cannot see the valley. All you can do is feel the ground under your feet and tell which way is
+downhill. So you take a step downhill, feel again, step again, and repeat. That is gradient descent.
+Everything else in this folder is a detail about *how big a step to take* and *what goes wrong when the
+landscape is a strange shape*.
+
+Now the three pieces of vocabulary, each of which is simpler than it looks.
+
+**The knobs.** A model is a big pile of numbers — weights — and training means finding good values for
+them. Those numbers are written $\theta$ (theta). When you read "find $\theta$ that makes the loss
+small," read it as "find knob settings that make the model less wrong."
+
+**The loss.** A single number saying how wrong the model currently is on your data, written $L$. Big
+number, bad model. The whole game is making it small. Your height on the landscape *is* the loss, and
+your position *is* the knob settings.
+
+**The slope.** The gradient, written $\nabla L$, is just the slope of the landscape where you are
+standing. It has one number per knob, each saying "if you increase this knob a little, the loss changes
+by this much." One mildly annoying convention: the gradient points *uphill*, toward steepest increase.
+So to go down, you subtract it. That is why the update rule has a minus sign.
+
+Put together, one step of gradient descent is:
+
+$$
+\theta_{\text{new}} = \theta_{\text{old}} - \eta \cdot \nabla L
+$$
+
+In words: **new knobs = old knobs − (step size × slope)**. That is the entire algorithm. The rest of
+this topic is about that little $\eta$.
+
+### A worked example you can do in your head
+
+Take the simplest possible landscape, $L(\theta) = \theta^2$ — a parabola whose lowest point is at
+$\theta = 0$. Its slope is $\nabla L = 2\theta$.
+
+Start at $\theta = 10$ with a step size of $\eta = 0.1$:
+
+| Step | Position $\theta$ | Slope $2\theta$ | Update | New $\theta$ |
+|---|---|---|---|---|
+| 1 | 10.0 | 20.0 | $-0.1 \times 20$ | 8.0 |
+| 2 | 8.0 | 16.0 | $-0.1 \times 16$ | 6.4 |
+| 3 | 6.4 | 12.8 | $-0.1 \times 12.8$ | 5.12 |
+| 4 | 5.12 | 10.24 | $-0.1 \times 10.24$ | 4.10 |
+
+It marches steadily toward zero, and notice it slows down as it gets closer — because the slope
+shrinks near the bottom. That self-braking behaviour is why gradient descent settles rather than
+overshooting forever.
+
+Now redo it with $\eta = 1.1$ instead:
+
+| Step | Position $\theta$ | Slope $2\theta$ | New $\theta$ |
+|---|---|---|---|
+| 1 | 10.0 | 20.0 | $10 - 22 = -12$ |
+| 2 | −12.0 | −24.0 | $-12 + 26.4 = 14.4$ |
+| 3 | 14.4 | 28.8 | $14.4 - 31.7 = -17.3$ |
+
+It bounces from side to side and the bounces get **bigger**. This is divergence, and it is the single
+most common training failure. The step was so large that it leapt clean over the valley and landed
+higher up the opposite wall.
+
+That contrast is the heart of this whole topic. **Too small and you crawl; too large and you explode.**
+Everything about schedules, warmup, and adaptive optimizers exists to manage that tension.
+
+### Why this is hard in practice — three complications
+
+If every loss looked like that parabola, gradient descent would be a solved, boring problem. Real
+training is harder for exactly three reasons, and every question in this folder traces back to one of
+them.
+
+**One: the landscape has many valleys, not one.** The parabola has a single lowest point, so you cannot
+fail to find it. This property is called *convex*. Real neural network landscapes are *non-convex* —
+many valleys, ridges, and flat plateaus — so where you end up depends partly on where you started.
+
+**Two: the valley is a long narrow canyon, not a round bowl.** This is the one that surprises people,
+and it is worth picturing properly. Imagine a valley that is extremely steep from side to side but
+almost flat along its length. You want to travel *along* it to reach the low end, but the steep walls
+dominate what you feel underfoot. Take a step big enough to make progress along the gentle direction
+and you slam into the steep wall and bounce. Take a step small enough to be safe on the steep wall and
+you inch along the gentle direction forever.
+
+That shape is called **ill-conditioning**, and the number describing how stretched the canyon is — the
+ratio of steepest curvature to gentlest — is the **condition number**. A round bowl has a condition
+number of 1 and is easy. A canyon stretched a thousand-to-one is miserable, because *one step size
+cannot be right for both directions at once*. Hold on to that sentence: it is the reason Adam,
+AdamW, per-layer scaling, and most of the rest of the optimizer zoo exist. They are all attempts to
+use a different effective step size in each direction.
+
+**Three: you cannot feel the ground exactly.** Computing the true slope means using every training
+example, which is far too slow. So you estimate it from a small random sample — a mini-batch. Your
+sense of "downhill" is therefore noisy, and it wobbles from step to step. That is what *stochastic*
+means. Surprisingly, that noise turns out to be useful, and later sections explain why.
+
+### The three regimes, in plain terms
+
+Those complications explain the three ways people compute the slope.
+
+Think of it as polling before deciding which way to walk. You can **survey every single person** — the
+most accurate reading, and far too slow to do before every step. That is batch gradient descent. You can
+**ask one person** — instant, but their opinion is noisy and might send you the wrong way. That is
+stochastic gradient descent in its pure form. Or you can **ask a small group**, which is nearly as fast
+and much steadier than one person. That is mini-batch, and it is what essentially everyone actually
+uses.
+
+The group size is the batch size $B$. Bigger groups give steadier readings — the noise falls in
+proportion to $B$ — but each reading costs more, and past a certain size the extra steadiness stops
+being worth the cost.
+
+### What to carry into the rest of this topic
+
+If you remember four things, the dense material below will make sense:
+
+1. Gradient descent is: **new knobs = old knobs − step size × slope.**
+2. Too small a step crawls; too large a step diverges. That tension never goes away.
+3. The loss surface is a stretched canyon, so **no single step size is right for every direction** —
+   which is what adaptive optimizers try to fix.
+4. The slope is estimated from a sample, so it is noisy — and that noise is not purely a nuisance.
+
+The sections that follow say all of this again, precisely, with the mathematics that lets you defend it
+in an interview. Read them knowing that they are the formal version of the four points above, not new
+material.
+
+---
+
+## The same idea, stated precisely
+
+You have a loss $L(\theta)$ and you want to find $\theta$ that makes it small. The gradient $\nabla L(\theta)$ points in the direction of steepest *increase*; subtract a small multiple of it from $\theta$ and you decrease the loss. Repeat. The "small multiple" is the learning rate $\eta$. The reason this isn't trivial: the loss surface in real deep learning is **non-convex** (many valleys, not one bowl), **ill-conditioned** (a stretched canyon — curvature varies massively across directions, so no single step size suits them all), and **stochastic** (we use noisy mini-batch estimates of $\nabla L$ rather than the true gradient). Every interesting question in this folder follows from one of these three properties.
 
 ---
 
@@ -60,7 +187,7 @@ The default. Batch size $B$ (typically 32–8192) trades stability for speed. Va
 
 ## Why the learning rate is the master hyperparameter
 
-For a quadratic loss with Hessian $H$, GD converges only if $0 < \eta < 2/\lambda_{\max}(H)$. Above that, you diverge in the sharpest direction. Below $1/\lambda_{\max}(H)$, you converge but waste steps in flatter directions. The optimal rate is $2/(\lambda_{\max} + \lambda_{\min})$, and convergence speed depends on the **condition number** $\kappa = \lambda_{\max}/\lambda_{\min}$.
+Here $\lambda_{\max}(H)$ is the curvature in the *steepest* direction of the canyon and $\lambda_{\min}(H)$ the curvature in the *gentlest*; the Hessian $H$ is what packages all those curvatures together. For a quadratic loss with Hessian $H$, GD converges only if $0 < \eta < 2/\lambda_{\max}(H)$. Above that, you diverge in the sharpest direction. Below $1/\lambda_{\max}(H)$, you converge but waste steps in flatter directions. The optimal rate is $2/(\lambda_{\max} + \lambda_{\min})$, and convergence speed depends on the **condition number** $\kappa = \lambda_{\max}/\lambda_{\min}$.
 
 In real deep networks:
 
