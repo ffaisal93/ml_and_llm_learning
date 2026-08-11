@@ -76,3 +76,6 @@ Thumbs.db
 # mdBook output
 /book/
 
+
+# personal, not published
+_local/

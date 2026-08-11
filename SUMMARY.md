@@ -547,7 +547,3 @@
   - [Code From Memory](73_night_before_review/CODE_FROM_MEMORY.md)
   - [Formula Sheet](73_night_before_review/FORMULA_SHEET.md)
   - [Depth And Breadth Qa](73_night_before_review/DEPTH_AND_BREADTH_QA.md)
-
-# 99 Personal
-
-- [99_personal](99_personal/knoxville_apartment_search.md)
