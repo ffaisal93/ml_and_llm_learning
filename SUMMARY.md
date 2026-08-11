@@ -541,6 +541,13 @@
   - [Claude Code And Debugging](72_claude_certified_developer/CLAUDE_CODE_AND_DEBUGGING.md)
   - [Practice Questions](72_claude_certified_developer/PRACTICE_QUESTIONS.md)
 
+# 73 Night Before Review
+
+- [73_night_before_review](73_night_before_review/README.md)
+  - [Code From Memory](73_night_before_review/CODE_FROM_MEMORY.md)
+  - [Formula Sheet](73_night_before_review/FORMULA_SHEET.md)
+  - [Depth And Breadth Qa](73_night_before_review/DEPTH_AND_BREADTH_QA.md)
+
 # 99 Personal
 
 - [99_personal](99_personal/knoxville_apartment_search.md)
