@@ -634,3 +634,9 @@
   - [Code From Memory](73_night_before_review/CODE_FROM_MEMORY.md)
   - [Formula Sheet](73_night_before_review/FORMULA_SHEET.md)
   - [Depth And Breadth Qa](73_night_before_review/DEPTH_AND_BREADTH_QA.md)
+
+# 74 AI Engineer Interview Prep
+
+- [74_ai_engineer_interview_prep](74_ai_engineer_interview_prep/README.md)
+  - [The Loops](74_ai_engineer_interview_prep/THE_LOOPS.md)
+  - [Modern Question Bank](74_ai_engineer_interview_prep/MODERN_QUESTION_BANK.md)
