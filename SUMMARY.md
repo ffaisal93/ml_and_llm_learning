@@ -640,3 +640,4 @@
 - [74_ai_engineer_interview_prep](74_ai_engineer_interview_prep/README.md)
   - [The Loops](74_ai_engineer_interview_prep/THE_LOOPS.md)
   - [Modern Question Bank](74_ai_engineer_interview_prep/MODERN_QUESTION_BANK.md)
+  - [Rag Failure Diagnosis](74_ai_engineer_interview_prep/RAG_FAILURE_DIAGNOSIS.md)

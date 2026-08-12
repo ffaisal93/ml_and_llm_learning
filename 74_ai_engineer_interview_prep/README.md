@@ -17,6 +17,7 @@ the job. None of them anywhere in the preparation.
 |---|---|
 | `THE_LOOPS.md` | The process. Five distinct roles that share vocabulary and nothing else, the standard pipeline stage by stage, what each round type is actually grading, a fully worked real loop, take-homes, behavioral, and reading the room. |
 | `MODERN_QUESTION_BANK.md` | The content. Eleven sections of applied GenAI questions — RAG, agents, prompting and context, evaluation, LLMOps, deployment, safety, judgement — plus 65 rapid-fire, each with the answer written the way you would say it out loud. |
+| `RAG_FAILURE_DIAGNOSIS.md` | The diagnostic drill. Five symptom-shaped RAG questions worked end to end — sudden regression, the retrieval-generation gap, proving an embedding change helped, five-document synthesis, and 10k to 1M documents — each with the ordered hypotheses, the experiment that discriminates between them, and the follow-ups. |
 
 ---
 
@@ -59,6 +60,26 @@ also means an interviewer who has seen those lists is deliberately asking around
 
 Section 11 documents where the questions came from and, more usefully, what was deliberately left out
 and why.
+
+---
+
+## Why there is a whole chapter on RAG failures
+
+`RAG_FAILURE_DIAGNOSIS.md` exists because of a distinct question type that the other two chapters do not
+cover well. The question bank asks *what is hybrid search and why* — component knowledge, answerable by
+anyone who has built one. The diagnostic chapter asks *your system suddenly started giving wrong answers,
+what do you investigate and how would you prove it* — which is answerable only by someone who has
+operated one.
+
+The gap between those two is where most candidates lose applied GenAI loops. Building teaches you the
+happy path and gives you a vocabulary for components. Operating teaches you the failure surface, which
+is much larger and shaped completely differently. Asked a symptom question, a builder lists components,
+and the interviewer hears someone who has never had one of these break at 2am.
+
+The chapter is organized so the transferable part comes first: the five moves every diagnostic answer
+makes, of which the one nearly everybody skips is saying how you would *prove* the cause. That is the
+part being graded. Memorizing the five answers does not survive an interviewer changing one detail;
+knowing the shape does.
 
 ---
 

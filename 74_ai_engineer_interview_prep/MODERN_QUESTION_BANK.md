@@ -57,6 +57,8 @@ Note what that answer does: names a constraint, gives numbers, defends a fork, a
 
 ## 2. RAG
 
+The questions here are component questions — what a thing is, when you would use it, what it costs. The *symptom* questions that build on them (something suddenly broke; retrieval looks fine and answers do not; prove that change helped; five documents; a million documents) are worked end to end in [`RAG_FAILURE_DIAGNOSIS.md`](RAG_FAILURE_DIAGNOSIS.md), because they are a different skill and a harder one.
+
 The most heavily-asked cluster in the entire loop, at essentially every company. See `39_rag_retrieval_augmented_generation` for the mechanics of indexing, ANN search, and embedding models; this section is the interview layer.
 
 ### "Why RAG instead of fine-tuning?"
