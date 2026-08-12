@@ -515,7 +515,7 @@ optimizer = torch.optim.Adam([prompt_embeddings], lr=0.3)
 ```
 
 **Complete Code:**
-See `prompt_prefix_code.py` for full implementation!
+See [`prompt_prefix_code.py`](prompt_prefix_code_py.md) for full implementation!
 
 **Key Points:**
 - Only prompt_embeddings requires gradients
@@ -596,7 +596,7 @@ for layer_idx, layer in enumerate(model.transformer.h):
 - Need to modify attention at each layer
 - Requires understanding of transformer internals
 
-**See `prompt_prefix_code.py` for complete implementation!**
+**See [`prompt_prefix_code.py`](prompt_prefix_code_py.md) for complete implementation!**
 
 ---
 

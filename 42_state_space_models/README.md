@@ -127,7 +127,7 @@ State Space Models are a class of models that use a hidden state to process sequ
 
 See detailed files for complete implementations:
 - `ssm_theory.md`: Complete theoretical foundation
-- `ssm_code.py`: Full implementation
+- [`ssm_code.py`](ssm_code_py.md): Full implementation
 - `mamba_code.py`: Mamba implementation
 - `ssm_qa.md`: Comprehensive interview Q&A
 

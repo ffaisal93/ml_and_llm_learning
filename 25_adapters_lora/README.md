@@ -330,7 +330,7 @@ class LoRALinear(nn.Module):
   - Best practices and tips
   - Comparison with other methods
 
-- **`prompt_prefix_code.py`**: Complete implementations
+- **[`prompt_prefix_code.py`](prompt_prefix_code_py.md)**: Complete implementations
   - `PromptTuning` class with full code
   - `PrefixTuning` class with full code
   - Training functions for both methods

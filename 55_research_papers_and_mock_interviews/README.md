@@ -194,8 +194,8 @@ For Gaussian assumptions, that means estimating mean vectors and covariance matr
 
 ## Files in This Topic
 
-- [research_judgment.py](/Users/faisal/Projects/ml_and_llm_learning/55_research_papers_and_mock_interviews/research_judgment.py): compact helpers for experiment comparison and the two-distribution question
-- [mock_interview_questions.md](/Users/faisal/Projects/ml_and_llm_learning/55_research_papers_and_mock_interviews/mock_interview_questions.md): research-style interview prompts
+- [research_judgment.py](research_judgment_py.md): compact helpers for experiment comparison and the two-distribution question
+- [mock_interview_questions.md](mock_interview_questions.md): research-style interview prompts
 
 The code is intentionally simple. It is meant to help you practice the reasoning path, not to serve as a production-grade statistical library.
 

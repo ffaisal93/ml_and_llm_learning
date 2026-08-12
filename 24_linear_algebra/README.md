@@ -159,7 +159,7 @@ Eigenvectors: v₁ = [1, 1], v₂ = [1, -1]
 
 ## Code Implementation
 
-See `linear_algebra_qa.py` for implementations.
+See [`linear_algebra_qa.py`](linear_algebra_qa_py.md) for implementations.
 
 ## Theory
 

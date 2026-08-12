@@ -151,28 +151,28 @@ Diffusion models are generative models that learn to reverse a gradual noising p
   - Variance schedules
   - Advanced topics (classifier-free guidance, latent diffusion)
 
-- **`diffusion_code.py`**: Full continuous diffusion implementation
+- **[`diffusion_code.py`](diffusion_code_py.md)**: Full continuous diffusion implementation
   - Variance schedules (linear, cosine)
   - Forward diffusion process
   - Noise prediction model
   - Training function
   - Sampling/generation function
 
-- **`nlp_diffusion.py`**: NLP-specific discrete diffusion
+- **[`nlp_diffusion.py`](nlp_diffusion_py.md)**: NLP-specific discrete diffusion
   - Discrete forward process (transition matrices)
   - Discrete diffusion model (transformer-based)
   - Training for discrete diffusion
   - Text generation
   - Text inpainting
 
-- **`training_diffusion.py`**: Complete training procedures
+- **[`training_diffusion.py`](training_diffusion_py.md)**: Complete training procedures
   - Training setup and best practices
   - Learning rate scheduling
   - Gradient clipping
   - Checkpointing
   - Classifier-free guidance training
 
-- **`evaluation_diffusion.py`**: Comprehensive evaluation methods
+- **[`evaluation_diffusion.py`](evaluation_diffusion_py.md)**: Comprehensive evaluation methods
   - Image metrics (FID, IS)
   - Text metrics (BLEU, perplexity, diversity)
   - Diffusion-specific metrics

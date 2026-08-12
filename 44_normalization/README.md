@@ -148,7 +148,7 @@ y = γ * x̂ + β
 ## Industry-Standard Boilerplate Code
 
 See detailed files for complete implementations:
-- `normalization_implementations.py`: Complete implementations from scratch
+- [`normalization_implementations.py`](normalization_implementations_py.md): Complete implementations from scratch
 - `normalization_theory.md`: Detailed theoretical explanations
 - `normalization_qa.md`: Comprehensive interview Q&A
 

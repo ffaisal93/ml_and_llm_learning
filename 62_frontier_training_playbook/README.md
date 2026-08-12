@@ -228,7 +228,7 @@ Then it may be overconstraining optimization or changing the geometry in a way t
 
 ## Boilerplate Code
 
-See [frontier_training_playbook.py](/Users/faisal/Projects/ml_and_llm_learning/62_frontier_training_playbook/frontier_training_playbook.py) for small pressure-friendly helpers covering:
+See [frontier_training_playbook.py](frontier_training_playbook_py.md) for small pressure-friendly helpers covering:
 
 - active-parameter estimates for dense and MoE-style setups
 - grouped-query vs multi-head KV-cache size estimates
@@ -239,7 +239,7 @@ These are not meant to simulate a full training stack.
 
 They are meant to make the trade-offs concrete and easy to reason about during interviews.
 
-For a more descriptive explanation of the training methodology, read [frontier_training_deep_dive.md](/Users/faisal/Projects/ml_and_llm_learning/62_frontier_training_playbook/frontier_training_deep_dive.md).
+For a more descriptive explanation of the training methodology, read [frontier_training_deep_dive.md](frontier_training_deep_dive.md).
 
 ## What to Practice Saying Out Loud
 
@@ -253,6 +253,6 @@ For a more descriptive explanation of the training methodology, read [frontier_t
 ## Suggested Use
 
 Use this topic after:
-- [51_llm_research_interview_prep](/Users/faisal/Projects/ml_and_llm_learning/51_llm_research_interview_prep/README.md)
-- [60_research_judgment_rounds](/Users/faisal/Projects/ml_and_llm_learning/60_research_judgment_rounds/README.md)
-- [61_large_scale_llm_systems](/Users/faisal/Projects/ml_and_llm_learning/61_large_scale_llm_systems/README.md)
+- [51_llm_research_interview_prep](README.md)
+- [60_research_judgment_rounds](README.md)
+- [61_large_scale_llm_systems](README.md)

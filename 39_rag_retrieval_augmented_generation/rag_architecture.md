@@ -122,7 +122,7 @@ RAG (Retrieval-Augmented Generation) combines retrieval of relevant documents wi
 - Learning-to-rank models
 - Multi-stage retrieval
 
-**See `retrieval_methods.md` and `retrieval_implementations.py` for detailed implementations!**
+**See `retrieval_methods.md` and [`retrieval_implementations.py`](retrieval_implementations_py.md) for detailed implementations!**
 
 ### 5. Context Assembly
 

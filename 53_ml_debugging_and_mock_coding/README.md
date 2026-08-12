@@ -248,8 +248,8 @@ That pattern is reliable under pressure.
 
 ## Files in This Topic
 
-- [debugging_patterns.py](/Users/faisal/Projects/ml_and_llm_learning/53_ml_debugging_and_mock_coding/debugging_patterns.py): small bug patterns and checks
-- [mock_questions.md](/Users/faisal/Projects/ml_and_llm_learning/53_ml_debugging_and_mock_coding/mock_questions.md): timed coding and debugging prompts
+- [debugging_patterns.py](debugging_patterns_py.md): small bug patterns and checks
+- [mock_questions.md](mock_questions.md): timed coding and debugging prompts
 
 These files are intentionally small and repeatable. The point is to make your debugging procedure easy to recall in an interview, not to build a large debugging framework.
 

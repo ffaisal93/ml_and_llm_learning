@@ -139,7 +139,7 @@ y_t = W_hy * h_t + b_y
 ## Industry-Standard Boilerplate Code
 
 See detailed files for complete implementations:
-- `rnn_lstm_code.py`: Simple, precise implementations
+- [`rnn_lstm_code.py`](rnn_lstm_code_py.md): Simple, precise implementations
 - `rnn_lstm_explanations.md`: Key concepts explained
 
 ## Exercises

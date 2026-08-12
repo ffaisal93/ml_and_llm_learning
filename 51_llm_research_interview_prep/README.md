@@ -295,7 +295,7 @@ In interviews, this is a strong place to ask whether comparisons were compute-ma
 
 ## Boilerplate Code
 
-See [llm_eval_and_ablation.py](/Users/faisal/Projects/ml_and_llm_learning/51_llm_research_interview_prep/llm_eval_and_ablation.py) for easy interview-style implementations of:
+See [llm_eval_and_ablation.py](llm_eval_and_ablation_py.md) for easy interview-style implementations of:
 
 - Negative log-likelihood
 - Perplexity

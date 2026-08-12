@@ -515,7 +515,7 @@ for t in reversed(range(timesteps)):
     x = denoise_step(x, noise_pred, t)
 ```
 
-**See `diffusion_code.py` for complete implementation!**
+**See [`diffusion_code.py`](diffusion_code_py.md) for complete implementation!**
 
 ---
 

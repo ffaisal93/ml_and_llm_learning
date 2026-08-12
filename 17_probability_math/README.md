@@ -181,7 +181,7 @@ P(heads and heads) = 0.5 × 0.5 = 0.25
 
 ## Code Implementation
 
-See `probability_qa.py` for implementations.
+See [`probability_qa.py`](probability_qa_py.md) for implementations.
 
 ## Exercises
 

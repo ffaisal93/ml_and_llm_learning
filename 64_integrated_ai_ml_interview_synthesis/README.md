@@ -202,9 +202,9 @@ Descend one level:
 
 ## Files in This Topic
 
-- [answer_frameworks.md](/Users/faisal/Projects/ml_and_llm_learning/64_integrated_ai_ml_interview_synthesis/answer_frameworks.md): answer structures by interview type
-- [cross_topic_map.md](/Users/faisal/Projects/ml_and_llm_learning/64_integrated_ai_ml_interview_synthesis/cross_topic_map.md): how topics connect across the repo
-- [descriptive_interview_narratives.md](/Users/faisal/Projects/ml_and_llm_learning/64_integrated_ai_ml_interview_synthesis/descriptive_interview_narratives.md): long-form examples of what strong spoken answers sound like
+- [answer_frameworks.md](answer_frameworks.md): answer structures by interview type
+- [cross_topic_map.md](cross_topic_map.md): how topics connect across the repo
+- [descriptive_interview_narratives.md](descriptive_interview_narratives.md): long-form examples of what strong spoken answers sound like
 
 ## What to Practice Saying Out Loud
 
@@ -217,10 +217,10 @@ Descend one level:
 ## Suggested Use
 
 Use this as a final synthesis chapter after:
-- [57_meta_style_mock_interviews](/Users/faisal/Projects/ml_and_llm_learning/57_meta_style_mock_interviews/README.md)
-- [60_research_judgment_rounds](/Users/faisal/Projects/ml_and_llm_learning/60_research_judgment_rounds/README.md)
-- [62_frontier_training_playbook](/Users/faisal/Projects/ml_and_llm_learning/62_frontier_training_playbook/README.md)
-- [63_paged_attention_and_llm_serving](/Users/faisal/Projects/ml_and_llm_learning/63_paged_attention_and_llm_serving/README.md)
+- [57_meta_style_mock_interviews](README.md)
+- [60_research_judgment_rounds](README.md)
+- [62_frontier_training_playbook](README.md)
+- [63_paged_attention_and_llm_serving](README.md)
 
 ## External Study Guide
 

@@ -324,7 +324,7 @@ P(bird|the) = (0+1)/(3+3) = 1/6 = 0.17  (fixed!)
 
 ## Industry-Standard Boilerplate Code
 
-See `nlp_basics.py` for complete implementations.
+See [`nlp_basics.py`](nlp_basics_py.md) for complete implementations.
 
 ## Additional Topics Covered
 
@@ -351,7 +351,7 @@ See `nlp_basics.py` for complete implementations.
   - Text Generation, Sentiment Analysis, Information Extraction, Dialogue Systems
   - Each with phase-by-phase procedures, model selection, training, evaluation
 
-See `evaluation_metrics.py`, `nlp_tasks_and_solutions.md`, `nlp_problems_detailed.md`, and `nl2code_detailed.py` for detailed implementations!
+See [`evaluation_metrics.py`](evaluation_metrics_py.md), `nlp_tasks_and_solutions.md`, `nlp_problems_detailed.md`, and [`nl2code_detailed.py`](nl2code_detailed_py.md) for detailed implementations!
 
 ## Exercises
 

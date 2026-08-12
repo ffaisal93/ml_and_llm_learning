@@ -324,7 +324,7 @@ Where:
 
 ## Industry-Standard Boilerplate Code
 
-See `information_theory.py` for complete implementations.
+See [`information_theory.py`](information_theory_py.md) for complete implementations.
 
 ## Exercises
 

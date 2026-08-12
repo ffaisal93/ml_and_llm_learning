@@ -436,7 +436,7 @@ torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
 ## Quick Reference
 
-See `pytorch_basics.py` for complete code examples.
+See [`pytorch_basics.py`](pytorch_basics_py.md) for complete code examples.
 
 ## Exercises
 

@@ -49,8 +49,8 @@ The best answers break the system into components, identify the dominant bottlen
 
 ## Files in This Topic
 
-- [large_scale_systems.md](/Users/faisal/Projects/ml_and_llm_learning/61_large_scale_llm_systems/large_scale_systems.md): detailed interview explanations
-- [systems_tradeoffs.py](/Users/faisal/Projects/ml_and_llm_learning/61_large_scale_llm_systems/systems_tradeoffs.py): small memory and throughput calculators
+- [large_scale_systems.md](large_scale_systems.md): detailed interview explanations
+- [systems_tradeoffs.py](systems_tradeoffs_py.md): small memory and throughput calculators
 
 ## Technical Details Interviewers Often Want
 
@@ -183,5 +183,5 @@ That structure makes your answer sound practical instead of vague.
 ## Suggested Use
 
 For deeper follow-up on frontier methodology and serving-engine internals, continue to:
-- [62_frontier_training_playbook](/Users/faisal/Projects/ml_and_llm_learning/62_frontier_training_playbook/README.md)
-- [63_paged_attention_and_llm_serving](/Users/faisal/Projects/ml_and_llm_learning/63_paged_attention_and_llm_serving/README.md)
+- [62_frontier_training_playbook](README.md)
+- [63_paged_attention_and_llm_serving](README.md)

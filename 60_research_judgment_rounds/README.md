@@ -44,8 +44,8 @@ You are trying to identify:
 
 ## Files in This Topic
 
-- [rounds.md](/Users/faisal/Projects/ml_and_llm_learning/60_research_judgment_rounds/rounds.md): scenario-based research rounds
-- [judgment_checklist.md](/Users/faisal/Projects/ml_and_llm_learning/60_research_judgment_rounds/judgment_checklist.md): compact interview checklist
+- [rounds.md](rounds.md): scenario-based research rounds
+- [judgment_checklist.md](judgment_checklist.md): compact interview checklist
 
 ## Technical Details Interviewers Often Want
 

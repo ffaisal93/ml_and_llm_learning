@@ -308,7 +308,7 @@ def dequantize_from_int8(quantized: np.ndarray, scale: float,
   - Memory considerations
   - Practical implementation details
 
-- **`kv_cache_comparison.py`**: Side-by-side code comparison
+- **[`kv_cache_comparison.py`](kv_cache_comparison_py.md)**: Side-by-side code comparison
   - Standard inference implementation (shows the problem)
   - KV cache implementation (shows the solution)
   - Step-by-step comparison showing exactly what changes

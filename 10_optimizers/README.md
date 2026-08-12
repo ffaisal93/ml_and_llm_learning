@@ -8,7 +8,7 @@
 |---|---|
 | `README.md` | Per-optimizer comparison — this file. |
 | `INTERVIEW_GRILL.md` | 40 interview questions on optimizer algorithms specifically (different angle from `02_gradient_descent/INTERVIEW_GRILL.md`). |
-| `optimizers.py` | From-scratch implementations of SGD, Momentum, Nesterov, RMSProp, Adam, AdamW, Lion. |
+| [`optimizers.py`](optimizers_py.md) | From-scratch implementations of SGD, Momentum, Nesterov, RMSProp, Adam, AdamW, Lion. |
 
 ---
 

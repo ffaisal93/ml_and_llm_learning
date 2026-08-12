@@ -358,7 +358,7 @@ P(disease|positive) = 0.95 * 0.01 / 0.059
 
 ## Industry-Standard Boilerplate Code
 
-See `models_comparison.py` for implementations.
+See [`models_comparison.py`](models_comparison_py.md) for implementations.
 
 ## Exercises
 

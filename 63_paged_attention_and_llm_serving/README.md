@@ -183,8 +183,8 @@ Then you must discuss the trade-off honestly: better serving efficiency may come
 ## Boilerplate Code
 
 See:
-- [paged_attention.py](/Users/faisal/Projects/ml_and_llm_learning/63_paged_attention_and_llm_serving/paged_attention.py)
-- [serving_notes.md](/Users/faisal/Projects/ml_and_llm_learning/63_paged_attention_and_llm_serving/serving_notes.md)
+- [paged_attention.py](paged_attention_py.md)
+- [serving_notes.md](serving_notes.md)
 
 The Python file contains small interview-friendly helpers for:
 - KV-cache memory estimation
@@ -196,7 +196,7 @@ The goal is not to reimplement vLLM.
 
 The goal is to make the core ideas mechanically clear.
 
-For a longer descriptive explanation of the serving logic, allocator trade-offs, and why paging helps, read [paged_attention_deep_dive.md](/Users/faisal/Projects/ml_and_llm_learning/63_paged_attention_and_llm_serving/paged_attention_deep_dive.md).
+For a longer descriptive explanation of the serving logic, allocator trade-offs, and why paging helps, read [paged_attention_deep_dive.md](paged_attention_deep_dive.md).
 
 ## What to Practice Saying Out Loud
 
@@ -210,6 +210,6 @@ For a longer descriptive explanation of the serving logic, allocator trade-offs,
 ## Suggested Use
 
 Use this topic after:
-- [06_llm_inference](/Users/faisal/Projects/ml_and_llm_learning/06_llm_inference/README.md)
-- [29_system_design_ml](/Users/faisal/Projects/ml_and_llm_learning/29_system_design_ml/README.md)
-- [61_large_scale_llm_systems](/Users/faisal/Projects/ml_and_llm_learning/61_large_scale_llm_systems/README.md)
+- [06_llm_inference](README.md)
+- [29_system_design_ml](README.md)
+- [61_large_scale_llm_systems](README.md)

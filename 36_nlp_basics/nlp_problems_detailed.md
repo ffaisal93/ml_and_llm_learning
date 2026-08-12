@@ -762,7 +762,7 @@ Generate code from natural language description
 
 ### Standard Solution Procedure
 
-**See `nl2code_detailed.py` for complete implementation!**
+**See [`nl2code_detailed.py`](nl2code_detailed_py.md) for complete implementation!**
 
 **Key Challenges:**
 1. **Large schemas**: Schema pruning

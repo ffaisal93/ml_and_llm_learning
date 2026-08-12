@@ -51,8 +51,8 @@ They keep a visible chain:
 
 ## Files in This Topic
 
-- [derivations.md](/Users/faisal/Projects/ml_and_llm_learning/58_whiteboard_derivations/derivations.md): step-by-step derivations
-- [memory_skeletons.md](/Users/faisal/Projects/ml_and_llm_learning/58_whiteboard_derivations/memory_skeletons.md): compact memory aids
+- [derivations.md](derivations.md): step-by-step derivations
+- [memory_skeletons.md](memory_skeletons.md): compact memory aids
 
 ## Technical Details Interviewers Often Want
 

@@ -196,7 +196,7 @@ For hidden layer (layer 1):
 
 ## Industry-Standard Boilerplate Code
 
-See `neural_network.py` for complete implementation.
+See [`neural_network.py`](neural_network_py.md) for complete implementation.
 
 ## Exercises
 

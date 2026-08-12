@@ -255,7 +255,7 @@ You should be able to explain these clearly:
 
 ## Boilerplate Code
 
-See [statistical_inference.py](/Users/faisal/Projects/ml_and_llm_learning/47_statistical_inference/statistical_inference.py) for easy interview-style code covering:
+See [statistical_inference.py](statistical_inference_py.md) for easy interview-style code covering:
 
 - Sample mean and variance
 - Bernoulli and Gaussian MLE

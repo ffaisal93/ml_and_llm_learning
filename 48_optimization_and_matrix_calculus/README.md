@@ -240,7 +240,7 @@ This structure matters as much as the answer.
 
 ## Boilerplate Code
 
-See [optimization.py](/Users/faisal/Projects/ml_and_llm_learning/48_optimization_and_matrix_calculus/optimization.py) for:
+See [optimization.py](optimization_py.md) for:
 
 - Sigmoid and stable softmax
 - Binary cross-entropy

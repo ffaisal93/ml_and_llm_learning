@@ -243,7 +243,7 @@ def r2_score(y_true: np.ndarray, y_pred: np.ndarray) -> float:
   - Related concepts (entropy, KL divergence, bits per token)
   - Applications
 
-- **`perplexity_code.py`**: Complete implementations
+- **[`perplexity_code.py`](perplexity_code_py.md)**: Complete implementations
   - Basic perplexity computation
   - Perplexity from logits
   - Language model perplexity

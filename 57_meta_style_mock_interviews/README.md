@@ -42,9 +42,9 @@ This topic exists so that you practice the transitions themselves, because real 
 
 ## What This Topic Contains
 
-- [mock_loops.md](/Users/faisal/Projects/ml_and_llm_learning/57_meta_style_mock_interviews/mock_loops.md): full simulated interview loops
-- [scorecard.md](/Users/faisal/Projects/ml_and_llm_learning/57_meta_style_mock_interviews/scorecard.md): evaluation rubric
-- [interview_timer.py](/Users/faisal/Projects/ml_and_llm_learning/57_meta_style_mock_interviews/interview_timer.py): small helper to print random mock rounds
+- [mock_loops.md](mock_loops.md): full simulated interview loops
+- [scorecard.md](scorecard.md): evaluation rubric
+- [interview_timer.py](interview_timer_py.md): small helper to print random mock rounds
 
 ## Technical Details Interviewers Often Want
 

@@ -116,7 +116,7 @@ Then the feature meaning can drift across splits, and evaluation may become inco
 
 ## Files in This Topic
 
-- [data_manipulation.py](/Users/faisal/Projects/ml_and_llm_learning/54_data_manipulation_for_ml/data_manipulation.py): compact pandas and NumPy patterns
+- [data_manipulation.py](data_manipulation_py.md): compact pandas and NumPy patterns
 
 ## What to Practice Saying Out Loud
 

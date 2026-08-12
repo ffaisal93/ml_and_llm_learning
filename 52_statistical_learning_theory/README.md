@@ -173,7 +173,7 @@ Then the original generalization story no longer applies directly, because the p
 
 ## Boilerplate Code
 
-See [generalization_boilerplate.py](/Users/faisal/Projects/ml_and_llm_learning/52_statistical_learning_theory/generalization_boilerplate.py) for:
+See [generalization_boilerplate.py](generalization_boilerplate_py.md) for:
 
 - empirical risk
 - generalization gap

@@ -270,7 +270,7 @@ In real systems you often filter empty sequences early or explicitly skip those 
 
 ## Boilerplate Code
 
-See [interview_patterns.py](/Users/faisal/Projects/ml_and_llm_learning/50_ml_coding_interview_patterns/interview_patterns.py) for compact implementations of:
+See [interview_patterns.py](interview_patterns_py.md) for compact implementations of:
 
 - Stable softmax
 - Masked softmax

@@ -167,7 +167,7 @@ That usually looks stronger than trying to hide the gap.
 
 ## Files in This Topic
 
-- [SPOKEN_QA.md](/Users/faisal/Projects/ml_and_llm_learning/56_spoken_interview_question_bank/SPOKEN_QA.md): grouped spoken-practice questions with model answers
+- [SPOKEN_QA.md](SPOKEN_QA.md): grouped spoken-practice questions with model answers
 
 ## What This Topic Covers
 

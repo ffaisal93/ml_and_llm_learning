@@ -454,7 +454,7 @@ Determine sentiment (positive, negative, neutral) of text
   - Question Answering (6 phases)
   - Machine Translation (6 phases)
   - Text Summarization (extractive + abstractive)
-  - Natural Language to Code (see `nl2code_detailed.py`)
+  - Natural Language to Code (see [`nl2code_detailed.py`](nl2code_detailed_py.md))
   - Text Generation (5 phases)
   - Sentiment Analysis (4 phases)
   - Information Extraction (relation extraction)

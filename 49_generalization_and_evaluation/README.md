@@ -220,7 +220,7 @@ For many real systems, a slice regression can matter more than the global averag
 
 ## Boilerplate Code
 
-See [diagnostics.py](/Users/faisal/Projects/ml_and_llm_learning/49_generalization_and_evaluation/diagnostics.py) for:
+See [diagnostics.py](diagnostics_py.md) for:
 
 - Binary confusion matrix
 - Accuracy / precision / recall / F1

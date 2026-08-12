@@ -37,8 +37,8 @@ You are practicing retrieval under pressure, not full project development.
 
 ## Files in This Topic
 
-- [drills.md](/Users/faisal/Projects/ml_and_llm_learning/59_blind_coding_drills/drills.md): timed prompts
-- [blind_drill_picker.py](/Users/faisal/Projects/ml_and_llm_learning/59_blind_coding_drills/blind_drill_picker.py): random drill selector
+- [drills.md](drills.md): timed prompts
+- [blind_drill_picker.py](blind_drill_picker_py.md): random drill selector
 
 ## Technical Details Interviewers Often Want
 

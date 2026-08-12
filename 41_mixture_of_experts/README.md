@@ -138,7 +138,7 @@ Mixture of Experts is an architecture where multiple expert networks are trained
 
 See detailed files for complete implementations:
 - `moe_theory.md`: Complete theoretical foundation
-- `moe_code.py`: Full implementation
+- [`moe_code.py`](moe_code_py.md): Full implementation
 - `moe_training.py`: Training procedures
 - `moe_qa.md`: Comprehensive interview Q&A
 

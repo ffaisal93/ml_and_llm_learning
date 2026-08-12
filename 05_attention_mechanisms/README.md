@@ -355,7 +355,7 @@ def cross_attention(Q_encoder, K_decoder, V_decoder, d_k):
   - Common mistakes and pitfalls
   - Advanced topics
 
-- **`causal_attention_code.py`**: Complete implementation with visualization
+- **[`causal_attention_code.py`](causal_attention_code_py.md)**: Complete implementation with visualization
   - Step-by-step visualization
   - Comparison with/without mask
   - Explanation of lower triangular
@@ -380,7 +380,7 @@ def cross_attention(Q_encoder, K_decoder, V_decoder, d_k):
   - Detailed comparisons and trade-offs
   - Real-world usage and examples
 
-- **`advanced_attention_code.py`**: Complete implementations
+- **[`advanced_attention_code.py`](advanced_attention_code_py.md)**: Complete implementations
   - MultiQueryAttention class
   - GroupQueryAttention class
   - PagedKVCache class (conceptual)
