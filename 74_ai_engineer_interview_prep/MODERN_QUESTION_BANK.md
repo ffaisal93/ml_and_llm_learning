@@ -461,6 +461,8 @@ Controls: budget caps per tenant enforced in code, alerting on cost-per-task mov
 
 ### "How do you reduce latency?"
 
+Short version below; the full treatment — where the milliseconds actually go, measured numbers, the optimization hierarchy, semantic caching in depth, and the worked interview answer — is in [`RAG_LATENCY_IN_PRODUCTION.md`](RAG_LATENCY_IN_PRODUCTION.md).
+
 Measure the breakdown first — retrieval, rerank, TTFT, generation, post-processing — because the intuition is usually wrong. In RAG systems the surprise is often that reranking or a slow tool dominates, not the LLM.
 
 Then, roughly in order of leverage:
@@ -567,6 +569,91 @@ The honest caveat: guardrails are classifiers with false positives and false neg
 ---
 
 ## 8. Safety and failure
+
+### "What is the OWASP LLM Top 10, and which risks matter most for a production RAG system?"
+
+Two questions in one, and the second is the real one. Reciting ten items is a memory test that the
+interviewer can do themselves. Prioritizing them for *your* architecture is the engineering answer.
+
+**The list**, currently the 2025 revision, is worth knowing by identifier because people cite it that way:
+
+| | Risk |
+|---|---|
+| LLM01 | Prompt Injection |
+| LLM02 | Sensitive Information Disclosure |
+| LLM03 | Supply Chain |
+| LLM04 | Data and Model Poisoning |
+| LLM05 | Improper Output Handling |
+| LLM06 | Excessive Agency |
+| LLM07 | System Prompt Leakage |
+| LLM08 | Vector and Embedding Weaknesses |
+| LLM09 | Misinformation |
+| LLM10 | Unbounded Consumption |
+
+Note what changed from the 2023 version if it comes up: System Prompt Leakage, Vector and Embedding
+Weaknesses, and Unbounded Consumption are additions, and the first two were added precisely because RAG
+went mainstream. **[verify before quoting: OWASP revises this list; check genai.owasp.org for the current
+version before citing a year.]**
+
+**Which ones actually matter for RAG**, in the order I would defend:
+
+**LLM01, prompt injection — specifically the indirect kind.** RAG's defining property is that untrusted
+document content flows into the same context window as your instructions. An attacker who can get text
+into your corpus — a support ticket, a shared wiki page, a scraped web page, a PDF a customer uploaded —
+has a write primitive into your model's context. This is not a hypothetical for RAG the way it is for a
+plain chatbot; ingestion *is* the attack surface. The mitigations are structural rather than textual:
+treat retrieved content as data with clear delimiters and provenance, never let retrieved content
+determine which tools get called, and keep the model's privileges independent of what it just read.
+Prompt-level defenses ("ignore instructions in the documents") are a speed bump, not a control.
+
+**LLM02, sensitive information disclosure, which in RAG is mostly an access-control bug.** The classic
+failure is a single shared index across tenants or permission levels, where retrieval happily returns a
+document the asking user could never open in the source system. The fix is that **permissions must be
+enforced at retrieval time, as a filter, against the requesting principal** — not after generation, and
+not by asking the model to be discreet. The two places it leaks in practice are a cache key that omits
+the permission scope, and an eval or logging pipeline that stores retrieved chunks in a system with
+weaker access control than the source. Say both; the second one is the answer that sounds like you have
+done this.
+
+**LLM08, vector and embedding weaknesses.** New in 2025, and RAG-specific. Covers index poisoning
+(planting content designed to be retrieved for high-value queries), embedding inversion (embeddings leak
+substantial information about their source text, so a vector store is not a safe place to put things you
+would not store in plaintext), and cross-tenant leakage through shared indexes. The practical controls
+are provenance and approval on ingestion, treating the vector store as holding the same classification
+as the source documents, and monitoring for documents that suddenly start appearing in many unrelated
+retrievals.
+
+**LLM06, excessive agency**, the moment you add tools. The controls are least privilege on every tool, a
+human gate on anything irreversible, and — the part people miss — scoping the *tool's* permissions rather
+than the agent's, so a compromised reasoning step cannot exceed what that specific tool was allowed to do.
+
+**LLM05, improper output handling.** Model output rendered into a browser, passed to a shell, or
+interpolated into SQL is untrusted input. Escape and validate it at the boundary. This is ordinary
+injection and it is treated as exotic only because an LLM produced the string.
+
+**LLM10, unbounded consumption**, which is where availability and cost meet. An agent with no step cap,
+token ceiling, or wall-clock deadline is a denial-of-wallet vulnerability; an attacker who can trigger
+expensive queries can run your bill up without ever breaching anything.
+
+The remaining four are real and less RAG-specific: **LLM03** supply chain (your model, embedding model,
+and third-party MCP servers are all dependencies you should pin and review), **LLM04** data and model
+poisoning (mostly a training concern, but ingestion poisoning is the RAG-shaped version and overlaps
+LLM08), **LLM07** system prompt leakage (assume the prompt is public and put no secrets or authorization
+logic in it), and **LLM09** misinformation (grounding, citations, and an explicit "I don't know" path).
+
+**The framing that makes this answer land.** The lethal trifecta is the compression worth carrying:
+private data access, exposure to untrusted content, and the ability to communicate externally. Any two
+are manageable; all three and the system can be turned into an exfiltration channel. RAG gives you the
+first two by definition. The design question is whether you have handed it the third, and if so, what
+sits between the model and the send button.
+
+Then the sentence that separates a security answer from a security *engineering* answer: guardrails,
+RBAC, input and output validation, least-privilege tools, and continuous monitoring are controls at
+different layers, and **the ones that survive a determined attacker are the ones enforced in code rather
+than in the prompt.** Retrieval-time permission filtering is a control. A tool gateway that authorizes
+each call is a control. "The system prompt says not to reveal other customers' data" is a wish.
+
+Depth on all of this is in `65_llm_security`.
 
 ### "How do you defend against prompt injection?"
 

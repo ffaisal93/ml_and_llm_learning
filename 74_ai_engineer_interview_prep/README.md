@@ -18,6 +18,7 @@ the job. None of them anywhere in the preparation.
 | `THE_LOOPS.md` | The process. Five distinct roles that share vocabulary and nothing else, the standard pipeline stage by stage, what each round type is actually grading, a fully worked real loop, take-homes, behavioral, and reading the room. |
 | `MODERN_QUESTION_BANK.md` | The content. Eleven sections of applied GenAI questions — RAG, agents, prompting and context, evaluation, LLMOps, deployment, safety, judgement — plus 65 rapid-fire, each with the answer written the way you would say it out loud. |
 | `RAG_FAILURE_DIAGNOSIS.md` | The diagnostic drill. Five symptom-shaped RAG questions worked end to end — sudden regression, the retrieval-generation gap, proving an embedding change helped, five-document synthesis, and 10k to 1M documents — each with the ordered hypotheses, the experiment that discriminates between them, and the follow-ups. |
+| `RAG_LATENCY_IN_PRODUCTION.md` | The latency chapter. Where the milliseconds actually go (with measured numbers, and a warning about the invented ones), how to set a budget and read percentiles, the five-level optimization hierarchy, caching including semantic caching in full, and the worked answer to "how would you optimize this for latency." |
 
 ---
 
