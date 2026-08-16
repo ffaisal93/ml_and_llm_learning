@@ -643,3 +643,12 @@
   - [Modern Question Bank](74_ai_engineer_interview_prep/MODERN_QUESTION_BANK.md)
   - [Rag Failure Diagnosis](74_ai_engineer_interview_prep/RAG_FAILURE_DIAGNOSIS.md)
   - [Rag Latency In Production](74_ai_engineer_interview_prep/RAG_LATENCY_IN_PRODUCTION.md)
+
+# 75 Governed AI Workflows
+
+- [75_governed_ai_workflows](75_governed_ai_workflows/README.md)
+  - [Governed Workflow Architecture](75_governed_ai_workflows/GOVERNED_WORKFLOW_ARCHITECTURE.md)
+
+# 76 Links To Read
+
+- [76_links_to_read](76_links_to_read/README.md)

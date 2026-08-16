@@ -84,6 +84,22 @@ two by definition. Watch the third.
 
 The one-liner: **the controls that survive an attacker are enforced in code, not in the prompt.**
 
+## If the domain is high-stakes
+
+**Agents can own workflows. They should not own truth.** The model plans, drafts, searches, proposes;
+deterministic software decides what is valid, what gets recorded, and what happens next.
+
+Three lines that carry the architecture: **validators run before execution, not after** (and asking a
+second model whether the first looked right is critique, not validation); **budgets are a correctness
+control** (unbounded search plus selective reporting is p-hacking with extra steps); **agents sharing a
+model are not independent verifiers** (three agents agreeing is one opinion stated three times).
+
+Place approval gates by **consequence if wrong × difficulty of reversal**. And the gate everyone builds
+wrong: if reviewers get more cases than they can inspect, it is a rubber stamp.
+
+Retrieval is **four** things, not one — structured DB query, lexical, vector, knowledge-graph traversal.
+Saying that out loud is worth points in any design round with real structured data behind it.
+
 ## Things people get backwards
 
 - Streaming reduces *perceived* latency, not computation time.
