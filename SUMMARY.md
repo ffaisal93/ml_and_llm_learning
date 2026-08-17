@@ -640,6 +640,12 @@
 
 - [74_ai_engineer_interview_prep](74_ai_engineer_interview_prep/README.md)
   - [The Loops](74_ai_engineer_interview_prep/THE_LOOPS.md)
+  - [Research / Project Deep Dive Qa](74_ai_engineer_interview_prep/LOOP_RESEARCH_QA.md)
+  - [Ml Depth Qa](74_ai_engineer_interview_prep/LOOP_ML_DEPTH_QA.md)
+  - [Statistics Qa](74_ai_engineer_interview_prep/LOOP_STATISTICS_QA.md)
+  - [Coding Qa](74_ai_engineer_interview_prep/LOOP_CODING_QA.md)
+  - [System Design Qa](74_ai_engineer_interview_prep/LOOP_SYSTEM_DESIGN_QA.md)
+  - [Behavioral And Hiring Manager Qa](74_ai_engineer_interview_prep/LOOP_BEHAVIORAL_QA.md)
   - [Modern Question Bank](74_ai_engineer_interview_prep/MODERN_QUESTION_BANK.md)
   - [Rag Failure Diagnosis](74_ai_engineer_interview_prep/RAG_FAILURE_DIAGNOSIS.md)
   - [Rag Latency In Production](74_ai_engineer_interview_prep/RAG_LATENCY_IN_PRODUCTION.md)
