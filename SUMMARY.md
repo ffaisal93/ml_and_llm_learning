@@ -149,6 +149,8 @@
 # 17 Probability Math
 
 - [17_probability_math](17_probability_math/README.md)
+  - [Scenario Problems Conditional](17_probability_math/SCENARIO_PROBLEMS_CONDITIONAL.md)
+  - [Scenario Problems Expectation](17_probability_math/SCENARIO_PROBLEMS_EXPECTATION.md)
   - [Probability Deep Dive](17_probability_math/PROBABILITY_DEEP_DIVE.md)
   - [Interview Grill](17_probability_math/INTERVIEW_GRILL.md)
   - [probability_qa.py](17_probability_math/probability_qa_py.md)
