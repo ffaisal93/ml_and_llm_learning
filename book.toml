@@ -33,9 +33,14 @@ level = 1
 [output.html.print]
 enable = true
 
-# === Optional: better LaTeX rendering via mdbook-katex ===
-# Uncomment after running `cargo install mdbook-katex`.
-# KaTeX renders much faster than the default MathJax and supports more macros.
+# === LaTeX rendering via mdbook-katex (ACTIVE) ===
+# Requires: cargo install mdbook-katex
+#
+# NOTE: KaTeX is what actually renders the math on this site. Inline math is
+# $...$ and display math is $$...$$. A literal dollar sign MUST be written as
+# \$ -- an unescaped one opens a math span that never closes, which silently
+# typesets the following prose as math until the next stray $. See commit
+# e4937f3, which fixed 49 of them.
 #
 [preprocessor.katex]
 optional = true

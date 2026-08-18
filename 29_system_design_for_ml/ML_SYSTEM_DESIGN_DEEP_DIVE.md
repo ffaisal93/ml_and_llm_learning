@@ -472,7 +472,7 @@ ad request (user, slot, context)
 ### Clarification
 
 - Goal: block fraudulent transactions; minimize false positives (legitimate users denied are very costly).
-- Scale: ~1000 transactions per second peak; >$1T/year volume.
+- Scale: ~1000 transactions per second peak; >\$1T/year volume.
 - Latency: ≤100ms decision (must complete before authorization timeout).
 - Cost asymmetry: false negative (fraud succeeds) costs the merchant money. False positive (block a legit txn) costs trust + future spend. Roughly 100:1 dollar-asymmetric depending on segment.
 
@@ -751,7 +751,7 @@ KV cache memory is the binding constraint on concurrent users. Strategies:
 For a 70B model on 8× H100:
 - Memory: 140 GB weights + ~80 GB KV + ~20 GB activations ≈ 240 GB total. Fits with TP=2 across 2 GPUs minimum.
 - Throughput at batch 32, 1K input + 200 output: ~5K-10K tokens/sec/GPU.
-- Cost per 1M tokens: ~$0.3-1 depending on demand and batch utilization.
+- Cost per 1M tokens: ~\$0.3-1 depending on demand and batch utilization.
 
 ### Monitoring
 

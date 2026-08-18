@@ -49,4 +49,4 @@ These are the topics that come up in **AI Infrastructure Engineer** interviews a
 3. Be able to derive KV-cache size for any model in seconds.
 4. Be able to do the GPU cost calculation (§14.2) on a whiteboard for any DAU/QPS scenario.
 5. Drill the 100-question grill in §20.
-6. **If you've shipped this stack before, lean on specifics in interviews** ("at $LASTROLE we ran vLLM 0.6 with FP8 KV cache on H100 TP=2 with chunked prefill enabled, hit p95 TTFT of 800ms at 50 concurrent users"). That kind of concrete answer beats theory every time.
+6. **If you've shipped this stack before, lean on specifics in interviews** ("at \$LASTROLE we ran vLLM 0.6 with FP8 KV cache on H100 TP=2 with chunked prefill enabled, hit p95 TTFT of 800ms at 50 concurrent users"). That kind of concrete answer beats theory every time.

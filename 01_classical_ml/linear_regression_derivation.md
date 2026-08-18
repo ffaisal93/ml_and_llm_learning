@@ -37,7 +37,7 @@ Price ($)
 
 **Example:**
 - If price = 100 × size + 50000
-- Increasing size by 1 sq ft → price increases by $100 (constant!)
+- Increasing size by 1 sq ft → price increases by \$100 (constant!)
 
 ---
 

@@ -32,7 +32,7 @@ The exam is organized around **four technology pillars**:
 | Time | **120 minutes** (~2 min/question) |
 | Passing score | **720 / 1000** (scaled score, not raw %) |
 | Question types | Multiple-choice and multiple-response (pick-N) |
-| Cost | **$125 USD** |
+| Cost | **\$125 USD** |
 | Delivery | Pearson VUE — online-proctored **or** test center |
 | Credential validity | **12 months** |
 | Level | Foundations (entry tier; no formal prerequisites) |

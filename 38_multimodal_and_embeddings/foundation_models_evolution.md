@@ -112,7 +112,7 @@ GPT-3: 175B parameters
 
 **Training:**
 - **Data**: Common Crawl, WebText2, Books, Wikipedia (300B tokens)
-- **Compute**: Massive (estimated $4.6M in compute)
+- **Compute**: Massive (estimated \$4.6M in compute)
 - **Few-shot**: Provide examples in prompt, model learns from context
 
 **Key Insights:**

@@ -25,7 +25,7 @@ The tell that this is a *developer* exam: **Applications & Integration is 33.1%*
 | Time | **120 minutes** (~2.3 min/question) |
 | Passing score | **720 / 1000** (scaled) |
 | Question types | Multiple-choice and multiple-response |
-| Cost | **$125 USD** |
+| Cost | **\$125 USD** |
 | Delivery | Pearson VUE — online-proctored or test center |
 | Validity | **12 months** |
 | Level | Foundations (entry tier) |

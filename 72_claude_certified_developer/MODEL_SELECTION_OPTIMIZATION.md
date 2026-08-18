@@ -78,11 +78,11 @@ thinking={"type": "enabled", "budget_tokens": 4000}
 
 | Lever | What it saves | Mechanism |
 |---|---|---|
-| **Right-size the model** | $$$ + latency | Haiku for easy/high-volume; Opus only when needed |
+| **Right-size the model** | \$\$\$ + latency | Haiku for easy/high-volume; Opus only when needed |
 | **Prompt caching** | input cost + latency on repeats | Cache stable prefix; keep it unchanged (`APPLICATIONS_INTEGRATION_DEEP_DIVE.md`) |
 | **Message Batches** | ~50% on bulk | Async, latency-tolerant jobs |
 | **Context management** | input cost | Summarize/compact; retrieve instead of pre-loading |
-| **Model routing** | $$$ | Cheap model triages; escalate only hard cases |
+| **Model routing** | \$\$\$ | Cheap model triages; escalate only hard cases |
 | **Streaming** | perceived latency | Tokens appear immediately (doesn't cut cost) |
 | **Tune `max_tokens`** | output cost | Don't reserve 4k when you need 200 |
 | **Lower temperature** | fewer retries | Deterministic structured output = fewer re-runs |

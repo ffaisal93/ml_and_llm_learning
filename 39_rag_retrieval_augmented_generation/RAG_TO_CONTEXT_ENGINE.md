@@ -90,7 +90,7 @@ tokens = 12K tokens of context for the RAG path.
 
 | Approach | Input tokens/query | Cost/query (Opus 5) | Notes |
 |---|---|---|---|
-| Stuff whole corpus, no cache | 1,000,000 | **$5.00** | plus a large prefill latency |
+| Stuff whole corpus, no cache | 1,000,000 | **\$5.00** | plus a large prefill latency |
 | Whole corpus, 1-hour prompt cache | 1,000,000 (cached) | **$0.50** | + one-time $10.00 cache write (2× multiplier) |
 | RAG, top-20 chunks | ~12,500 | **$0.0625** | + ~$0.00001 query embedding, + vector search |
 

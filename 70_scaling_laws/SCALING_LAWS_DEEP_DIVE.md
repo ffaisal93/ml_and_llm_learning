@@ -2,7 +2,7 @@
 
 > Distilled from Stanford CS336 (Tatsu Hashimoto's *Basic Scaling Laws* lecture, 2025) + cross-referenced against the canonical literature (Hestness 2017, Kaplan 2020, Hoffmann 2022 Chinchilla, Rosenfeld, Pearson & Song, Yair-resolution-paper, Epoch-AI Chinchilla-method-3 reanalysis).
 >
-> The point: **scaling laws turn frontier model engineering from "spend $10M and pray" into "fit a curve at small scale and extrapolate."** They're not a free pass — they're an engineered measurement instrument that requires careful execution. This chapter walks the math, the historical lineage, the modern practice, and the canonical Kaplan-vs-Chinchilla cautionary tale.
+> The point: **scaling laws turn frontier model engineering from "spend \$10M and pray" into "fit a curve at small scale and extrapolate."** They're not a free pass — they're an engineered measurement instrument that requires careful execution. This chapter walks the math, the historical lineage, the modern practice, and the canonical Kaplan-vs-Chinchilla cautionary tale.
 >
 > Pair with `04_transformers/MODERN_LLM_ARCHITECTURE_CHOICES.md` (the architecture choices scaling laws are used to justify), `52_statistical_learning_theory/` (the generalization-bound lineage), `62_frontier_training_playbook/` (production-scale recipes).
 

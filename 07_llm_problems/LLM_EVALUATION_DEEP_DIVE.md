@@ -268,7 +268,7 @@ Issues with Arena: prompt distribution skews toward casual chat, vocal users may
 
 ### Arena-Hard-Auto
 
-500 prompts curated from Arena to be hard, judged by GPT-4 with position-bias correction. Scores correlate with Arena ELO at r ≈ 0.95 but cost ~$25/run instead of months of voter time.
+500 prompts curated from Arena to be hard, judged by GPT-4 with position-bias correction. Scores correlate with Arena ELO at r ≈ 0.95 but cost ~\$25/run instead of months of voter time.
 
 ### Bradley-Terry MLE
 

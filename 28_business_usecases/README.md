@@ -97,7 +97,7 @@ That is why applied interview answers should mention:
 A subscription-based company wants to predict which customers will cancel their subscription in the next month.
 
 **Business Impact:**
-- Reduce churn by 10% → Save $X million annually
+- Reduce churn by 10% → Save \$X million annually
 - Identify at-risk customers early
 - Target retention campaigns effectively
 
@@ -351,7 +351,7 @@ def hybrid_recommendations(user_id, collaborative_scores, content_scores):
 Payment processor needs to detect fraudulent transactions in real-time.
 
 **Business Impact:**
-- Reduce fraud losses by $X million
+- Reduce fraud losses by \$X million
 - Maintain low false positive rate (<0.1%)
 - Process transactions in <50ms
 

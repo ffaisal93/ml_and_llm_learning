@@ -49,7 +49,7 @@ An AI Infrastructure Engineer makes LLMs **fast, cheap, reliable, and scalable**
 Day-to-day responsibilities:
 - Take a checkpoint, deploy it on the right hardware with the right inference engine.
 - Hit latency SLOs (p50, p95, p99) at projected QPS.
-- Hit cost targets ($/1M tokens, $/request, $/active user).
+- Hit cost targets (\$/1M tokens, $/request, $/active user).
 - Ensure reliability (uptime, failover, rolling deploys).
 - Set up observability: traces, metrics, logs, eval.
 - Capacity-plan for growth.
@@ -89,20 +89,20 @@ LLM inference has two compute regimes:
 
 ### 2.3 Frontier GPU specs (2025-2026)
 
-| GPU | VRAM | HBM BW | FP16 TFLOPS | TDP | List $ |
+| GPU | VRAM | HBM BW | FP16 TFLOPS | TDP | List \$ |
 |---|---|---|---|---|---|
-| A100 80GB SXM | 80 GB | 2 TB/s | 312 | 400W | ~$15K |
-| H100 80GB SXM | 80 GB | 3.35 TB/s | 989 | 700W | ~$30K |
-| H100 NVL 94GB | 94 GB | 3.9 TB/s | 1979 | 350W | ~$40K |
-| H200 141GB | 141 GB | 4.8 TB/s | 989 | 700W | ~$40K |
-| B100/B200 | 192 GB | 8 TB/s | ~2500 (FP4 is 9k) | 1000-1200W | ~$50K+ |
-| GB200 NVL72 (rack) | 72 × 192 GB | massive | massive | massive | ~$3M+ |
+| A100 80GB SXM | 80 GB | 2 TB/s | 312 | 400W | ~\$15K |
+| H100 80GB SXM | 80 GB | 3.35 TB/s | 989 | 700W | ~\$30K |
+| H100 NVL 94GB | 94 GB | 3.9 TB/s | 1979 | 350W | ~\$40K |
+| H200 141GB | 141 GB | 4.8 TB/s | 989 | 700W | ~\$40K |
+| B100/B200 | 192 GB | 8 TB/s | ~2500 (FP4 is 9k) | 1000-1200W | ~\$50K+ |
+| GB200 NVL72 (rack) | 72 × 192 GB | massive | massive | massive | ~\$3M+ |
 
 Cloud renting (rough order of magnitude):
-- A100: $1.5-3 / hour
-- H100: $3-6 / hour
-- H200: $4-8 / hour
-- B200: $7-12 / hour
+- A100: \$1.5-3 / hour
+- H100: \$3-6 / hour
+- H200: \$4-8 / hour
+- B200: \$7-12 / hour
 
 **Why memory matters most.** A 70B model in BF16 is 140 GB. In FP8, 70 GB. In INT4, 35 GB. The choice between A100 (80GB), H100 (80GB), H200 (141GB), B200 (192GB) is mostly about **what fits**.
 
@@ -396,9 +396,9 @@ The training side. Detailed coverage in `61_large_scale_llm_systems/EFFICIENT_TR
 
 ### 9.4 Cost / capacity planning
 
-- Training a 7B model from scratch: ~50-200 H100-days. ~$4-15K cloud.
+- Training a 7B model from scratch: ~50-200 H100-days. ~\$4-15K cloud.
 - 70B from scratch: ~5K-15K H100-days. $400K-$1.5M.
-- 400B+: 100K+ H100-days. $10M+.
+- 400B+: 100K+ H100-days. \$10M+.
 - Fine-tuning: 10-100× cheaper than from-scratch.
 
 ---
@@ -608,7 +608,7 @@ Request (user_id, conversation_id, request_id)
 - **Input drift.** User-prompt distribution shift. Detect via embedding drift on prompts.
 - **Output drift.** Response distribution shift. Length, refusal rate, formatting.
 - **Latency drift.** Sudden p95 jumps.
-- **Cost drift.** $/request creeping up.
+- **Cost drift.** \$/request creeping up.
 
 ### 13.5 Logging — privacy and compliance
 
@@ -642,7 +642,7 @@ The senior task: estimate hardware for a planned product.
 3. **Throughput per GPU** = experimental measurement on the inference engine. Run benchmarks at expected batch size and context length.
 4. **GPUs needed** = QPS × avg tokens-out / TPS-per-GPU. Add 30-50% buffer.
 5. **VRAM check.** Model + KV cache (peak concurrency × max context × KV/token) ≤ available VRAM.
-6. **Cost** = GPUs × $/hour × hours. Add storage, network egress, observability tools.
+6. **Cost** = GPUs × \$/hour × hours. Add storage, network egress, observability tools.
 
 ### 14.2 A worked example
 
@@ -653,8 +653,8 @@ Building a coding assistant for 100K DAU. Each user makes 10 requests/day, avg 2
 - On Llama 3 70B FP8 with vLLM on H100, measured throughput ≈ 8000 tps per GPU at batch=64.
 - GPUs needed ≈ 15,000 / 8,000 × 1.5 (buffer) ≈ 3 GPUs.
 - TP=2 for memory → 6 GPUs total = 1 DGX node.
-- Cost: ~$5/hour/GPU × 6 = $30/hour = ~$22K/month.
-- Per user: $22K / 100K = $0.22/user/month. Need to charge ≥ $1/user/month for healthy margin.
+- Cost: ~\$5/hour/GPU × 6 = $30/hour = ~$22K/month.
+- Per user: \$22K / 100K = $0.22/user/month. Need to charge ≥ $1/user/month for healthy margin.
 
 That's the calculation.
 
@@ -872,7 +872,7 @@ What separates "knows the words" from "has shipped this."
 5. Why does TP usually stay within a node?
 6. What's the FP16 TFLOPS of an H100 SXM?
 7. How much VRAM does a 70B BF16 model take? FP8? INT4?
-8. What's the rough $ / hour for an H100 on cloud?
+8. What's the rough \$ / hour for an H100 on cloud?
 9. What's NVSwitch?
 10. When would you pick H200 over H100?
 

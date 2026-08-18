@@ -226,7 +226,7 @@ PAIR is black-box and works without gradients. It's slower and less reliable tha
 
 ### 6.1 Pretraining poisoning
 
-If you can get attacker-chosen text into the pretraining corpus (Common Crawl, Wikipedia, Reddit, GitHub), you can shape model behaviour. Carlini et al. (2023, "Poisoning Web-Scale Training Datasets") show that attackers who can buy expired domains for less than $60 can pollute downstream training. Defenses: corpus auditing, deduplication, provenance, source weighting.
+If you can get attacker-chosen text into the pretraining corpus (Common Crawl, Wikipedia, Reddit, GitHub), you can shape model behaviour. Carlini et al. (2023, "Poisoning Web-Scale Training Datasets") show that attackers who can buy expired domains for less than \$60 can pollute downstream training. Defenses: corpus auditing, deduplication, provenance, source weighting.
 
 ### 6.2 Backdoor / trojan attacks
 
