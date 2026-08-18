@@ -38,6 +38,8 @@ y[k] = C_d h[k] + D_d u[k]    # Output
 - Space: O(n) - linear in sequence length
 - Transformer: O(n²) - quadratic
 
+> **Saying it out loud.** A state space model is a sequence model that keeps one running summary instead of looking back at everything. Each step it fades the old summary a little, folds in the new token, and reads an answer out of it — no comparing every token to every other token. That's why it's linear in sequence length while attention is quadratic. The mental picture I'd give is a Kalman filter tracking a moving object: you never store the whole trajectory, you just keep a best current estimate and update it. The tradeoff is right there in that picture — a fixed-size summary means information does get lost, which is exactly where SSMs lose to attention on exact recall.
+
 ---
 
 ## Q2: What is Mamba? How does it differ from standard SSMs?
@@ -77,6 +79,8 @@ y[k] = C[k] h[k]             # C depends on input
 - Can adapt to different inputs
 - Still maintains O(n) complexity
 - Better quality than standard SSMs
+
+> **Saying it out loud.** Mamba's one idea is selectivity: let each token decide how much it matters. In a plain SSM the matrices are the same at every position, so a comma and a person's name get processed identically, which is a strange thing for a language model to do. Mamba computes $B$, $C$ and the step size fresh from each token, so an important token writes hard into the state and a filler token slides past. The price is that you lose the convolution shortcut — there's no single fixed kernel anymore — so Mamba needs a parallel scan and a custom CUDA kernel to train fast.
 
 ---
 
@@ -125,6 +129,8 @@ y[k] = C[k] h[k]             # C depends on input
 - For seq_len > 8K: SSMs faster
 - For seq_len > 100K: SSMs much better
 
+> **Saying it out loud.** Short answer: transformers below roughly 8K tokens, SSMs above it, hybrids if you want both. The reason is that attention's cost grows with the square of context while an SSM's grows linearly, so there's a crossover — but attention's kernels are so well optimized that the crossover sits further out than the big-O suggests, somewhere in the low thousands. Above 100K tokens it isn't close: the transformer's KV cache alone will eat your GPU. What keeps transformers ahead at normal lengths is exact recall — pulling a specific string out of the prompt verbatim — which attention does natively and a compressed state has to fake.
+
 ---
 
 ## Q4: How does Mamba achieve linear complexity?
@@ -165,6 +171,8 @@ h[k+1] = A h[k] + B[k] u[k]
 - State summarizes past information
 - Sequential processing is sufficient
 - More efficient for long sequences
+
+> **Saying it out loud.** It never builds the all-pairs comparison matrix. Attention computes a score between every pair of tokens, so at 10,000 tokens that's 100 million scores; Mamba walks the sequence once, doing constant work per token. The catch a good interviewer will push on is that a linear recurrence sounds sequential, which would be terrible for GPUs. The answer is the parallel scan: because composing two linear updates gives you another linear update and that composition is associative, you can evaluate it as a tree in $\log N$ depth instead of a chain of $N$ steps. Linear work, logarithmic depth — that's the whole trick.
 
 ---
 
@@ -216,6 +224,8 @@ h[k+1] = A h[k] + B[k] u[k]
 - Less parallelizable than attention
 - But can use scan operations
 
+> **Saying it out loud.** The advantages are all about cost: linear compute in sequence length, and at decode time a fixed-size state instead of a KV cache that grows with every token. That's what lets you run 100K-plus context without your memory budget exploding. The disadvantages are one real and two circumstantial — the real one is recall, because a fixed-size state has to compress and can't point back at an exact token, which shows up sharply on needle-in-a-haystack evals. The circumstantial ones are ecosystem maturity and the fact that no one has proven the scaling laws hold past 100B parameters. That's why practically everyone shipping today uses hybrids.
+
 ---
 
 ## Q6: How do you train State Space Models?
@@ -266,6 +276,8 @@ h[k+1] = A h[k] + B[k] u[k]
 - Learnable initial state
 - Gradient clipping
 - Careful discretization
+
+> **Saying it out loud.** Training is mostly normal deep learning with three places to be careful. First, initialization of $A$ genuinely matters — HiPPO-style init is the difference between remembering thousands of steps and forgetting after fifty, so this isn't a tuning detail. Second, precision: the state accumulates over thousands of steps, so fp16 drifts and you want the state in fp32 even if the rest of the model is half precision. Third, sequence boundaries — if you pack multiple documents into one batch row and don't reset the state, information leaks across documents. That last one is nasty because it doesn't crash, it just quietly makes long-context quality worse.
 
 ---
 

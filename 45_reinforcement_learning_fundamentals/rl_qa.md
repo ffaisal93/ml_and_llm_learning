@@ -20,6 +20,8 @@ A Markov Decision Process is like a framework for describing decision-making pro
 
 **Why it matters:** Almost every RL problem can be described as an MDP. When we "solve an MDP," we find the best way to act (policy) that maximizes total reward over time.
 
+> **Saying it out loud.** An MDP is just the formal way of writing down 'I'm in a situation, I do something, the world changes and I get a score.' Four pieces: states, actions, rewards, and transition probabilities. The one part that's doing real work is the Markov property — it says the current state contains everything you need to decide, so you can throw away the history. That's a modeling assumption, not a fact about the world, and it's where MDPs break in practice: in poker or in a conversation you can't see the full state, so the problem is really partially observable and a naive MDP solver will be badly wrong.
+
 ---
 
 ## Q2: What is a Multi-Armed Bandit? Explain the exploration vs exploitation trade-off.
@@ -52,6 +54,8 @@ A Multi-Armed Bandit is the simplest reinforcement learning problem. Imagine you
 **UCB (Upper Confidence Bound):** Play machines that either have high average rewards OR haven't been tried much. This automatically balances exploration and exploitation.
 
 **Why it matters:** Multi-armed bandits are everywhere: A/B testing, recommendation systems, clinical trials, online advertising. They teach you the fundamental trade-off between exploration and exploitation that appears in all RL.
+
+> **Saying it out loud.** A bandit is reinforcement learning with the hard part removed: you have several slot machines with unknown payouts, and your action doesn't change what happens next, so there's no long-term planning — just the exploration-exploitation tension in its purest form. Every play you spend learning about a machine is a play you didn't spend on the best one you know, and every play you spend cashing in is a chance you never discover something better. Epsilon-greedy handles it crudely by exploring at random some fixed fraction of the time; UCB does it smartly by adding a bonus for uncertainty, so an arm you've barely tried looks attractive purely because you don't know much about it. The number worth quoting is that UCB's regret grows like $\log T$ while epsilon-greedy with a fixed epsilon grows linearly — you never stop paying for that random exploration.
 
 ---
 
@@ -89,6 +93,8 @@ Q(s, a) ← Q(s, a) + α [r + γ * max Q(s', a') - Q(s, a)]
 **Why It Works:**
 
 Q-Learning is "off-policy" - it learns the best policy even while following a different policy (like an exploratory one). You can explore randomly but still learn the optimal policy. Over time, Q-values converge to true values, and you just pick the action with the highest Q-value in each state.
+
+> **Saying it out loud.** Q-learning learns a table of scores, one per state-action pair, where the score means 'total reward I expect if I take this action here and play well afterward.' You update it by comparing what you predicted to what you actually observed plus your estimate of the future, and nudging toward the difference. The clever bit is the max in the target: you bootstrap using the best action available in the next state, not the action you actually took, which is why it's called off-policy — you can explore randomly, even act badly, and still converge to the optimal policy. The catch is that the same max makes it systematically optimistic, because taking a max over noisy estimates biases upward, and that overestimation is exactly what Double Q-learning was invented to fix.
 
 ---
 
@@ -131,6 +137,8 @@ To figure out how good a policy is:
 
 - **Monte Carlo:** When you have episodic tasks and want simple, model-free learning
 - **Q-Learning:** When you want faster learning and can use bootstrapping
+
+> **Saying it out loud.** Monte Carlo means playing the whole episode out and then learning from what actually happened, with no guessing about the future. You finish the game, look at the real total reward, and adjust every state you visited toward it. That makes it unbiased — you're using ground truth, not an estimate — but very noisy, because one lucky sequence can swing your update wildly. Q-learning does the opposite: it updates after every single step by bootstrapping off its own current estimate, so it learns much faster and with far less variance, at the cost of being biased while those estimates are still wrong. That's the bias-variance tradeoff in its cleanest form, and TD($\lambda$) is the knob that lets you sit anywhere between the two.
 
 ---
 
@@ -176,6 +184,8 @@ These combine both: an "actor" (policy) that learns how to act, and a "critic" (
 - **Policy-based:** REINFORCE, Policy Gradients
 - **Actor-Critic:** A3C, PPO (used in RLHF)
 
+> **Saying it out loud.** Value-based methods learn how good each action is and then act greedily on those numbers; policy-based methods skip the middleman and learn the action distribution directly. The practical dividing lines are concrete. If your actions are continuous — a steering angle, a joint torque — value-based methods choke, because taking a max over an infinite action set isn't something you can do. And if the optimal behavior is genuinely random, like bluffing in poker, a greedy value-based policy can't represent it at all. The cost of going policy-based is variance: you're estimating a gradient from sampled trajectories, so it's noisy and sample-hungry, which is exactly why actor-critic exists — the critic's value estimate is what cuts that variance down, and PPO in RLHF is a direct descendant.
+
 ---
 
 ## Q6: Explain Value Iteration and Policy Iteration. When would you use each?
@@ -219,6 +229,8 @@ Policy Iteration directly finds the optimal policy:
 
 **Both require:** Knowing the environment model (transition probabilities, rewards). If you don't know the model, use model-free methods like Q-Learning or Monte Carlo.
 
+> **Saying it out loud.** Both are planning algorithms for when you already know the rules of the environment, and the difference is how patient they are. Value iteration sweeps over every state, updating each toward the best it could achieve in one step, and repeats until the numbers settle — then reads the policy off at the end. Policy iteration alternates: fully evaluate the current policy, then improve it greedily, then re-evaluate. Policy iteration usually needs far fewer rounds — often under ten — but each round is expensive because a full evaluation is itself an iterative solve. The thing to say last is that both need the transition probabilities, so they're planning rather than learning, and the moment you don't have a model you're back to Q-learning or Monte Carlo.
+
 ---
 
 ## Q7: What is Temporal Difference (TD) Learning?
@@ -248,6 +260,8 @@ TD learning combines the best of both worlds:
 - **Lower variance** than Monte Carlo (updates more frequently)
 
 **Q-Learning is actually a form of TD learning** - it uses TD updates to learn Q-values. Understanding TD learning helps you understand many modern RL algorithms.
+
+> **Saying it out loud.** TD learning is updating your prediction as soon as you get a hint, instead of waiting for the final answer. Say you predict a two-hour drive and hit traffic ten minutes in — Monte Carlo would wait until you arrive to learn anything; TD immediately revises the estimate based on the delay plus your new prediction from here. That difference between the old prediction and the updated one is the TD error, and it's the learning signal. What makes it powerful is that it's model-free like Monte Carlo but bootstrapped like dynamic programming, so it learns online with much lower variance. The tradeoff is bias, since you're learning from your own possibly-wrong estimates — and it's worth noting that the TD error also shows up in neuroscience, where dopamine neurons appear to encode almost exactly this quantity.
 
 ---
 
