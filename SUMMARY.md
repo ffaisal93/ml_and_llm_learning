@@ -174,11 +174,8 @@
 - [20_multi_turn_conversations](20_multi_turn_conversations/README.md)
   - [Multi Turn Deep Dive](20_multi_turn_conversations/MULTI_TURN_DEEP_DIVE.md)
   - [Interview Grill](20_multi_turn_conversations/INTERVIEW_GRILL.md)
+  - [conversation.py](20_multi_turn_conversations/conversation_py.md)
 
-# 20 Multiturn Conversations
-
-- [20_multiturn_conversations](20_multiturn_conversations/README.md)
-  - [conversation.py](20_multiturn_conversations/conversation_py.md)
 
 # 21 Dimensionality Reduction
 
