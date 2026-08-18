@@ -56,6 +56,8 @@ Probability
 - Smooth, differentiable
 - S-shaped (sigmoid)
 
+> **Saying it out loud.** Linear regression is the wrong tool for classification because it doesn't know that probabilities stop at 0 and 1 — fit it to yes/no data and it will happily predict 1.4 or minus 0.3, which means nothing. What we want is a model that always outputs a valid probability, is smooth so we can optimize it, and still uses a simple linear combination of the features underneath. The sigmoid does exactly that: it takes any real number and squashes it into the unit interval, S-shaped, so extreme inputs saturate near 0 and 1 while the middle stays sensitive.
+
 ---
 
 ## Step-by-Step Derivation
@@ -72,6 +74,8 @@ Probability
 - Need: P(y=1|x) ∈ [0, 1]
 
 ### Step 2: The Odds Ratio
+
+*In plain terms:* the problem is that a probability is trapped between 0 and 1 while a linear function runs off to infinity in both directions. This step fixes that in two moves. Odds — probability divided by one minus probability — stretch the range to everything positive, and then taking a log stretches it to the whole number line, which is exactly where a linear function lives.
 
 **Intuition:**
 Instead of probability, think about "odds"
@@ -107,6 +111,8 @@ Probability → Odds → Log Odds
     0.5    →  1.0  →   0.0
     0.9    →  9.0  →   2.2
 ```
+
+> **Saying it out loud.** The trick is to stop modeling probability and start modeling log-odds. Odds are just probability over one minus probability — 0.8 becomes 4, meaning four to one in favor — and they range from zero to infinity. Take the log and you get something running from minus infinity to plus infinity, which is precisely the range of a linear function, so now the modeling assumption is natural rather than forced. Gamblers have used odds forever for the same reason: they turn a bounded quantity into one you can do arithmetic on.
 
 ### Step 3: The Model
 
@@ -163,7 +169,11 @@ z → +∞: σ(z) → 1
 - When wx + b = 0 → P = 0.5 (even chance)
 - When wx + b is very positive → P ≈ 1 (very likely)
 
+> **Saying it out loud.** The sigmoid isn't a squashing function someone picked because it looked nice — it's what you get when you algebraically invert 'log-odds are linear'. Start from $\log(P/(1-P)) = wx + b$, solve for $P$, and the sigmoid falls out in four lines. That's worth being able to do on a whiteboard, because it reframes the whole model: the sigmoid is a *consequence* of the assumption, not the assumption itself. And its shape does what you want — very negative input means almost certainly no, zero means a coin flip, very positive means almost certainly yes.
+
 ### Step 5: The Likelihood Function
+
+*In plain terms:* likelihood is the probability of seeing the labels you actually saw, treated as a function of the weights. Good weights make the observed data look likely; bad weights make it look like a fluke. So 'fitting the model' becomes 'find the weights that maximize that number', and the loss function is going to fall out of this rather than be chosen.
 
 **For binary classification:**
 - If y = 1: Want P(y=1|x) to be high
@@ -214,6 +224,8 @@ log L(w, b) = Σᵢ [yᵢ log σ(wxᵢ + b) + (1-yᵢ) log(1 - σ(wxᵢ + b))]
 
 **This is what we want to maximize!**
 
+> **Saying it out loud.** Likelihood is the probability of the labels you actually observed, viewed as a function of the weights — so maximizing it means finding the parameters under which your data looks least surprising. The clever notational trick is writing each point's probability as $p^y (1-p)^{1-y}$, which collapses to $p$ when the label is 1 and $1-p$ when it's 0, so one formula covers both cases. Then you multiply across all the points, assuming independence. And you take a log immediately, because a product of ten thousand small probabilities underflows to zero in floating point, while a sum of logs is perfectly stable.
+
 ### Step 7: Cost Function (Negative Log-Likelihood)
 
 **Convention:**
@@ -254,7 +266,11 @@ Cost
   0       1
 ```
 
+> **Saying it out loud.** Flip the sign on the log-likelihood and you have cross-entropy — so the loss wasn't a design choice, it's what maximum likelihood hands you. The behavior is worth describing concretely: if the true label is 1 and you predicted 0.9, the cost is about 0.1, but if you predicted 0.01, the cost is 4.6. The penalty grows without bound as your confident prediction goes wrong, which is exactly the incentive you want — the model is punished far more for being confidently wrong than for being uncertain.
+
 ### Step 8: Gradient Descent
+
+*In plain terms:* there's no closed-form answer here the way there is for linear regression, so we walk downhill instead. The algebra below is long, but the destination is short: the gradient turns out to be simply the prediction error times the input. All the messy sigmoid derivative terms cancel.
 
 **Goal:** Minimize J(w, b)
 
@@ -313,6 +329,8 @@ b = b - α × ∂J/∂b
 - If error < 0: Predicted too low → increase w, b
 - Update proportional to error and input x
 
+> **Saying it out loud.** After all that algebra, the gradient collapses to something beautiful: the prediction error times the input, summed over the data. Every trace of the sigmoid's derivative cancels, because the $1/p$ from the log and the $p(1-p)$ from the sigmoid are exact inverses of each other. That's the same form as linear regression's gradient, and it's not a coincidence — it's what happens for any exponential-family model paired with its canonical link. In practice it also means the update rule reads exactly the way intuition wants: predicted too high, push the weights down in proportion to the input.
+
 ---
 
 ## Matrix Formulation
@@ -357,6 +375,8 @@ J(w) = -Σᵢ [yᵢ log σ(Xᵢw) + (1-yᵢ) log(1 - σ(Xᵢw))]
 w = w - α × Xᵀ(σ(Xw) - y)
 ```
 
+> **Saying it out loud.** In matrix form the whole thing fits on one line: the gradient is $X^\top(\sigma(Xw) - y)$. Read it as the data matrix transposed times the residual vector — each feature gets credited with the errors of the points where it was large. That's the same expression as linear regression's gradient with a sigmoid wrapped around the prediction, which is a good thing to point out because it means the same optimization code works for both. And it vectorizes, so one matrix multiply computes the gradient for the entire dataset at once.
+
 ---
 
 ## Why Cross-Entropy Loss?
@@ -392,6 +412,8 @@ CE = -Σ [y log σ(wx + b) + (1-y) log(1 - σ(wx + b))]
 - Convex (guaranteed global minimum)
 - Works well with probabilities
 - Information-theoretically motivated
+
+> **Saying it out loud.** Cross-entropy is the information-theoretic distance between what you predicted and what actually happened, and minimizing it is the same as maximum likelihood — two derivations landing on the same loss is a strong sign it's the right one. The practical argument against MSE is the killer: paired with a sigmoid, squared error is non-convex, and its gradient carries an extra $\sigma'(z)$ factor that vanishes when the model is confidently wrong. So the examples you most need to learn from produce almost no gradient. Cross-entropy has no such dead zone.
 
 ---
 
@@ -438,6 +460,8 @@ Class 1: *  *  *
 Class 0: *  *  *
 ```
 
+> **Saying it out loud.** You classify by thresholding the probability, and setting that threshold at 0.5 puts the boundary exactly where $wx + b = 0$ — a straight line, or a hyperplane with more features. So logistic regression always has a linear boundary in whatever feature space you give it, no matter what threshold you choose; moving the threshold just slides the same line sideways. Two things follow. If you need a curved boundary, you have to build the curvature into the features. And 0.5 is only the right cutoff when a false positive and a false negative cost the same, which on an imbalanced problem they almost never do.
+
 ---
 
 ## Assumptions
@@ -469,6 +493,8 @@ Class 0: *  *  *
 **Multicollinearity:**
 - Unstable coefficients
 - Solution: Regularization, feature selection
+
+> **Saying it out loud.** The one real assumption is that the log-odds are linear in your features — break that and the model is genuinely mis-specified. The others are about whether your *estimates* are trustworthy rather than whether the fit is any good: independent observations, no severe collinearity, and enough data relative to the number of features. The one people violate without noticing is independence, which repeated measurements on the same user quietly break, and the effect is that you think you have ten thousand data points when you really have four hundred. Notice what's *not* on the list: nothing about feature distributions being normal.
 
 ---
 
@@ -513,6 +539,8 @@ J(w) = -log L(w) + λ||w||₁
 - Sets some coefficients to exactly 0
 - Feature selection
 - Sparse model
+
+> **Saying it out loud.** Regularization is not optional here, and the reason is sharper than 'it prevents overfitting'. If your classes are perfectly separable — which happens easily with many features — the unpenalized maximum likelihood has no finite solution at all, because scaling the weights up forever keeps increasing the likelihood. L2 adds curvature in every direction and pins the answer down to something unique and finite. L1 does the same job while also zeroing out coefficients entirely, so you get feature selection for free. That's why sklearn regularizes by default and why people are confused when they can't reproduce the textbook unpenalized answer.
 
 ---
 

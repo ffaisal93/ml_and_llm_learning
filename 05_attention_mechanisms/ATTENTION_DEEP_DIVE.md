@@ -18,6 +18,8 @@ Modern attention variants live on a few orthogonal axes:
 
 A specific attention mechanism is a point in this space. "MHA + causal + full + standard" = vanilla GPT attention. "GQA + causal + sliding window + FlashAttention" = Mistral-style. Frontier interviews probe both the individual variants and how they combine.
 
+> **Saying it out loud.** Attention isn't one thing, it's a design space, and it helps to say that up front. You're independently choosing a direction — bidirectional, causal, or cross — a sparsity pattern, how much the heads share their keys and values, whether the compute is quadratic or linear, and which kernel implements it. Any real model is one point in that space: vanilla GPT is causal plus full plus MHA, Mistral is causal plus sliding window plus GQA plus FlashAttention. Framing it that way is useful in an interview because it lets you answer 'what would you change' with a specific axis instead of a vibe.
+
 ---
 
 ## 2. Multi-Head Attention (MHA): the baseline
@@ -28,7 +30,9 @@ $$
 \text{head}_i = \mathrm{softmax}\!\left(\frac{Q_i K_i^\top}{\sqrt{d_h}}\right) V_i, \qquad \text{Output} = \mathrm{concat}(\text{heads}) \cdot W_O
 $$
 
-The key memory cost: each layer caches $2 \cdot h \cdot d_h \cdot N = 2 \cdot d \cdot N$ bytes per sequence per layer. For long contexts and large models, this dominates.
+The key memory cost: each layer caches $2 \cdot h \cdot d_h \cdot N = 2 \cdot d \cdot N$ values per sequence per layer (multiply by the dtype size for bytes). For long contexts and large models, this dominates.
+
+> **Saying it out loud.** MHA is the baseline where every head is fully independent — its own queries, its own keys, its own values. That's maximally expressive, and it's also the most expensive thing you could possibly cache, because you're storing a separate K and V for every head at every layer for every token. Concretely that's $2 \cdot d \cdot N$ values per layer per sequence, and at long context it dwarfs the model weights. Everything else in this document is a different answer to the question 'how do I keep the expressiveness and stop paying that'.
 
 ---
 
@@ -53,6 +57,8 @@ Empirically, ~1–2% degradation on benchmarks for moderate-size models. Signifi
 ### Use cases
 
 PaLM-1 used MQA. Some smaller models still do. Mostly superseded by GQA, which gets most of the savings with less quality loss.
+
+> **Saying it out loud.** MQA is the blunt fix: keep all the query heads, collapse to a single shared key and value. You've still got $h$ different questions being asked, they're just all consulting one table. The KV cache drops by a factor of $h$ — often 32 or 64x — which is the difference between serving eight users and serving five hundred. The cost is about 1 to 2 percent on benchmarks, concentrated on tasks that need heads to look at genuinely different content, and that's why GQA replaced it.
 
 ---
 
@@ -80,9 +86,13 @@ Almost zero with $n_{\text{kv-heads}} \geq 8$. The original GQA paper and subseq
 
 LLaMA-2 70B (8 KV heads vs 64 query heads), LLaMA-3, Qwen, Mistral. **The de facto standard for modern LLMs.**
 
+> **Saying it out loud.** GQA is the compromise everybody landed on. Instead of $h$ key-value heads or exactly one, you use a small number of groups — usually eight — and each group's K and V get shared by a handful of query heads. LLaMA-2 70B is the canonical setup: 64 query heads, 8 KV heads, so an 8x smaller cache. The reason it's the default is that quality is essentially flat from 8 groups up to full MHA, so you're getting almost all of MQA's memory win for almost none of its quality loss.
+
 ---
 
 ## 5. Multi-Latent Attention (MLA, DeepSeek-V2)
+
+*In plain terms:* every other variant shrinks the KV cache by making heads **share** keys and values. MLA instead **compresses** them — it squeezes each token's key/value information into a small vector, stores only that, and rebuilds the full keys and values on the fly when attention runs. The notation below is just 'project down to size $d_c$, cache, project back up'.
 
 ### The change
 
@@ -109,6 +119,8 @@ Extra compute at attention time (re-expand $K, V$ from $c$). For decode (where m
 ### Use cases
 
 DeepSeek-V2 and DeepSeek-V3. Reportedly state-of-the-art KV memory efficiency.
+
+> **Saying it out loud.** MLA compresses instead of sharing. You project each token down into a small latent vector — say 512 dimensions instead of 4096 — cache only that, and reconstruct the full keys and values when you actually run attention. It's low-rank compression of the cache rather than head-sharing, and DeepSeek got GQA-level memory with equal or better quality out of it. The tradeoff to name is that you're trading memory for compute, which is a great deal during decode where you're bandwidth-bound anyway, and a worse one during prefill where you're already compute-bound.
 
 ---
 
@@ -138,9 +150,13 @@ They handle "looking at" inputs by putting the input in the context window. The 
 
 T5, BART, original transformer, multimodal models (image encoder + language decoder), retrieval-augmented decoders.
 
+> **Saying it out loud.** Cross-attention is just attention where the queries come from one place and the keys and values come from another. The decoder asks 'which source words matter for the word I'm writing now', and the encoder's output answers — that's where translation alignment heatmaps come from. The nice property is that the encoder output is fixed for the whole request, so you compute its K and V once and reuse them for every decode step, unlike self-attention where the cache grows with every token. Decoder-only models dropped it and just put the input in the context window, which is simpler but gives up that fixed-cost cache.
+
 ---
 
 ## 7. Causal (autoregressive) attention
+
+*In plain terms:* this is the one line of code that turns attention into a language model. You add a matrix of zeros and negative infinities to the scores so that no token can see anything to its right. Negative infinity becomes zero weight after the softmax, so the masked positions contribute nothing.
 
 The defining trick that makes decoder-only LLMs possible. Add a triangular mask to the attention scores:
 
@@ -163,6 +179,8 @@ The model sees the entire sequence in parallel. The causal mask ensures position
 ### Why this works during inference
 
 The mask is implicit during autoregressive decode: you only compute attention between the new token's query and all previous keys/values. No future positions exist. The KV cache stores $K, V$ from previous steps; the new query attends over them.
+
+> **Saying it out loud.** The causal mask is how you stop a token from reading the future, and it's almost embarrassingly simple — add negative infinity above the diagonal, and softmax turns those into exactly zero weight. Nothing about the attention algorithm changes. The payoff is enormous at training time: you can run the whole sequence in one parallel pass and still get a legitimate next-token prediction at every position, so one forward pass gives you $N$ training examples. At inference the mask is implicit — there is no future yet, so you just attend the new query over the cached keys.
 
 ---
 
@@ -194,6 +212,8 @@ With $L$ layers and window $W$, the receptive field of the top layer is $L \cdot
 
 Mistral 7B, Longformer, Sparse Transformers.
 
+> **Saying it out loud.** Sliding window means each token only looks at the last $W$ tokens instead of everything before it, so the attention triangle becomes a narrow band. Compute goes from $N$ squared to $N$ times $W$, and — the part that actually matters — the KV cache is capped at $W$ tokens no matter how long the conversation runs. The clever argument for why it still works is stacking: with 32 layers and a 4K window, Mistral's theoretical reach is around 131K tokens, because each layer's tokens already summarized their own window. The honest caveat is that it's a blurred reach, so long-range exact recall is measurably worse.
+
 ---
 
 ## 9. Local-global attention (Longformer, BigBird)
@@ -214,6 +234,8 @@ They aggregate information across the whole sequence — short-circuit for the r
 ### Use cases
 
 Longformer (4096 window + small set of global tokens), BigBird (window + global + random sparse).
+
+> **Saying it out loud.** Local-global attention bolts a broadcast channel onto a sliding window. A handful of designated tokens — a CLS token, a task marker — get to attend everywhere and be attended by everyone, while everything else stays local. That fixes the sliding window's weakness cheaply: instead of needing thirty layers to route a fact across a document, anything important can be written to a global token and read anywhere in one hop. Cost stays linear in sequence length because there are only a few globals, which is why Longformer and BigBird both do exactly this.
 
 ---
 
@@ -237,9 +259,13 @@ BigBird (Zaheer et al. 2020): random attention pattern + sliding window + global
 
 All of these reduce compute and memory at some quality cost. They're more popular in research than production — modern long-context production models tend to use full attention with efficient kernels (FlashAttention) and KV memory tricks (paged, quantized) rather than sparsifying.
 
+> **Saying it out loud.** Sparse attention is the family of 'attend to a clever subset instead of everything'. Strided patterns give you logarithmic reach by attending at exponentially spaced offsets; Reformer hashes queries and keys so you only compare things likely to score highly; BigBird throws in random edges to guarantee short paths. They all work, and none of them are what production uses. The reason worth naming is that irregular sparsity is hard to make fast on a GPU, so the theoretical FLOP savings don't materialize — and FlashAttention plus a paged KV cache got you most of the benefit without the quality tax.
+
 ---
 
 ## 11. Linear attention
+
+*In plain terms:* softmax forces you to build the full $N \times N$ score matrix before you can multiply by $V$. If you replace softmax with a plain feature map, matrix multiplication becomes reassociable — you can multiply the keys and values together *first*, producing a fixed-size $d \times d$ summary, and then hit it with the queries. Cost stops depending on $N$ squared. Everything below is that one idea written out.
 
 The full softmax attention is $O(N^2)$. Linear attention removes the softmax to get $O(N)$:
 
@@ -281,6 +307,8 @@ Linear attention models are usually weaker than softmax attention at the same sc
 
 Mamba, S4, etc. are essentially structured linear attention with specific kernel choices and parallelizable training. See `42_state_space_models/`.
 
+> **Saying it out loud.** Linear attention is a reassociation trick with a huge consequence. Drop the softmax, use a feature map instead, and you can multiply the keys and values together first into a fixed $d \times d$ state — so cost becomes linear in sequence length. Better still, that state can be updated incrementally, one outer product per token, which means decoding is a constant-memory recurrent update instead of a growing KV cache. The catch is that a fixed-size state has to compress the entire past, so exact recall and in-context learning are where these models lag, and whether that closes at frontier scale is genuinely open.
+
 ---
 
 ## 12. FlashAttention recap
@@ -288,6 +316,8 @@ Mamba, S4, etc. are essentially structured linear attention with specific kernel
 Already covered in `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`. One-paragraph recap:
 
 > FlashAttention (Dao et al. 2022) computes standard softmax attention with the same FLOPs but radically less memory traffic by tiling $Q, K, V$ to fit in SRAM and using online softmax to compute partial softmax statistics block-by-block. 2–4× wall-clock speedup, especially at long sequences. FA-2 (2023) and FA-3 (2024) extend with better parallelization and Hopper-native primitives.
+
+> **Saying it out loud.** FlashAttention is the one where you should be careful not to overclaim. It does not reduce the FLOPs at all — it's the same attention, same numbers. What it changes is memory traffic: instead of writing an $N \times N$ score matrix out to GPU main memory and reading it back, it tiles the computation into blocks that fit in on-chip SRAM and uses an online softmax to accumulate the result. Same math, 2 to 4x faster in wall clock, and memory drops from quadratic to linear — which is what actually made long context practical.
 
 ---
 
@@ -309,6 +339,8 @@ For interview questions about how transformers learn / generalize, interpretabil
 ### Head pruning
 
 Many heads can be removed without loss (Voita et al., Michel et al.). Suggests redundancy. In production, this rarely matters; the attention is small relative to FFN. In research, head pruning gives insights into which heads are "essential."
+
+> **Saying it out loud.** Some heads do genuinely interpretable things, and induction heads are the one to know. An induction head spots that the current prefix matched something earlier in the context and copies whatever came next — that's the mechanism behind in-context learning, and its emergence during training lines up with a visible bump in the loss curve. You'll also find previous-token heads, duplicate detectors, and coreference heads. But keep the honest caveat in the answer: most heads aren't cleanly interpretable, and the fact that you can prune many of them without hurting quality says the network is heavily redundant.
 
 ---
 
