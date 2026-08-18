@@ -87,6 +87,8 @@ Output: R1 — reasoning capability of Stage-2 + general usefulness + safety.
 - No RL.
 - Headline: R1-Distill-Qwen-32B beats GPT-4o-2024-05 on AIME and MATH despite ~5x smaller.
 
+> **Saying it out loud.** The distill story is almost too simple: take about eight hundred thousand generations from R1, supervised-fine-tune Llama and Qwen bases from 1.5B up to 70B on them, and stop — no RL on the student at all. DeepSeek's headline is that the 32B distillate beats GPT-4o from May 2024 on AIME and MATH at roughly a fifth of the size, and that's a vendor-published benchmark claim, so I'd say it as theirs rather than as fact. The mechanism is that the teacher's chain of thought is a worked demonstration of the search policy, so the student picks up backtracking and self-checking by imitation instead of discovering them through RL. The hard limit to name: imitation can't exceed the teacher, so distillation democratises a capability but doesn't advance the frontier — you need RL on top for that.
+
 ### 1.4 Why this paper matters
 
 - First public **end-to-end frontier recipe** with full numerical results.
@@ -97,6 +99,8 @@ Output: R1 — reasoning capability of Stage-2 + general usefulness + safety.
 ### 1.5 Interview-ready 90-second answer
 
 > R1 is a four-stage post-training pipeline starting from DeepSeek-V3 base. Stage one is cold-start SFT on a small high-quality long-CoT dataset to give the model legible reasoning format. Stage two is reasoning-RL with GRPO and verifiable rewards on math, code, and logic — same recipe as R1-Zero but starting from the SFT'd model — with an added language-consistency reward to fix R1-Zero's English/Chinese mixing. Stage three regenerates ~800k SFT examples from the stage-two model, mixing 600k reasoning and 200k chat/writing/QA, and re-SFTs from V3-base. Stage four is final RLHF for helpfulness and safety. Distillation: SFT smaller bases on R1's generations, no RL needed, and you get strong reasoning models very cheaply.
+
+> **Saying it out loud.** R1 matters because it's the first time anyone published a complete frontier reasoning recipe with the numbers attached. There are really two results in the paper. R1-Zero is the scientific one: pure RL straight from the base model, verifier reward plus a format reward, GRPO, no SFT and no process reward model — and reasoning emerges anyway, with AIME pass-at-one going from about sixteen percent to seventy-one. R1 is the engineering one: four stages, where cold-start SFT buys legibility, RL buys capability, rejection-sampled SFT buys breadth, and final RLHF buys safety. If you remember one thing, remember that each stage exists to repair a specific defect of the one before it, and that the paper is unusually honest about those defects — R1-Zero mixes languages mid-chain and makes a bad chatbot, and they say so.
 
 ---
 
@@ -148,6 +152,8 @@ AllenAI's fully open recipe. Released November 2024. The most reproducible front
 
 > Tülu 3 is AllenAI's open-source post-training recipe. Three stages from Llama 3.1 base: SFT on a curated mix of ~939k examples, DPO on ~270k preference pairs with length-controlled loss, and RLVR with PPO on math final-answer verification and IFEval-style verifiable instruction-following constraints. The key contribution beyond standard SFT+DPO is RLVR — using verifiable rewards on a subset of skills where you can write a deterministic checker, even outside math/code. Headline is that 70B Tülu 3 matches GPT-3.5 with a fully reproducible pipeline.
 
+> **Saying it out loud.** Tülu 3 is the one to cite when someone asks how you'd build an instruction model from scratch, because it's fully reproducible — data, code, evals and intermediate checkpoints all public, which no frontier lab offers. Three stages from Llama 3.1 base: SFT on a curated mix of around nine hundred thousand examples, DPO on about two hundred seventy thousand preference pairs with a length-controlled loss to fight length bias, then RLVR. The genuinely new contribution is that last stage, and specifically that they applied verifiable rewards *outside* math — IFEval-style instruction-following constraints like "answer in JSON" or "under fifty words" are deterministically checkable, so you can use exact rewards there too. The lesson to take away is that "verifiable" is a broader category than people assume, and finding new verifiable slices is cheap capability.
+
 ---
 
 ## 3. Llama 3
@@ -190,6 +196,8 @@ Meta's recipe published in *The Llama 3 Herd of Models* (Jul 2024). The most tho
 
 Meta explicitly chose DPO over PPO for cost / stability reasons at scale. With careful preference-pair construction (rejection-sampling with RM), DPO is competitive with PPO and far cheaper.
 
+> **Saying it out loud.** Meta went with DPO rather than PPO explicitly for cost and stability at 405B scale, and the reasoning is worth being able to give. PPO needs a reward model and a value head resident alongside the policy, plus an online generation loop, which at that scale is a serious memory and orchestration burden with a lot of ways to go unstable. DPO is just a supervised loss on preference pairs — no critic, no sampling loop during training. The catch is that DPO is offline, so it only learns from pairs you already have, which is why the recipe is *iterative*: better model, better rejection-sampled data, next round. The tradeoff to name is that you trade PPO's on-policy exploration for stability and cost, and you compensate by doing the exploration in the data-construction step instead.
+
 ### 3.4 Iterative DPO
 
 The recipe is iterated: improved model → better rejection-sampled SFT data → next-round SFT → next-round DPO. Multiple rounds. This is *iterative DPO* / *online DPO*, not PPO.
@@ -197,6 +205,8 @@ The recipe is iterated: improved model → better rejection-sampled SFT data →
 ### 3.5 Interview answer (60-second)
 
 > Llama 3 is Meta's iterative SFT + DPO recipe. They construct SFT data via rejection sampling — sample many outputs, score with reward model, keep best — and iterate this for 6+ rounds, each round improving the model's outputs which improve the next round's data. Per-capability SFT pipelines for code, math, reasoning, multilingual, tool-use, and dialogue. After SFT, DPO with carefully constructed pairs, then a separate tool-use RL phase and an adversarial safety RL phase. They explicitly chose DPO over PPO for stability and cost at the 405B scale. No reasoning-RL stage in 3.1 — that's expected in Llama 4.
+
+> **Saying it out loud.** Llama 3's post-training is the most detailed public account of doing this at industrial scale, and its shape is different from R1's — no reasoning-RL stage at all in the 3.1 family, just many rounds of SFT and DPO. The engine is rejection sampling: generate lots of candidates, score with a reward model, keep the best, fine-tune, and then use the improved model to generate better candidates next round. Six-plus rounds of that, with separate data pipelines per capability — code, math, multilingual, tool use, dialogue — plus a dedicated tool-use RL phase and an adversarial safety phase on red-team prompts. The interesting choice is DPO over PPO, made explicitly for cost and stability at 405B. The takeaway is that data quality iteration, not algorithm choice, is where most of the gain came from — which is a good thing to say because it's true and it's not the answer people expect.
 
 ---
 
@@ -217,7 +227,7 @@ Alibaba's recipe. Most detailed in the QwQ-32B and Qwen 2.5 Math papers.
 - PRM evaluated; included in re-ranking but **not** in the RL reward (after experiments showed it didn't help training).
 - Tool-integrated reasoning: model can invoke a calculator mid-CoT.
 
-### 4.3 QwQ-32B (Nov 2024) and Qwen3-thinking models
+### 4.3 QwQ-32B-Preview (Nov 2024) / QwQ-32B (Mar 2025) and Qwen3-thinking models
 
 - Cold-start SFT on long-CoT data (similar in spirit to R1).
 - RLVR for reasoning.
@@ -230,6 +240,8 @@ The Qwen team's published ablations report that PRMs helped *modestly* in some e
 - Strong open-weights reasoning models (QwQ, Qwen3-thinking).
 - Tool-integrated reasoning (calculator + Python via execution).
 - Per-domain specialization recipes (Math, Code, Coder).
+
+> **Saying it out loud.** Qwen's recipe rhymes with R1 — cold-start SFT on long chains, RLVR for reasoning, then a final RLHF pass — which is useful corroboration, because two independent teams landing on the same shape is stronger evidence than one paper. Two details worth carrying. First, on process reward models they report the same thing DeepSeek did: PRMs helped modestly in some experiments, but the shipped recipe used outcome reward only, and they kept the PRM for reranking at inference rather than as a training signal. That's now two independent groups saying the same thing, which is about as close to settled as this question gets. Second, tool-integrated reasoning — the model calls a calculator or Python mid-chain — which sidesteps the fact that multi-digit arithmetic is a genuinely bad use of a transformer's forward pass.
 
 ---
 
@@ -256,10 +268,14 @@ Following R1's release, HuggingFace launched **Open-R1** (Jan 2025+) — communi
 - Distillation works robustly: SFT on long-CoT generations transfers reasoning.
 - Pure-RL from a non-frontier base is hard — R1-Zero needed V3-base's quality. Open reproductions of pure-RL on Llama 3 base get smaller gains.
 
+> **Saying it out loud.** Three things came out of the community reproductions and they're more informative than the original paper in one respect. One: distillation reproduces robustly — everyone who fine-tuned a small base on long chains got the reasoning transfer, first try. Two: the pipeline reproduces well at smaller scale, so the recipe isn't secretly dependent on 671B parameters. Three, and this is the important one: pure RL from a non-frontier base does *not* reproduce well — R1-Zero's result leaned on how strong V3-base already was, and people running the same thing on Llama 3 base got much smaller gains. That's direct evidence for the elicitation story: RL surfaces reasoning the base model already has priors for, so base quality sets the ceiling.
+
 ### 5.4 Implications
 
 - The data + RL infrastructure is the moat, not weights.
 - Open-source is ~3-6 months behind frontier, closing fast on reasoning.
+
+> **Saying it out loud.** What's actually open here is worth being precise about, because interviewers probe it. DeepSeek released the weights and the training code, but not the training data — so Open-R1 and the community efforts are reconstructing the data with open sources, which is the hard part. The reproductions taught us that distillation transfers robustly and the pipeline scales down fine, but that pure RL from a weaker base does not reproduce, which points back at base-model quality as the real constraint. The strategic conclusion people draw is that the moat is the data and the RL infrastructure, not the weights — and the empirical observation is that open source is running something like three to six months behind on reasoning and closing.
 
 ---
 
@@ -330,6 +346,8 @@ If asked "design a post-training pipeline for a frontier reasoning model from sc
 - **Iterative DPO** as a cheaper alternative to PPO.
 - **Test-time compute scaling laws** (Snell et al.) — match pretraining compute with inference compute on hard tasks.
 - **Multi-objective reward** (Pareto / MORLHF) for helpful-honest-harmless tradeoffs.
+
+> **Saying it out loud.** If I get "design a post-training pipeline from scratch", I'd give seven steps and say why each exists rather than just listing them. Stage zero is pretraining mix — heavy on math, code and worked problem-solution text — because that sets the ceiling on what RL can elicit, and no amount of clever post-training fixes a base without reasoning priors. Then cold-start SFT on a few tens of thousands of clean long chains for format and legibility. Then reasoning RL with GRPO or RLOO on verifiable problems, correctness plus format plus language consistency, KL back to the SFT model — that's where capability comes from. Then rejection-sampled SFT to broaden back out to chat and writing, then final RLHF for helpfulness and safety, then distillation into small models for actual deployment. The framing that scores is that stages two and three trade against each other — RL narrows the model onto reasoning, the SFT stage widens it back — so the ordering is a deliberate sequence of repairs, not a pipeline of independent improvements.
 
 ---
 

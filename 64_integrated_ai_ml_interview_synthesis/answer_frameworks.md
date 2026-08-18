@@ -1,5 +1,7 @@
 # Answer Frameworks
 
+> **Saying it out loud.** *(How to use this page.)* Don't memorize these as scripts to recite — use them as the skeleton you hang an answer on so you never freeze on "where do I start." In the room it sounds like structure, not like a template: you say what the concept is, why anyone cares, how it actually works, and where it breaks, and the interviewer hears a person who has organized their thinking. The step people drop under pressure is the last one in every framework — the limitation, the edge case, the tradeoff — and that's the step that scores highest, because anyone can recite a definition and only someone who's used the thing knows where it fails. Rehearse each of these out loud against a real question until the shape is automatic and you can spend your attention on content.
+
 ## Theory Question
 
 1. Define the concept.

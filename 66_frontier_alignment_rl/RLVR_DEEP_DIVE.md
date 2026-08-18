@@ -49,6 +49,8 @@ Examples of verifiable rewards:
 
 **The one-line takeaway:** RLVR is the cleanest signal in modern post-training, and reasoning RL is currently the highest-impact application.
 
+> **Saying it out loud.** RLVR is reinforcement learning where a program, not a person, grades the answer. Run the unit tests, check the boxed number against sympy, hand the proof to Lean — if it passes, reward one, otherwise zero. That one substitution fixes most of what's wrong with preference-based RLHF: no labeller cost, so you can scale to millions of problems; no labeller bias, so no length bias or sycophancy leaking into the reward; and the model can't get a better score by being more polite or using more bullet points. What the model learns from that is a search policy — it discovers on its own that spending more tokens on hard problems pays off, which nobody engineered. The binding constraint, and the thing to name as the tradeoff, is coverage: only a narrow slice of useful behaviour is verifiable, so everything outside math, code and formal tasks still needs a judge model or human preferences.
+
 ---
 
 ## 2. The 2024-2025 RLVR algorithm zoo
@@ -64,6 +66,8 @@ The classical RLHF setup. Policy + critic (value head). Advantage = reward + GAE
 
 ### 2.2 GRPO (Group Relative Policy Optimization, DeepSeek)
 
+*Plain-language gloss.* "Group" here means **G different completions sampled for the same prompt** — nothing to do with groups of users, demographics, or data categories. The advantage for one completion is simply how much better its reward was than the average of its siblings on that same question, standardised by their spread. That group average is doing the job PPO's learned value network used to do, which is why GRPO can drop the critic entirely.
+
 For a prompt $x$, sample $G$ rollouts. Use the group's mean reward as the baseline; standardize by group std. No critic.
 
 $$
@@ -73,6 +77,8 @@ $$
 **Pros.** No critic; sample-efficient; particularly good for verifiable-reward settings (the reward is sequence-level, so a token-level critic is wasteful).
 **Cons.** Group size adds compute; the std normalization is contentious (Dr. GRPO removes it).
 
+> **Saying it out loud.** GRPO is PPO with the value network deleted. Instead of training a critic to predict how good a state is, you sample a group of completions — call it G of them — for the *same prompt*, and use the group's own mean reward as the baseline. So an advantage is just "did this rollout do better or worse than my other attempts at this same question", optionally divided by the group's standard deviation. That works because in RLVR the reward is a single number at the end of the sequence, so a per-token critic was mostly wasted machinery anyway — and dropping it halves your memory and removes a component that was poorly calibrated on sparse rewards. The tradeoff is compute: you now pay G rollouts per prompt instead of one, and if all G get the same reward the group contributes no gradient at all, which is exactly the problem DAPO's dynamic sampling exists to fix.
+
 ### 2.3 Dr. GRPO
 
 GRPO without the std normalization in the advantage. Argued to be more stable when reward variance correlates with problem difficulty (you don't want easy-problem easy-wins to dominate via small std).
@@ -81,7 +87,7 @@ $$
 \hat A_{i,t} = r_i - \mathrm{mean}(\{r_1, \ldots, r_G\}).
 $$
 
-### 2.4 DAPO (Decoupled Clip and Dynamic Sampling Policy Optimization, ByteDance 2024)
+### 2.4 DAPO (Decoupled Clip and Dynamic Sampling Policy Optimization, ByteDance 2025)
 
 Four contributions stacked on GRPO:
 - **Clip-Higher.** Asymmetric clip — `clip(ρ, 1−ε_low, 1+ε_high)` with `ε_high > ε_low`. Lets the policy take bigger steps on positive-advantage tokens (encouraging exploration) without amplifying negative-advantage updates.
@@ -90,6 +96,8 @@ Four contributions stacked on GRPO:
 - **Overlong Reward Shaping.** Penalize CoTs that hit the max-length cap (often correlated with non-termination / failure).
 
 DAPO results on AIME match or exceed GRPO with significantly less compute. **The current canonical algorithm for reasoning RL outside DeepSeek's stack.**
+
+> **Saying it out loud.** DAPO is four small fixes to GRPO that together matter a lot. Clip-higher makes the PPO clipping range asymmetric, so the policy can take bigger steps toward things that worked without equally amplifying the push away from things that didn't — that's an exploration fix, aimed at entropy collapse. Dynamic sampling throws away groups where every rollout got the same reward, because those contribute exactly zero gradient and you paid for them anyway. Token-level loss stops long correct answers from being down-weighted just for being long, which is a length-bias fix hiding in the normalisation. And overlong shaping penalises chains that hit the context cap, since those are usually non-termination failures rather than deep thinking. The reason to know it is that it matches or beats GRPO on AIME at substantially less compute, and it's the default outside DeepSeek's own stack.
 
 ### 2.5 RLOO (REINFORCE Leave-One-Out, Kool 2019; revived for RLHF by Ahmadian 2024)
 
@@ -100,6 +108,8 @@ $$
 $$
 
 Unbiased; no critic; simple. Ahmadian et al. ("Back to Basics") showed RLOO matches or beats PPO on RLHF benchmarks.
+
+> **Saying it out loud.** RLOO is the same group-baseline idea as GRPO with one difference that matters theoretically: the baseline for each sample is the mean of the *other* samples in the group, excluding itself. Leaving yourself out is what makes the estimator unbiased — if you include your own reward in the baseline you're subtracting something correlated with what you're estimating. No critic, no standard-deviation normalisation, about four lines of code. Ahmadian's "Back to Basics" paper showed it matches or beats PPO on RLHF benchmarks, which was a mildly embarrassing result for the field. If I had academic-scale compute and one algorithm to pick, this is the one — simplest thing that works, and hardest to get subtly wrong.
 
 ### 2.6 REINFORCE++
 
@@ -136,6 +146,8 @@ Not strictly RL, but adjacent. Repeat: sample policy, build preference pairs fro
 - **Speed of iteration matters more than peak quality:** Iterative DPO.
 - **You want a per-step signal without training a PRM:** PRIME (implicit PRM).
 
+> **Saying it out loud.** The honest framing is that all of these are REINFORCE plus variance reduction, and the differences are about what you use as a baseline and how you keep updates from blowing up. PPO learns a critic to give you the baseline. GRPO throws the critic away and uses the mean reward of a group of rollouts on the same prompt instead. RLOO does the same but leaves the sample itself out of its own baseline, which makes it unbiased. Dr. GRPO drops the standard-deviation normalisation because it quietly over-weights easy problems, and DAPO stacks four practical fixes — asymmetric clipping, discarding zero-signal groups, token-level loss, and penalising overlong chains. GSPO moves the importance ratio to the sequence level, which matters specifically because token-level ratios blow up on mixture-of-experts models. If someone asks what to actually use: DAPO or GRPO at scale, RLOO for simplicity, and the honest caveat that the gaps between them are smaller than the gap made by a better verifier.
+
 ---
 
 ## 3. Verifier design — the often-neglected half
@@ -149,6 +161,8 @@ Most RLVR papers focus on the algorithm; the verifier is the actual moat. A bad 
 - **Fast.** Will be run millions of times during training.
 - **Robust to format.** Final-answer extraction handles `\boxed{}`, `<answer>...</answer>`, "Final answer: 42", etc.
 - **Hard to game.** Can't be hacked by exotic equivalent-but-not-quite formats.
+
+> **Saying it out loud.** A good verifier has to get two things right that pull against each other. High recall on equivalent answers — one-half, zero point five, and the LaTeX fraction all have to match, or you punish the model for being right in the wrong notation. And low false positives — because every wrong answer the verifier accepts is a lie you're training on, and the policy will find those lies faster than you will. Add fast, because you'll run it millions of times, and robust to format, because final-answer extraction has to survive boxed notation, answer tags, and "the answer is 42". The failure mode to name is that a lenient verifier silently caps your model: the reward curve keeps climbing while true accuracy plateaus, and you won't see it unless you're reading samples.
 
 ### 3.2 Math verifier patterns
 
@@ -200,9 +214,13 @@ The policy WILL find verifier exploits. Defense:
 - Ensemble verifiers (sympy + numeric + regex agreement).
 - Periodic manual sample inspection.
 
+> **Saying it out loud.** The thing I'd push hardest in an interview is that the verifier, not the algorithm, is the moat. Everyone benchmarks GRPO against DAPO against RLOO and the differences are a few points; a verifier with a two percent false-accept rate will cap your model in a way no optimiser recovers from. Concretely: sympy canonicalisation with numeric tolerance for math, hidden test suites with time and memory limits for code, final-state checks in a sandbox for tool use, Lean when you can afford formal. And when nothing deterministic exists, an LLM judge — with the caveats stated: it's slower, it's injectable by content in the rollout, and it has self-preference bias if it's the same family as the policy. The discipline that actually protects you is treating the verifier as an adversarial target — fuzz it, ensemble it, and read samples, because the policy will find its exploits whether or not you do.
+
 ---
 
 ## 4. Reward shaping in RLVR
+
+*Plain-language gloss.* Reward shaping is adding extra small terms alongside "was the answer right", to nudge behaviour the correctness signal alone doesn't reach — use the right tags, don't ramble, don't switch languages mid-thought. The danger is that every term you add is a new thing to game, so the practical rule is that correctness must dominate everything else by a wide margin.
 
 A practical zoo of components, all of which appear in published recipes.
 
@@ -264,9 +282,13 @@ def compute_reward(rollout):
     return 1.0 + bonus
 ```
 
+> **Saying it out loud.** The rule I'd lead with is: correctness dominates, everything else is a whisper. Format reward exists so the answer is parseable, and if you weight it too high the model learns to emit beautiful empty tags. Length shaping exists to stop chains growing until they hit the context cap, which is almost always non-termination rather than deep thought. Language-consistency reward exists because R1-Zero drifted between English and Chinese mid-chain. And the composition pattern that works is hierarchical rather than additive — format is a hard gate, correctness is the dominant term, and the soft bonuses only apply once you're already correct. The named failure mode is Goodhart, and the practical defence isn't a better formula, it's reading rollouts at every stage, because reward hacking is glaringly obvious in the samples and completely invisible in the reward curve.
+
 ---
 
 ## 5. KL regularization choices
+
+*Plain-language gloss.* The KL term measures how far the model you're training has drifted from the model you started with, and subtracting it from the reward means "improve, but don't become a different model". Without it, a policy chasing a proxy reward will happily walk off into text that scores well and reads like nonsense.
 
 KL keeps the policy near the reference (SFT or DPO model) — without it, the policy drifts into incoherence.
 
@@ -276,6 +298,8 @@ KL keeps the policy near the reference (SFT or DPO model) — without it, the po
 - **Reverse KL** $\mathrm{KL}(q \,\|\, p)$: mode-seeking; concentrates on high-prob regions; encourages confident outputs.
 
 Standard PPO/GRPO uses *reverse KL* (mode-seeking) which is fine for reasoning where you want confident correct outputs.
+
+> **Saying it out loud.** Forward KL is mean-seeking — it punishes you for putting zero probability anywhere the reference put mass, so it spreads out and keeps diversity. Reverse KL is mode-seeking — it punishes you for putting mass where the reference didn't, so it collapses onto the reference's high-probability regions and gets confident. Standard PPO and GRPO use reverse KL, and for reasoning that's the right default, because you want the model confidently committing to a correct chain rather than hedging across many. The cost you're accepting is diversity, which matters more than people think: if you're going to sample many rollouts and take the best, an over-confident policy gives you N copies of the same wrong idea.
 
 ### 5.2 Token-level vs sequence-level KL
 
@@ -290,6 +314,8 @@ R1 uses adaptive $\beta$ with KL targets. If running KL > target, increase $\bet
 
 Some recent work (Dr. GRPO, some RLVR variants) argues that with strong correctness rewards and small enough updates, the KL term can be dropped. Empirically: depends on base model strength.
 
+> **Saying it out loud.** The KL term is a leash keeping the policy near the model you started from, and the whole art is how long to make it. Too tight and the policy can't explore, so nothing improves. Too loose and you get the classic collapse — language drift, degenerate repeated templates, fluent nonsense that scores well on your proxy. Two implementation choices matter: token-level KL added to per-token reward is a stronger regulariser than the cheaper sequence-level estimate, and R1 uses an adaptive beta with a KL target, dialling it up when running KL exceeds the target. There's a live debate about dropping KL entirely — Dr. GRPO and some other variants argue that with a strong correctness reward and small updates you don't need it — and the empirical answer seems to be that it depends on how strong your base model is. The failure mode to name is reward over-optimisation: proxy reward keeps climbing while true quality plateaus or falls, and the KL cap is your main defence against it.
+
 ---
 
 ## 6. Curriculum, exploration, warm-start
@@ -300,6 +326,8 @@ Some recent work (Dr. GRPO, some RLVR variants) argues that with strong correctn
 - **Warm-start (R1, Tülu 3, Qwen):** start RL from an SFT'd model that already has the format. More stable and legible, possibly less exploratory.
 
 The empirical answer: warm-start dominates for production. Cold-start is a research curiosity.
+
+> **Saying it out loud.** Cold-start means running RL directly on the base model, R1-Zero style, and it's a beautiful research result — it proves the reasoning was latent and RL can surface it with no demonstrations at all. Warm-start means running RL from a model that's already been SFT'd on a few thousand well-formatted long chains, which is what every production recipe actually does. The reason is legibility and stability: cold-start models produce chains that mix languages and use non-standard formatting, and they're erratic outside math. The tradeoff to state honestly is exploration — the cold-start model isn't anchored to a human-chosen reasoning style, so in principle it can find strategies the SFT data never contained, and warm-start gives some of that up for reliability. In practice everyone takes the reliability.
 
 ### 6.2 Curriculum
 
@@ -319,6 +347,8 @@ If the base model gets <1% on the training problems, gradients are pure noise. S
 
 Store high-reward trajectories. Replay them during training to keep good behavior alive. Useful when reward is sparse.
 
+> **Saying it out loud.** The single biggest practical failure in RLVR isn't the algorithm, it's that your problems are too hard. If the base model solves under one percent of them, essentially every rollout returns zero, the group baseline is zero, and your gradient is noise — you can train for a week and learn nothing. So you filter by difficulty and train on problems the model already gets right some of the time, ideally somewhere in the middle, and promote harder ones as it improves. That's the curriculum. Exploration is the other side: temperature around point six, top-p around point nine, and a group size big enough that rollouts actually differ, since a group where everything is identical carries no signal either. The tradeoff to name is that group size scales cost linearly, so you're literally buying gradient signal with GPU hours.
+
 ---
 
 ## 7. Common failure modes
@@ -335,6 +365,8 @@ The interview signals — be ready for these.
 - **Catastrophic forgetting of non-RL tasks.** Reasoning model regresses on chat. Fix: rejection-sampling SFT after RL stage (R1's stage 3).
 - **Reward overoptimization.** True quality plateaus or drops as proxy reward keeps climbing. Fix: KL cap, ensemble verifiers, periodic human eval.
 - **Instability with MoE / large models.** Token-level ratios blow up. Fix: GSPO (sequence-level), gradient clipping, smaller LR.
+
+> **Saying it out loud.** These cluster into three families. Reward hacking: the model games format, gams length, or finds inputs the verifier wrongly accepts — the fix is a hard gate on correctness, small shaping weights, and hardening the verifier with adversarial cases. Optimisation pathology: mode collapse onto one reasoning template, length explosion until the chain fills the context, off-policy drift, and instability on mixture-of-experts models where token-level ratios blow up. And distribution damage: the model gets much better at math and measurably worse at chat, which is why R1's third stage is a big rejection-sampled SFT to broaden it back out. The one that's hardest to detect is reward over-optimisation — your proxy reward keeps climbing while real quality plateaus or drops — and the only reliable detector is a held-out human eval you run periodically and actually look at.
 
 ---
 
@@ -379,6 +411,8 @@ For a 70B+ model: 100-500 H100s, weeks. Out of academic reach without partnershi
 
 For a 1.5B-3B model + R1-Distill-style approach: feasible on 8 GPUs.
 
+> **Saying it out loud.** The stack has converged, which makes this an easy answer. TRL from Hugging Face if you're on one machine or a small cluster, veRL from ByteDance if you're doing this properly at scale with DAPO and GRPO, OpenRLHF and NeMo-Aligner as the other production options, and Open-R1 if you specifically want to reproduce the R1 recipe. Underneath all of them the rollout backend is vLLM, because RLVR is dominated by generation cost, not by the gradient step — you're sampling many long chains per prompt, so continuous batching is what makes it tractable. The architecture is a trainer holding the weights, rollout workers generating, verifiers scoring, and a weight-sync step between them, and the engineering difficulty is mostly in that sync. The budget reality worth stating: a 7B R1-style reasoning run is roughly eight to sixty-four H100s for a few days, a 70B run is hundreds of GPUs for weeks — so academic work happens at 1.5B to 3B or on distillates.
+
 ---
 
 ## 9. Multi-modal RLVR
@@ -389,6 +423,8 @@ RLVR generalizes beyond text math.
 - **Code with side-effects.** Generated code modifies a sandbox; verifier checks final state.
 - **Tool-augmented reasoning.** Model thinks → calls calculator/Python/search → integrates result → continues. Verifier grades final answer. Critical: gradient must flow correctly through tool boundary (usually only the LM tokens are differentiated; tool call results are treated as fixed context).
 - **Long-horizon agents.** SWE-Gym, OSWorld, AgentDojo, TAU-bench. Verifier = task-completion check. Credit assignment over hundreds of steps is hard; prevailing approach is final-only reward + GRPO with patience.
+
+> **Saying it out loud.** RLVR generalises anywhere you can programmatically check the outcome, which is a lot more than text math. Vision-language reasoning on image-rendered problems, where the reward is still just a numeric match. Code with side effects, where the verifier inspects the final state of a sandbox. Tool-augmented reasoning, where the model thinks, calls Python or a search tool mid-chain, and continues — and the implementation detail that matters there is that you only take gradients through the model's own tokens; the tool's returned text is fixed context, not something you differentiate through. Long-horizon agents are the hard frontier: SWE-Gym, OSWorld, TAU-bench, where the verifier is task completion and the credit-assignment problem is brutal because a single reward arrives after hundreds of steps. The current prevailing approach is honestly just final-only reward with a large group and a lot of patience, which is a statement about how unsolved this is.
 
 ---
 
@@ -409,6 +445,8 @@ There are roughly four communities of users for low-resource multilingual reason
 2. **STEM access** — scientific reasoning in non-English languages.
 3. **Government/legal** — rule-based reasoning over local documents.
 4. **Cultural-context reasoning** — problems involving culturally-specific concepts.
+
+> **Saying it out loud.** Nearly all reasoning RL has been done in English, with some Chinese, and the result is that a model which solves a grade-school word problem fine in English can fall apart on the same problem in Bengali or Swahili or Yoruba. Two separate failures are hiding in there. One is capability — the base model saw very few reasoning-shaped tokens in that language, so the prior is weak. The other is legibility — even when it gets the right number, it often reasons in English internally, which is useless to a monolingual student who needs to see the working. So the population that most needs a patient tutor gets the version of the model that can't show its work. That's the gap, and the reason it's tractable is that math verifiers are language-agnostic: the answer is 42 regardless of what language the question was in.
 
 ### 10.2 Why this is hard
 
@@ -479,6 +517,8 @@ The natural RL extension of approach (B). Instead of distilling once and stoppin
 
 **Cons.** Embedding-based reward can be hacked (model emits text superficially similar to pivot but semantically off). MT-based reward inherits MT errors. Pivot's reasoning style may dominate target-language outputs (homogenization risk).
 
+> **Saying it out loud.** The trick here is nice because it sidesteps the thing that makes multilingual RLVR hard. You don't have ground-truth reasoning data in the target language and you can't afford to annotate it — so instead you keep a strong English model as a pivot, let it produce a reference answer for each problem, and reward the multilingual policy for being *semantically equivalent* to that reference. Equivalence gets measured by multilingual embedding similarity, round-trip translation overlap, or a judge. The key insight is that cross-lingual semantic comparison is a much easier problem than producing target-language ground truth, and we already have decent tools for it. The reported gains are around sixteen percent on Llama-3.1-8B and ten percent on Qwen3-32B over PPO baselines. And I'd name the two risks unprompted: an embedding-based reward is hackable — you can look similar to the pivot while being wrong — and there's a homogenisation risk where the pivot's English reasoning style gets imprinted onto every target language.
+
 #### C. Cross-lingual code-switched CoT
 
 - Allow the model to think in English (its strongest reasoning language) but answer in target language.
@@ -540,6 +580,8 @@ This is essentially a "low-resource R1" recipe.
 - **Numeric format mismatches.** Lakh vs million, date formats, decimal commas vs dots.
 - **Verifier limitations.** Math verifier is language-agnostic for numbers, but word-answer problems ("what is the capital of X?") need language-aware verification.
 - **Loss of cultural context.** A "fair price" problem assumes Western market conventions; low-resource users may have different price intuitions.
+
+> **Saying it out loud.** The observation that makes this whole area work is that math verifiers don't care what language the question was in — the answer is still 42. So the reward signal transfers for free, which means the hard part is only getting a policy that reasons in the target language at all. The approach landscape runs from cheapest to most ambitious: translate English problems and fine-tune, distil long chains from an English reasoning teacher and translate them, keep an English pivot model live during RL and reward semantic equivalence to it, or add a language-consistency reward so the model is penalised for slipping into English mid-chain. The realistic recipe is a low-resource R1: cold-start SFT on translated distilled chains, then RLVR with correctness plus format plus language consistency, then rejection-sampled SFT to broaden, then light RLHF. The failure mode I'd name specifically is code-switching collapse — the model flips to English, solves it, flips back, the verifier is perfectly happy, and the user still can't read the reasoning.
 
 ---
 
@@ -641,6 +683,8 @@ If you have one week and one A100:
 
 This is a tiny project but immediately useful and demonstrates competence.
 
+> **Saying it out loud.** If someone asks what I'd actually build, the smallest honest version is: take a base model with some real presence in the target language, distil a few tens of thousands of long chains from an English reasoning model, translate them, SFT, then run GRPO on translated GSM8K and MATH with correctness plus format plus a language-consistency term, and evaluate on MGSM. That's a few GPUs and a few weeks, not a frontier budget. The scientific question worth designing around is which of those stages is doing the work — that's the ablation that makes it a paper rather than a demo. And the honest risk is that the answer turns out to be "the distillation did all of it and the RL added two points", which is a real possible outcome and worth saying up front rather than discovering at write-up time.
+
 ---
 
 ## 12. Datasets and benchmarks
@@ -690,6 +734,8 @@ This is a tiny project but immediately useful and demonstrates competence.
 - **How do you do RLVR for non-numeric reasoning in target languages?**
 - **What's the impact of translating-reasoning-back vs target-language-from-the-start?**
 - **Can speech-to-speech reasoning (no transcription) work in low-resource settings?**
+
+> **Saying it out loud.** The one I'd lead with is whether RLVR teaches new reasoning or only surfaces what pretraining already put there, because the answer determines whether base quality is still the binding constraint — and the pass-at-k evidence currently leans toward "only surfaces". The second is the multilingual version of the same question: how much of cross-lingual transfer is genuine target-language reasoning versus the model thinking in English behind a translated surface, which nobody has cleanly measured. Then whether there's a scaling law for cross-lingual transfer, and how you do RLVR at all for reasoning whose answer isn't a checkable number. I'd be explicit that these are open — the good version of this answer names what evidence would settle each one, rather than picking a side. For the first, that's a controlled pass-at-k comparison against the model's own base; for the second, it's probing whether the intermediate representations are language-specific or pivoting through English.
 
 ---
 

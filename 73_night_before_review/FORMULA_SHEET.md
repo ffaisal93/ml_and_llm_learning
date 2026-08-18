@@ -38,6 +38,8 @@ $$\mathcal{L} = \max(0,\; d(a,p) - d(a,n) + m)$$
 $$\mathcal{L} = -\log \frac{\exp(\text{sim}(q,k^+)/\tau)}{\sum_{i=0}^{K}\exp(\text{sim}(q,k_i)/\tau)}$$
 Lower bound on mutual information; small $\tau$ = harder on near-negatives.
 
+> **Saying it out loud.** *(The one they ask you to explain: why cross-entropy is the loss for classification.)* Cross-entropy is just the negative log-probability your model assigned to the correct answer, averaged over the data — so minimizing it is maximizing likelihood, nothing more exotic than that. The identity that makes it feel principled is that cross-entropy equals the entropy of the true distribution plus the KL divergence from the truth to your model. The entropy term doesn't depend on your parameters at all, so minimizing cross-entropy is exactly minimizing KL — you're pushing your predicted distribution onto the real one. The failure mode to name: it's unbounded below on the wrong side, so a single confidently wrong prediction contributes an enormous loss, which is why label smoothing and gradient clipping exist.
+
 ---
 
 ## Gradients
@@ -113,6 +115,8 @@ Cheaper, empirically equal; used by Llama, Qwen, Gemma, DeepSeek and effectively
 
 **QK-Norm** — normalize $Q$ and $K$ before the dot product; now common for training stability at scale.
 
+> **Saying it out loud.** *(The one they ask you to explain: BatchNorm versus LayerNorm.)* Same formula, different axis — that's genuinely the whole thing. BatchNorm computes the mean and variance for one feature across all the examples in the batch; LayerNorm computes them for one example across all its features. Everything else follows: BatchNorm couples examples together, so it needs a decent batch size, it behaves differently at train and test because inference uses running averages, and it's awkward for variable-length sequences. LayerNorm has no batch coupling and is identical in both modes, which is why transformers use it. The named failure mode is the silent BatchNorm bug — fine-tune with the layer left in train mode and it quietly overwrites the running statistics, and nothing errors.
+
 ---
 
 ## Attention
@@ -136,6 +140,8 @@ $$\text{MHA}(X) = \text{Concat}(\text{head}_1,\dots,\text{head}_h)W^O, \quad \te
 **RoPE** — rotate $q,k$ by a position-dependent angle so the dot product depends on $m-n$:
 $$\langle R_m q, R_n k\rangle = f(q,k,m-n)$$
 Relative position for free; extend context by scaling the base frequency (NTK / YaRN).
+
+> **Saying it out loud.** *(The one they ask you to explain: the square root of d-k.)* It's variance control at initialization. If the query and key entries are roughly independent with unit variance, their dot product is a sum over d-k terms, so its variance is d-k and the logits grow like the square root of d-k. Big logits push the softmax toward one-hot, and a saturated softmax has a nearly zero Jacobian, so the gradient dies before training even starts. Dividing by the square root of d-k pulls the logit variance back to one. The number to have ready: at a head width of 64 that's an 8x reduction in logit scale, and the modern follow-up is QK-Norm, which normalizes the queries and keys directly because the scaling alone stops being enough at frontier scale.
 
 ---
 
@@ -265,3 +271,5 @@ The leading 2 is K and V. Multiply by batch size. fp16 = 2 bytes, fp8 = 1, int4 
 **Inference regimes** — prefill is compute-bound ($O(n^2)$ attention, parallel); decode is memory-bandwidth-bound (one token at a time, must re-read all weights + KV cache). Hence batching, paged KV (vLLM), and speculative decoding.
 
 **Rules of thumb** — serving a model in fp16 needs $\approx 2N$ bytes of weights; int8 $\approx N$; int4 $\approx N/2$, plus KV cache, plus ~20% overhead.
+
+> **Saying it out loud.** *(The one they ask you to explain: where the compute goes.)* Training costs about six FLOPs per parameter per token — two forward and four backward, because the backward pass computes gradients with respect to both activations and weights. Multiply by parameters and tokens and you have the whole training budget in one expression, which is why labs can price a run before starting it. Chinchilla then says that for a fixed budget you want roughly twenty tokens per parameter, though Epoch AI's 2024 replication showed the paper's fitted constants were off even while the twenty-to-one policy held. The tradeoff nobody in a real job forgets: Chinchilla only optimizes training compute, and inference cost scales with parameters and not tokens — so you deliberately over-train a smaller model, often to hundreds of tokens per parameter, and pay in training efficiency for permanently cheaper serving.

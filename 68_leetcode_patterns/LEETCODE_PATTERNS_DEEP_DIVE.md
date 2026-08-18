@@ -84,6 +84,8 @@ When a problem lands, ask in this order:
 
 This 30-second triage is 80% of competence. State it explicitly during a real interview.
 
+> **Saying it out loud.** Before I write anything: let me make sure I've got the problem right — the input's a single array, I need a count back, and n goes up to ten to the fifth. That last number is doing most of the work here, because it rules out anything quadratic and tells me I'm looking for linear or n-log-n. Contiguous means I should be thinking sliding window rather than subsequence DP. Let me say the brute force first so we agree on correctness — nested loops, O of n squared — and then I'll talk about how to get it down. The thing I'm doing here on purpose is narrating the triage instead of silently pattern-matching, because if I'm wrong about the pattern you can stop me in ten seconds instead of twenty minutes.
+
 ---
 
 ## 2. Arrays & Hashing
@@ -147,6 +149,8 @@ return list(groups.values())
 - Assuming hash maps preserve insertion order (Python 3.7+ does; Java's HashMap doesn't).
 - Using a list as a key (not hashable) — use a tuple.
 
+> **Saying it out loud.** Here's my thinking — the brute force is checking every pair, which is O of n squared. But I don't actually need to *search* for the complement, I can *remember* what I've already seen. So I'll do one pass with a hash map from value to index, and at each element ask whether the complement is already in the map. One pass, O of n time, O of n extra space — I'm trading memory for time, which is the whole move for this pattern. Let me code it and I'll narrate as I go... and the edge case I want to handle explicitly is duplicates: I insert the current element *after* I check for its complement, so an element never matches with itself.
+
 ---
 
 ## 3. Two Pointers
@@ -200,6 +204,8 @@ return slow
 - Forgetting to skip duplicates in 3Sum (gives wrong answer with duplicate triplets).
 - Off-by-one in loop bounds.
 - Using two pointers on unsorted data (usually wrong).
+
+> **Saying it out loud.** The array's sorted, and that's the hint I want to use — sorted means I can throw away half the search space with each comparison instead of scanning. So: pointer at each end. If the sum is too big, the only way to shrink it is to move the right pointer in; if it's too small, move the left in. Each pointer only ever moves one direction, so this is O of n with O of 1 extra space — better than the hash map version because I don't need the map at all. Let me state the invariant out loud since that's what makes it correct: the answer, if it exists, is always inside the window between the two pointers. Edge case I'll check: fewer than two elements, and duplicates if the problem wants unique pairs.
 
 ---
 
@@ -272,6 +278,8 @@ def at_most_k(k):
 - Counting versus length tracking.
 - Treating subsequence problems as sliding-window (don't — those are DP).
 
+> **Saying it out loud.** The word "contiguous" is what makes me reach for sliding window. Instead of re-examining every subarray from scratch, I expand the right edge one element at a time, and whenever the window becomes invalid I shrink from the left until it's valid again. The key insight for the complexity: each index enters the window once and leaves once, so even though there's a nested loop it's O of n total, not n squared — that's the amortized argument and it's worth saying out loud because it looks quadratic on the page. I'll keep a hash map of counts inside the window as my validity check. Off-by-one is the classic bug here, so let me trace a two-element example before I call it done.
+
 ---
 
 ## 5. Stack
@@ -330,6 +338,8 @@ return res
 - Pushing/popping order wrong.
 - Forgetting to handle leftover stack items at the end (e.g., remaining bars in histogram).
 - Confusing monotonic increasing vs decreasing stacks.
+
+> **Saying it out loud.** The signal I'm picking up on is that I need to match each element with something earlier that I haven't resolved yet — that's a stack. For the monotonic version: I keep the stack decreasing, and whenever a new element is bigger than the top, that new element is the "next greater" for everything I pop. Every element gets pushed once and popped at most once, so it's O of n even though there's a while loop inside a for loop — same amortized argument as sliding window. Space is O of n in the worst case, when the input's already sorted the wrong way. The edge case to handle is what's left on the stack at the end: those elements never found a match, so they get the default answer, usually negative one.
 
 ---
 
@@ -400,6 +410,8 @@ return l
 - Integer overflow on `(l + r) // 2` in languages with fixed int (use `l + (r - l) // 2`).
 - Predicate not monotonic → binary search doesn't apply.
 - Forgetting which boundary to return.
+
+> **Saying it out loud.** Sorted input and a log-n target complexity is basically an announcement that this is binary search. The version I want to write is the one that finds a boundary rather than an exact match, because that generalizes to "first element greater than or equal to x" without extra cases. I'll use the half-open convention — low inclusive, high exclusive, mid computed as low plus high-minus-low over two — and I'll state my loop invariant, which is that the answer always lives in the range low to high. That invariant is the thing that keeps me out of the classic infinite loop where mid never advances. Edge cases: empty array, target smaller than everything, target bigger than everything. It's O of log n time and O of 1 space.
 
 ---
 
@@ -484,6 +496,8 @@ return dummy.next
 - Off-by-one in "Nth from end" (n vs n+1 advance).
 - Cycle in input → infinite loop if not detecting.
 
+> **Saying it out loud.** With linked lists I can't index, so almost everything reduces to two pointer tricks. Fast and slow for anything about the middle or about cycles: if there's a cycle, the fast pointer laps the slow one and they meet, which is Floyd's algorithm — O of n time, O of 1 space, and that constant space is why we prefer it to a visited set. Two pointers offset by k for anything about "kth from the end." And I'll add a dummy head node before I write any code, because it makes deleting or inserting at the front behave exactly like the middle and eliminates a whole class of null checks. The edge cases I always run: empty list, single node, and operating on the head itself.
+
 ---
 
 ## 8. Trees (Binary Trees, BST)
@@ -561,6 +575,8 @@ def search(node, target):
 - LCA on BST without exploiting BST property → unnecessary $O(n)$.
 - Recursion depth limit on skewed trees in Python (`sys.setrecursionlimit`).
 
+> **Saying it out loud.** Two questions decide the shape of my code: does each node need answers from its children, or does it need context from its parent? If it's children-up, that's post-order recursion where I return something and combine. If it's parent-down, I pass state as an argument — for a BST validity check, the running min and max bounds. And if the problem is about levels or shortest depth, that's BFS with a queue, not recursion. Complexity is O of n because I visit every node once; space is O of h for the recursion stack, which is log n on a balanced tree and n on a degenerate one. That worst case is the thing to name — a linked-list-shaped tree will blow Python's default recursion limit of a thousand.
+
 ---
 
 ## 9. Tries
@@ -611,6 +627,8 @@ class Trie:
 - Using a class-per-node when a dict-of-dicts works fine.
 - Forgetting the end-of-word marker.
 - Heavy memory use (consider compressed/Patricia trie for large dictionaries).
+
+> **Saying it out loud.** A trie is what I use when the queries are about prefixes, because a hash set can tell me a word exists but can't tell me anything shares a prefix. Each node is a map from character to child node plus a flag marking end-of-word. Insert and search are O of L in the length of the word, completely independent of how many words are stored — that independence is the whole reason to build one. The tradeoff to name is memory: you're paying a node per character in the worst case, so it's a real space cost compared to a set, and you'd only take it if prefix queries are actually in the requirements. The edge cases are the empty string and making sure a word that's a prefix of another still has its end flag set.
 
 ---
 
@@ -690,6 +708,8 @@ return dummy.next
 - Forgetting to handle ties when heap stores tuples.
 - Time complexity of `heapify` is $O(n)$, not $O(n \log n)$.
 
+> **Saying it out loud.** "Top k" is the trigger. I could sort — that's n log n — but I only need the k largest, so I'll keep a min-heap of size k: push everything, and pop whenever the heap exceeds k. The smallest of my current best k is always sitting at the top where I can compare against it cheaply. That's O of n log k, which is a real win when k is small relative to n, and O of k space. One Python detail I'll say out loud because it bites people: heapq is a min-heap only, so for a max-heap I push negated values and negate on the way out. Edge cases: k bigger than the array, and ties.
+
 ---
 
 ## 11. Backtracking
@@ -767,6 +787,8 @@ def dfs(remaining, current):
 - Appending mutable state without copying — append `current[:]` not `current`.
 - Wrong start index in combinations vs permutations (combinations: `i+1`; permutations: include all).
 - Not handling duplicates when input has dups (sort + skip).
+
+> **Saying it out loud.** The output is "all combinations," and n is small — twenty or under — so exponential is expected and I shouldn't be trying to be clever. This is backtracking: choose, recurse, un-choose. I'll pass a start index so I never revisit an earlier element, which is what stops me generating the same combination in different orders. Complexity is roughly O of n times two to the n for subsets, or n factorial for permutations — I'll say which and why. Two things I'll be careful about: I append a *copy* of the path when I hit a leaf, because the path list gets mutated after; and to handle duplicates I sort first and skip an element if it equals the previous one and the previous one wasn't used at this level.
 
 ---
 
@@ -862,6 +884,8 @@ def union(a, b):
 - BFS without level tracking when distance matters.
 - Mutating the input grid without restoring (some interviewers care).
 - Stack overflow on huge DFS in Python — convert to iterative or `setrecursionlimit`.
+
+> **Saying it out loud.** The moment a problem mentions connectivity or reachability I'm building a graph, even if it's handed to me as a grid — a grid is just a graph where the neighbors are up, down, left, right. Then the choice is simple: BFS if I need the shortest path in an unweighted graph, DFS if I just need to explore or count components. Either way it's O of V plus E, and the single most important line is marking a node visited *when I enqueue it*, not when I dequeue it, or the same node gets queued many times and the complexity blows up. Edge cases: disconnected components, so I loop over all starting nodes; self-loops; and an empty grid.
 
 ---
 
@@ -968,6 +992,8 @@ for u, v, w in edges:
 - Using BFS instead of Dijkstra when edges have non-uniform weights.
 - Forgetting `if d > dist[u]: continue` in Dijkstra → unnecessary relaxations.
 
+> **Saying it out loud.** These four are really "which constraint did you add." Dependencies and ordering means topological sort — Kahn's algorithm with in-degrees, O of V plus E, and if the queue empties before I've output every node there's a cycle, which is often what the problem was actually testing. Weighted with non-negative edges is Dijkstra, a heap-based BFS, E log V. Negative edges break Dijkstra's greedy assumption entirely, so that's Bellman-Ford at V times E, which also detects negative cycles with one extra pass. All-pairs on a small dense graph is Floyd-Warshall, three nested loops, n cubed. The mistake to name out loud: reaching for Dijkstra on an unweighted graph, where plain BFS gets the same answer without the log factor.
+
 ---
 
 ## 14. 1-D Dynamic Programming
@@ -1038,6 +1064,8 @@ return prev1
 - Forgetting to initialize the base case.
 - Using $O(n)$ space when $O(1)$ suffices.
 - Coin Change unbounded vs 0/1 — different recurrence.
+
+> **Saying it out loud.** Let me define the state before I write anything, because that's where DP goes wrong: dp of i is the answer for the first i elements. Then the recurrence — at position i I either take this element and add dp of i minus two, or skip it and keep dp of i minus one — so it's the max of those. Base cases are dp of zero and dp of one, and getting those wrong is the usual bug. That's O of n time and O of n space, and since I only ever look back two positions I can collapse it to two variables and get O of 1 space, which I'll do if you want it. The way I got here, and this is the general recipe, is: write the brute-force recursion, notice the overlapping subproblems, then memoize and flip it to a bottom-up loop.
 
 ---
 
@@ -1112,6 +1140,8 @@ for L in range(2, n + 1):                   # window length
 - Confusing "subsequence" with "substring" — the recurrence differs.
 - LCS variants: longest common substring is different (resets on mismatch).
 
+> **Saying it out loud.** Two sequences or a grid means two indices in the state, so dp of i and j is the answer for the first i of one string and the first j of the other. The recurrence splits on whether the characters match: if they do, I extend the diagonal, dp of i minus one, j minus one, plus one; if they don't, I take the best of dropping a character from either side. Fill the base row and column first, then sweep. That's O of m times n time and space. Since each row only depends on the row above it, I can drop to one-dimensional and get O of n space — worth mentioning even if I don't do it. Edge cases: empty strings, which is exactly what the zero row and column encode.
+
 ---
 
 ## 16. Greedy
@@ -1155,6 +1185,8 @@ return result
 - Assuming greedy works without proof — it often doesn't on problems that look greedy. (Coin change with arbitrary denominations is *not* greedy; with US coins, it is.)
 - Wrong sort key.
 - Edge cases at boundaries.
+
+> **Saying it out loud.** I want to be careful here, because greedy is the pattern that looks right and is wrong. My claim is that taking the locally best choice at each step gives the global optimum, and I should justify that rather than assume it — usually with an exchange argument: if some optimal solution differs from my greedy choice, I can swap in the greedy choice without making it worse. Sorting first is almost always part of the setup, so it's n log n dominated by the sort, then a linear sweep. If I can't articulate why greedy is safe here, that's my cue to say so and fall back to DP, which is slower but provably correct. Getting caught with an unjustified greedy is much worse than shipping a correct n squared.
 
 ---
 
@@ -1213,6 +1245,8 @@ return max_active
 - "Touch" vs "overlap" (`<=` vs `<`).
 - Empty input.
 
+> **Saying it out loud.** Interval problems are almost all the same problem after you sort. Sort by start time, then sweep: if the current interval starts before the previous one ended, they overlap, so I merge by extending the end to the max of the two; otherwise I close out the previous one and start fresh. That's n log n for the sort and then linear, so n log n overall, O of n space for the output. The one variant worth flagging: for "maximum non-overlapping intervals" you sort by *end* time, not start, because finishing early leaves the most room for everything after. Edge cases: intervals that merely touch at an endpoint — I'd ask you whether [1,2] and [2,3] count as overlapping, because the problem statements differ.
+
 ---
 
 ## 18. Math & Geometry
@@ -1243,6 +1277,8 @@ Often there's a closed-form or a clever invariant.
 - Off-by-one in spiral.
 - Negative exponent in Pow → 1/Pow(x, -n) and handle int min.
 - Integer overflow in languages with fixed int.
+
+> **Saying it out loud.** These are usually about spotting an invariant rather than an algorithm. Rotating a matrix in place is transpose then reverse each row — two simple passes instead of trying to reason about a four-way cyclic swap, and it's O of n squared time with O of 1 space. The spiral is four boundary pointers that close inward, and the only tricky part is the check that stops you double-traversing the middle row or column when the boundaries meet. Set-matrix-zeroes is the one where the interesting version uses the first row and column as your own marker storage to get O of 1 space. Edge cases here are non-square matrices and empty input, and I'd rather trace a three-by-three by hand than trust the indices.
 
 ---
 
@@ -1284,6 +1320,8 @@ XOR has cancellation. AND extracts. OR sets. Shift moves. Many problems reduce t
 - Bit-shift on signed integers.
 - Off-by-one on bit indexing.
 
+> **Saying it out loud.** The two identities that carry most of these: XOR with itself is zero and XOR with zero is identity, so XOR-ing an entire array cancels every element that appears twice and leaves the one that doesn't — O of n time, O of 1 space, no hash set needed. And n AND n-minus-one clears the lowest set bit, so counting set bits runs in as many iterations as there are ones rather than thirty-two. I'll say what n AND n-minus-one does out loud rather than just typing it, because otherwise it reads as a magic incantation. The gotcha to name: Python integers are arbitrary precision and negatives don't wrap, so any problem involving 32-bit overflow needs an explicit mask.
+
 ---
 
 ## 20. Problem-to-pattern transformation tricks
@@ -1307,6 +1345,8 @@ These are the "ah-ha" moves that turn a hard problem into a known pattern.
 - **Treat 2D as 1D.** Search a 2D Matrix → flatten via row*ncols + col.
 - **Split into halves.** Median of Two Sorted Arrays. Quickselect partitioning.
 
+> **Saying it out loud.** If I'm stuck, I say so and then start listing transformations out loud rather than going quiet — that's worth real points on its own. What if I sort first, does that turn this into a sweep? Can I phrase the dependencies as a graph and just BFS it? Would prefix sums turn these range queries into subtractions? Is the answer a number in a monotonic range, in which case I can binary search on the answer itself rather than compute it? Can I count instead of construct, since the problem only wants a count? The one to reach for when nothing else lands is the brute-force recursion plus memoization, because that's how every DP solution actually gets discovered.
+
 ---
 
 ## 21. Complexity reasoning cheatsheet
@@ -1322,6 +1362,8 @@ These are the "ah-ha" moves that turn a hard problem into a known pattern.
 - $O(n!)$ — permutations.
 
 If $n = 10^5$, you need $O(n \log n)$ or better. If $n = 10^4$, $O(n^2)$ might work. If $n \le 20$, exponential is fine.
+
+> **Saying it out loud.** I read complexity off the constraints before I pick an approach, and I say that reasoning out loud. n up to ten to the fifth means I need n log n or better, so sorting is fine and nested loops are not. n around ten thousand means n squared will probably pass. n at twenty or below is an explicit invitation to do something exponential — subsets or bitmask DP — and trying to find a polynomial solution there is usually wasted time. That reasoning is a genuine signal to the interviewer, because it shows I'm choosing an approach against the actual constraints rather than reciting the fastest algorithm I know for the problem shape.
 
 ---
 
@@ -1343,6 +1385,8 @@ If $n = 10^5$, you need $O(n \log n)$ or better. If $n = 10^4$, $O(n^2)$ might w
 - **Recursion depth.** Python defaults to 1000; for huge inputs, iterate or `sys.setrecursionlimit`.
 - **Integer overflow.** Not in Python, but in Java/C++ — multiply two `int`s often overflows.
 
+> **Saying it out loud.** The biggest one isn't technical: it's going silent. The interviewer is grading your reasoning, and a quiet candidate who produces correct code often scores below a talkative one who doesn't finish. So when I get stuck I narrate the stuck-ness — "the brute force is n squared, and the thing I want to avoid is re-scanning; let me think about whether sorting first buys me anything." The second biggest is coding before agreeing on the problem. I spend two to five minutes restating, making up an edge case, stating the brute force and the optimal idea and both complexities, and only then type. And I always trace a small example through the finished code before saying I'm done — that's where the off-by-one shows up.
+
 ---
 
 ## 23. The 5-step problem-solving protocol
@@ -1360,6 +1404,8 @@ Use this verbatim in every interview.
 **Step 5: Code.** Write clean code. State invariants. Trace through an example. State final time/space complexity.
 
 If stuck at step 4, return to step 3 and code the brute force; many interviews accept it.
+
+> **Saying it out loud.** "Let me make sure I understand — the input is X, I return Y, and n can be up to this. Are there duplicates? Can values be negative?" Then: "Let me walk your example, plus one of my own — an empty input." Then: "The brute force is checking every pair, O of n squared. That works but we can do better." Then: "This looks like sliding window, because the constraint is on a contiguous range — that gets us to O of n." Then code, narrating the invariant as I write it, and finish by tracing an example and restating time and space. That's the whole script, and it's worth using verbatim because if you run out of time at step four, an interviewer who watched you reason still has plenty to write down.
 
 ---
 

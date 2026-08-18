@@ -1,5 +1,7 @@
 # Cross-Topic Map
 
+> **Saying it out loud.** *(How to use this page.)* This isn't reading material — it's a map of the five moves that make an answer sound senior, which is connecting the topic you were asked about to the one it causes. When someone asks why GQA matters, the bridge is architecture to inference to serving cost, and walking it out loud is worth more than any single fact on either end. When a metric looks suspiciously strong, the bridge is data pipeline to leakage to evaluation credibility, and naming it is how you avoid sounding either gullible or paranoid. Practice by picking a bridge, saying the chain aloud in three sentences, and checking whether you can explain each arrow — the arrows are where the credit is, not the boxes.
+
 ## High-Value Bridges
 
 ### Losses -> Optimization -> Calibration

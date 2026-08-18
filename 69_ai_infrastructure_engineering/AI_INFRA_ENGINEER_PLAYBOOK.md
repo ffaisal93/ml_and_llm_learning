@@ -49,7 +49,7 @@ An AI Infrastructure Engineer makes LLMs **fast, cheap, reliable, and scalable**
 Day-to-day responsibilities:
 - Take a checkpoint, deploy it on the right hardware with the right inference engine.
 - Hit latency SLOs (p50, p95, p99) at projected QPS.
-- Hit cost targets (\$/1M tokens, $/request, $/active user).
+- Hit cost targets (\$/1M tokens, \$/request, \$/active user).
 - Ensure reliability (uptime, failover, rolling deploys).
 - Set up observability: traces, metrics, logs, eval.
 - Capacity-plan for growth.
@@ -59,6 +59,8 @@ Day-to-day responsibilities:
 - Manage cost (prompt caching, model routing, batch APIs).
 
 The interview probes whether you've **shipped this stack** (and which parts you've personally touched), not whether you've published papers about it.
+
+> **Saying it out loud.** My job is to take a model somebody else trained and make it fast, cheap, and reliable enough to put in front of real traffic. That means picking the hardware and the inference engine, hitting a p99 latency target at the projected request rate, and hitting a cost-per-million-tokens number the business can actually charge against. I'm not doing research and I'm not building product features — I'm the layer in between, where a checkpoint becomes a service. The thing that separates people who've done this from people who've read about it is that we start from the constraint, not the design: tell me the latency SLO and the cost ceiling and I'll tell you the quantization, the batching, and the GPU count that fit inside them.
 
 ---
 
@@ -89,6 +91,8 @@ LLM inference has two compute regimes:
 
 ### 2.3 Frontier GPU specs (2025-2026)
 
+*Prices and hourly rates below are point-in-time figures as of late 2025 / early 2026, not current quotes. GPU list prices, cloud on-demand rates, and spot pricing move fast — treat every number here as an order-of-magnitude anchor for arithmetic, and say "as of when I last looked" if you quote one in an interview.*
+
 | GPU | VRAM | HBM BW | FP16 TFLOPS | TDP | List \$ |
 |---|---|---|---|---|---|
 | A100 80GB SXM | 80 GB | 2 TB/s | 312 | 400W | ~\$15K |
@@ -108,6 +112,8 @@ Cloud renting (rough order of magnitude):
 
 ### 2.4 NVLink / NVSwitch / InfiniBand
 
+**In plain language.** GPUs in a big training or serving job have to constantly hand each other partial results, so how fast they can talk determines how you're allowed to split the model. NVLink is the very fast wiring between GPUs sitting in the same physical server; InfiniBand is the merely-fast wiring between servers in a rack or cluster — roughly an order of magnitude slower. That gap is the whole design rule: the way of splitting a model that chats the most (tensor parallelism) has to stay inside one server on NVLink, and the ways that chat less (data and pipeline parallelism) are what you stretch across servers.
+
 - **NVLink.** GPU-to-GPU within a node. H100: 900 GB/s bidirectional (NVLink 4). Used for tensor parallelism (which is NVLink-bound).
 - **NVSwitch.** Switch fabric making all GPUs in a server (8 typically) NVLink-connected.
 - **InfiniBand (NDR).** Cross-node networking. ~400 Gbps. Slower than NVLink, used for data parallelism / pipeline parallelism across nodes.
@@ -119,6 +125,8 @@ Cloud renting (rough order of magnitude):
 > "For 70B BF16, that's 140 GB of weights + KV cache. Doesn't fit on one 80GB H100; needs TP=2 or H200 (141GB). For decode at long context, KV cache might add 10-30 GB on top, pushing toward TP=2 or 4 even on H200. Decode is memory-bandwidth-bound at ~3.35 TB/s on H100, so per-GPU per-second I can scan ~3.35 TB / 140 GB = ~24 token/s before TP. With TP=2, weights split, BW per token halves → ~48 token/s. PagedAttention + continuous batching gets total throughput up by sharing prefill and overlapping. With INT4 quantization, weights drop to 35 GB, single H100 fits, and per-GPU TPS gets to ~95."
 
 That's a senior answer.
+
+> **Saying it out loud.** The one thing to internalize about a GPU is that it has way more arithmetic than memory bandwidth, so most of the time you're not waiting on math, you're waiting on bytes moving out of HBM. That's why prefill and decode behave like different machines: prefill scores a whole prompt at once and saturates the tensor cores, while decode produces one token at a time and has to re-read every weight from memory to do it. So capacity planning is really a memory question — a 70B model in BF16 is 140 GB of weights, which doesn't fit on an 80 GB H100 at all, and the KV cache piles on top of that. The number to have ready: H100 SXM is about 3.35 TB/s of HBM bandwidth, so scanning 140 GB of weights caps you at roughly 24 tokens per second per GPU before any parallelism or quantization.
 
 ---
 
@@ -156,6 +164,8 @@ Always validate on:
 - Production-traffic eval (sample 1k requests, run BF16 and quantized, judge for divergence).
 
 A common production policy: **don't ship if perplexity gap > 1% or task benchmark gap > 2%.**
+
+> **Saying it out loud.** Quantization is storing the weights in fewer bits so you read fewer bytes per token — and since decode is memory-bandwidth-bound, fewer bytes is directly more speed, not just less memory. FP8 is the safe default on Hopper and newer: about half the bytes of BF16, hardware support so it's genuinely faster, and quality loss you usually can't measure. INT4 with AWQ or GPTQ halves it again and is what you reach for when you're trying to fit a big model on one GPU. The tradeoff to name is that quality loss is not uniform — it concentrates in long-context, multi-turn, and code generation, and standard perplexity checks will happily miss it. So the rule is that you never ship a quantized model on a perplexity number alone; you run the task evals you actually care about, side by side.
 
 ---
 
@@ -202,6 +212,8 @@ State-of-the-art for very-large-scale deployments. Used by Anthropic, OpenAI, To
 ### 4.6 Hook ladder
 
 "Static < dynamic < continuous + chunked prefill < disaggregated."
+
+> **Saying it out loud.** Batching is how you stop wasting the GPU, because loading the weights costs the same whether you're serving one request or sixty-four. The naive version is static batching, where you wait for a group, run them together, and everyone leaves when the slowest one finishes — which means short requests sit around burning GPU time doing nothing. Continuous batching fixes that by scheduling at the level of individual decode steps: the moment a sequence finishes, a waiting request drops into its slot. That's typically a five-to-ten-times throughput win and it's the single biggest lever in a serving stack. The tradeoff to name is that bigger batches raise time-to-first-token because of queuing, which is exactly what chunked prefill and disaggregated prefill/decode exist to unwind.
 
 ---
 
@@ -259,6 +271,8 @@ Pick one. Stick with it. Master its config.
 
 **Hook.** "vLLM is the OSS default; TRT-LLM if you need the last 10-20% throughput."
 
+> **Saying it out loud.** These are all doing the same three things — paged KV, continuous batching, fused kernels — and the choice is mostly about who you are, not what's fastest. vLLM is the default: open, huge community, PagedAttention is theirs, and it runs on NVIDIA and AMD. TensorRT-LLM is faster on NVIDIA if you're willing to pay for it in build complexity and lock-in, because you compile a model-specific engine. SGLang wins on structured and agentic workloads because of RadixAttention prefix sharing, and TGI is the pick when you're already inside the HuggingFace ecosystem. The senior move is naming the version and the flags — "vLLM with chunked prefill on and fp8 KV cache" — because that's the part you can only know from having actually run it.
+
 ---
 
 ## 6. KV Caching in Production
@@ -301,6 +315,8 @@ KV cache size per token = 2 (K, V) * num_layers * num_kv_heads * head_dim * byte
 
 **Llama 3 70B (BF16):** 2 × 80 × 8 × 128 × 2 = **327 KB / token**. At 32K context: 10.5 GB / sequence. At batch=8: 84 GB just for KV cache. **This is why GQA matters.**
 
+> **Saying it out loud.** The KV cache is the model's memory of the tokens so far, and in production it's usually what runs you out of VRAM rather than the weights, because it grows with context length times batch size and it's per user. The old way to allocate it was one contiguous slab per request, sized to the maximum possible length — which wasted most of it, since almost no request hits the max. PagedAttention borrows the operating system's trick: chop the cache into fixed 16-token blocks and keep a page table, so you allocate as you go and blocks from different requests can share pages. That's how vLLM gets a two-to-four-times throughput improvement without touching the model. The failure mode to name is fragmentation-driven preemption — under memory pressure the scheduler evicts a running sequence and has to recompute its prefill, so your p99 latency spikes while average throughput still looks fine.
+
 ---
 
 ## 7. Speculative Decoding in Production
@@ -324,6 +340,8 @@ KV cache size per token = 2 (K, V) * num_layers * num_kv_heads * head_dim * byte
 
 - vLLM: `--speculative-model EAGLE-Llama-3-8B --num-speculative-tokens 5`
 - TRT-LLM: built-in for Medusa, EAGLE.
+
+> **Saying it out loud.** Speculative decoding exploits the fact that decode is memory-bound: since you're already paying to read all the weights for one token, you may as well check several at once. A cheap draft model guesses the next few tokens, the big model verifies them all in a single forward pass, and you keep the longest prefix that matches what the big model would have produced anyway. It's mathematically lossless — the output distribution is identical — and it typically buys one-and-a-half to three times faster decoding. The tradeoff people get wrong: the win comes from spare compute, so it evaporates at high batch sizes where you're already compute-saturated. At large batch it can actually make you slower, which is why production systems gate it on current load rather than leaving it on.
 
 ---
 
@@ -362,9 +380,13 @@ The four numbers you live and die by.
 - Speculative acceptance rate.
 - VRAM utilization.
 
+> **Saying it out loud.** There are two latencies users feel and they trade against each other. Time-to-first-token is how long they stare at nothing, and it's dominated by prefill and by queuing. Time-per-output-token is how fast the text streams once it starts, and it's dominated by memory bandwidth and by how many other requests are sharing the GPU. Small batches give you great TTFT and mediocre throughput; large batches give you great throughput and users waiting in a queue. The numbers worth having: p99 TTFT under about two seconds and around thirty milliseconds per output token, because thirty milliseconds is roughly faster than people read. And the discipline that scores is quoting p99 rather than averages — the average hides exactly the preemption and queuing events that make a service feel broken.
+
 ---
 
 ## 9. Distributed Training Infrastructure
+
+**In plain language: the three ways to split a job.** *Data parallelism* gives every GPU a full copy of the model and a different slice of the batch; they average their gradients at the end of each step. It's the simplest and it's what you use until the model stops fitting on one GPU. *Tensor parallelism* cuts each individual layer's matrices into pieces so several GPUs compute one layer together — that requires talking to each other multiple times per layer, so it lives inside a single NVLink-connected node, usually eight GPUs. *Pipeline parallelism* gives each GPU a different consecutive stack of layers, like stations on an assembly line, so the chatter is only at the handoffs and it can cross nodes. Real frontier runs use all three at once plus ZeRO/FSDP sharding of the optimizer state, and the named cost of pipelining is the "bubble" — idle GPUs waiting for the first micro-batch to work its way down the line.
 
 The training side. Detailed coverage in `61_large_scale_llm_systems/EFFICIENT_TRAINING_INFERENCE_PLAYBOOK.md` — production focus here.
 
@@ -397,9 +419,11 @@ The training side. Detailed coverage in `61_large_scale_llm_systems/EFFICIENT_TR
 ### 9.4 Cost / capacity planning
 
 - Training a 7B model from scratch: ~50-200 H100-days. ~\$4-15K cloud.
-- 70B from scratch: ~5K-15K H100-days. $400K-$1.5M.
+- 70B from scratch: ~5K-15K H100-days. \$400K-\$1.5M.
 - 400B+: 100K+ H100-days. \$10M+.
 - Fine-tuning: 10-100× cheaper than from-scratch.
+
+> **Saying it out loud.** Above a few hundred GPUs, training stops being an ML problem and becomes a reliability problem. A thousand-GPU run sees hardware failures daily, so the real engineering is asynchronous checkpointing every thirty to sixty minutes, sharded restore that gets you back in under five minutes, and automatic rollback when the loss spikes. You combine the three parallelism strategies according to the network: tensor parallel inside a node on NVLink, pipeline and data parallel across nodes on InfiniBand. The failure mode that actually costs money isn't a crash — it's the straggler, one slow GPU or a flapping InfiniBand link that silently drags the whole synchronous step down, so every other GPU in the job idles at its cost per hour while nothing errors out.
 
 ---
 
@@ -445,6 +469,8 @@ The hard part of GPU autoscaling: **GPUs take 60-300s to come up (provision + mo
 - **Canary.** New version gets 1-5% of traffic; monitor; ramp.
 - **Shadow.** Mirror traffic to new version; compare outputs offline; no impact.
 - **A/B for quality.** Random assignment; collect quality signals.
+
+> **Saying it out loud.** Autoscaling GPUs is much harder than autoscaling web servers, because a cold start means pulling tens of gigabytes of weights and warming an engine — that's minutes, not seconds. So you don't scale on CPU utilization; you scale on queue depth or time-to-first-token, and you scale up much earlier than feels necessary. Scale-to-zero is only honest for genuinely bursty internal workloads, because the first user after a scale-down eats the whole cold start. The tradeoff to name is idle cost versus tail latency: you're paying for warm GPUs that are doing nothing precisely so that your p99 doesn't include a model load, and the right amount of that waste is a business decision, not an engineering one.
 
 ---
 
@@ -512,6 +538,8 @@ LLM generator with retrieved context
 - **NV-Embed.** NVIDIA's massive embedding model.
 - **Domain-specific finetunes** of any of the above.
 
+> **Saying it out loud.** A vector database is an approximate nearest-neighbor index with an operations story bolted on, and the operations story is usually why you pick one. Exact search is fine up to a few million vectors; past that you use HNSW, which is fast and accurate but expensive in RAM, or IVF-PQ, which compresses hard and trades away recall. The part that bites teams is that the recall knob — efSearch, or nprobe — silently degrades retrieval quality with no error and no alert, so somebody tunes it down for latency and the product gets worse in a way that never shows up in a dashboard. The failure mode to name is embedding-model drift: change the embedding model and every vector in the index is now in a different space, so you must reindex the entire corpus, and a partial reindex gives you garbage results from the mixed portion.
+
 ---
 
 ## 12. Prompt Caching and Cost Optimization
@@ -563,6 +591,8 @@ OpenAI Batch API, Anthropic Batches: half-price for non-realtime workloads. Use 
 8. Cache final responses for FAQ-style queries.
 9. Track cost per (user, route, day).
 10. Set alarms on outlier-cost requests.
+
+> **Saying it out loud.** The cheapest token is the one you never compute, and in chat and agent workloads a huge fraction of every request is an identical prefix — the same system prompt, the same tool definitions, the same conversation so far. Prefix caching keeps that prefix's KV cache around so you skip re-running prefill on it, and on real chat traffic that's commonly a fifty-to-ninety percent cost reduction, which dwarfs anything you'd get from squeezing the model. After that it's routing cheap queries to a small model and pushing anything non-interactive onto a batch API. The tradeoff worth naming is semantic caching, where you serve a stored answer for a merely-similar question — it saves the most and it's the one that will eventually return a confidently wrong answer to somebody, so it needs a tight similarity threshold and a way to see how often it fires.
 
 ---
 
@@ -629,6 +659,8 @@ Request (user_id, conversation_id, request_id)
 - Refusal rate spiked > 20%.
 - VRAM utilization > 95% for > 5 min.
 
+> **Saying it out loud.** LLM observability is different from normal service monitoring because the failure you care about most returns a 200. The model answers fluently and the answer is wrong, and no latency graph will ever show you that. So the trace has to carry the semantic layer — the prompt, the retrieved chunks, the tool calls, the tokens in and out, the cost — not just spans and status codes. Then you run a small online judge on a sample of live traffic and a fixed offline eval set on every deploy. The alarm set that matters is error rate, p99 latency, cost per request, and a quality score that can actually page someone, because if quality has no alarm, quality regressions get discovered by customers.
+
 ---
 
 ## 14. Capacity Planning and Cost Modeling
@@ -653,8 +685,8 @@ Building a coding assistant for 100K DAU. Each user makes 10 requests/day, avg 2
 - On Llama 3 70B FP8 with vLLM on H100, measured throughput ≈ 8000 tps per GPU at batch=64.
 - GPUs needed ≈ 15,000 / 8,000 × 1.5 (buffer) ≈ 3 GPUs.
 - TP=2 for memory → 6 GPUs total = 1 DGX node.
-- Cost: ~\$5/hour/GPU × 6 = $30/hour = ~$22K/month.
-- Per user: \$22K / 100K = $0.22/user/month. Need to charge ≥ $1/user/month for healthy margin.
+- Cost: ~\$5/hour/GPU × 6 = \$30/hour = ~\$22K/month.
+- Per user: \$22K / 100K = \$0.22/user/month. Need to charge ≥ \$1/user/month for healthy margin.
 
 That's the calculation.
 
@@ -663,6 +695,8 @@ That's the calculation.
 > "We have a chatbot product with 1M MAU, 10% DAU. Estimate GPU costs for a Llama 3 70B deployment."
 
 Walk the flow above. Show your work. State assumptions (avg session length, avg QPS per user, etc.).
+
+> **Saying it out loud.** I'd do this out loud as arithmetic, because the interviewer is scoring the method, not the answer. Daily actives times requests per user divided by 86,400 gives average QPS; multiply by two or three for peak. Peak QPS times average output tokens gives the tokens per second I have to produce. Divide that by measured throughput per GPU — measured, not from a spec sheet — add fifty percent buffer, then check that the weights plus the peak KV cache actually fit in VRAM, which often forces more GPUs than throughput alone did. Then multiply by the hourly rate. The move that makes it a senior answer is stating every assumption as you go and finishing with the per-user number, because a hundred thousand users at twenty-two thousand dollars a month is twenty-two cents a head, and that's the number that tells you whether the product can exist.
 
 ---
 
@@ -696,6 +730,8 @@ The survival skills.
 - **Runbook.** Documented procedures: model swap, region failover, full service restart.
 - **Game days.** Practice failure scenarios.
 
+> **Saying it out loud.** Reliability for inference is mostly ordinary distributed-systems hygiene applied to unusually expensive replicas: N-plus-one across availability zones, circuit breakers so a timing-out model fails fast instead of building a queue, and a smaller fallback model so a degraded answer beats no answer. The interesting part is the rollout, because you can't unit-test a model's quality. So you shadow first — mirror real traffic to the new version and throw the responses away — then canary at one percent, five, twenty-five, watching error rate and latency and a quality score at each step. The thing to name is that rollback has to be instant, which means keeping the old version warm for a day rather than tearing it down the moment the new one is live.
+
 ---
 
 ## 16. Security at the Infrastructure Layer
@@ -712,6 +748,8 @@ The survival skills.
 - **Audit logs.** Who deployed what, when. SOC 2 / ISO 27001.
 - **Vulnerability scanning.** Container scanning, dependency scanning. SBOM.
 - **Compliance.** GDPR, HIPAA, SOC 2, FedRAMP — depending on customer base.
+
+> **Saying it out loud.** At the infra layer I stop thinking about clever prompts and start thinking about blast radius: assume the model will eventually be talked into doing something bad, and make sure it can't reach anything that matters when it does. Concretely that's egress filtering on anything with tools — allowlist the destinations and explicitly deny private IP ranges and the cloud metadata endpoint, because that's how a prompt injection turns into stolen instance credentials. Code execution goes in a per-request sandbox like gVisor or Firecracker with a read-only filesystem, a time limit, and no network. And per-tenant isolation has to extend into the caches and the retrieval index, not just the database — shared prefix caches and shared vector indexes are the two places tenant data leaks across without anyone writing an obviously insecure line of code.
 
 ---
 
@@ -782,6 +820,8 @@ The senior interview question: *"Walk me through the full architecture of a prod
 
 That's the full picture.
 
+> **Saying it out loud.** I'd walk it front to back and keep saying why each box exists. Client hits a gateway that does auth, rate limiting, and validation, so nothing unauthenticated ever reaches a GPU. Behind it an orchestration layer decides whether this request needs retrieval, which model tier it deserves, and whether the prefix is already cached. Then the inference layer — vLLM or TRT-LLM with paged KV and continuous batching, multiple replicas across zones behind a router that's prefix-aware so cache hits stay on the same replica. Retrieval hangs off the side with a vector index and a reranker, and observability wraps the whole thing so every request has a trace with tokens, cost, and latency attached. The framing that scores: the gateway protects the GPUs, the caches protect the budget, and the replicas protect the SLO.
+
 ---
 
 ## 18. Senior Signals
@@ -802,6 +842,8 @@ What separates "knows the words" from "has shipped this."
 - **You design for failure** (multi-replica, blue-green, circuit breakers, fallback model).
 - **You quantify GPU economics** (rent vs reserved, spot, H100 vs H200 vs B200).
 - **You separate experiment / staging / prod** environments and config.
+
+> **Saying it out loud.** The tell for seniority in this interview isn't knowing more acronyms, it's the order you say things in. Start from constraints — what's the latency SLO, what's the cost ceiling, what's the traffic shape — and let the design fall out of them, rather than proposing an architecture and defending it. Name specific software with versions and flags, because that's the part you can only get from having run it at three in the morning. Quantify with KV math rather than adjectives. And be visibly cautious about the two things that quietly break: quantization quality, which needs real task evals and not perplexity, and anything you turned on for throughput that costs you p99.
 
 ---
 
@@ -876,6 +918,8 @@ What separates "knows the words" from "has shipped this."
 9. What's NVSwitch?
 10. When would you pick H200 over H100?
 
+> **Saying it out loud.** *(The one they'll actually ask: why decode is memory-bandwidth-bound and prefill isn't.)* Prefill has the whole prompt in hand, so it can score thousands of tokens in parallel against one read of the weights — the arithmetic per byte loaded is high and the tensor cores stay busy. Decode has exactly one token, so it re-reads every weight and the entire KV cache out of HBM to produce that one token, and the arithmetic per byte is near zero. So the GPU is sitting there waiting on memory with most of its FLOPs unused. The number that makes it concrete: an H100 has about 3.35 TB/s of bandwidth, so a 140 GB BF16 70B model caps out around 24 tokens per second per GPU no matter how much compute you throw at it.
+
 ### B. Quantization (Q11–18)
 11. What are FP8 E4M3 and E5M2?
 12. SmoothQuant — what problem does it solve?
@@ -886,6 +930,8 @@ What separates "knows the words" from "has shipped this."
 17. How do you validate quantized model quality?
 18. When would you NOT quantize?
 
+> **Saying it out loud.** *(The one they'll actually ask: how do you validate a quantized model.)* Not with perplexity — that's the trap. Perplexity is an average over easy tokens and it barely moves even when the model has gotten meaningfully worse. What I'd do is run the actual task evals side by side against the unquantized baseline, weighted toward the places degradation concentrates: long context, multi-turn, structured output, and code. Then a human or judge comparison on a sample of real production prompts. The tradeoff to name is that FP8 on Hopper is basically free quality-wise and INT4 is not — INT4 buys you the model fitting on one GPU, and you pay for it in exactly the hard cases your perplexity check didn't cover.
+
 ### C. Batching (Q19–25)
 19. Compare static / dynamic / continuous batching.
 20. What's chunked prefill?
@@ -894,6 +940,8 @@ What separates "knows the words" from "has shipped this."
 23. How does batch size affect TTFT vs TPOT?
 24. What's iteration-level scheduling?
 25. Where does Orca fit historically?
+
+> **Saying it out loud.** *(The one they'll actually ask: why continuous batching is five to ten times faster than static.)* Because in static batching the whole batch is held hostage by its longest sequence. If sixty-three requests finish in fifty tokens and one runs to two thousand, those sixty-three slots sit idle for the rest of the batch — you've reserved GPU time and produced nothing with it. Continuous batching schedules per decode iteration instead of per batch, so the instant a sequence emits its stop token, a queued request takes the slot. The GPU stays full. The tradeoff to name is that the extra admissions can push time-to-first-token up for everyone, which is why chunked prefill exists — it interleaves prefill work in slices so a long prompt can't stall the decode loop.
 
 ### D. Inference engines (Q26–34)
 26. What's vLLM's killer feature?
@@ -906,6 +954,8 @@ What separates "knows the words" from "has shipped this."
 33. What's the typical inference engine config for a 70B production deploy?
 34. What inference engine would you pick for an agentic workload with heavy structured output?
 
+> **Saying it out loud.** *(The one they'll actually ask: when do you pick TensorRT-LLM over vLLM.)* When you're locked to NVIDIA anyway, the model and shapes are stable, and you've squeezed everything else and still need the last twenty or thirty percent. TRT-LLM compiles a model-specific engine, which is where the speed comes from and also where the pain comes from — every model change, every precision change, and often every NVIDIA release means rebuilding, and the build is slow and fussy. vLLM is the default for basically everyone else: it iterates fast, supports new architectures within days, and runs on AMD too. The tradeoff in one line is engineering velocity versus peak throughput, and most teams should not be trading away velocity.
+
 ### E. KV cache (Q35–42)
 35. KV cache size formula?
 36. How does GQA shrink KV cache?
@@ -916,6 +966,8 @@ What separates "knows the words" from "has shipped this."
 41. KV quantization to FP8 — quality cost?
 42. How does PagedAttention compare to flat allocation?
 
+> **Saying it out loud.** *(The one they'll actually ask: do the KV cache math on the spot.)* The formula is two — for K and V — times layers, times KV heads, times head dimension, times tokens, times bytes per element, and then times batch size. Walk it out loud and plug numbers in. For a 70B with GQA in FP16, that lands around a couple hundred kilobytes per token, so a 32K context at batch 8 is tens of gigabytes sitting on top of your weights. That's the calculation that decides your hardware, and it's why the KV heads term matters so much — GQA cutting 64 KV heads to 8 is an eight-times reduction in that whole number. Quantizing the cache to FP8 halves it again, at some quality cost on long context.
+
 ### F. Speculative decoding (Q43–48)
 43. Sketch speculative decoding.
 44. What's Medusa?
@@ -923,6 +975,8 @@ What separates "knows the words" from "has shipped this."
 46. Why does speculative decoding speedup decrease at large batch?
 47. How do you tune speculative tokens?
 48. Memory cost of running speculative?
+
+> **Saying it out loud.** *(The one they'll actually ask: when does speculative decoding stop helping.)* At high batch size. The whole trick is spending idle compute to avoid a memory read, and at large batch you no longer have idle compute — you've already amortized the weight loading across many sequences, so you're compute-bound and the draft model's forward passes are pure added cost. It can genuinely make you slower under load. The other thing to name is that the win depends entirely on acceptance rate: if the draft model agrees with the target seventy or eighty percent of the time you get a real speedup, and if it's a poorly matched draft at thirty percent you're burning compute to be rejected. So production systems gate it on current load and monitor acceptance rate as a first-class metric.
 
 ### G. Throughput / SLO (Q49–55)
 49. Define TTFT, TPOT, TPS, ITL.
@@ -932,6 +986,8 @@ What separates "knows the words" from "has shipped this."
 53. How do you tune for low TTFT?
 54. How do you tune for high throughput?
 55. Why monitor cache hit rate?
+
+> **Saying it out loud.** *(The one they'll actually ask: how batch size affects TTFT versus TPOT.)* They pull in opposite directions, and that's the whole design tension in a serving stack. Bigger batches amortize the weight read across more sequences, so per-token decode latency goes down and total throughput goes up — but requests wait longer in the queue before admission, so time-to-first-token goes up. Smaller batches do the reverse: snappy first token, worse throughput, more cost per token. So the SLO decides the batch size, not the other way around. The escape hatch to name is disaggregated serving — put prefill and decode on separate GPU pools so each can be tuned for its own bottleneck, and both numbers improve at the cost of a lot more system complexity.
 
 ### H. Distributed training (Q56–63)
 56. Difference between DDP and FSDP?
@@ -943,6 +999,8 @@ What separates "knows the words" from "has shipped this."
 62. Why is loss-spike detection important?
 63. Cost of training a 70B from scratch — order of magnitude?
 
+> **Saying it out loud.** *(The one they'll actually ask: why does tensor parallelism stay inside a node.)* Because tensor parallelism splits an individual layer across GPUs, which means they have to all-reduce partial results multiple times per layer — that's enormous, latency-sensitive communication happening constantly. NVLink inside a server gives you hundreds of gigabytes per second; InfiniBand between servers is roughly an order of magnitude less. Stretch tensor parallelism across nodes and communication, not compute, becomes the whole run. So the standard layout is tensor parallel up to eight inside a DGX node, pipeline parallel across nodes because it only communicates at stage boundaries, and data parallel on top. The named cost of the pipeline dimension is the bubble — idle stages at the start and end of each batch, which you shrink with more micro-batches.
+
 ### I. Serving / autoscaling (Q64–71)
 64. Compare Triton, KServe, Ray Serve, BentoML.
 65. Why is GPU autoscaling slow?
@@ -953,6 +1011,8 @@ What separates "knows the words" from "has shipped this."
 70. When is serverless GPU appropriate?
 71. How do you handle cold start?
 
+> **Saying it out loud.** *(The one they'll actually ask: how do you autoscale GPU inference.)* Not on CPU utilization — that metric means nothing here. You scale on queue depth or on time-to-first-token, because those are what the user feels, and you scale up aggressively early because a cold start is minutes: you're pulling tens of gigabytes of weights and warming an engine before that replica serves anything. Scale down slowly and conservatively for the same reason. The tradeoff to name is idle GPU cost versus tail latency — keeping warm capacity is deliberately paying for nothing so that your p99 doesn't contain a model load, and scale-to-zero is only defensible for internal or genuinely bursty workloads where somebody waiting two minutes is acceptable.
+
 ### J. Vector DBs (Q72–78)
 72. HNSW vs IVF-PQ — tradeoffs?
 73. When does pgvector stop being enough?
@@ -961,6 +1021,8 @@ What separates "knows the words" from "has shipped this."
 76. How do you handle embedding-model versioning?
 77. Latency budget for retrieval+rerank?
 78. What's a reranker and which would you use?
+
+> **Saying it out loud.** *(The one they'll actually ask: HNSW versus IVF-PQ.)* HNSW builds a layered navigable graph and gives you excellent recall at low latency, but it holds the full vectors plus the graph in RAM, so it's the expensive option and it's awkward to update in bulk. IVF-PQ partitions the space and then compresses each vector down with product quantization, so memory drops by something like an order of magnitude and you pay in recall. Rule of thumb: HNSW under roughly ten million vectors where quality matters, IVF-PQ above that or when memory is the binding constraint. The failure mode to name is that both have a recall knob — efSearch and nprobe — that silently trades away retrieval quality for latency with no error and no alert when somebody tunes it down.
 
 ### K. Cost optimization (Q79–86)
 79. What's prompt caching?
@@ -972,6 +1034,8 @@ What separates "knows the words" from "has shipped this."
 85. When is quantization not worth it?
 86. What's semantic caching, and what's the risk?
 
+> **Saying it out loud.** *(The one they'll actually ask: the chatbot bill is too high, what do you do first.)* Prompt caching, before anything else. In chat and agent traffic an enormous share of every request is an identical prefix — system prompt, tool schemas, prior turns — and caching its KV means you skip prefill on it entirely, which is commonly a fifty-to-ninety percent cost cut for a config change rather than a model change. Then route: send the easy majority of queries to a small model and reserve the big one for the hard tail. Then move anything non-interactive to a batch API for roughly half price. Quantization and better batching come after, because they're more work for less money. The tradeoff to name on routing is that classifying "easy" wrong is a quality regression your cost dashboard will never show you.
+
 ### L. Observability (Q87–93)
 87. Compare LangSmith / Langfuse / Helicone.
 88. What does an LLM trace look like?
@@ -981,6 +1045,8 @@ What separates "knows the words" from "has shipped this."
 92. What metrics trigger alarms?
 93. PII redaction strategies?
 
+> **Saying it out loud.** *(The one they'll actually ask: how do you detect quality regressions in production.)* You need something other than the request status, because the characteristic LLM failure returns a perfectly healthy 200 with a wrong answer. So: a fixed offline eval suite that runs on every deploy and blocks it, plus an online judge scoring a sample of live traffic continuously, plus drift monitors on the input distribution — prompt length, language, topic mix, retrieval scores — because inputs usually shift before outputs visibly break. And then the quality score needs a real alarm attached to it, at the same tier as latency. The named failure mode is silent degradation: nothing errors, no dashboard turns red, and you find out from a customer three weeks later.
+
 ### M. Capacity / reliability / security (Q94–100)
 94. Estimate GPUs for 100K DAU coding-assistant on Llama 3 70B.
 95. What's a circuit breaker?
@@ -989,6 +1055,8 @@ What separates "knows the words" from "has shipped this."
 98. Secrets management?
 99. Egress filtering for tool-using agents?
 100. SBOM and why does it matter?
+
+> **Saying it out loud.** *(The one they'll actually ask: estimate the GPUs for this product.)* Say the arithmetic out loud and state every assumption as you make one. Daily actives times requests each over 86,400 seconds gives average QPS; times two or three for peak; times average output tokens gives the tokens per second you must produce; divide by measured per-GPU throughput on your actual engine; add fifty percent buffer; then separately verify weights plus peak KV cache fit in VRAM, which frequently forces more GPUs than throughput did. Multiply by the hourly rate — and flag that hourly rates move, so quote them as of a date. Then close with the per-user cost, because that's the number that decides whether the product has a business model at all.
 
 ---
 

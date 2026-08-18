@@ -49,9 +49,13 @@ Why it works (intuition):
 
 The interview-relevant implication: **a frontier reasoning model is fundamentally an inference-time search policy distilled into a single autoregressive model**. RLVR teaches the policy. Test-time compute deploys it.
 
+> **Saying it out loud.** The shift is that we stopped training models to *sound* right and started training them to *work things out*. Before late 2024, alignment was taste — SFT to follow instructions, RLHF to make answers people prefer — and the capability was already sitting in the base model. Reasoning models add a second thing: the model writes a long chain of thought before answering, and that chain is trained by reinforcement learning against a reward you can actually check, like whether the final number is right or the unit tests pass. The consequence people care about is that you can now buy quality with inference compute — let it think longer and it does better — which is a completely new knob. The one-line framing I'd give is that a reasoning model is a search procedure compressed into a single autoregressive policy: RL teaches the search, and test-time compute runs it.
+
 ---
 
 ## 2. Test-time compute scaling — what changed
+
+*Plain-language gloss.* The argument here is that thinking longer at answer time is a substitute for being a bigger model. Historically the only way to get a better answer was to train a larger model on more data; the test-time-scaling claim is that you can instead take a fixed model and spend more compute *per question* — sample many attempts, revise, or search — and quality keeps climbing on a predictable curve. So compute now buys capability in three separate places: pretraining, post-training, and the moment the user hits enter.
 
 Snell et al. (DeepMind 2024) showed empirically that for a fixed model, three "test-time" strategies all yield smooth scaling curves:
 
@@ -68,6 +72,8 @@ Why this matters for interviews:
 - **Scaling is now multi-dimensional.** Capability ∝ pretraining-compute + post-training-compute + inference-compute. You should reason about all three.
 - **The product of all three is what matters.** Allocating compute optimally across them is an open research question (Sardana et al. on optimal allocation, etc.).
 - **It changes the deployment economics.** A reasoning model is much slower and more expensive per query. Which raises product-side questions about *when to invoke reasoning*.
+
+> **Saying it out loud.** The headline is that for hard reasoning tasks you can trade model size for thinking time. Snell's group showed three ways of spending inference compute — sample many answers and pick with a reward model, let the model revise its own attempt, or search step by step with a process verifier — and all three give smooth improvement curves. The number people quote is that a smaller model given roughly fourteen times more inference compute can match a fourteen-times-larger model on hard reasoning. There's an important shape to it though: easy problems benefit more from revising deeply, hard problems benefit more from exploring broadly, so the optimal strategy depends on difficulty you have to estimate up front. And the tradeoff that hits product teams is brutal — the model is now fifty to a couple of hundred times more expensive per query, so routing "does this actually need thinking" becomes a real engineering problem.
 
 ---
 
@@ -88,6 +94,8 @@ A *verifiable* reward is one where, given a problem and a final answer, you can 
 
 What's *not* verifiable: writing quality, summary fidelity, chat persona. Those need preference signals (RLHF), generative reward models, or LLM-as-judge.
 
+> **Saying it out loud.** A verifiable reward is one where a program, not a person, decides if you were right. Math: parse the boxed answer, compare to ground truth, maybe canonicalise with sympy. Code: run the unit tests. Formal proofs: hand it to Lean. Tool use: check the final state of the sandbox. That's the whole idea, and it's powerful because the signal is exact and costs cents instead of dollars, so you can generate millions of training examples. The constraint that defines the field: only a slice of what we want models to do is verifiable at all — writing quality, summary fidelity, being a good conversational partner have no verifier, so those still need preference data or a judge model.
+
 ### 3.2 Why verifiable rewards are special
 
 - **Zero ambiguity.** No labeler bias, no labeler drift, no preference-data noise.
@@ -99,6 +107,8 @@ Tradeoff: only a slice of useful capabilities is verifiable. Most chat tasks are
 
 ### 3.3 The RLVR objective
 
+*Plain-language gloss.* In words: try to make the model produce answers the verifier marks correct, while not letting it wander too far from the model you started with. The first term is "get more reward"; the KL term is a leash. Everything hard about RLVR is choosing how long that leash is.
+
 In its simplest form (used by R1-Zero and the Tülu 3 RLVR phase):
 
 $$
@@ -108,6 +118,8 @@ $$
 where $r(x, y) \in \{0, 1\}$ is the verifier output (correct / incorrect) — or a small graded set (correct / partial / wrong / format-error). $\pi_{\text{ref}}$ is typically the SFT model.
 
 The optimizer is usually GRPO, RLOO, or REINFORCE++ (no critic — see `ALIGNMENT_DEEP_DIVE.md`). PPO with a value head also works but adds memory.
+
+> **Saying it out loud.** The objective is about as simple as RL gets: maximise expected reward, minus a penalty for drifting too far from where you started. The reward is usually just one or zero — did the verifier say the answer was right — plus maybe a small term for producing the right format. The KL term against the reference model is what keeps it from wandering off into incoherent text, and beta is the knob: too large and the model never explores enough to improve, too small and you get mode collapse, language drift, and reasoning that's fluent nonsense. In practice people drop the value network and use a group baseline instead — GRPO, RLOO — because with a binary verifier reward you don't need a learned critic to tell you how good a state was. The tradeoff to name is exploration versus stability, and it's controlled almost entirely by that one KL coefficient.
 
 ### 3.4 Format rewards and reward shaping
 
@@ -137,9 +149,15 @@ Tradeoff: too high $\beta$ = no exploration, no improvement; too low $\beta$ = m
 - **Mode collapse.** Single reasoning template wins; diversity dies. Mitigation: entropy bonus, KL cap, diversity-aware sampling.
 - **Reward sparsity for hard problems.** If success rate is <1%, gradients are essentially noise. Mitigation: curriculum (easier problems first), expert iteration, or reduce problem difficulty.
 
+> **Saying it out loud.** The failure modes are all versions of Goodhart. If format is rewarded too heavily, the model learns to emit a nicely-boxed wrong answer. If length correlates with reward, chains grow until they fill the context with no accuracy gain. If nothing penalises it, the chain of thought drifts between languages mid-stream, which is what happened with R1-Zero. And if the KL is too loose, you get mode collapse onto one reasoning template and diversity dies. The one that bites hardest in practice is reward sparsity: if the model solves under one percent of your problems, almost every rollout gets zero, the gradient is basically noise, and no amount of tuning fixes it — you need curriculum or easier problems, not a better optimiser.
+
+> **Saying it out loud.** RLVR is the engine of the whole reasoning-model era, and the core insight is a data insight rather than an algorithmic one. Preference-based RLHF is bottlenecked by humans — expensive, noisy, and hackable, which is where length bias and sycophancy come from. Swap the human for a verifier and the reward becomes exact, free, and unhackable in the usual ways, so you can scale to millions of problems. Then you run a fairly ordinary policy-gradient method against it: maximise expected verifier reward with a KL leash on the reference model. The tradeoff that defines the whole research agenda is coverage: verifiable reward is a perfect signal on a narrow slice of tasks, so the open question is how far you can push it beyond math and code before you're back to needing judge models.
+
 ---
 
 ## 4. Process Reward Models (PRMs) vs Outcome Reward Models (ORMs)
+
+*Plain-language gloss.* Outcome reward asks one question at the end — was the final answer right? Process reward asks at every step — was that step right? Outcome reward is cheap and unambiguous but tells you nothing about *where* a wrong answer went wrong; process reward tells you exactly that, but somebody or something has to label every step, and those labels are either expensive (humans) or noisy (automatic rollouts).
 
 Reward models in reasoning RL come in two flavors. Knowing the distinction cold is interview-table-stakes.
 
@@ -161,6 +179,8 @@ Scores *each reasoning step*. Trained on (problem, step-1, ..., step-k, label) t
   - **Math-Shepherd (Wang et al. 2024).** Auto-label step correctness by Monte-Carlo rollouts: from each step, sample $K$ continuations; the step is "good" if a high fraction reach a correct answer.
   - **OmegaPRM (Luo et al. 2024).** MCTS-based PRM data construction. State-of-the-art for automatic PRM data.
 
+> **Saying it out loud.** A process reward model scores every step of the reasoning rather than just the final answer, which fixes the credit-assignment problem — if step three was where it went wrong, you want to know that, not just that the answer was wrong. Lightman's "Let's Verify Step by Step" is the canonical result, and their PRM800K dataset was human-labelled, which is exactly the problem: per-step labels are enormously expensive. So the field went automatic — Math-Shepherd labels a step by rolling out from it many times and asking what fraction reach a correct answer, and OmegaPRM does the same thing with MCTS to make the search efficient. The tradeoff is that these auto-labels are noisy, and a noisy dense reward is a very hackable reward, which is exactly why DeepSeek reported PRMs didn't beat a strong outcome model for them.
+
 ### 4.3 PRM as RL reward
 
 Two ways to use a PRM in RL training:
@@ -180,6 +200,8 @@ A different way to get rewards: instead of a discriminative scalar head, prompt 
 
 genRMs are central to the 2025 frontier and any interview question of the form "how would you build a reward model that doesn't get hacked" should mention them.
 
+> **Saying it out loud.** Outcome reward grades the final answer; process reward grades each step along the way. Outcome is trivially cheap because a verifier gives it to you free, but the signal is sparse — every step of a fifty-step chain gets the same credit, including the good steps in a chain that went wrong at the end. Process reward is dense and gives you real credit assignment, and Lightman et al. showed it beats outcome reward for reranking on MATH. The catch is data: step labels are expensive by hand and noisy when automated, and a noisy dense reward is something the policy will learn to game. DeepSeek tried PRMs for R1 and reported they didn't beat a strong ORM, citing label noise, reward hacking and complexity; Qwen reports mixed results. So the honest answer in an interview is that this is genuinely open — with a good verifier, ORM plus enough sampling may be all you need.
+
 ---
 
 ## 5. Search + RL combinations
@@ -196,6 +218,8 @@ Bootstrap reasoning:
 5. Iterate.
 
 **Key insight:** even rationalization improves reasoning, because the rationalized CoT teaches the model how a correct chain looks for that class of problem.
+
+> **Saying it out loud.** STaR is the simplest self-improvement loop that works. Have the model reason its way to an answer; keep the reasoning when the answer was right, throw it away when it wasn't; fine-tune on what you kept; repeat. The clever twist is rationalisation — when the model gets it wrong, you show it the correct answer and ask it to produce a chain of thought that leads there, and you keep that too. It sounds like cheating, but it works, because the model learns what a valid chain for that problem class looks like even if it couldn't have found it unaided. The failure mode to name is that rationalised chains can be right for the wrong reason, so you're training on reasoning the model didn't actually do — which is the same concern that shows up later as unfaithful chain of thought.
 
 ### 5.2 Quiet-STaR (Zelikman et al. 2024)
 
@@ -233,6 +257,8 @@ The simplest expert-iteration-flavored method:
 
 Used as the SFT-data source by Tülu 3, Qwen 2.5 Math, Llama 3 (rejection-sampled tool-use data). Essentially free signal.
 
+> **Saying it out loud.** The unifying idea here is expert iteration, which is the AlphaZero trick: use search to produce better trajectories than your current policy would, then distil those back into the policy so next time it finds them directly. Everything in this family is a variation on that. STaR filters correct chains and fine-tunes on them; ReST-EM formalises the same loop as expectation-maximisation with a verifier as the filter; V-STaR also trains a verifier on the failures instead of throwing them away; rejection-sampling fine-tuning is the stripped-down industrial version everyone actually ships. MCTS methods do explicit tree search, which works beautifully when you have a hard verifier like Lean — AlphaProof got IMO-silver-level performance that way — and much less well on open text where the value function is guesswork. The tradeoff to state: search buys you better data at high compute cost, and the whole point of distilling it back is to stop paying that cost at inference.
+
 ---
 
 ## 6. R1-Zero — pure RL from base, the "aha moment"
@@ -252,6 +278,10 @@ DeepSeek's R1-Zero (Jan 2025) is the empirical headline of the era and **the que
 Reading the DeepSeek-R1 paper (arXiv 2501.12948), §2.2.4 famously documents the model spontaneously generating phrases like "Let me re-check my work" and "Wait, I made an error" mid-CoT — *without being trained on any data containing such phrases*. This is the emergence of *self-correction* purely from outcome reward.
 
 The reasoning length grows from ~100 tokens to >2000 over training. Accuracy on AIME climbs from ~16% to ~71% pass@1.
+
+> **Contested.** Follow-up analyses (e.g. Liu et al., *There May Not Be Aha Moment in R1-Zero-like Training*, 2025) find that base models already emit self-reflective phrases like "wait" and "let me check" before any RL, and that the reasoning-length increase is partly an artefact of the response-length normalisation in vanilla GRPO. Treat "emergent self-correction" as a live claim, not settled fact — the same caution Schaeffer et al. (2023) established for "emergent abilities" generally, where much of the apparent discontinuity came from discontinuous metrics.
+
+> **Saying it out loud.** The famous bit is that partway through training, R1-Zero started spontaneously writing things like "wait, let me re-check that" mid-chain, with nobody having trained it on data containing those phrases. Reasoning length grew from about a hundred tokens to over two thousand, and AIME pass-at-one went from roughly sixteen percent to seventy-one. The story is that self-correction emerged from pure outcome reward because backtracking is simply the policy that scores better on hard problems. I'd add one honest caveat, because it's the kind of thing an interviewer will push on: follow-up work has shown base models already produce those self-reflective phrases before any RL, so what RL is doing is plausibly amplifying an existing behaviour rather than inventing one — the "aha moment" framing is evocative but contested.
 
 ### 6.3 What R1-Zero proves
 
@@ -277,6 +307,8 @@ R1-Zero is a clean experimental result that an interviewer can probe in many dir
 - "Could you replace verifiable reward with preference data?" → much harder; outcome verification is the privileged signal.
 - "What's the failure mode of training only on math?" → distribution shift; reasoning skill doesn't transfer to chat without further alignment.
 
+> **Saying it out loud.** R1-Zero is the result everyone asks about, and the reason is that it removed a step everyone assumed was necessary. They took the DeepSeek-V3 base model — no instruction tuning, no SFT at all — and ran RL directly with a verifier reward plus a small format reward, using GRPO. And it worked: the model taught itself long chains of thought, backtracking, and self-checking, with no process reward model and no human demonstrations of reasoning. What it proves is that the capability was already latent in the base model and RL is eliciting it rather than building it. The honest other half is that the paper says plainly what it costs: the reasoning is illegible, it mixes English and Chinese mid-chain, and the model is a poor chatbot — which is exactly why the full R1 pipeline exists.
+
 ---
 
 ## 7. R1 — the full pipeline
@@ -291,6 +323,8 @@ DeepSeek-R1 (Jan 2025) is the first publicly documented frontier-reasoning recip
 4. **Final RLHF.** Standard RLHF on stage-3 SFT for helpfulness, harmlessness, alignment with human preferences, while keeping the reasoning capability.
 
 The result: R1-zero capabilities + chat-friendly + safe + multilingual.
+
+> **Saying it out loud.** Four stages, and each one exists to fix what the previous one broke. Stage one is a small cold-start SFT on a few thousand clean long-chain examples, purely to give the model a legible format. Stage two is the real reasoning RL — same verifier setup as R1-Zero, but starting from the SFT'd model, plus a language-consistency reward to stop the English-Chinese mixing. Stage three regenerates a huge SFT set from that model, around six hundred thousand reasoning examples plus two hundred thousand chat, writing and QA, and re-trains from the base to broaden the distribution back out. Stage four is a final ordinary RLHF pass for helpfulness and safety. The thing to say is that this isn't four stages because more is better — it's a repair sequence, and if you can only remember one thing, remember that stage two is where capability comes from and everything else is making it usable.
 
 ### 7.2 Why four stages instead of one
 
@@ -336,6 +370,8 @@ If asked "give me a recipe for a reasoning model from scratch," answer:
 
 That's the canonical 5-step recipe. Customizations are mostly empirical.
 
+> **Saying it out loud.** R1 is the first fully documented frontier reasoning recipe, which is why it's the one to memorise. The shape is: small cold-start SFT for legibility, heavy verifier-based RL for capability, large rejection-sampled SFT to broaden back to chat and writing, then a final RLHF pass for helpfulness and safety. Compare it to Tülu 3, which is the fully open predecessor — SFT, then DPO, then a lighter RLVR stage — and to Llama 3, which is multi-round SFT plus DPO with no reasoning-RL stage at all in the 3.1 releases. The general recipe transfers: strong math-and-code-heavy pretraining, cold start, RLVR, rejection-sampled SFT, final RLHF. The tradeoff worth naming is that every broadening stage costs you a little reasoning, which is why the ordering — capability first, breadth second, safety last — is deliberate rather than arbitrary.
+
 ---
 
 ## 8. o1 / o3 — what we know and what we infer
@@ -362,6 +398,8 @@ OpenAI's approach to safety in reasoning models. Train the model to *deliberate 
 
 Different from RLHF on safety: the deliberation is *trainable*, not just a refusal. Crucial reading: "Deliberative Alignment" (Guan et al., OpenAI 2024).
 
+> **Saying it out loud.** Deliberative alignment is the idea that a reasoning model should reason about the safety policy the same way it reasons about a math problem. Instead of training a reflexive refusal, you train the model to recall the relevant part of the spec during its chain of thought, work out whether this request actually violates it, and then act on that conclusion. The training data is synthetic — generate lots of prompt, deliberation, action triples from the written spec, then SFT and RL on them. The appeal is that it generalises to situations nobody wrote a rule for, and it degrades more gracefully on edge cases than a classifier. The obvious risk, and I'd say it out loud: if the model's reasoning about the spec is what gates behaviour, then attacks that corrupt the reasoning — or reasoning that isn't faithful to what the model actually does — are now a safety problem, not just an accuracy problem.
+
 ### 8.2 Anthropic's reasoning approach
 
 Less public detail. Claude 3.7 Sonnet's "extended thinking" mode emerged in early 2025. Likely similar architectural idea (long CoT trained via RL on verifiable + judge-graded tasks) plus Constitutional / RLAIF-flavored preference data. Anthropic's published Constitutional AI paper (2022) and RLAIF papers are the relevant priors.
@@ -369,6 +407,8 @@ Less public detail. Claude 3.7 Sonnet's "extended thinking" mode emerged in earl
 ### 8.3 Gemini 2.5 thinking
 
 Google DeepMind. Public details indicate test-time compute scaling, MCTS-flavored search at training data generation (consistent with their AlphaProof / AlphaGeometry lineage), and a similar multi-stage RL recipe.
+
+> **Saying it out loud.** The honest answer is that OpenAI hasn't published the recipe, so anything specific is inference from the system card and from open reproductions. What's well supported: long chains of thought trained by RL, hidden from the user and shown only as a summary, with accuracy scaling roughly log-linearly in the thinking-token budget on AIME, GPQA and Codeforces. What's plausible but unconfirmed: some mixture of process and outcome supervision — they did publish "Let's Verify Step by Step" — search used to generate training data, and a multi-stage pipeline similar in spirit to R1's. What's speculation: MCTS at inference time, which most people doubt, since the output looks like a single autoregressive stream. The thing that scores in an interview is drawing that line explicitly rather than reciting rumour as fact.
 
 ---
 
@@ -385,6 +425,8 @@ DeepSeek released **R1-Distill** models (Llama, Qwen bases of various sizes). Re
 3. Optionally a follow-up DPO or RL stage.
 
 **Headline result.** R1-Distill-Qwen-32B beats GPT-4o-2024-05 on AIME and MATH despite being far smaller. **Distillation transfers reasoning.** This is the most important "free lunch" of the era.
+
+> **Saying it out loud.** Distillation here is almost embarrassingly simple: run the big reasoning model over a large problem set, keep the chains of thought, and supervised-fine-tune a small model on them. DeepSeek did this with roughly eight hundred thousand samples onto Llama and Qwen bases of various sizes, and reported that the 32B distillate outperformed GPT-4o from mid-2024 on AIME and MATH — that's a vendor-published benchmark claim, worth flagging as such. No RL needed on the student at all. The reason it works so well is that the teacher's chain is a demonstration of the search policy, so the student imitates the behaviour rather than having to rediscover it. The hard bound to name: the student can't exceed the teacher through imitation alone — you need RL on top to break that ceiling.
 
 ### 9.2 Why distillation works so well
 
@@ -403,6 +445,8 @@ DeepSeek released **R1-Distill** models (Llama, Qwen bases of various sizes). Re
 - **Reasoning capability democratizes fast.** Once one frontier model demonstrates the capability, distillation sweeps it across model families and sizes.
 - **The moat is the verifier + RL infra**, not the final model.
 - **Privacy of reasoning becomes a question** — should reasoning be hidden from users to prevent distillation? OpenAI hides o1 CoTs from users for several reasons including this.
+
+> **Saying it out loud.** The punchline is that reasoning distils incredibly well, and that reshapes who has this capability. You generate long chains from a strong reasoning model, fine-tune a small base model on them, and the small model picks up the self-correction and verification habits by imitation — no RL, no verifier infrastructure, comparatively trivial compute. Which means once one lab demonstrates the capability, it propagates across every model family within months, and it did. The strategic read is that the durable moat isn't the model, it's the verifier and the RL infrastructure that produced the chains in the first place. And it's why OpenAI hides o1's raw reasoning traces — a summary is much less useful as training data than the real chain, and that's at least part of why the tradeoff against user transparency was made the way it was.
 
 ---
 
@@ -438,9 +482,13 @@ Run beam search where each beam expansion is rated by a PRM; prune low-PRM beams
 
 Snell et al. show: for a fixed inference budget, allocate more samples to harder problems (judged by self-confidence or verifier disagreement). At difficulty $D$, optimal $N_{\text{samples}} \approx K \cdot D^\alpha$ for empirical exponent $\alpha$.
 
+> **Saying it out loud.** Compute-optimal inference just means not spending the same amount of thinking on every question. Snell's result is that for a fixed total budget you should push samples toward the harder problems, where difficulty is estimated by something cheap like the model's own confidence or how much the candidate answers disagree. Easy problems are better served by a small number of deep sequential revisions; hard ones by broad parallel sampling. The practical version most products ship is cruder — a small router model that decides whether to invoke the reasoning model at all. The catch worth naming is that difficulty estimation is itself unreliable, and misjudging a hard problem as easy is the expensive error, because you get a confident wrong answer instead of a slow right one.
+
 ### 10.8 What the user actually pays
 
 A reasoning model run with best-of-32 and self-revision can be 50-200x more expensive per query than a single greedy decode. This is the new product-economics challenge: **when is reasoning worth the cost?** Routing layers (cheap LM detects "is this a reasoning task" → invoke reasoning model only if yes) are a 2025 product pattern.
+
+> **Saying it out loud.** Once you have a reasoning policy, how you decode is a real lever. Greedy is usually wrong for reasoning because it locks the model into one mode; sampling around temperature point six with self-consistency — draw N chains, majority-vote the answers — is the cheapest reliable win. Best-of-N with a reward model beats voting when the reward model is good, and minimum-Bayes-risk decoding, which picks the candidate most similar to the others, is more robust when the reward model is noisy. Sequential revision and verifier-guided beam search are the heavier options that pay off on genuinely hard problems. All of it is one tradeoff: quality against cost, and the cost is not small — best-of-32 with revision can be a hundred times a single greedy decode, which is why routing between a fast and a thinking mode is now a standard product pattern.
 
 ---
 
@@ -479,6 +527,8 @@ A model trained on AIME-style math can fail dramatically on physics word problem
 
 A reasoning model that gets math wrong after 30000 thinking tokens is a unique failure mode. Confidence-based early termination is now common.
 
+> **Saying it out loud.** The failure modes are the interesting part because they're not the ones people expect. Overthinking is the common one — a five-thousand-token chain for "what is two plus two", which wastes money and sometimes actually degrades accuracy because errors accumulate. Hallucinated reasoning is the dangerous one: a long, fluent, internally consistent chain that was wrong at step one, which a verifier catches on math and nothing catches on legal or medical reasoning. Then language mixing, reward gaming on format and length, and reasoning collapse when a math-trained model meets a physics word problem and produces formula soup. The calibration point is the subtle one to raise: these models are often better calibrated on math, where you can literally see hedging in the chain, and worse on factual questions, where they build long confident chains on top of a wrong premise.
+
 ---
 
 ## 12. Generative reward models, LLM-as-judge as reward signal
@@ -500,6 +550,8 @@ Prompt a strong LLM with the input + output and a rubric. The LLM emits CoT and 
 
 genRMs are now standard in OpenAI / Anthropic / Google reward pipelines. Mahan et al. 2024, Zhang et al. 2024, Lambert (Tülu 3), and Anthropic's RLAIF lineage all use them.
 
+> **Saying it out loud.** A generative reward model is just a strong model acting as a judge — you hand it the problem, the candidate answer, and a rubric, and it reasons out loud before giving a verdict you parse into a number. The reason this beats a scalar reward head is that the same test-time-compute lever applies to the judge: letting the grader think makes the grading better, especially out of distribution. It also gives you an explanation you can inspect, which matters enormously when you're debugging why the policy learned something stupid. The tradeoff to say plainly is that the judge is a model with its own biases — position bias, length bias, self-preference for its own family's outputs — so it's more hackable than a verifier, just less hackable than a scalar head.
+
 ### 12.3 Constitutional AI / RLAIF
 
 Anthropic's recipe for preference data without humans:
@@ -508,7 +560,7 @@ Anthropic's recipe for preference data without humans:
 - Use the model itself (or a separate model) to revise outputs against each principle.
 - Train the RM on (revised better, original worse) preferences.
 
-RLAIF (Bai et al. 2022) is the variant where AI labels preferences directly. Zheng et al. 2023 ("RLAIF: Scaling Reinforcement Learning from Human Feedback with AI Feedback") showed RLAIF matches RLHF in many domains.
+RLAIF (Bai et al. 2022) is the variant where AI labels preferences directly. Lee et al. 2023 ("RLAIF: Scaling Reinforcement Learning from Human Feedback with AI Feedback") showed RLAIF matches RLHF in many domains.
 
 ### 12.4 Critic-LM
 
@@ -517,6 +569,8 @@ A specialized LLM trained to *critique* outputs. Used as a reward signal or as a
 ### 12.5 Open question
 
 Are genRMs the future or a stopgap? The tension: genRMs are themselves models with their own biases, and can be hacked. But they're cheaper and richer than human labels. For frontier 2025-2026, the answer is "both": humans for ground truth on a small set, genRMs to scale the signal.
+
+> **Saying it out loud.** Once you leave math and code you have no verifier, so the reward has to come from a model, and the field has largely moved from scalar reward heads to generative judges. A scalar head predicts a single preference score and picks up every pathology in the preference data — length bias, sycophancy, noise on long outputs. A generative judge reads the answer, reasons about it against a rubric, and emits a verdict, which is both more accurate out of distribution and inspectable when it goes wrong. Constitutional AI and RLAIF are the same idea pushed further: write the principles down and let the model generate its own preference labels against them. The open question I'd flag is whether judges are the future or a stopgap, because they're models and therefore hackable — the current answer everyone lands on is humans for ground truth on a small set, judges to scale the signal.
 
 ---
 
@@ -551,6 +605,8 @@ Goodhart's law applies brutally. Anything you reward, the model will hack. Anyth
 - Manual sample inspection at every stage.
 - Reward model retraining if exploitation is detected.
 
+> **Saying it out loud.** Reward shaping is where reasoning RL actually succeeds or fails, and the governing rule is Goodhart's law: whatever you reward, the model will maximise, including in ways you didn't intend. The zoo is correctness as the dominant term, then format, length, language consistency, repetition penalties, self-consistency, and optionally step-level process reward. Two ways to combine them — a linear weighted sum, which is easy to tune and easy to break, or hierarchical, where format gates correctness and correctness dominates everything, with the soft terms only mattering once the hard ones are satisfied. Hierarchical is more stable and it's what I'd default to. The practical discipline that matters more than the formula: keep every shaping term small relative to correctness, and actually read samples at every stage, because reward hacking is obvious in the outputs and invisible in the reward curve.
+
 ---
 
 ## 14. Open questions and frontier directions
@@ -560,6 +616,10 @@ These are interview gold — show you're at the frontier.
 ### 14.1 Can pure RL produce capabilities the base model doesn't have?
 
 R1-Zero suggests RL *elicits* latent capability, not creates it. Whether RL can transcend the base model's reasoning capacity is open. Some evidence (R1-Zero exceeding GPT-4o on AIME) suggests yes, at least on narrow tasks.
+
+> **Caveat on that evidence.** R1-Zero beating GPT-4o is a comparison against a *different* base model, so it says nothing about whether RL exceeded *its own* base. The sharper evidence runs the other way: pass@k analyses (Yue et al. 2025) find RL-trained models beat their base at k=1 but the base matches or overtakes at large k — consistent with RL concentrating probability mass on solutions the base could already sample, rather than adding new ones. State this as unresolved.
+
+> **Saying it out loud.** This is genuinely open and I'd resist a confident answer. The R1-Zero result shows RL surfacing behaviour the base model never demonstrated, which reads like creation — but the natural interpretation is elicitation, sharpening a distribution the base model already had mass on. The evidence against creation is fairly sharp: work analysing pass-at-k finds that RL-trained models beat their base at k equals one but the base catches up or overtakes at large k, which suggests RL is concentrating probability on solutions the base could already reach rather than adding new ones. Comparing R1-Zero to GPT-4o doesn't settle it either way, because that's a different base model. So my answer is: on current evidence RL mostly elicits, the question of whether it can genuinely extend capability is unresolved, and it matters a lot, because if it's pure elicitation then base-model quality is still the binding constraint.
 
 ### 14.2 Is the inference-compute scaling law universal?
 
@@ -597,6 +657,8 @@ The model spec is a natural-language constitution. Frontier labs are converging 
 
 The frontier 2025-2026 reasoning model is likely a *reasoning-and-tool-using agent* — model thinks, calls a calculator / code interpreter / web tool mid-CoT, integrates tool output, continues. Training this end-to-end via RL is an open systems problem.
 
+> **Saying it out loud.** If someone asks what's unsettled, I'd name four. One, does RL create capability or only elicit what the base model already has — the pass-at-k evidence leans toward elicitation. Two, does the test-time compute scaling curve hold outside math and code, because it's clean on verifiable tasks and much murkier on open-ended generation. Three, do process reward models actually earn their cost once your outcome model is good — DeepSeek says no, others say sometimes, nobody has a decisive answer. Four, credit assignment over long agentic horizons, where a reward arrives after hundreds of steps and the current answer is mostly "final reward and patience". The safety one I'd add unprompted: if the chain of thought is where safety reasoning happens, then faithfulness of the chain to the model's actual computation becomes a load-bearing assumption, and there's real evidence it isn't reliably true.
+
 ---
 
 ## 15. Senior-level interview signals
@@ -615,6 +677,8 @@ What separates a "knows the buzzwords" answer from a research-scientist answer.
 - **You don't oversell**: you separate what's published (R1, Tülu 3, Llama 3) from what's inferred (o1 internals).
 - **You have an opinion** on the open questions in §14.
 - **You think about cost** — reasoning is expensive; product routing is now necessary.
+
+> **Saying it out loud.** What separates a senior answer is mostly calibration about what's known. You can sketch R1's four stages from memory and say why each exists. You distinguish process from outcome reward and know that the field is genuinely split on whether process reward pays for itself. You know GRPO and RLOO drop the value network because a group baseline is enough when the reward is a binary verifier. You separate what's published — R1, Tülu 3, Llama 3 — from what's inferred about o1, and you say which is which. And you think about cost: a reasoning model is one to two orders of magnitude more expensive per query, so "route to it only when the task needs it" is a real answer, not a dodge.
 
 ---
 

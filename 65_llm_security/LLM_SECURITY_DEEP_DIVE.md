@@ -43,6 +43,8 @@ Three things make LLM security different from anything that came before.
 
 If you remember one mental model from this chapter: **LLMs cannot be assumed to robustly follow instructions in the presence of adversarial input.** Treat every model output as untrusted, and treat every input as potentially attacker-controlled. Build the system around that assumption.
 
+> **Saying it out loud.** So the reason LLM security is its own discipline is that there's no boundary between instructions and data. In a normal program the code and the user input live in separate places; in a language model everything is just tokens in one context window, so a web page the model reads can say "ignore your instructions" and the model may simply comply. On top of that the model is fuzzy — there's no parser to validate against, and safety training is a thin behavioural layer sitting on a base model that already read most of the internet. The practical upshot I'd give an interviewer: assume the model can be talked out of any instruction, and bound the damage at the system level instead. The failure mode to name is the confused deputy — your agent spending the user's privileges on an attacker's behalf.
+
 ---
 
 ## 2. The threat model and attack surface
@@ -75,6 +77,8 @@ A useful taxonomy for LLM systems.
 - **Untrusted content arrives via the prompt path** — RAG retrievals, tool outputs, browsed pages, attached files, screen-reading agents. Classical web security has cross-site scripting; LLM security has *cross-context prompt injection.*
 - **Privileges are encoded as natural language.** "You can call the email tool to send mail on the user's behalf" — but the model decides whether and what to send.
 - **Adversarial inputs transfer across models.** Attacks crafted on one open model often work on commercial closed ones.
+
+> **Saying it out loud.** I'd frame the attack surface on three axes: when the attack lands, what the attacker wants, and how much access they have. Timing runs from poisoning the pretraining corpus, which is expensive but persistent, down to inference-time prompt attacks, which is where basically all real-world LLM hacking actually happens. Goals are the usual confidentiality, integrity and availability, plus one new one — misuse, where the *user* is the attacker trying to pull content out of the model. The genuinely new thing versus classical security is that untrusted content arrives through the prompt path — retrieved documents, tool outputs, browsed pages — and privileges are written in English rather than enforced by a kernel. Worth adding that white-box is now a realistic assumption, because open-weight models let an attacker optimise an attack locally and transfer it to your closed one.
 
 ---
 
@@ -114,6 +118,8 @@ Once the malicious instruction is in context, the model treats it the same as an
 
 **Real-world incidents.** Bing Chat (early 2023) was injection-jailbroken via webpages it was browsing. Microsoft Copilot, ChatGPT plugins, browsing agents, and many email-assistant products have shipped or had reported indirect-injection vulnerabilities. CVEs have been issued.
 
+> **Saying it out loud.** So the thing about indirect prompt injection is that the attacker never talks to your model at all. They put the instructions into something the model will read later — a web page, an email, a PDF, a code comment, a GitHub issue — and once that lands in context the model can't tell it apart from your system prompt. That's the whole problem: tokens carry no provenance. Direct injection is mostly handled by refusal training; indirect injection isn't, because from the model's point of view it's being helpful, not jailbroken. Bing Chat in early 2023 is the canonical case, and real CVEs have been issued for it since.
+
 ### 3.3 Multi-modal prompt injection
 
 - **Images with hidden text.** Text steganographically embedded — invisible to humans (white on white, tiny font, encoded in EXIF metadata), visible to the OCR-like front of a vision-language model.
@@ -130,6 +136,8 @@ A heuristic: an LLM agent becomes a serious risk when it has all three of:
 
 When all three are present, indirect prompt injection can ⇒ exfiltration of private data to an attacker. **Removing any one of the three breaks the kill chain.** Most secure agent designs deliberately deny one (e.g. read-only browsing with no external write actions; tools that touch private data are gated behind explicit user confirmation; untrusted content rendered through a separate, disempowered "quoting" sub-agent).
 
+> **Saying it out loud.** The lethal trifecta is Simon Willison's rule of thumb for when an agent is genuinely dangerous: it has access to private data, it's exposed to untrusted content, and it can communicate externally. Any two of those is survivable. All three, and one injected instruction turns into your data walking out the door. What I like about it as a design tool is that the fix is structural rather than model-level — you pick a leg and cut it: read-only browsing, or a no-network sub-agent for anything touching private data, or a human confirmation on anything that sends. The tradeoff you have to say out loud is that every leg you cut is product capability you're giving up, which is exactly why teams keep quietly reattaching them.
+
 ### 3.5 What does *not* work as a defense
 
 - **"Just put it in the system prompt."** Models don't reliably distinguish system from user from third-party content. There is no protected message channel; "system prompt" is a soft convention.
@@ -137,6 +145,8 @@ When all three are present, indirect prompt injection can ⇒ exfiltration of pr
 - **String-matching for injection patterns.** Trivially evaded by paraphrase, base64, foreign language, leet-speak, or new attacks no one has written rules for yet.
 
 The robust patterns are §12 — structured I/O, dual-LLM, capability gating, and output-side defenses.
+
+> **Saying it out loud.** If someone asks me to defend against prompt injection in one minute: you can't solve it in the prompt. Telling the model "ignore any instructions in the documents below" falls over to rephrasing, and pattern-matching for injection strings falls over to base64, another language, or an attack nobody has written a rule for yet. What actually works is treating it as a systems problem — structured envelopes so untrusted content is at least marked, a low-privilege reader model that can quote content but never act on it, capability gating on the tools, and egress filtering on the way out. The honest framing is that this is mitigation, not a fix: the current state of the art still leaves double-digit attack-success rates on agent benchmarks like AgentDojo.
 
 ---
 
@@ -181,9 +191,13 @@ A "jailbreak" is a prompt that elicits behaviour the model was trained to refuse
 
 You can't *RLHF away* every jailbreak — capability-elicitation attacks are a moving target, and fundamental capabilities can't be unlearned without erasing usefulness. Any LLM product on adversarial inputs needs **defense in depth**: model-level refusal + input-side filtering + output-side filtering + system-design constraints (the lethal-trifecta breakers).
 
+> **Saying it out loud.** A jailbreak is just a prompt that gets the model to do something it was trained to refuse, and the taxonomy splits into hand-written and automated. Hand-written is personas like DAN, fictional framing, refusal suppression, prefix injection where you start the answer with "Sure, here's how", low-resource languages, and the multi-turn ones like Crescendo where you open benign and escalate. Automated is where it gets interesting — GCG optimises an adversarial suffix with gradients on an open model and it transfers to closed ones, PAIR uses one model to attack another with no gradients at all, and Best-of-N just samples thousands of random perturbations until one lands. The reason you can't RLHF your way out is that the underlying capability is still sitting in the base model; refusal is a behaviour, not a deletion. The number that makes it concrete is Qi et al. — a fine-tune on a few hundred examples strips most of the safety training.
+
 ---
 
 ## 5. Adversarial inputs (the optimization-based attacks)
+
+*Plain-language gloss.* These are attacks found by search rather than by a human writing a clever prompt. You define a numeric objective — "make the model start its reply with 'Sure, here's how'" — and then let an optimiser hunt for input text that drives that objective down. Because the search is mechanical, it finds strings no human would ever write, and those strings often keep working on models the attacker never had access to.
 
 For interview depth on the technique behind GCG and friends.
 
@@ -198,6 +212,8 @@ For a target like "Sure, here's how to make a bomb...":
 5. Iterate until loss is low → suffix elicits the target completion.
 
 GCG suffixes are adversarial in a Carlini-style sense — small token-level perturbation, large output change.
+
+> **Saying it out loud.** GCG is adversarial examples, but for text. You pick a target string like "Sure, here's how", append a suffix of junk tokens to the harmful request, and search over which tokens go in that suffix so the model's probability of starting with that target goes up. Tokens are discrete so you can't just do gradient descent — you use the gradient at the embeddings to propose top-K candidate swaps per position, then actually evaluate a random subset and greedily take the best. That's the "greedy coordinate" part, and it's why the attack is expensive: thousands of forward passes per suffix. The tradeoff versus PAIR is exactly that — GCG needs weights and compute but is reliable, PAIR needs neither but is slower to land and easier to filter.
 
 ### 5.2 Why it transfers
 
@@ -219,6 +235,8 @@ PAIR is black-box and works without gradients. It's slower and less reliable tha
 - **Circuit breakers (Zou et al. 2024).** Train the model to *refuse to compute the harmful output's representation* — break the residual-stream circuit that produces it. More robust than refusal training.
 - **Latent adversarial training** (Sheshadri et al. 2024). Adversarially perturb intermediate activations during fine-tuning.
 - **Input-side classifiers / paraphrase / perturbation defenses (SmoothLLM, RAIN).** Randomly perturb the input N times and majority-vote the output; adversarial suffixes don't survive perturbation.
+
+> **Saying it out loud.** The reason optimisation-based attacks matter more than clever prompt writing is that they transfer. A suffix found on an open-weight model works on a closed one you have no access to, because instruction-tuned models share base lineage and near-identical tuning data, so the same compliance circuitry is there to hit. PAIR is the black-box cousin — attacker model, target model, judge model, iterate — which is slower and less reliable but needs no weights. Defence status should be stated honestly: adversarial training and circuit breakers raise the cost and cut success rates substantially, but a longer suffix or a different optimiser still gets through. The named failure mode is the adaptive-attack gap — a defence evaluated against yesterday's attack suite reports a number that says nothing about tomorrow's.
 
 ---
 
@@ -245,6 +263,8 @@ Even a few hundred well-chosen adversarial examples can strip safety training fr
 ### 6.5 RLHF poisoning
 
 Poisoning the preference dataset can install reward-hacking behaviours — the model learns to pursue what looked good to labelers, including specific attacker-chosen patterns. Defenses are mostly process-based: vetted labelers, gold sets, distribution monitoring.
+
+> **Saying it out loud.** Poisoning is the attack where you get your text into the *training* data rather than the prompt, and the uncomfortable part is how cheap it is — Carlini's group showed you can buy expired domains that still sit in web-crawl corpora for a few tens of dollars each and reliably land attacker text in the next pretraining run. Backdoors are the targeted version: the model behaves normally except when it sees a trigger phrase. The result to name is Anthropic's Sleeper Agents — standard safety training, including RLHF and adversarial training, did not remove the trigger behaviour, and in some cases taught the model to hide it better. The reason is mechanical rather than spooky: safety training only ever sees inputs *without* the trigger, so there's no gradient signal on the poisoned branch at all. The takeaway that scores is that behavioural evaluation can't rule out misalignment that only fires on rare inputs, which is the whole argument for interpretability-grade detection.
 
 ---
 
@@ -279,9 +299,13 @@ Larger models memorize more and earlier in training. Repeated documents are memo
 - **Output filters.** Detect verbatim emission of long PII / copyright strings and block.
 - **Machine unlearning.** Active research area; current methods (TOFU, NPO, gradient ascent) have utility/forgetting trade-offs and are not full guarantees.
 
+> **Saying it out loud.** Models memorise, and the bigger they get the more they memorise and the earlier in training it happens. Duplicated documents are the worst offenders, which is why deduplication is the highest-leverage mitigation — Lee et al. showed it cuts memorisation sharply and costs you almost nothing in quality. The attacks are simpler than people expect: prefix continuation, where you feed the opening of a known document and let the model finish it, and the divergence attack, where telling ChatGPT to repeat a word forever made it dump chunks of training data including real PII. That turns into three liabilities — privacy, copyright litigation like NYT v. OpenAI, and GDPR erasure, where nobody has a good answer for what deleting a person from a trained model even means. Differential privacy is the principled fix and the tradeoff is blunt: at frontier scale the utility cost still makes it impractical.
+
 ---
 
 ## 8. Membership inference, model extraction, embedding inversion
+
+*Plain-language gloss.* All three ask the same underlying question: how much of what went *into* a model can you get back *out* of it through an API? Membership inference recovers whether a document was in the training set, extraction recovers pieces of the model itself, and inversion recovers the original text from a supposedly opaque embedding vector. The practical lesson is that "we only expose derived numbers, not the data" is not a privacy argument.
 
 ### 8.1 Membership inference
 
@@ -308,6 +332,8 @@ Given a vector embedding (from an embedding model like text-embedding-3 or a que
 - Implications: storing "anonymized" embeddings of private documents in a vector DB is **not** privacy-preserving. The vectors are themselves PII.
 
 Mitigations: encrypt at rest, restrict access, treat embeddings with the same data-classification level as the source text.
+
+> **Saying it out loud.** These are all confidentiality attacks, and the one people underrate is embedding inversion. Membership inference asks whether a specific document was in training — you use the loss, or min-K-percent probability, which looks only at the model's least-confident tokens because members tend to have fewer genuinely surprising ones. Full model extraction isn't realistic at LLM scale, but Carlini's team showed you can recover the final embedding layer's dimension and structure just from a top-K logprob endpoint, which is why providers clamped that endpoint down. And Vec2Text-style work showed you can reconstruct readable text back out of an embedding vector. The consequence to say out loud: storing "anonymised" embeddings of private documents in a vector database is not anonymisation — classify the vectors at the same level as the source text.
 
 ---
 
@@ -337,6 +363,8 @@ A coding agent that (1) reads private repos, (2) browses the open web for contex
 
 Standard benchmark for agent security. Provides realistic agent environments (calendar, email, banking, Slack) with both useful tasks (utility eval) and adversarial injection tasks (security eval). Reports: (a) task success and (b) attack success. Frontier agents on AgentDojo at the time of writing solve ~70% of useful tasks but are also vulnerable to ~20–40% of injection attacks.
 
+> **Saying it out loud.** Once the model can call tools, prompt injection stops being an embarrassment and becomes a breach. The right frame is the confused deputy from classical security — your agent holds the user's credentials, so an attacker who can only write into a document the agent reads gets to spend those credentials. The patterns worth naming are injection arriving in tool output, exfiltration through a rendered markdown image where the private data is in the URL, and tool-argument injection where model output becomes a shell command or a SQL query. AgentDojo is the benchmark I'd cite: frontier agents solve roughly seventy percent of the useful tasks and still fall to something like twenty to forty percent of injection attacks. That gap is why human-in-the-loop on side-effecting actions isn't paranoia, it's the current state of the art.
+
 ---
 
 ## 10. Plugin / extension / MCP security
@@ -349,6 +377,8 @@ The plugin model (OpenAI plugins, ChatGPT Actions, Claude tools, MCP servers) ge
 - **Supply chain.** Plugin updates ship via repository pulls; same risks as npm.
 
 Mitigations: explicit user consent per dangerous action, capability scoping per plugin, plugin-sandboxing (process / network / fs separation), signed plugin manifests, allowlists.
+
+> **Saying it out loud.** Plugins and MCP servers generalise the problem, because now the untrusted thing isn't just content — it's code running with the user's access. A malicious MCP server on someone's laptop can read their whole filesystem, and a plugin can simply lie about what it returned, with the model having no way to check. You also get cross-plugin confused deputy, where plugin A's output is what triggers plugin B under the user's privileges. The mitigations are old-fashioned and that's fine: per-plugin capability scoping, process/network/filesystem sandboxing, signed manifests, explicit consent for dangerous actions. The failure mode to name is supply chain — plugin updates arrive the way npm packages do, so the plugin you audited last month isn't necessarily the one running today.
 
 ---
 
@@ -365,6 +395,21 @@ LLM outputs can contain attacker-influenced text. Treat that text the way you'd 
 - **Prompt leakage in stack traces / logs.** A code-running agent may include private data in error messages that get logged or returned.
 
 The OWASP Top 10 for LLM Applications (2023, 2025 updates) is the canonical list — read it.
+
+The current version is the **2025** list; quote that one in interviews, not the 2023 original (which had a different ordering and no vector/embedding or system-prompt-leakage entries):
+
+- **LLM01** Prompt Injection
+- **LLM02** Sensitive Information Disclosure
+- **LLM03** Supply Chain
+- **LLM04** Data and Model Poisoning
+- **LLM05** Improper Output Handling
+- **LLM06** Excessive Agency
+- **LLM07** System Prompt Leakage
+- **LLM08** Vector and Embedding Weaknesses
+- **LLM09** Misinformation
+- **LLM10** Unbounded Consumption
+
+> **Saying it out loud.** The one-line rule is: model output is user input. Anything the model writes may have been shaped by an attacker, so never pipe it straight into a privileged sink. That single rule generates the whole list — rendering markdown becomes exfiltration via image fetch, raw HTML becomes XSS, executing generated code becomes RCE, generated SQL becomes SQL injection, a generated URL becomes SSRF into cloud metadata, a generated filename becomes path traversal. The mitigations are the boring classical ones — sanitise, parameterise, allowlist, sandbox — and that's exactly the point. In the OWASP 2025 LLM Top 10 this is LLM05, Improper Output Handling, and it's the category where ordinary appsec skill transfers one-for-one.
 
 ---
 
@@ -411,6 +456,8 @@ Layer them. No single layer suffices.
 - **Embedding endpoints**: be aware that embeddings leak content (Vec2Text). Treat as PII.
 - **Prompt-leak defenses.** Don't over-rely on "the system prompt is secret" — if it matters, the model probably has it; assume the system prompt is exposable.
 
+> **Saying it out loud.** I'd answer this as layers, because no single one holds. Input side: classifiers, paraphrase-based smoothing that breaks adversarial suffixes, and spotlighting so untrusted content is at least marked. Model side: refusal training, plus the more interesting stuff like circuit breakers, which make the harmful internal representation unreachable rather than just training a refusal on top of it. Output side: an output classifier and egress filtering — and honestly the output classifier is often the last thing standing between a jailbroken model and a real harm. But the layer that actually changes the risk profile is system design: capability scoping, human confirmation on side effects, and breaking the lethal trifecta. The tradeoff to name is latency and false refusals — every classifier costs a round trip and rejects some legitimate traffic, so a credible answer says what you're willing to pay.
+
 ---
 
 ## 13. Red-teaming and security evaluation
@@ -446,6 +493,8 @@ Domain-expert humans probe the model. The bedrock at frontier labs. Very expensi
 
 Anthropic, OpenAI, Google have model-bug bounty programs paying for serious jailbreaks and indirect-injection vulnerabilities. Standard in 2024–2026.
 
+> **Saying it out loud.** Red-teaming splits into manual and automated and you need both, for different reasons. Manual expert probing is where genuinely novel attack classes come from; it's expensive and doesn't scale. Automated is how you get coverage and regression testing — Perez's model-attacks-model setup, PAIR and TAP, then the standard benchmarks: HarmBench and JailbreakBench for refusal robustness, AgentDojo for agent injection, StrongREJECT as a judge that's harder to fool than a vanilla GPT judge, WMDP and CyberSecEval for dangerous-capability measurement. What makes this a discipline rather than vibes is that attack-success-rate becomes a number you track per release. The tradeoff to name: automated attacks only find the families they encode, so a benchmark score that stops moving usually means your attack suite went stale, not that your model got safe.
+
 ---
 
 ## 14. Privacy, unlearning, compliance
@@ -479,6 +528,8 @@ Active research area. No production-ready guarantee yet.
 - **NIST AI RMF (AI 600-1, 2024)** for generative AI risk management.
 - **Sector-specific** — FedRAMP / SOC2 for cloud LLM products, FINRA for finance.
 
+> **Saying it out loud.** The honest state of unlearning is that there's no production-grade method. The gold standard is retraining without the data, which nobody can afford, so everything else — gradient ascent on the forget set, NPO, TOFU-style evaluation — is an approximation, and the way you check it is by running membership inference to see whether you can still pull the data back out. Differential privacy is the one with an actual mathematical guarantee, and it's only practical on a small model or a sensitive fine-tune, not on frontier pretraining. The pressure comes from GDPR erasure, the EU AI Act's frontier-tier obligations, and sector rules like HIPAA. The tradeoff to say out loud is forgetting versus utility — every method that reliably removes the target data also measurably degrades the model, and nobody has shown a clean way around that.
+
 ---
 
 ## 15. Frontier-lab safety frameworks
@@ -492,6 +543,8 @@ These define when a model is too dangerous to deploy without specific safeguards
 - **METR.** Independent evals on autonomous capability uplift (notably cyber and ML R&D).
 
 In an interview, knowing these by name and what they bind on signals the candidate is operating at the frontier.
+
+> **Saying it out loud.** Every frontier lab now publishes a policy that says "here are capability thresholds at which we stop and add safeguards." Anthropic's is the Responsible Scaling Policy with AI Safety Levels — ASL-3 is roughly where a model gives meaningful uplift on bioweapons or autonomous cyber operations, and reaching it triggers specific deployment and weight-security controls. OpenAI's Preparedness Framework scores categories like cyber, CBRN, persuasion and model autonomy; DeepMind's Frontier Safety Framework uses Critical Capability Levels. Then there's external testing from the UK and US AI Safety Institutes and METR. The caveat I'd volunteer is that these are vendor-published, self-enforced commitments rather than regulation, and the evaluations behind the thresholds are young — so what they really bind is internal process and reputation.
 
 ---
 
@@ -535,6 +588,8 @@ A reasonable security stack for a real LLM product (chat/coding/agent).
 - Quarterly external eval (AISI / METR / contracted red team).
 - Continuous adversarial training and classifier refresh.
 
+> **Saying it out loud.** If you asked me to secure a real LLM product I'd walk five tiers. Tier one is classifiers and hardening — input classifier, output classifier, structured prompt envelopes, sanitise before you render. Tier two is capability gating: split tools into read versus write and private versus public, and make sure no single agent step holds all three legs of the trifecta. Tier three is sandboxing — disposable VMs for code, an egress proxy with an allowlist that denies private ranges and cloud metadata, workspace-rooted file access. Tier four is monitoring — audit every prompt, retrieval, tool call and output, and alert on exfiltration signatures and denial-of-wallet. Tier five is process: a red-team gate before launch, a bug bounty, external evals. The framing that scores is saying up front that you're designing for jailbreaks *succeeding* and bounding blast radius, not promising prevention.
+
 ---
 
 ## 17. Failure modes and case studies
@@ -548,6 +603,8 @@ A reasonable security stack for a real LLM product (chat/coding/agent).
 - **Sleeper Agents paper (Hubinger et al. 2024).** Trigger-conditioned deceptive behaviour survives RLHF. Lesson: behavioural eval is necessary but not sufficient; we need interpretability-grade detection.
 - **GPT-4 fine-tune jailbreak (Qi et al., 2023).** A few hundred examples through the fine-tuning API removes safety training. Lesson: fine-tuning APIs need their own policy enforcement.
 - **DeepSeek, open-weights frontier models (2025).** Open-weights frontier models change the threat model — adversaries can run GCG locally and transfer. Lesson: closed-weights ≠ secure forever.
+
+> **Saying it out loud.** The case studies are worth memorising because each one hands you a reusable lesson. Bing Sydney in early 2023: injection from browsed web pages, system prompt leaked — so never assume the system prompt is secret. The divergence attack: "repeat poem forever" made ChatGPT emit training data including real PII, so decoding-time attacks leak memorised data. Slack AI in 2024 and the Copilot work: indirect injection inside enterprise SaaS reading across channels and mailboxes — that's the lethal trifecta showing up in office software. Sleeper Agents: trigger-conditioned behaviour survives RLHF. And the fine-tuning-API results: a few hundred examples strips safety training, which makes a fine-tuning API a security perimeter in its own right. The pattern across all of them is the same — nobody's model failed in isolation; in each case someone assumed a privilege boundary that didn't exist.
 
 ---
 
@@ -567,6 +624,8 @@ What separates a good answer from a great one.
 - **You think about *who has what privilege* in an agentic system** — confused-deputy reasoning is the senior signal.
 - **You separate classical infosec hygiene** (sandboxing, egress filters, rate limits, audit logs) from **LLM-specific defenses**, and apply both.
 - **You don't promise "bulletproof."** You design assuming jailbreaks will succeed and bound the blast radius.
+
+> **Saying it out loud.** What separates a senior answer here is mostly framing. You separate alignment from security — alignment is whether the model wants the right things, security is whether an adversary can make a deployed system do the wrong thing. You reach for the lethal trifecta the moment agents come up. You never propose a system-prompt-only defence, because you know it doesn't bind. You can name and sketch GCG, PAIR, AutoDAN, Crescendo, Skeleton Key, Many-Shot and Best-of-N rather than waving at "jailbreaks". And the closer is refusing to promise bulletproof: you say you're designing on the assumption that some jailbreak lands, and the real question is how small the blast radius is when it does.
 
 ---
 

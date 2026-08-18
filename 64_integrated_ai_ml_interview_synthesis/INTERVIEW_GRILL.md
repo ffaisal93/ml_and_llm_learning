@@ -24,6 +24,8 @@ Decision tree: data → model → evaluation → drift → cost asymmetry. Commo
 **6. "Trade off X vs Y" — what framework?**
 Identify business priorities; explain the curve; pick the operating point with justification.
 
+> **Saying it out loud.** The reason to learn the five archetypes is that recognizing which one you're in decides the shape of your answer in the first ten seconds. "Design X" wants a structure walked out loud, ending in monitoring. "Train X" wants the pipeline in decision order, starting from the compute budget. "Why does X work" wants you to name a principle and build back up from it. "Debug X" wants hypotheses ordered by prior probability, boring causes first. "Trade off X versus Y" wants the curve and then a decision. Misclassify the archetype and you'll give a well-structured answer to a question nobody asked — which is a surprisingly common way to lose a round you technically knew the material for.
+
 ---
 
 ## B. Cross-topic bridges
@@ -46,6 +48,8 @@ Frontier training (`62`), SFT/RLHF (`08`), RAG corpora (`39`), anomaly (`32`).
 **12. Why does cross-topic fluency matter?**
 Frontier interviews ask multi-part questions where each part lives in a different deep dive. Senior candidates see the connections.
 
+> **Saying it out loud.** Cross-topic fluency is really one skill: noticing that the same object is showing up in two places. Cross-entropy is the pretraining loss, the distillation objective, and the KL penalty in RLHF — same math, three costumes. Attention is the architecture answer, the long-context answer, and the serving-cost answer. Embeddings are retrieval, recommendation, and multimodal alignment. When you can say "this is the same thing as that, for the same reason," you sound like someone who has worked across the stack rather than someone who read seven separate chapters. And that's exactly what the multi-part frontier question is designed to detect, because each part deliberately lives in a different area.
+
 ---
 
 ## C. Synthesis question patterns
@@ -67,6 +71,8 @@ Distribution shift, data quality, model rollback, infra failures, evaluation pit
 
 **18. "Online/offline mismatch" — what topics?**
 Position bias, counterfactual eval, label time leakage, novelty effect, distribution shift.
+
+> **Saying it out loud.** For any of these sprawling prompts, the move is to name the two or three topics that actually bind and then go deep on one, rather than touring all six at one inch of depth. "Cut latency in half" touches quantization, speculative decoding, caching, and batching — but I'd say up front that decode is memory-bandwidth-bound, so anything that reduces bytes read per token is the real lever and everything else is secondary. "Improve a metric without retraining" sounds like a trick until you realize threshold tuning and calibration are free and frequently worth more than a model upgrade. Naming the dominant lever first, then the supporting ones, is the difference between a synthesis answer and a list.
 
 ---
 
@@ -93,6 +99,8 @@ Shows judgment. Senior candidates see what could go wrong; junior candidates ass
 **25. Strongest defended conclusion — why?**
 "All of the above" loses points. Pick one, justify it, mention alternatives for context.
 
+> **Saying it out loud.** The pattern in one breath: what are we optimizing, what's the binding constraint, which principle governs, what's the simplest baseline, how would I iterate, how could it fail, and what would I actually do. The two steps candidates skip are the baseline and the ending. Skipping the baseline makes you sound like you'd rather build the interesting thing than the shippable thing, which is a real hiring signal. And ending on "there are several good options" instead of "I'd do this, because" reads as an inability to commit under uncertainty — which is most of the job. Say the failure modes too; senior candidates volunteer them, junior candidates assume it works.
+
 ---
 
 ## E. Common mistakes
@@ -111,6 +119,8 @@ Always close with: "could fail when X; mitigate via Y."
 
 **30. Forgetting the business — what to do?**
 Tie ML answer to user-facing outcome. Senior interviewers value product judgment.
+
+> **Saying it out loud.** All five of these are the same mistake: substituting coverage for judgment. Listing model families proves you read the survey; picking one and saying why proves you'd ship. Naming FlashAttention proves you follow the news; saying it takes attention memory from quadratic to linear by tiling, and that it matters here because we're at 32K context, proves you know when it applies. Over-engineering is the same disease pointed the other way — proposing a graph network where gradient boosting would do reads as inexperience, not sophistication. And the cheapest points on the board are closing every answer with a failure mode and a mitigation, which almost nobody does unprompted.
 
 ---
 
@@ -131,6 +141,8 @@ Index docs → embed query → ANN retrieve → optional rerank → prompt templ
 **35. Recommender stack in one breath?**
 Two-tower retrieval (ANN over embeddings) → ranker (GBDT or DL) → diversity/exploration → A/B test.
 
+> **Saying it out loud.** These one-breath summaries are worth rehearsing verbatim, because interviewers frequently open with "walk me through RAG" and the first thirty seconds set their prior for the rest of the hour. Say it as a pipeline with the failure point marked: index and chunk the documents, embed the query, approximate-nearest-neighbor retrieve, optionally rerank, drop the results into a template, generate with citations — and the part that breaks is retrieval, not generation, which is why you measure recall at k separately. Same discipline for RLHF: SFT for format, reward model from preferences, then policy optimization with a KL penalty holding you near the reference, and reward hacking is the permanent threat.
+
 ---
 
 ## G. Synthesis under pressure
@@ -149,6 +161,8 @@ Reasoning, agents, multimodal, efficiency, alignment robustness. Pick 2 with sub
 
 **40. Stuck on a question — strategy?**
 Re-state to confirm understanding. Decompose into smaller parts. Solve the simplest part. Build up. Don't fake it.
+
+> **Saying it out loud.** Under time pressure the structure is the answer. For a five-minute design question: one minute clarifying, one framing, ninety seconds on the architecture, one on evaluation, thirty seconds on monitoring — and say the budget out loud so they know you're managing it. For thirty seconds: "three things matter here, A, B, and C; A dominates because of this; I'd start with X and revisit if I see Y." And when you're genuinely stuck, the recovery is to restate the problem, decompose it, and solve the smallest piece out loud — never to bluff. Interviewers score the honest boundary far above a confident wrong answer, and they can almost always tell the difference.
 
 ---
 
