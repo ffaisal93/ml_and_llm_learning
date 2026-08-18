@@ -25,6 +25,8 @@ A healthy training run typically shows:
 
 **Periodic oscillation**: LR too high, edge of stability, bad scheduler.
 
+> **Saying it out loud.** A healthy run has a shape you can recognise from across the room. Loss falls off a cliff in the first few hundred steps as the model learns the easy stuff like token frequencies, then settles into a long, smooth, slowly flattening descent, with validation tracking just above it. What you're watching for is anything that breaks that shape: a flat line right from the start usually means the learning rate is far too low or something's frozen; regular oscillation means the learning rate is too high; and a validation curve that peels upward while training keeps falling is overfitting. The one number to keep in your head is the train-val gap — small and stable is healthy, monotonically widening is not.
+
 ---
 
 ## 2. Learning rate behavior
@@ -43,6 +45,8 @@ Linear ramp from 0 to peak LR over first $K$ steps. Standard for transformers (l
 
 Why: in early training, gradients are small and weights move dramatically per step at full LR; instability ensues.
 
+> **Saying it out loud.** Warmup means starting the learning rate at essentially zero and ramping it up over the first few thousand steps instead of hitting full speed immediately. The reason is that at initialisation the model is random, Adam's running estimates of gradient mean and variance haven't stabilised, so the first few updates at full learning rate can be enormous and knock the model somewhere it never recovers from. Ramping in lets the optimizer state settle before you push hard. Skip warmup on a large transformer and the classic failure is a loss spike to NaN inside the first thousand steps.
+
 ### Decay
 
 After warmup, LR typically decays:
@@ -60,6 +64,8 @@ LLMs typically decay to ~10% of peak.
 **Too high**: loss bounces, possibly diverges; high gradient norms.
 
 **Sweet spot**: smooth descent; gradient norm decreases over time.
+
+> **Saying it out loud.** Learning rate is the hyperparameter that matters most, full stop — a factor of two or three separates a state-of-the-art run from one that diverges. The practical way to find it is an LR range test: sweep exponentially over a few hundred steps, watch where the loss blows up, and pick roughly an order of magnitude below that. Then you warm up to that peak and decay, usually on a cosine down to about 10 percent of peak. The two failure signatures to name are: too low looks like a slow, boring, almost-linear descent that wastes your compute budget, and too high looks like a bouncing loss with a gradient norm that won't come down.
 
 ---
 
@@ -80,15 +86,21 @@ When you scale batch size by $k$, scale LR by $k$. Maintains effective per-updat
 
 Beyond a certain batch size, doubling batch doesn't double effective progress (McCandlish et al. 2018). Critical batch is task-dependent; varies from 1k to millions of tokens.
 
+> **Saying it out loud.** The linear scaling rule says if you double the batch, double the learning rate. The intuition is that a batch of double the size is a less noisy estimate of the same gradient, so you can afford to trust it twice as far, and your per-token progress stays constant. But it stops working past the critical batch size — beyond that point the gradient estimate is already accurate enough that adding more data to the batch buys you almost nothing, and you're just burning GPUs for the same progress. That's the number to name: critical batch size, task-dependent, anywhere from a thousand tokens to millions, and it's the hard ceiling on how far data parallelism can speed you up.
+
 ### Generalization gap (Keskar et al. 2017)
 
 Empirically, very large batches sometimes generalize worse. Hypothesis: small-batch SGD finds flatter minima.
 
 In practice: for modern LLMs trained on web data, large batch + linear-scaled LR works fine.
 
+> **Saying it out loud.** Batch size is mostly a knob for trading noise against throughput. Bigger batch means a cleaner gradient estimate — variance falls like one over the batch size — plus better hardware utilisation, at the cost of memory and of doing fewer updates per token seen. There's an old result that very large batches generalise slightly worse, the sharp-minima story from Keskar, but for LLMs trained on huge web corpora it mostly doesn't bite as long as you scale the learning rate with it. The real limit isn't generalisation, it's the critical batch size, past which extra parallelism stops converting into faster convergence.
+
 ---
 
 ## 4. Gradient norm and stability
+
+*In plain language:* the gradient norm is just one number summarising how big a step the optimizer wants to take right now. Watching it over time is the cheapest health monitor you have — a smooth downward drift means things are fine, a sudden spike means trouble is about to show up in the loss. The formula below is clipping: if that number gets too big, scale the whole gradient down so it isn't.
 
 ### Gradient norm = signal of training health
 
@@ -105,6 +117,8 @@ Log gradient norm per layer / parameter group. Different layers may behave diffe
 $\nabla \to \nabla \cdot \min(1, \tau / \|\nabla\|)$. Caps norm at $\tau$ (typically 1.0 for transformers).
 
 Prevents explosions from rare bad batches. Standard for any non-trivial training.
+
+> **Saying it out loud.** The gradient norm is the cheapest instrument on your dashboard. In a healthy run it drifts down and stays smooth; a sudden spike is your early warning that a loss spike or a NaN is a few steps away, and a norm collapsing to near zero usually means vanishing gradients rather than convergence — check whether your activations have saturated before you celebrate. Clipping is the standard insurance: if the norm exceeds a threshold, usually 1.0 for transformers, you rescale the whole gradient down to that threshold, which preserves the direction and just limits the step size. It costs nothing and it turns a run-ending explosion from one freak batch into a barely visible bump.
 
 ---
 
@@ -128,6 +142,8 @@ Weights start small (init), gradually grow as training fits the data. After trai
 $w \leftarrow w - \eta \cdot (\nabla + \lambda w)$. Pulls weights toward zero. Prevents unbounded growth.
 
 In modern Adam/AdamW, decoupled from gradient (correctly implemented in AdamW).
+
+> **Saying it out loud.** Weights should grow over training — they start small by design at initialisation and get bigger as the model actually fits something. So if the weight norms haven't moved after a few thousand steps, your model isn't learning: the learning rate is too low, or a layer is accidentally frozen, or gradients aren't flowing. The opposite pathology is unbounded growth, which usually means weight decay is off or too weak. Weight decay in AdamW is decoupled — it's applied directly to the weights rather than folded into the gradient, which is the actual bug that original Adam had, and it's why AdamW is the default for transformers.
 
 ---
 
@@ -154,6 +170,8 @@ Best practice: also save final model; sometimes "best val" is the wrong checkpoi
 - Train loss measured with augmentation; val without.
 - BatchNorm statistics differ (train uses batch; val uses running mean).
 
+> **Saying it out loud.** The reflex most people have is that validation loss below training loss means something's broken, and that's wrong. Dropout is active during training and off during validation, so training loss is measured on a deliberately handicapped model — same for data augmentation, and for batch-norm using batch statistics in training but running averages at eval. So a small inversion is completely normal. What's actually diagnostic is the trend: both falling together is healthy, training falling while validation flattens then rises is overfitting, and both stuck high is underfitting or a learning rate that's too low. And save the final checkpoint as well as the best-validation one, because with a noisy validation set the minimum is often just noise.
+
 ---
 
 ## 7. Mixed precision training
@@ -174,6 +192,8 @@ Forward / backward in BF16 or FP16; weights and optimizer state in FP32.
 
 ### FP8 training
 Hopper / Blackwell GPUs natively. Even more memory savings; needs careful per-tensor scale management. Frontier feature in 2024+.
+
+> **Saying it out loud.** Mixed precision means doing the forward and backward pass in 16-bit while keeping the master weights and optimizer state in 32-bit, and it roughly doubles your throughput for free. The choice that matters is FP16 versus BF16: FP16 has more mantissa bits but a narrow exponent range, so gradients underflow to zero and you need loss scaling to work around it; BF16 keeps FP32's exponent range and just needs no scaling at all. That's why BF16 is the default on anything modern. The one thing to say if pushed is that some operations — layer norm, softmax, loss accumulation — should still run in FP32, because that's where the silent accuracy losses hide.
 
 ---
 
@@ -203,6 +223,8 @@ Hopper / Blackwell GPUs natively. Even more memory savings; needs careful per-te
 - BF16.
 - Periodic checkpoint to enable easy rollback.
 
+> **Saying it out loud.** Loss spikes are normal in large runs and the mistake is panicking. Usually it's one pathological batch — a chunk of repeated garbage, a weird encoding — or a numerical instability in FP16. The playbook, in order, is: don't restart from scratch, roll back to the last good checkpoint, skip or filter the offending data, lower the learning rate and re-warm, and make sure gradient clipping is actually on. Prevention is boring and it works: clip at 1.0, use BF16, warm up long enough, and checkpoint often enough that a rollback costs you an hour, not a week.
+
 ---
 
 ## 9. Overfitting timeline
@@ -227,6 +249,8 @@ LLMs operate in over-parameterized regime: many epochs of pre-training data but 
 - Smaller model.
 - More data.
 
+> **Saying it out loud.** Overfitting is about the ratio of model capacity to data, and the thing to say is that LLM pretraining barely lives in that regime. With a small dataset and a big model you'll see it fast — training loss keeps falling while validation flattens and then climbs. With web-scale data and a single pass, you often never even finish the underfitting phase, so training loss still descending is a legitimate reason to keep going. The signal that actually matters is validation loss stalling, not training loss looking good. And the sharpest test for memorisation is whether the model can recite training samples verbatim, which is both a quality problem and a legal one.
+
 ---
 
 ## 10. Catastrophic forgetting
@@ -248,6 +272,8 @@ Training on new task / data wipes out previously learned capability.
 - **EWC** (Elastic Weight Consolidation): regularize toward old weights weighted by Fisher information.
 - **LoRA / adapters**: train small additional parameters; preserve base.
 - **Smaller LR**: less aggressive update on existing weights.
+
+> **Saying it out loud.** Catastrophic forgetting is when teaching a model something new quietly erases what it already knew — you fine-tune on your customer support data and suddenly it can't write code anymore. It happens because gradient descent has no reason to preserve capabilities nothing in the new data is testing. The standard fix is replay: mix roughly 5 to 15 percent of the original pretraining distribution back into your fine-tuning data, which is cheap and works surprisingly well. Beyond that you can use LoRA or adapters so the base weights never move, or just use a much smaller learning rate. The operational point is to keep evaluating broad benchmarks during specialised training, because if you only measure the target task you won't see the damage until users do.
 
 ---
 

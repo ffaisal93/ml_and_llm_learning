@@ -33,9 +33,13 @@ A surprisingly common interview question: "I have data of type X — what distri
 3. **Is variance bigger or smaller than mean?** Poisson has Var = Mean. If Var > Mean, use Negative Binomial (overdispersion).
 4. **Is the data heavy-tailed?** Many quantities (income, web traffic, returns) are. Gaussian dramatically underestimates extreme events.
 
+> **Saying it out loud.** When someone asks which distribution to use, don't reach for a name — ask three questions instead. What values can the data actually take: zero-or-one, non-negative integers, a number between zero and one, or the whole real line? What's the story that generates it: independent trials, waiting for something, or lots of small effects adding up? And how does the spread compare to the average? That third one is the most useful and least used: Poisson insists variance equals mean, so if your counts have variance far above the mean, you're overdispersed and the right answer is negative binomial. Answer those three and the distribution basically picks itself.
+
 ---
 
 ## 2. Exponential family — the unifying view
+
+*In plain language:* the exponential family is a template that a surprising number of familiar distributions fit into — Gaussian, Bernoulli, Poisson, gamma, and more. If you can rewrite a distribution in that template, a whole toolbox comes free: you instantly know what to summarise the data with, how to fit it, and what its natural prior is. The formula below is just that template, and the four symbols in it are the four slots you fill in.
 
 A distribution is in the exponential family if its density can be written:
 
@@ -66,9 +70,13 @@ The exponential family unifies most distributions you see in practice (Bernoulli
 
 **Poisson**: $p(x|\lambda) \propto \exp(x \log \lambda - \lambda)$. Natural parameter $\eta = \log \lambda$, $T(x) = x$.
 
+> **Saying it out loud.** The exponential family is the observation that most of the distributions you actually use — Gaussian, Bernoulli, Poisson, gamma, beta, multinomial — are the same shape wearing different clothes. Once you write one in that form you get several things for nothing: a sufficient statistic, meaning you can throw the raw data away and keep a couple of sums; a clean fitting rule, where the maximum likelihood estimate just matches the model's expected statistic to the empirical average; and a conjugate prior that exists in closed form. The reason to care in an ML interview is that it's the machinery underneath GLMs, underneath variational inference, and underneath why softmax plus cross-entropy is the natural pairing rather than an arbitrary one.
+
 ---
 
 ## 3. Generalized linear models (GLMs)
+
+*In plain language:* a GLM is linear regression made flexible enough to handle outputs that aren't unbounded real numbers. You keep the linear combination of features, but you pass it through a function that squashes it into the right range — probabilities, counts, positive numbers — and you pick the noise model to match. Logistic regression and Poisson regression are just two entries in this one framework.
 
 A GLM models data as exponential family conditional on a linear predictor:
 
@@ -97,6 +105,8 @@ The **canonical link** is the one that makes the natural parameter equal to $\et
 - The choice of activation + loss in a neural network's output layer is exactly a GLM choice.
 - Generalized additive models (GAMs) extend this to non-linear features.
 
+> **Saying it out loud.** A GLM is three pieces: a distribution for the noise, a linear combination of your features, and a link function that connects them. That's it. The link exists because a linear predictor ranges over all the real numbers while your target might be a probability or a count, so you need something to squash it into range — sigmoid for probabilities, exponential for counts. The canonical link is the one that makes the algebra collapse, and when you use it the gradient is always the same beautiful thing: the residual times the feature. The punchline that scores is that your neural network's output layer is a GLM — softmax plus cross-entropy is exactly the multinomial GLM, and squared error plus a linear output is exactly the Gaussian one.
+
 ---
 
 ## 4. Common modeling pitfalls
@@ -109,13 +119,19 @@ Default assumption in many pipelines. Wrong when:
 - Data is bounded (use beta, truncated normal).
 - Data is count (use Poisson, negative binomial).
 
+> **Saying it out loud.** The commonest modelling sin is reaching for a Gaussian by reflex. It's wrong whenever the support is wrong — a Gaussian puts probability mass on negative numbers, so it's a bad model for durations, revenue, or file sizes, all of which are strictly positive and skewed. It's also wrong when the tails are heavy, because a Gaussian says a five-sigma event basically never happens and in real data it happens all the time. The concrete failure is underestimating extremes: model latency as Gaussian and your p99 predictions will be badly optimistic, which is exactly the number that matters operationally.
+
 ### Poisson when variance > mean (overdispersion)
 
 Poisson assumes variance = mean. Real count data often has variance >> mean. Use negative binomial instead.
 
+> **Saying it out loud.** Overdispersion is the classic count-data trap. Poisson has a rigid constraint baked in — variance equals mean, one parameter for both — and real count data almost never obeys it, because there's usually extra variability the model doesn't see. Website hits vary by hour, sequencing reads vary by sample. The symptom is easy to check: compute the mean and the variance and if the variance is several times bigger, Poisson is wrong. The fix is negative binomial, which is Poisson with a gamma-distributed rate, giving you a second parameter to absorb the extra spread. Fitting Poisson to overdispersed data doesn't bias your point estimates much, but it makes your confidence intervals far too narrow, and that's how you ship a wrong conclusion.
+
 ### Independence assumption
 
 Naive Bayes assumes feature independence given class. Hierarchical / sequential data violates this. GLMs assume iid given covariates — fails for time series.
+
+> **Saying it out loud.** Independence is the assumption everyone makes and almost nobody checks. Naive Bayes assumes features are independent given the class, GLMs assume observations are independent given the covariates, and standard error formulas assume your samples are independent. Time series, repeated measurements on the same user, and anything with spatial structure all violate this. The consequence is specific and dangerous: dependence inflates your effective sample size, so your standard errors come out too small and you declare significance that isn't there. That's how underpowered A/B tests get shipped as wins.
 
 ### Using "the" distribution rather than thinking
 
@@ -124,6 +140,8 @@ Asking "what distribution should I use?" is usually less helpful than:
 - "What's the support?"
 - "Are there extreme values? How heavy is the tail?"
 - "Is variance comparable to mean?"
+
+> **Saying it out loud.** The question "what distribution should I use" is usually the wrong question, and saying so is a good answer. The better questions are what physically generates this data, what values it can take, how heavy the tail is, and whether the variance is comparable to the mean. Get those and the distribution is a consequence rather than a choice. It also stops you from the common failure of fitting a familiar distribution and never checking — a QQ plot against your fitted model takes thirty seconds and catches most of these mistakes.
 
 ---
 
@@ -141,6 +159,8 @@ Many ML problems have heavy-tailed data (Pareto, lognormal, Cauchy). Important c
 **Lognormal**: $\log X \sim \mathcal{N}$. Heavy right tail. Common for incomes, sizes, times.
 
 **Cauchy**: $p(x) \propto 1/(1+x^2)$. No mean or variance. Sample mean is just another Cauchy.
+
+> **Saying it out loud.** Heavy tails are the thing that quietly breaks ordinary statistics, and most real business data has them. Revenue per user, web traffic, file sizes, latency — a small fraction of the population accounts for most of the total, so the sample mean is dominated by whichever extreme values happened to land in your sample and jumps around wildly between samples. The technical version is that for a Pareto with alpha below 2 the variance is infinite, so the central limit theorem gives you nothing and your confidence intervals are meaningless; below alpha of 1 even the mean is infinite. Practically: use medians and quantiles instead of means, or log-transform if it's lognormal, which turns it back into something Gaussian methods can handle. The number to end on is that at a heavy enough tail, no amount of extra data makes your average stable.
 
 ---
 
