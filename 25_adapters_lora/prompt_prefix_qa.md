@@ -44,6 +44,8 @@
 - Prompt tuning: 20 tokens × 768 dim = 15,360 parameters
 - Efficiency: 15,360 / 125,000,000 = 0.012% of parameters
 
+> **Saying it out loud.** Prompt tuning is learning the prompt instead of writing it. You stick a handful of trainable vectors on the front of the input, freeze absolutely everything else in the model, and let gradient descent figure out what those vectors should be. They don't correspond to any real words, they're just free parameters living in embedding space, which is why people call them soft prompts. Compared with fine-tuning you're touching maybe a hundredth of a percent of the parameters, the base model can't forget anything because it never changes, and one deployed model can serve many tasks by swapping a few kilobytes of prompt.
+
 ---
 
 ## Q2: What is prefix tuning? How does it differ from prompt tuning?
@@ -89,6 +91,8 @@
 **When to Use:**
 - **Prompt tuning**: Simple tasks, maximum efficiency
 - **Prefix tuning**: Complex tasks, need better performance
+
+> **Saying it out loud.** Prefix tuning is prompt tuning applied at every layer instead of just the input. Rather than prepending vectors to the embeddings and letting them propagate up, you inject trainable key and value vectors directly into each layer's attention. That's much more expressive, because you can steer the model's behavior at every level of abstraction rather than only nudging the input. It costs maybe thirty times more parameters than prompt tuning and it's meaningfully harder to implement, since you have to reach into the attention mechanism of every block.
 
 ---
 
@@ -159,6 +163,8 @@ Trainable parameters = p × d_model
 - Model learns to interpret prompt as task instruction
 - Prompt encodes task-specific information efficiently
 
+> **Saying it out loud.** The math is simpler than it looks. You embed your input tokens normally, you keep a separate learnable matrix of $p$ vectors of the model's width, you concatenate them in front, and you run the frozen model on the result. Gradients flow back through the whole network but only land on that one small matrix. Concretely, twenty prompt tokens at seven hundred sixty-eight dimensions is about fifteen thousand parameters, roughly a hundredth of a percent of a small GPT-2, and that's the entirety of what you ship per task.
+
 ---
 
 ## Q4: Explain the mathematical formulation of prefix tuning.
@@ -225,6 +231,8 @@ Total = L × (p × d_model/2 + 2 × d_model²)
 - Can guide model behavior at multiple abstraction levels
 - More flexible than prompt tuning (only input layer)
 
+> **Saying it out loud.** For prefix tuning the formulation is about attention. At each layer you generate prefix key and value vectors and concatenate them onto the keys and values computed from the actual sequence, leaving the queries untouched. So every real token can attend to the prefix, but the prefix never attends to anything, it just sits there as extra context the model can read. The one implementation detail that always comes up is reparameterization: training the prefix directly is unstable, so you generate it from a smaller matrix through an MLP, and you throw that MLP away after training.
+
 ---
 
 ## Q5: What are the advantages and disadvantages of prompt tuning vs prefix tuning?
@@ -270,6 +278,8 @@ Total = L × (p × d_model/2 + 2 × d_model²)
 - Start with prompt tuning (simpler, more efficient)
 - If performance insufficient, try prefix tuning
 - Use full fine-tuning only if needed and resources available
+
+> **Saying it out loud.** The tradeoff between the two is expressiveness against simplicity. Prompt tuning is the fewest parameters, the simplest code, and the smallest thing to store, and on straightforward tasks it's enough. Prefix tuning gives you control at every layer, so it does better on harder generation tasks, at the cost of more parameters, custom attention code, and a much fiddlier optimization. My default recommendation is start with prompt tuning and only move to prefix tuning if the eval says you need to. And say the real-world caveat: both lost to LoRA in practice, largely because both consume context window and neither merges away.
 
 ---
 
@@ -329,6 +339,8 @@ Project up to full dimension
 - **Experiment**: Try different strategies, use validation performance
 - **Task-specific**: Use domain knowledge when available
 
+> **Saying it out loud.** Initialization matters much more here than in ordinary fine-tuning, because you're optimizing a very small number of parameters in a space the model wasn't trained to accept. Random initialization works but converges slowly and sometimes not at all. The trick that reliably helps is initializing from real vocabulary embeddings, ideally words related to the task, so you start somewhere the model already understands. For prefix tuning, reparameterizing through an MLP is close to mandatory rather than optional. The failure mode you're avoiding is a run that just sits at its starting loss and never moves.
+
 ---
 
 ## Q7: What is the optimal prompt/prefix length? How do you choose it?
@@ -382,6 +394,8 @@ Project up to full dimension
 - Performance improves with length up to a point
 - Then plateaus or degrades (overfitting)
 - Sweet spot: 20-50 tokens for most tasks
+
+> **Saying it out loud.** Length is a capacity knob and it behaves like any capacity knob. Performance rises with more prompt tokens, plateaus, then gets worse as you start overfitting and eating context. Twenty to fifty tokens is the sweet spot for prompt tuning, and ten to twenty per layer for prefix tuning, since prefix tuning has far more parameters per token. Scale it with task complexity and dataset size, not with ambition. And remember every prompt token is a token you can't use for actual input, which is a hard cost at a fixed context window.
 
 ---
 
@@ -467,6 +481,8 @@ Project up to full dimension
 | **Prefix Tuning** | 0.3% | Very Good | Moderate | Small |
 | **Prompt Tuning** | 0.01% | Good | Simple | Smallest |
 
+> **Saying it out loud.** Ranked by parameters, it's prompt tuning at about a hundredth of a percent, prefix tuning around three tenths, LoRA at a tenth to one percent, and full fine-tuning at a hundred. Ranked by quality, it's basically the reverse, though LoRA is close enough to full fine-tuning that the gap rarely decides anything. The reason LoRA won production despite not being the smallest is that it merges into the base weights, so inference costs nothing extra and no context window is consumed. Prompt and prefix tuning both permanently spend context on every single request, which is a tax you keep paying.
+
 ---
 
 ## Q9: How do you implement prompt tuning? Show the key code.
@@ -522,6 +538,8 @@ See [`prompt_prefix_code.py`](prompt_prefix_code_py.md) for full implementation!
 - Model parameters stay frozen
 - Very simple implementation
 - Extremely parameter-efficient
+
+> **Saying it out loud.** Implementing prompt tuning is genuinely about ten lines. Freeze every model parameter, create one trainable tensor of shape prompt-length by model-width, embed the real input, concatenate the two along the sequence axis, and run the forward pass. Only that one tensor receives gradients. The two details people get wrong are forgetting to extend the attention mask to cover the prompt positions, and forgetting to shift the labels so you're not asking the model to predict the soft prompt tokens themselves.
 
 ---
 
@@ -597,6 +615,8 @@ for layer_idx, layer in enumerate(model.transformer.h):
 - Requires understanding of transformer internals
 
 **See [`prompt_prefix_code.py`](prompt_prefix_code_py.md) for complete implementation!**
+
+> **Saying it out loud.** Prefix tuning is a lot more work because you have to intervene inside attention at every layer. You keep a small prefix matrix, project it up through an MLP for stability, produce per-layer key and value tensors, and concatenate those onto the keys and values in each block while leaving the queries alone. Compute-wise it's cheap, since the sequence just grows from $n$ to $n + p$ and $p$ is small, so it stays roughly $O(n^2 d)$. The real cost is engineering: you're modifying transformer internals, which means your code breaks every time the model library changes its attention implementation.
 
 ---
 
