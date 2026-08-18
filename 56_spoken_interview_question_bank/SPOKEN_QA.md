@@ -26,17 +26,23 @@ Then the mean alone is not enough. A point near the common mean may be more like
 
 A p-value is the probability of observing data at least this extreme assuming the null hypothesis is true. It is not the probability that the null hypothesis is true. The practical interpretation is that a small p-value means the observed result would be surprising if there were really no effect.
 
+> **Saying it out loud.** The answer above is correct but reads like a textbook line; here's how I'd actually say it. A p-value answers one narrow question: if there were genuinely no effect, how often would I see data at least this extreme just by luck? So a p-value of 0.03 means results this striking would turn up three times in a hundred in a world where nothing is going on. What it is *not* is the probability that the null is true — that's the flip people make constantly, and it's like confusing the chance of a positive test given the disease with the chance of the disease given a positive test. Say the direction of the conditioning out loud and you've already answered better than most.
+
 ### Q4. What is the difference between confidence interval and credible interval?
 
 **Model answer:**
 
 A confidence interval is a frequentist concept. It means that if we repeated the sampling procedure many times, a fixed percentage of those intervals would contain the true parameter. A credible interval is Bayesian. It directly expresses posterior uncertainty, so you can say there is a certain posterior probability that the parameter lies in that range. The formulas can look similar, but the interpretations are different.
 
+> **Saying it out loud.** Said plainly: a credible interval means what everyone *thinks* a confidence interval means. With a 95 percent credible interval, I can say there's a 95 percent probability the parameter is in this range, full stop, because Bayesian inference treats the parameter as uncertain. A confidence interval can't say that — the parameter is a fixed unknown number, so the randomness lives in the procedure, and the guarantee is that if I repeated the whole experiment forever, 95 percent of the intervals I'd construct would cover the truth. The tradeoff is that the credible interval buys that cleaner interpretation with a prior you have to choose and defend.
+
 ### Q5. What is bias-variance trade-off?
 
 **Model answer:**
 
 Bias is systematic error from using a model that is too simple or too constrained. Variance is instability from fitting sample-specific noise. If I increase model flexibility, bias often goes down but variance can go up. Good modeling is about balancing those two so test error is minimized, not just training error.
+
+> **Saying it out loud.** Here's the plain version with a picture. Imagine trying to draw a curve through a scatter of noisy points. Use a straight line and you'll be systematically wrong no matter how many points you collect — that stubborn, repeatable error is bias. Use a wiggly high-degree polynomial and you'll pass through every point including the noise, so if I hand you a fresh sample you'll draw a completely different curve — that instability is variance. Both hurt test error, and pushing one down usually pushes the other up, which is why the classical test-error curve is U-shaped and the whole job is finding the bottom. The number that makes it concrete: the model that fits training data perfectly is almost never the one with the lowest test error.
 
 ### Q6. Why do we divide by `n - 1` for sample variance?
 
@@ -90,6 +96,8 @@ Because exponentials can overflow for large inputs. Subtracting the maximum shif
 
 Because the derivative of binary cross-entropy composed with the sigmoid has a nice cancellation. If the model outputs `p = sigmoid(z)`, then differentiating the loss with respect to `z` gives `p - y`. That is why the vectorized gradient becomes `X^T (p - y) / n`.
 
+> **Saying it out loud.** The written answer names the cancellation; here's how I'd narrate why it happens. The sigmoid has the unusual property that its derivative is `p * (1 - p)` — its own output times one minus its output. Binary cross-entropy differentiated with respect to `p` gives you a term with `p * (1 - p)` in the denominator. Chain them and those factors cancel exactly, leaving `p - y`: just prediction minus target. That's not a coincidence, it's what you get whenever you pair a loss with its matching link function, which is also why softmax with cross-entropy gives the same clean form. The practical payoff to state: the gradient is bounded and well-behaved, which is exactly why you fuse the sigmoid into the loss rather than computing them separately.
+
 ### Q14. Why might Adam and SGD behave differently?
 
 **Model answer:**
@@ -102,11 +110,15 @@ Adam adapts step sizes per parameter using first and second moment estimates, so
 
 A convex objective is one where any line segment between two points stays above the function. The practical reason it matters is that for convex problems, every local minimum is a global minimum. That makes optimization much easier to reason about than deep non-convex neural network training.
 
+> **Saying it out loud.** Plainer version: a convex function is bowl-shaped, so if you pick any two points on it and stretch a string between them, the string never dips below the surface. Why anyone cares is the one-line consequence — a bowl has exactly one bottom, so any local minimum you find is the global minimum, and you can stop worrying about where you started or getting stuck. Logistic regression, linear regression, and SVMs are all convex, which is why they're reliably reproducible. Neural networks are wildly non-convex, so nothing is guaranteed and the honest framing is that in high dimensions the problem isn't bad local minima but saddle points and flat regions.
+
 ### Q16. What is a Jacobian?
 
 **Model answer:**
 
 A Jacobian is the matrix of first derivatives when the output is a vector. It tells you how each output component changes with respect to each input component. In neural networks, the full Jacobian is often not formed explicitly, but the idea is central to backpropagation.
+
+> **Saying it out loud.** In plain speech: a gradient is what you get when the output is a single number, and a Jacobian is what you get when the output is a vector — one row of partial derivatives per output. So it's just a table telling you how much each output wiggles when you wiggle each input. In deep learning you almost never build one, because for a layer with a thousand inputs and a thousand outputs that's a million entries. Backpropagation is precisely the trick of computing vector-times-Jacobian products without ever materializing the matrix, which is the whole reason reverse-mode autodiff is cheap — one backward pass costs about the same as one forward pass, regardless of how many parameters you have.
 
 ---
 
@@ -222,6 +234,8 @@ Common mistakes include forgetting batch dimensions, summing over the wrong axis
 
 Perplexity is the exponential of average negative log-likelihood. It measures how surprised the model is by the observed tokens under the target distribution. Lower perplexity means better next-token prediction, but it does not necessarily mean better factuality, reasoning, or downstream task performance.
 
+> **Saying it out loud.** The definitional version above is right; the spoken version is this. Perplexity is roughly the number of options the model feels it's choosing between at each token. A perplexity of 10 means the model is about as uncertain as if it were picking uniformly among ten words; a perplexity of 2 means it's basically down to a coin flip. That's why lower is better, and it's just the exponential of the average cross-entropy, so it's the same quantity in friendlier units. The caveat that scores: perplexity is tokenizer- and dataset-dependent, so comparing it across models with different vocabularies is meaningless, and better perplexity routinely fails to translate into better reasoning or factuality.
+
 ### Q34. Why does tokenization matter?
 
 **Model answer:**
@@ -273,6 +287,8 @@ Because retrieval quality and answer quality are not identical objectives. The r
 **Model answer:**
 
 Supervised fine-tuning trains directly on desired input-output pairs. PPO uses a reinforcement-learning objective with a reward signal and usually a KL penalty to keep the policy near a reference model. DPO uses preference pairs more directly and optimizes a closed-form objective without an explicit online RL loop. Conceptually, SFT learns demonstrations, while PPO and DPO try to learn preferences.
+
+> **Saying it out loud.** Simplest framing: SFT teaches by example, PPO and DPO teach by comparison. In supervised fine-tuning you show the model good answers and it imitates them, which is cheap and stable but capped by the quality of your demonstrations — the model can never exceed the writers. Preference methods instead take pairs where a human said this one is better than that one, which is far easier to collect and lets the model exceed the demonstrations. PPO does it the long way, training a reward model and then running online RL against it with a KL penalty to stop the policy drifting off; DPO shows you can skip the reward model and the RL loop entirely and optimize the preference pairs in closed form. The tradeoff to name: DPO is dramatically simpler and more stable to train, while PPO's online sampling lets it keep exploring and is generally still stronger at the frontier — and both share the same failure mode, reward hacking of whatever the preference data actually encoded.
 
 ### Q42. Why can preference optimization hurt factuality?
 

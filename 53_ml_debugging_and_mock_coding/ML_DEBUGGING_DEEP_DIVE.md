@@ -23,6 +23,8 @@ When something is wrong, work through layers in order. Most failures hit at one 
 
 The principle: cheap checks first. Plot losses, eyeball data, sanity-check shapes. Don't dive into custom gradient computations until you've ruled out trivial bugs.
 
+> **Saying it out loud.** My rule is: debug in the order that things are cheap to check, not in the order they're interesting. Data first, then the pipeline, then the model, then loss, optimizer, training loop, evaluation, and only then infrastructure. The reason is base rates — the overwhelming majority of “the model won't train” turns out to be a label format, a shape, or a learning rate, and almost none of it is an exotic gradient bug. So I plot the loss, print a batch, and check shapes before I ever open the modelling code. The failure mode I'm avoiding is the classic one: two days rewriting an attention implementation when the labels were off by one.
+
 ---
 
 ## 2. Loss curve interpretation
@@ -69,6 +71,8 @@ No. Sanity-check:
 - Compare loss curves across runs (changed one thing — should affect curve in expected way).
 - Look at per-batch loss, not just smoothed running average.
 
+> **Saying it out loud.** The loss curve is the cheapest diagnostic you own, and each shape means something specific. Dead flat from step zero says the gradient isn't reaching the weights — frozen parameters, a detached graph, or a learning rate so small nothing moves. Noisy and refusing to descend usually means the learning rate is too high. Exploding to NaN means overflow or a step off a cliff. Train falling while validation climbs is plain overfitting, and both being suspiciously good is a leakage smell. Two habits that pay: plot on a log y-axis so you can see the first hundred steps, and look at per-batch loss rather than the smoothed average, because a single bad batch spikes the raw curve and vanishes from the moving average.
+
 ---
 
 ## 3. Data-side debugging
@@ -104,12 +108,14 @@ Print 5 random batches. Look at shapes, label distributions, raw values.
 
 If something looks off, fix that first before assuming a model issue.
 
+> **Saying it out loud.** Before I blame the model I try to fit one batch. Take a single batch, turn off regularization and shuffling, and train on it for a few hundred steps — the loss should crater toward zero, because a model that can't memorize thirty-two examples has a bug, not a capacity problem. If that passes, I scale up to a hundred examples and expect near-perfect training accuracy. Then I print raw batches and look at them: shapes, value ranges, label distribution, and for text, decode the tokens back and read them. That whole loop is about five minutes and it catches most real bugs. The classic one it finds is a normalization mismatch — dividing by 255 in training and standardizing with ImageNet mean and standard deviation at inference.
+
 ---
 
 ## 4. NaN debugging
 
 ### Causes
-- **FP16 overflow**: $e^x$ for $x > 88$ overflows in FP16. Use BF16 (extended exponent range) or stable softmax.
+- **FP16 overflow**: $e^x$ for $x > 11$ overflows in FP16 (max finite value 65504); $x > 88$ is the FP32 threshold. Use BF16 (extended exponent range) or stable softmax.
 - **Division by zero**: variance estimate hits 0; output of LayerNorm; division in normalization.
 - **Log of zero**: $\log p$ for $p = 0$. Add $\epsilon$ (e.g., $\log(p + 10^{-9})$).
 - **Square root of negative**: numerical drift makes a "non-negative" value slightly negative.
@@ -132,6 +138,8 @@ If something looks off, fix that first before assuming a model issue.
 - Compute attention in higher precision.
 - Add $\epsilon$ in normalizations.
 - Restart from earlier checkpoint.
+
+> **Saying it out loud.** With a NaN, the first question is always *when* — step zero or step five thousand — because they mean completely different things. At step zero it's initialization, a bad first batch, or an input that's already broken. Thousands of steps in, it's an instability that finally got triggered: a huge attention logit, a divide by a variance that hit zero, a log of zero, or an outlier batch producing a giant gradient. By the time the loss reads NaN the weights are already poisoned, so you catch it earlier with assertions after suspect ops or with anomaly detection, which is slow but points at the first bad operation. The fix list in order: clip gradients at norm 1.0, lower the learning rate, switch FP16 to BF16 — same memory, far more exponent range, no loss scaling needed — and restart from the last clean checkpoint.
 
 ---
 
@@ -178,6 +186,8 @@ X_train = scaler.transform(X_train)
 X_test = scaler.transform(X_test)
 ```
 
+> **Saying it out loud.** Leakage is when information the model wouldn't have at prediction time sneaks into training, and the tell is a number that's too good. If a single feature gets you AUC above 0.95, or any feature correlates above 0.9 with the label, I go audit it before I celebrate. The forms worth naming out loud are target leakage, where a feature is computed downstream of the outcome; group leakage, where the same user or patient lands in both splits; temporal leakage, where you use the future to predict the past; and preprocessing leakage, the most common by far — fitting a scaler or an imputer on the whole dataset before splitting, so test statistics bleed into training. The diagnostic that catches temporal leakage is comparing a random split against a time-ordered holdout: if accuracy falls off a cliff on the time split, you had it.
+
 ---
 
 ## 6. Gradient checking
@@ -200,6 +210,8 @@ def gradient_check(f, x, eps=1e-5):
 If rel_error > $10^{-5}$, suspect a bug.
 
 PyTorch has `torch.autograd.gradcheck(func, inputs)`. Use it for custom autograd functions.
+
+> **Saying it out loud.** Gradient checking is how you prove a hand-written backward pass is right: perturb one input by a tiny epsilon in each direction, take the two-sided finite difference of the forward pass, and compare against the analytical gradient. You compare *relative* error, not absolute, and anything under about $10^{-5}$ is fine while anything above $10^{-3}$ means a real bug. Two practical notes: use double precision, because in float32 the noise floor swamps the signal, and avoid checking at kinks like ReLU at zero, where the finite difference is legitimately meaningless. It's $O(n)$ forward passes, so you run it once on a tiny tensor, not in training — in PyTorch, `torch.autograd.gradcheck` does exactly this.
 
 ---
 
@@ -227,6 +239,8 @@ PyTorch has `torch.autograd.gradcheck(func, inputs)`. Use it for custom autograd
 - Feature monitoring with alerts.
 - Shadow / canary deployment to catch regressions early.
 
+> **Saying it out loud.** When offline looks great and production looks bad, my first hypothesis is that the data moved, not that the model broke. I compare three distributions between training and live traffic: the inputs feature by feature, the model's own output scores, and the label rate wherever labels arrive. A shifted score histogram is the fastest signal because it's one plot and needs no labels. Then I name which kind of shift it is: covariate shift means the inputs moved but the input-to-label relationship held, so reweighting or retraining fixes it; concept drift means the relationship itself changed and only fresh labels help. The one that bites hardest is pipeline drift — an upstream team silently redefines a feature and the model degrades with no distribution alarm at all, which is why you monitor features and ship behind a canary.
+
 ---
 
 ## 8. Common interview gotchas
@@ -241,6 +255,8 @@ PyTorch has `torch.autograd.gradcheck(func, inputs)`. Use it for custom autograd
 | `loss.backward()` raised NaN — where to look? | Loss | NaN can be from any earlier op; use `set_detect_anomaly(True)` |
 | Gradient clip value? | "Some number" | 1.0 typical for transformers; tune for your task |
 
+> **Saying it out loud.** The thread through this table is that in a debugging round, interviewers score your *ordering*, not your knowledge of any single fix. Reaching for a bigger model or a retrain first reads as guessing; cheap diagnostics first reads as experience. So for a flat loss I overfit one batch, for a suspiciously good AUC I suspect leakage, for a production regression I roll back first and investigate second, and for a NaN I ask when it appeared. Say the diagnostic before the fix every time. The one concrete number worth having ready: gradient clipping at global norm 1.0 is the standard for transformers.
+
 ---
 
 ## 9. Eight most-asked debugging questions
@@ -253,6 +269,8 @@ PyTorch has `torch.autograd.gradcheck(func, inputs)`. Use it for custom autograd
 6. **Implement gradient checking for a custom layer.** (Numerical: $(f(x+\epsilon) - f(x-\epsilon))/(2\epsilon)$.)
 7. **What does a flat loss curve mean?** (LR issue; warmup not finished; frozen weights; phase transition pending.)
 8. **What sanity checks before training?** (Overfit one batch; tiny dataset to 99%; inspect data.)
+
+> **Saying it out loud.** If I get any of these, I answer with a process rather than a guess, and I say the process out loud in order: form a hypothesis, name the cheapest test that could disprove it, run it, then narrow. Loss not moving? Overfit one batch. NaN? Ask when it first appeared. Ninety-nine train against sixty test? Decide between overfitting, leakage, and a train-serving distribution mismatch, and name the check that distinguishes them. Offline good but online bad? Distribution shift and feedback effects like position bias before anything else. The tradeoff I state explicitly is speed versus certainty in production: roll back first to stop the bleeding, then debug on the artifacts, because a live regression is not the place to be curious.
 
 ---
 

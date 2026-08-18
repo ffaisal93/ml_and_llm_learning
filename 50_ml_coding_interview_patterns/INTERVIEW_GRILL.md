@@ -24,6 +24,8 @@ Combine as logits $-$ logsumexp; avoids underflow on softmax output.
 **6. PyTorch's `nn.CrossEntropyLoss` takes what input?**
 Raw logits, not probabilities. Combines log-softmax + NLL internally.
 
+> **Saying it out loud.** Everything in this group comes from one fact: `exp` overflows fast, and floating point has no mercy. So you never exponentiate a raw logit — you subtract the row max first, which changes nothing mathematically because the constant cancels top and bottom, and guarantees the largest exponent is zero. Log-sum-exp is the same move for log-space: pull the max out front, exponentiate the rest, add the max back. And you never chain softmax into log, you fuse them, which is why `nn.CrossEntropyLoss` takes raw logits. Failure mode to name: overflow to NaN, or an underflowed probability whose log is minus infinity.
+
 ---
 
 ## B. Attention
@@ -45,6 +47,8 @@ $[B, L, D] \to [B, L, H, D/H] \to [B, H, L, D/H]$ — heads come before sequence
 
 **12. Common attention bug?**
 Wrong axis for softmax. Should be over last dim (key dim).
+
+> **Saying it out loud.** Attention scores every query against every key, softmaxes those scores, and returns the weighted average of the values — a soft lookup. The $1/\sqrt{d_k}$ is there because the variance of a dot product grows with the dimension, so unscaled scores get huge, the softmax saturates into a one-hot, and gradients die. Masking is additive and happens *before* the softmax: you push forbidden scores to $-\infty$ so they come out as exactly zero weight and the rest still renormalize. Multiply-by-zero afterwards leaves the denominator wrong. The two bugs interviewers watch for are softmaxing over the wrong axis and a multi-head reshape that mixes heads with positions.
 
 ---
 
@@ -68,6 +72,8 @@ Subtract from logits of recently-used tokens. Reduces repetition.
 **18. Why does beam search produce repetitive text?**
 Maximum-likelihood paths cluster in low-entropy regions. Sampling with top-p avoids this.
 
+> **Saying it out loud.** Decoding is all about how much of the tail you let in. Temperature rescales the logits — toward zero it becomes greedy, toward infinity it becomes uniform. Top-k keeps a fixed count of candidates; top-p keeps the smallest set whose mass reaches $p$, so it widens when the model is unsure and narrows when it's confident, which is why top-p is the modern default. Repetition penalties just subtract from the logits of tokens you've already used. The tradeoff is coherence versus diversity, and the named failure is degenerate repetition when you decode too greedily.
+
 ---
 
 ## D. Beam search
@@ -83,6 +89,8 @@ Tasks with single-correct-answer flavor: translation, summarization with referen
 
 **22. Beam size trade-off?**
 Larger: better likelihood but slower; sometimes worse output quality (repetition).
+
+> **Saying it out loud.** Beam search keeps the $B$ best partial sequences at each step rather than committing to one, so it's a wider greedy search, not a real search of the whole space. Length normalization is mandatory because each extra token subtracts more log-probability — divide by length to the power $\alpha$, roughly 0.6, or the model always ends the sentence early. Bigger beams give better likelihood and cost linearly more compute. The tradeoff worth stating: for translation or summarization, where there's roughly one right answer, beam wins; for open-ended generation the highest-likelihood text is famously bland and repetitive, so you sample instead.
 
 ---
 
@@ -100,6 +108,8 @@ Re-initialize centroid (random point, far from existing centroids, or split larg
 **26. K-means++ initialization?**
 First centroid random; subsequent centroids sampled with prob $\propto$ squared distance to nearest existing centroid. $O(\log K)$-approximation guarantee.
 
+> **Saying it out loud.** K-means alternates assign-to-nearest and move-to-mean, and it's really coordinate descent on total within-cluster squared distance, so it converges monotonically but only to a local optimum. Each iteration costs $O(NKD)$, which is why it scales fine until $K$ gets big. Initialization is the whole ballgame: K-means++ picks seeds with probability proportional to squared distance from the nearest existing centroid and buys you an $O(\log K)$ approximation guarantee. The failure mode to name is the empty cluster — mean of nothing is NaN, so you re-seed it — plus the standing assumption of roughly spherical, equally sized clusters.
+
 ---
 
 ## F. Backprop and MLP
@@ -115,6 +125,8 @@ $dW_2 = (h_1)^\top dz_2$, $dz_1 = (W_2^\top dz_2) \odot \sigma'(z_1)$, $dW_1 = x
 
 **30. Why store activations during forward?**
 Backward needs them — gradient w.r.t. weights uses input to that layer.
+
+> **Saying it out loud.** Backprop is the chain rule run backwards with caching: each layer receives the gradient of the loss with respect to its output and produces two things, a gradient for its own weights and one to hand to the layer below. You store the forward activations precisely because the weight gradient is the layer's input times the incoming gradient. The identity worth memorizing is that softmax plus cross-entropy gives $(p - y)/n$ — everything else cancels. ReLU's derivative is just an indicator of positive pre-activation. Named tradeoff: activation checkpointing throws those cached activations away to save memory and recomputes them, usually costing about 30 percent extra compute.
 
 ---
 
@@ -132,6 +144,8 @@ Lower-triangular AND padding-mask broadcasted. Bool AND.
 **34. Common bug with padding?**
 Forgetting to mask padding from loss (you're predicting on tokens that don't exist).
 
+> **Saying it out loud.** Padding exists so variable-length sequences fit in one rectangular tensor, and masking exists so those fake positions never affect anything. The padding mask is $[B, L]$, one for real tokens, and you combine it with the lower-triangular causal mask by a boolean AND. Two places people forget it: in attention, where pad tokens otherwise soak up weight and make a sentence's embedding depend on its batchmates, and in the loss, where you'd be training the model to predict padding. The failure mode is eval numbers that shift when you change batch size — a real bug that looks like noise.
+
 ---
 
 ## H. Vectorization
@@ -148,6 +162,8 @@ GIL + interpreter overhead. Vectorized NumPy/PyTorch is 10–100× faster.
 **38. Broadcasting trick?**
 Use `[:, None]` and `[None, :]` to get pairwise computation without explicit loop.
 
+> **Saying it out loud.** Vectorizing is about replacing a Python loop with one big array operation, because the loop pays interpreter overhead per element while the matmul runs in optimized C or on the GPU — routinely 10 to 100 times faster. Cosine similarity is row-normalize both matrices then one matmul. Pairwise squared distance uses the expansion into norms plus a matmul rather than materializing every difference. Broadcasting with `[:, None]` and `[None, :]` is the general trick. The tradeoff is memory: the broadcast difference tensor for $N$ points in $D$ dimensions is $N^2 D$, so past a few thousand points you chunk it or you get an out-of-memory error.
+
 ---
 
 ## I. Production patterns
@@ -157,6 +173,8 @@ Use `[:, None]` and `[None, :]` to get pairwise computation without explicit loo
 
 **40. Why use gradient accumulation?**
 Effective batch size = micro_batch × accum_steps. Use when memory limits batch size.
+
+> **Saying it out loud.** These two are the standard answers to "my model doesn't fit." Mixed precision stores activations and does matmuls in BF16 or FP16, which roughly halves memory and lets you use tensor cores, while keeping a master copy of the weights in FP32 so tiny updates don't get rounded away. Gradient accumulation fakes a larger batch by summing gradients over several micro-batches before stepping, so effective batch equals micro-batch times accumulation steps. The tradeoff is time: accumulation buys batch size at a proportional cost in wall clock. FP16's named failure mode is gradient underflow, which is why you need loss scaling; BF16 has the range to avoid it and is the usual choice today.
 
 ---
 

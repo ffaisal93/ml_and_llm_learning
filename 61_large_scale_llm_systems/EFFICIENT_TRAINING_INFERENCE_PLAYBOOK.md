@@ -37,6 +37,8 @@ The art is: pick the technique that addresses the *current* bottleneck without c
 
 > **One-line summary.** Training scales by pipelining + sharding (4 axes: data, tensor, pipeline, expert); inference scales by KV cache + batching + quantization + speculative decoding.
 
+> **Saying it out loud.** The way I approach scaling is to ask what runs out first, because the answer is almost never "compute." Usually it's memory — and it's not the weights, it's the optimizer state during training and the KV cache during inference. Adam at FP32 costs you about 16 bytes per parameter all-in, so a 70B model needs roughly 1.1 terabytes just to hold training state, which is fourteen H100s before you've stored a single activation. So the real skill is picking the technique that fixes today's bottleneck without creating tomorrow's: sharding fixes memory but costs you network bandwidth, and at some point the network becomes the thing that runs out.
+
 ---
 
 ## 2. Memory Optimization
@@ -58,6 +60,8 @@ The art is: pick the technique that addresses the *current* bottleneck without c
 
 **Deep dive.** See `05_attention_mechanisms/ATTENTION_DEEP_DIVE.md`.
 
+> **Saying it out loud.** FlashAttention is a memory-movement trick, not a math trick — and that's the part people get wrong. The output is bit-for-bit the same attention you'd get otherwise; it does not reduce FLOPs and it doesn't approximate anything. What it does is stop writing the giant n-by-n attention matrix out to HBM: it walks Q, K and V in tiles that fit in on-chip SRAM, keeps a running max and a running sum so softmax can be done in one pass, and on the backward pass it recomputes the tile instead of reading it back. The reason that's a win is that HBM is roughly an order of magnitude slower than SRAM, so trading a little extra arithmetic for a lot less traffic buys you two to four times the wall-clock speed and turns memory from quadratic in sequence length into linear.
+
 ### 2.2 Multi-Query / Grouped-Query Attention (MQA/GQA)
 
 **Problem.** KV cache memory at inference scales with `num_heads × seq_len × d_head × num_layers`. For long context, the KV cache dominates.
@@ -72,6 +76,8 @@ The art is: pick the technique that addresses the *current* bottleneck without c
 
 **Deep dive.** `05_attention_mechanisms/ATTENTION_DEEP_DIVE.md`, `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`.
 
+> **Saying it out loud.** GQA exists because the KV cache, not the weights, is what fills your GPU at long context. Every query head having its own key and value head is redundant, so the fix is to let several query heads share one KV head — MQA takes that to the extreme with a single shared KV head, and GQA sits in the middle. In a 32-head model with 8 KV heads you cut the cache by 4x and basically nobody can measure the quality loss, which is why Llama 3 and Qwen 2.5 both ship it. MQA's the cautionary tale: it saves the most memory but it measurably degrades on hard reasoning tasks, so the tradeoff is cache size against head diversity, and 8 groups is where the industry settled.
+
 ### 2.3 Activation Checkpointing (Gradient Checkpointing)
 
 **Problem.** During backprop you need activations from the forward pass. Storing them all blows memory.
@@ -83,6 +89,8 @@ The art is: pick the technique that addresses the *current* bottleneck without c
 **Selective checkpointing.** Skip cheap-to-recompute layers (e.g., LayerNorm) and checkpoint only expensive ones (attention, MLP). Most modern frameworks do this automatically.
 
 **Hook.** "Save every √L layers; recompute the rest on backward."
+
+> **Saying it out loud.** Activation checkpointing is buying memory with compute, and the exchange rate is very good. During the forward pass you'd normally keep every intermediate tensor around because backprop needs them; instead you throw most of them away and keep only a checkpoint every so often, then recompute the missing ones on the way back. If you checkpoint every square-root-of-L layers you go from O(L) activation memory to O(sqrt(L)) — in practice something like a 70% memory cut — and it costs you roughly one extra forward pass, about 33% more compute. The refinement everyone uses now is selective: don't recompute LayerNorm, it's cheap to store and cheap to redo, so spend your checkpoints on the attention and MLP blocks where the tensors are actually big.
 
 ---
 
@@ -98,6 +106,8 @@ The art is: pick the technique that addresses the *current* bottleneck without c
 
 **Hook.** "Pack sequences end-to-end; use document mask to keep attention within boundaries."
 
+> **Saying it out loud.** Sequence packing is about not paying to multiply zeros. If your batch pads everything up to the longest sequence and your length distribution is skewed, most of the tokens in that batch are padding and the GPU is doing real arithmetic on them. So instead you concatenate short documents end to end into one full-length stream, and you carry a document mask — a block-diagonal attention mask — so token 500 in document two can't peek at document one. You get near 100% useful-token utilization, typically a 2 to 4x throughput win, and the failure mode if you skip the mask is subtle and nasty: the model quietly learns cross-document attention and your eval numbers drift without any obvious crash.
+
 ### 3.2 Efficient Transformer Variants (sub-quadratic attention)
 
 For very long context. The main families:
@@ -112,6 +122,8 @@ For very long context. The main families:
 **Hook ladder.** Sliding window → global tokens → low-rank projection → SSMs.
 
 **Deep dive.** `42_state_space_models/SSM_DEEP_DIVE.md`, `14_advanced_positional_embeddings/POSITIONAL_DEEP_DIVE.md`.
+
+> **Saying it out loud.** All the efficient-transformer variants are answering one question: which pairs of tokens can we afford *not* to compare? Sliding-window says only look at your neighbors, so cost goes from n-squared to n times window. Global tokens add a few hub tokens that everyone can reach, which restores long-range information cheaply, and low-rank methods like Linformer instead squash K and V down to a fixed size. State-space models like Mamba go furthest and drop attention for a recurrence that's genuinely linear in n. The honest tradeoff is that every one of these is an approximation of full attention, whereas FlashAttention is exact — so in practice the frontier mostly runs exact attention made fast, and reaches for sparsity only when context gets extreme.
 
 ---
 
@@ -142,6 +154,8 @@ Inference is where money lives in production. These techniques are the differenc
 
 **Deep dive.** `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`, `63_paged_attention_and_llm_serving/`.
 
+> **Saying it out loud.** The KV cache turns decoding from quadratic into linear, and then immediately becomes your biggest memory problem. Without it, generating token 1000 means re-running attention over all 999 previous tokens from scratch; with it, you keep every past key and value around, compute one new K and V, and attend against the stored cache. The catch is the arithmetic: for Llama-70B with GQA-8 at 8K context that's roughly 320 KB per token, about 2.7 GB per concurrent request, so at long context the cache dominates the weights. That's why every serving optimization — GQA, cache quantization, PagedAttention, eviction — is really the same fight over that one number, and the failure mode is always the same: you run out of KV space and your max batch size collapses, which kills throughput.
+
 ### 4.2 Stateful / Prefix Caching
 
 **Problem.** Multi-turn conversations re-process the entire context every turn. The system prompt + chat history is identical across many requests.
@@ -153,6 +167,8 @@ Inference is where money lives in production. These techniques are the differenc
 **Win.** Often 5-10× speedup on chat workloads where system prompts are 1k+ tokens.
 
 **Hook.** "Hash prefixes; tree cache; LRU evict."
+
+> **Saying it out loud.** Prefix caching is just noticing that in a chat product, almost every request starts with the same thousand tokens. The system prompt is identical, and in a multi-turn conversation the whole history up to the new message is identical to last turn — so recomputing it is pure waste. You hash the prefix, store the KV in a tree keyed by that hash, and on a new request you find the longest matching prefix, load its KV, and only prefill from the point where the conversation diverges. On chat workloads with long system prompts that's routinely a 5 to 10x cut in time-to-first-token, and the tradeoff is that cache memory competes with batch capacity, so you're managing it with LRU eviction and it only pays when prefixes actually repeat.
 
 ### 4.3 Speculative Decoding
 
@@ -171,6 +187,8 @@ Inference is where money lives in production. These techniques are the differenc
 **Hook.** "Draft generates K, target verifies in one pass, accept longest correct prefix."
 
 **Deep dive.** `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`.
+
+> **Saying it out loud.** Speculative decoding works because decode is memory-bandwidth-bound, not compute-bound — at batch one you're doing about one FLOP per byte you read, so the GPU's math units are almost idle while you drag the whole weight matrix through HBM for a single token. So you get the extra tokens basically for free: a small draft model proposes four or five, and the big model scores all of them in one forward pass that reads the weights exactly once. You keep the longest prefix where the target model agrees with the draft, and with an acceptance rate around 0.7 and K equal to 4 you get roughly 2.5x. It's also exactly output-equivalent to normal sampling if you do the rejection step properly — the tradeoff is draft-model memory and the fact that the win shrinks as you batch harder, because large batches are already using the bandwidth well.
 
 ### 4.4 Quantization
 
@@ -196,6 +214,8 @@ Inference is where money lives in production. These techniques are the differenc
 
 **Hook.** "PTQ = quantize after; QAT = simulate during; STE = gradient as identity within range."
 
+> **Saying it out loud.** Quantization helps inference mainly because it's a bandwidth fix, not a math fix — decode is bound by how many bytes of weights you pull per token, so halving the bytes roughly halves the time. The main split is post-training quantization, where you just squeeze a trained model and INT8 is essentially free while INT4 needs care, versus quantization-aware training, where you simulate the rounding during training and push the gradient straight through the quantizer. The thing that actually breaks INT4 is outliers: a handful of activation channels with huge magnitudes blow up the scale factor and wreck everything else, which is what SmoothQuant, AWQ and per-group scales all exist to fix. The tradeoff worth naming is that weights quantize much more happily than activations, which is why the common production recipe is INT4 weights with BF16 activations rather than going low on both.
+
 **Deep dive.** `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`.
 
 ---
@@ -217,7 +237,11 @@ The four axes of parallelism: **Data, Tensor, Pipeline, Expert**. Real frontier 
 
 **Hook.** "BF16 forward/backward, FP32 master weights, FP32 optimizer state."
 
+> **Saying it out loud.** The whole mixed-precision story is about exponent range, not precision. FP16 has only five exponent bits, so small gradients underflow straight to zero and your run silently stops learning — that's why FP16 needs loss scaling, where you multiply the loss by something like 2^16 before backward and divide it out before the step. BF16 has the same eight exponent bits as FP32 and just fewer mantissa bits, so it covers the same dynamic range and needs no loss scaling at all, which is why it's the default now. You still keep an FP32 master copy of the weights and FP32 optimizer state, because tiny updates added to a BF16 weight round away to nothing and your model stops moving — the tradeoff is 4 extra bytes per parameter for the master copy, which is cheap next to a divergent run.
+
 ### 5.2 Data Parallelism
+
+**In plain language.** Data parallelism means every GPU has the whole model and they just split up the training examples, then average their gradients so all copies stay identical. The problem is that "identical copy" wastes an enormous amount of memory, most of it the optimizer's bookkeeping rather than the weights themselves. ZeRO is the family of fixes that says: if all N copies are the same, let each GPU own only 1/N of it and fetch the rest when needed.
 
 **DataParallel (legacy).** Single process, multiple threads (Python GIL contention!). Replicate model on every GPU; split batch; average gradients via NCCL. Use **DDP** instead.
 
@@ -236,9 +260,13 @@ The four axes of parallelism: **Data, Tensor, Pipeline, Expert**. Real frontier 
 
 **Hook.** "ZeRO-1 = optimizer state shards; ZeRO-2 + gradient shards; ZeRO-3 + param shards = FSDP."
 
+> **Saying it out loud.** Plain data parallelism wastes memory by keeping a full identical copy of everything on every GPU, and the biggest copy isn't the weights — it's Adam's optimizer state, about 12 bytes per parameter once you count FP32 momentum, variance and master weights. ZeRO's insight is that if every GPU holds an identical copy, only one of them needs to. Stage 1 shards the optimizer state and gives you roughly 4x memory back for no extra communication, which is why it's always worth turning on. Stage 2 also shards gradients for about 8x, still free comm-wise; stage 3 shards the parameters too, which scales with your data-parallel degree but costs about 50% more communication because you now have to all-gather weights before every layer's forward and again on backward. FSDP is PyTorch's stage 3, and the tradeoff is exactly that: memory that scales with GPU count, paid for in network traffic.
+
 **Deep dive.** `61_large_scale_llm_systems/`, `62_frontier_training_playbook/`.
 
 ### 5.3 Pipeline Parallelism
+
+**In plain language.** Pipeline parallelism cuts the model horizontally: GPU 0 gets the first ten layers, GPU 1 the next ten, and so on, like stations on an assembly line. The obvious problem is that an assembly line with one item on it has everybody but one station standing around — that idle time is called the bubble, and every idea below is a different way of keeping more stations busy at once.
 
 **Naive model parallel.** Split model across layers, one chunk per GPU. Problem: only one GPU works at a time → bubble.
 
@@ -260,9 +288,13 @@ The four axes of parallelism: **Data, Tensor, Pipeline, Expert**. Real frontier 
 
 **Hook ladder.** Naive → GPipe (bubble) → 1F1B → PipeDream-flush → ZB-H1/H2 → DualPipe.
 
+> **Saying it out loud.** Pipeline parallelism splits the model by layer across GPUs, and the whole subject is one problem: the bubble. If you just hand a batch down the line, GPU 3 sits idle while GPU 0 works, so most of your cluster does nothing. GPipe fixes that by chopping the batch into micro-batches so the stages stagger — the bubble fraction becomes d minus 1 over m plus d minus 1, so with 4 stages and 32 micro-batches you're down to about 9% idle. 1F1B interleaves a backward after each forward so activations get freed sooner, which is a memory win, and Zero Bubble goes further by noticing the backward pass has two halves: the input gradient has to happen in order, but the weight gradient can be deferred and used to plug the remaining gaps. The tradeoff throughout is micro-batches versus memory and version consistency — more micro-batches means less bubble, but PipeDream-style schedules can end up computing gradients against stale weights, which is why weight stashing exists.
+
 **Deep dive.** `61_large_scale_llm_systems/`, `62_frontier_training_playbook/`.
 
 ### 5.4 Tensor Parallelism
+
+**In plain language.** Tensor parallelism cuts the model vertically: instead of giving each GPU different layers, you give every GPU a slice of *the same* layer's weight matrix, and they cooperate on each matrix multiply. The two ways to slice a matrix — by columns or by rows — determine what kind of message the GPUs have to exchange at the end, and the whole design game is arranging the slices so those messages are as few and as small as possible.
 
 **Idea.** Split a single matrix multiply across devices.
 
@@ -283,9 +315,13 @@ The four axes of parallelism: **Data, Tensor, Pipeline, Expert**. Real frontier 
 
 **Hook.** "Column → all-gather; Row → all-reduce. Megatron does column + row in pairs to minimize all-reduces."
 
+> **Saying it out loud.** Tensor parallelism splits a single matrix multiply across GPUs, so no one GPU ever holds the whole layer. There are two ways to cut a weight matrix: split it by columns, and each GPU produces part of the output, so you finish with an all-gather; or split it by rows, and each GPU produces a partial sum of the whole output, so you finish with an all-reduce. Megatron's trick is to chain them — column-split the first MLP matrix, row-split the second — so the intermediate never needs to be gathered and you only pay one all-reduce per MLP and one per attention block, and you pay it after the nonlinearity where the tensor is smallest. The hard limit is bandwidth: those all-reduces happen twice per layer, on the critical path, so TP basically has to stay inside one NVLink node, which is why you almost always see TP equal to 8 and never TP across the datacenter.
+
 **Deep dive.** `61_large_scale_llm_systems/`, `04_transformers/TRANSFORMERS_DEEP_DIVE.md`.
 
 ### 5.5 Context Parallelism (a.k.a. Sequence Parallelism, Ring Attention)
+
+**In plain language.** Here you split the *sequence* — GPU 0 gets tokens 1 through 8,000, GPU 1 gets 8,001 through 16,000 — which is what you need when a single example is too long to fit anywhere. Note the name collision: Megatron's "sequence parallelism" in §5.4 is a small memory optimization on LayerNorm and dropout, while context parallelism here genuinely shards the tokens across GPUs and needs the KV ring to make attention work.
 
 **Idea.** Split the *sequence* dimension across GPUs. Each GPU handles a chunk of tokens. For attention, each GPU's queries need keys/values from the full sequence — solved via **Ring Attention**: KV chunks circulate through GPUs in a ring, each GPU does a partial attention update each step.
 
@@ -298,7 +334,11 @@ The four axes of parallelism: **Data, Tensor, Pipeline, Expert**. Real frontier 
 
 **Hook.** "Sequence shards across GPUs; KV ring-circulates for full attention."
 
+> **Saying it out loud.** Context parallelism is what you reach for when the sequence itself is the thing that doesn't fit. You give each GPU a slice of the tokens rather than a slice of the weights, which works fine for the MLP because it's per-token, but attention is the problem: my queries need everybody's keys and values. Ring Attention solves it by passing KV blocks around a ring of GPUs — each step you attend against whichever block you're holding and accumulate with online softmax, so after N steps you've seen the whole sequence without any GPU ever storing it. That's how you get to hundred-thousand or million-token context, and the tradeoff is that you're now overlapping a ring of communication with compute, so if your interconnect is slower than your math the ring stalls and the whole thing degrades to a very expensive way to do attention.
+
 ### 5.6 Expert Parallelism (MoE)
+
+**In plain language.** A Mixture of Experts replaces one feed-forward block with many, plus a little router that sends each token to only a couple of them. Because most experts sit idle for any given token, you can own far more parameters than you pay to compute — but since the experts live on different GPUs, tokens have to be physically shipped to wherever their expert is and shipped back afterwards.
 
 **Idea.** Replace dense FFN with a set of experts (e.g., 8 or 64 small FFNs). A gating function routes each token to **top-K experts** (K=1 in Switch Transformer, K=2 in GShard). Only K experts run per token → constant compute even as expert count grows.
 
@@ -326,6 +366,8 @@ The four axes of parallelism: **Data, Tensor, Pipeline, Expert**. Real frontier 
 
 **Deep dive.** `41_mixture_of_experts/MOE_DEEP_DIVE.md`.
 
+> **Saying it out loud.** A Mixture of Experts lets you grow parameters without growing compute per token. Instead of one big feed-forward block, you have many, and a small router sends each token to just the top one or two — DeepSeek-V3 has 671 billion parameters but only activates about 37 billion for any given token. The catch is routing is a popularity contest: left alone, a few experts get swamped while others starve, so you either add an auxiliary load-balancing loss, or do what DeepSeek-V3 does and nudge a per-expert bias up and down with no extra loss term. And the systems cost is real — every layer needs two all-to-all collectives to ship tokens to their experts and results back, and all-to-all is the worst-scaling collective across nodes, so on MoE models the network, not the GPU, is usually the bottleneck.
+
 ### 5.7 The full parallelism stack — putting it together
 
 Modern frontier training combines all four axes. **3D parallelism** = data + tensor + pipeline. **4D** adds expert. Typical 70B-1T training config:
@@ -337,6 +379,8 @@ Modern frontier training combines all four axes. **3D parallelism** = data + ten
 - **FSDP / ZeRO-1** layered on DP for sharded optimizer state.
 
 **Communication cost analysis.** TP all-reduces happen most frequently → highest BW link. PP point-to-point activations are smaller and rarer → lower BW link. DP all-reduce of gradients is once per step → can use slower link. Engineers map these to NVLink (TP), NVSwitch (TP/PP), InfiniBand (DP across nodes).
+
+> **Saying it out loud.** The way to think about combining parallelism axes is to match each one's communication appetite to the fastest link that can feed it. Tensor parallelism talks twice per layer, so it goes inside a node on NVLink — typically TP of 8. Pipeline parallelism only ships activations at stage boundaries, which is small and rare, so it can cross nodes. Data parallelism syncs gradients once per optimizer step, big message but infrequent, so it goes outermost over InfiniBand, usually with ZeRO-1 layered on to shard the optimizer state. Expert parallelism sits on top for MoE. A realistic 70B-to-1T config is TP 8, PP 4 to 16, DP anywhere from 16 to 256 — and the failure mode when you get the mapping wrong is that MFU falls off a cliff, because you've put an every-layer all-reduce on a link that was meant for once-per-step traffic.
 
 ---
 
@@ -362,6 +406,8 @@ Memorize these — every distributed-training interview asks about at least one.
 **NCCL.** NVIDIA's library implementing all these on GPUs with NVLink/InfiniBand awareness. The default backend.
 
 **Hook.** "All-Reduce = Reduce-Scatter + All-Gather; Ring All-Reduce is `2(N-1)X/N` per GPU."
+
+> **Saying it out loud.** There are only about eight collectives and you can derive most of them from two questions: who ends up with data, and is there a reduction on the way. The one that matters most is all-reduce, because that's how gradients get averaged in data parallelism, and the key fact is that it decomposes into a reduce-scatter followed by an all-gather. That decomposition is what makes Ring All-Reduce work: each GPU only ever talks to its two neighbors, and the total data each GPU moves is 2 times N minus 1 over N, times the model size — which converges to about 2X and is *independent of the number of GPUs*. That's the whole reason DDP scales to thousands of GPUs instead of choking, and the one to remember on the other side is all-to-all, the MoE routing primitive, which does not have that property and is why expert parallelism hurts across nodes.
 
 ---
 
@@ -412,6 +458,8 @@ The interview question: *"Walk me through how you'd train a 70B model from scrat
 - Tensor parallel across 4-8 GPUs for serving.
 
 That's the full senior answer.
+
+> **Saying it out loud.** If someone asks me to design a 70B training run, I'd structure it as hardware, parallelism, numerics, memory, reliability. Say 64 to 512 H100s — 80 gigs of HBM3 each at 3.35 terabytes a second — with NVLink inside the node and InfiniBand between nodes. Parallelism follows the interconnect: TP 8 inside the node, PP 4 across nodes, FSDP or ZeRO for everything else. Numerics are BF16 forward and backward with FP32 master weights and FlashAttention for the attention kernels, plus activation checkpointing and sequence packing to keep activation memory sane. And then the part that separates people who've actually done it: reliability. At 500 GPUs something fails constantly, so you checkpoint asynchronously every 30 minutes or so, watch for loss spikes, and auto-restart from the last good checkpoint — because the metric you're actually judged on is MFU over the whole run, and a run that dies at hour 200 with no checkpoint has an MFU of zero.
 
 ---
 
@@ -491,6 +539,8 @@ For each topic, three answer lengths.
 13. PagedAttention — what does it solve?
 14. What's KV cache quantization and how aggressive can you go?
 
+> **Saying it out loud (Q1–14, memory).** The through-line for this whole block is: attention is quadratic in memory only if you're naive about it, and the KV cache is what actually fills the GPU. FlashAttention makes attention linear in memory *without* changing the math — it tiles into SRAM and never writes the n-by-n matrix — so the honest answer to "how do you fix quadratic attention" is "you don't reduce the FLOPs, you reduce the HBM traffic." Then on the cache side, the three levers are share the heads (GQA or MLA), shrink the bytes (4-bit KV quantization), and stop wasting the space you have (PagedAttention). Concretely, a 70B model with GQA-8 at 8K context is around 2.7 GB of cache per request, which is the number to have ready when someone asks why the cache beats the weights.
+
 ### Compute (Q15–22)
 
 15. Why does sequence packing improve throughput?
@@ -501,6 +551,8 @@ For each topic, three answer lengths.
 20. Prefill vs decode — which is bandwidth-bound?
 21. Why does continuous batching help?
 22. What's chunked prefill?
+
+> **Saying it out loud (Q15–22, compute).** The one thing an interviewer is really checking here is whether you know prefill and decode are completely different regimes. Prefill processes the whole prompt at once, so it's a big matmul and it's compute-bound; decode does one token at a time, drags every weight out of HBM for a single token, and is memory-bandwidth-bound — arithmetic intensity of about 1 FLOP per byte at batch one, against a machine that wants around 295 on an H100 in BF16. That gap is why batching helps decode so much and barely helps prefill, and why chunked prefill exists: you slice a long prompt into pieces and interleave them with decode steps, so the bandwidth-starved decodes ride along with the compute-heavy prefill. Sequence packing is the training-side version of the same instinct — don't let the hardware do arithmetic on padding.
 
 ### Inference (Q23–34)
 
@@ -517,12 +569,16 @@ For each topic, three answer lengths.
 33. What's NF4?
 34. FP8 vs FP16 vs BF16 — which for what?
 
+> **Saying it out loud (Q23–34, inference).** Every technique in this block is attacking the same fact: decode is bandwidth-bound, so the currency is bytes moved per token. KV caching stops you re-reading history, prefix caching stops you re-reading the system prompt across requests, speculative decoding gets several tokens out of one pass through the weights, and quantization simply makes the weights smaller. If I had to give one number, it's speculative decoding at roughly 2.5x with 70% acceptance and 4 draft tokens. The framing that scores is that these compose but they also compete for the same GPU memory — a draft model and a big prefix cache both eat space that would otherwise raise your batch size, and batch size is the other thing that fixes bandwidth-bound decode.
+
 ### Training — mixed precision (Q35–38)
 
 35. BF16 vs FP16 — what's different and why does it matter for training stability?
 36. What's loss scaling and when do you need it?
 37. What are master weights?
 38. Where in the training loop do you keep FP32?
+
+> **Saying it out loud (Q35–38, mixed precision).** The short version: BF16 everywhere in the forward and backward, FP32 for the master weights and the optimizer moments. BF16 wins over FP16 not because it's more accurate — it's less accurate, only 7 mantissa bits — but because it keeps FP32's 8 exponent bits, so gradients don't underflow and you can skip loss scaling entirely. You keep FP32 master weights because a typical update is many orders of magnitude smaller than the weight it's added to, and in BF16 that addition just rounds away to nothing, so the model silently stops learning. That's the failure mode to name: not a crash, a plateau.
 
 ### Training — data parallelism (Q39–46)
 
@@ -535,6 +591,8 @@ For each topic, three answer lengths.
 45. What's FSDP?
 46. Why does ZeRO-3 cost +50% comm?
 
+> **Saying it out loud (Q39–46, data parallelism).** The core of this block is that DDP is memory-wasteful and Ring All-Reduce is bandwidth-optimal. Old DataParallel used one process with threads and died on the Python GIL; DDP gives every GPU its own process and syncs gradients with a ring, where each GPU moves about 2 times the model size regardless of how many GPUs there are — that constant is why it scales to thousands. Then ZeRO removes the duplication: stage 1 shards optimizer state for about 4x memory at zero extra comm, stage 2 adds gradients for 8x, stage 3 adds parameters and scales with GPU count but costs roughly 50% more traffic because weights must be gathered before every forward and again on backward. So the answer to "which stage" is: 1 always, 3 only when you genuinely can't fit — you're trading memory for network.
+
 ### Training — pipeline parallelism (Q47–52)
 
 47. What's the GPipe bubble formula?
@@ -544,6 +602,8 @@ For each topic, three answer lengths.
 51. What does DualPipe do differently?
 52. Why does Llama 3 reduce one transformer layer from first and last stages?
 
+> **Saying it out loud (Q47–52, pipeline parallelism).** Everything in this block reduces to the bubble and how to fill it. GPipe's formula — d minus 1 over m plus d minus 1 — is the one to have memorized, and the intuition is that you need many more micro-batches than stages before the pipeline is mostly busy. 1F1B doesn't change the bubble size, it changes the memory: doing a backward as soon as you can frees activations earlier. Zero Bubble splits the backward into the input-gradient part, which is order-dependent, and the weight-gradient part, which isn't, and uses the latter as filler. And the Llama 3 detail is really about balance, not bubbles — the first stage also carries the embedding and the last also carries the output projection and loss, so you drop a transformer layer from each end to even out the per-stage time, because a pipeline runs at the speed of its slowest stage.
+
 ### Training — tensor parallelism (Q53–58)
 
 53. Column-wise vs row-wise tensor parallelism — communication primitive each ends with?
@@ -552,6 +612,8 @@ For each topic, three answer lengths.
 56. What's sequence parallelism and how does it extend TP?
 57. What's Ring Attention?
 58. Compare context parallelism vs tensor parallelism.
+
+> **Saying it out loud (Q53–58, tensor parallelism).** The two-line version: column-parallel ends in an all-gather, row-parallel ends in an all-reduce, and Megatron pairs them so a transformer block only needs two all-reduces total. The reason to care is placement — those all-reduces are on the critical path twice per layer, so TP is pinned inside a single NVLink node, typically 8-way, and pushing it across InfiniBand tanks your throughput. Sequence parallelism is the cheap add-on: the LayerNorm and dropout between the TP regions weren't being split at all, so you split them along the sequence dimension and recover that activation memory for a couple of extra collectives. Context parallelism is a different animal — it splits tokens rather than weights and uses a ring of KV passing — so the clean contrast is: TP shrinks the model per GPU, CP shrinks the sequence per GPU.
 
 ### Training — MoE (Q59–66)
 
@@ -564,12 +626,16 @@ For each topic, three answer lengths.
 65. What's capacity factor and priority dropping?
 66. What's All-to-All comm and why is it the MoE bottleneck?
 
+> **Saying it out loud (Q59–66, MoE).** MoE buys you parameters without buying compute — top-K routing means a 671B model like DeepSeek-V3 only activates about 37B per token. Top-1 is cheapest and top-2 is the usual compromise because averaging two experts gives the router a smoother gradient. Everything hard about MoE is load balance: routing is winner-take-all by nature, so without intervention a few experts get every token, hit the capacity factor, and the overflow tokens get dropped — that's the failure mode, silently dropped tokens. The fixes are an auxiliary balance loss, expert-choice routing where experts pick tokens instead, or DeepSeek-V3's bias-nudging with no extra loss. And the systems cost is the all-to-all twice per layer, which is the collective that scales worst across nodes.
+
 ### Communication primitives (Q67–70)
 
 67. List 8 standard collective primitives.
 68. What's the All-Reduce = Reduce-Scatter + All-Gather identity?
 69. Why does Ring All-Reduce scale to thousands of GPUs?
 70. What's NCCL?
+
+> **Saying it out loud (Q67–70, collectives).** I'd answer this by organizing the eight primitives on two axes: does data end up on one rank or all ranks, and is it reduced along the way. Broadcast and scatter are one-to-many, gather and reduce are many-to-one, and all-gather, reduce-scatter, all-reduce and all-to-all are many-to-many. The load-bearing identity is that all-reduce equals a reduce-scatter followed by an all-gather, which is exactly how Ring All-Reduce is implemented: two phases of N minus 1 steps, and 2 times N minus 1 over N times the model size moved per GPU — call it 2X, constant in N. NCCL is NVIDIA's implementation that picks rings or trees based on whether you're on NVLink or InfiniBand, and the practical failure mode to mention is that a single rank missing a collective doesn't error, it hangs the whole job until the NCCL timeout fires.
 
 ---
 

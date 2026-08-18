@@ -57,6 +57,8 @@ Used in cross-entropy loss to combine softmax + log without overflow.
 - Quick to write but easy to get wrong.
 - Gateway to harder questions (FlashAttention works on this principle at scale).
 
+> **Saying it out loud.** The trick is one line: subtract the largest logit before you exponentiate. It doesn't change the answer at all, because that constant cancels top and bottom, but it means every exponent you actually compute is zero or negative, so the biggest thing you ever hand to `exp` is 1. Without it, a logit around 1000 overflows to infinity and the whole row comes back NaN. So the named failure mode is overflow-to-NaN in the forward pass — and the same trick, done blockwise, is exactly what makes FlashAttention's online softmax possible.
+
 ---
 
 ## 2. Cross-entropy loss
@@ -78,6 +80,8 @@ def cross_entropy(logits, labels):
 
 ### Common interview gotcha
 Don't write `softmax → log → loss`. Combine into log-softmax. PyTorch's `nn.CrossEntropyLoss` takes raw logits for this reason.
+
+> **Saying it out loud.** Cross-entropy on logits is just the negative log-probability of the correct class, and the clean way to write it is minus the true logit plus log-sum-exp over all of them. I'd never compute softmax and then take a log — that's two chances to lose precision, and if a probability underflows to zero the log is minus infinity. Fold them into log-softmax and it's one stable pass. That's exactly why PyTorch's `nn.CrossEntropyLoss` wants raw logits: handing it softmax output is the classic double-softmax bug that quietly flattens your gradients.
 
 ---
 
@@ -138,6 +142,8 @@ def multi_head_attention(x, W_q, W_k, W_v, W_o, n_heads):
 - Mask: $-\infty$ before softmax, NOT 0 multiply after.
 - Multi-head reshape order matters.
 
+> **Saying it out loud.** Attention is a soft dictionary lookup. Every query dots against every key to get a score, you divide by the square root of the head dimension, softmax those scores into weights, and return that weighted average of the values. The scaling matters because dot products of $d$-dimensional vectors grow like $\sqrt{d}$, and without it the softmax saturates and the gradients vanish. Masking is additive — set forbidden scores to $-\infty$ *before* the softmax rather than multiplying by zero after, or the weights never renormalize. Multi-head is just that computation run in parallel on $H$ slices of size $d_{\text{model}}/H$; the failure mode there is a reshape that interleaves heads with positions, which trains silently and badly.
+
 ---
 
 ## 4. Sampling techniques
@@ -189,6 +195,8 @@ def top_p_sample(logits, p):
 - Top-p with $p=1$ should equal full sampling.
 - Nucleus selects the *smallest* set summing to ≥ $p$, not exactly $p$.
 
+> **Saying it out loud.** All of these are just ways of reshaping the distribution before you draw from it. Temperature divides the logits — below 1 sharpens toward greedy, above 1 flattens toward uniform. Top-k keeps a fixed number of candidates; top-p keeps the smallest set whose probabilities sum to at least $p$, and that's the real difference: top-k is blind to how peaked the distribution is, while top-p adapts, taking one token when the model is confident and fifty when it isn't. The tradeoff is diversity versus coherence, and the classic failure is a large k on an already-peaked distribution, which lets tail garbage in.
+
 ---
 
 ## 5. Beam search
@@ -234,6 +242,8 @@ score / (len(seq) ** alpha)
 ### Why beam search loses to sampling for LLMs
 Beam search produces deterministic, repetitive, low-entropy outputs. Sampling (top-p, temperature) is the modern default for open-ended generation.
 
+> **Saying it out loud.** Beam search keeps the $B$ best partial sequences instead of just one, expands each by a step, then prunes back to $B$ — greedy search with a wider frontier. You need length normalization because every extra token adds another negative log-probability, so without dividing by length to the power $\alpha$, about 0.6 in practice, the search always prefers to stop early. The tradeoff is that a bigger beam buys higher likelihood but not better text. That's the named failure mode for open-ended generation: the highest-probability output is bland and repetitive, which is why modern LLMs sample with top-p instead.
+
 ---
 
 ## 6. K-means update
@@ -270,6 +280,8 @@ def kmeans(X, k, max_iter=100):
 - Wrong axis in norm (should be over feature dim).
 - K-means++ initialization is better than uniform random.
 
+> **Saying it out loud.** K-means alternates two steps until nothing moves: assign every point to its nearest centroid, then move each centroid to the mean of the points it just got. It's coordinate descent on within-cluster squared distance, so it always converges — but only to a local optimum, which is why initialization matters and why K-means++, spreading the initial seeds apart, is the standard fix. The bug I'd call out while coding is the empty cluster: no assigned points means a divide-by-zero mean and NaN centroids, so you re-seed from a random point. And it assumes roughly spherical, similarly sized clusters; elongated ones it will happily cut in half.
+
 ---
 
 ## 7. Padding and batching
@@ -300,6 +312,8 @@ def combined_mask(L, padding_mask):
     return causal & padding_mask[:, None, :]  # [B, L, L]
 ```
 
+> **Saying it out loud.** You pad because matmuls need rectangles, and then you mask because those pad tokens are fake and must not influence anything. Two different masks get combined: the causal mask, which stops position $i$ from seeing the future, and the padding mask, which stops anything from attending to filler — you AND them together. Forget the padding mask and the pad positions still receive attention weight, so a sentence's representation depends on who else is in its batch. The failure mode is nondeterministic eval metrics. Practical tradeoff: bucketing similar lengths together cuts a lot of waste, since a batch padded to its longest sequence can easily be half padding.
+
 ---
 
 ## 8. Vectorized cosine similarity
@@ -318,6 +332,8 @@ def cosine_sim_matrix(Q, K, eps=1e-8):
 - Normalize each vector independently (not the whole matrix).
 - Handle zero vectors (avoid division by zero).
 - For sparse vectors, use scipy.sparse to avoid materializing.
+
+> **Saying it out loud.** Cosine similarity is just a dot product after making every vector unit length, so it measures angle and ignores magnitude. Batched, that's normalize the rows of both matrices once, then a single matmul gives you the whole similarity matrix — much faster than looping. Two things to get right: normalize each row independently, not the matrix as a whole, and add an epsilon in the denominator so a zero vector doesn't produce NaN. The tradeoff against a raw dot product is that cosine throws away the norm, which in embeddings often encodes confidence or frequency — usually what you want for retrieval, often not what you want when popularity is signal.
 
 ---
 
@@ -348,6 +364,8 @@ def logistic_regression(X, y, lr=0.01, n_iter=1000):
 - Sigmoid overflow for large negative inputs (clip).
 - Regularization: add $\lambda w$ to gradient for $\ell_2$.
 - Multi-class: use softmax + cross-entropy instead.
+
+> **Saying it out loud.** Logistic regression puts a sigmoid on a linear score and trains it with log loss, and the nice part is the gradient: it's just $X^\top(p - y)/n$, the same shape of expression you get from linear regression with squared error. The loss is convex, so gradient descent finds the global optimum — there's no local-minimum story here. The failure mode worth naming is perfectly separable data: the weights run off to infinity chasing ever-more-confident predictions, which is exactly what $\ell_2$ regularization exists to stop. Numerically, guard the sigmoid, because `exp` of a large positive argument overflows.
 
 ---
 
@@ -385,6 +403,8 @@ def backward(X, y, z1, h1, z2, W2):
 - ReLU derivative: 1 where $z > 0$, else 0.
 - Batch dimension: divide by $n$ for mean loss; sum biases over batch.
 
+> **Saying it out loud.** Backprop is the chain rule applied in reverse order, reusing everything you cached on the way forward. You start at the loss and hand each layer the gradient with respect to its output; the layer turns that into a gradient for its own weights and one to pass further back. The one simplification worth memorizing is that softmax plus cross-entropy collapses to $p - y$ — all the messy Jacobian terms cancel, which is another reason you fuse them. ReLU's derivative is just the mask of where the pre-activation was positive. The classic bug is forgetting to divide by batch size, so your effective learning rate scales with $n$ and training blows up the moment you raise the batch.
+
 ---
 
 ## 11. Common interview gotchas
@@ -399,6 +419,8 @@ def backward(X, y, z1, h1, z2, W2):
 | Cosine similarity normalize what? | Whole matrix | Each row independently |
 | K-means empty cluster? | Just ignore | Re-initialize from a random point or mean |
 
+> **Saying it out loud.** If I compress this table into one habit: in ML coding rounds the wrong answers are almost never about algorithms, they're about numerics and axes. Subtract the max before exponentiating, add $-\infty$ instead of multiplying by zero, normalize per row rather than per matrix, and handle the degenerate case — the empty cluster, the zero vector, the length-one sequence. Say the gotcha out loud as you write the line, because interviewers score the awareness at least as much as the fix. The single most common one is feeding softmax outputs into a loss that already applies log-softmax internally.
+
 ---
 
 ## 12. Eight most-asked coding questions
@@ -411,6 +433,8 @@ def backward(X, y, z1, h1, z2, W2):
 6. **Implement backprop for a 2-layer MLP.** (Chain rule; cross-entropy + softmax simplification.)
 7. **Implement beam search.** (Top-$B$ hypotheses; length normalization.)
 8. **Implement batched cosine similarity.** (Per-row normalize; matmul.)
+
+> **Saying it out loud.** These eight cover most of what actually gets asked, and they share a skeleton: get the shapes right, get the reduction axis right, then say the stability caveat aloud. When I get one, I narrate the plan first — inputs and shapes, then the three or four real lines, then the edge case — because five silent minutes reads as stuck even when the code is fine. Budget is roughly ten minutes each, and I'd rather ship a correct loop and mention the vectorized version than half-finish clever broadcasting. The tradeoff to state explicitly is readability versus speed: interviewers accept a slow correct answer, never a fast wrong one.
 
 ---
 
