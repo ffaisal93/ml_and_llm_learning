@@ -2,6 +2,8 @@
 
 ## Q1: Explain entropy. What does it measure?
 
+**In plain terms.** Entropy is a single number for "how unpredictable is this?" Zero means you already know the answer; the maximum means every outcome is equally likely. Everything below is just that idea written as a formula and applied to coins.
+
 **Answer:**
 
 **Entropy** measures the uncertainty or randomness in a probability distribution.
@@ -41,6 +43,8 @@ H(X) = -Σ p(x) * log₂(p(x))
 - **Compression**: Entropy is lower bound on average code length
 - **Feature selection**: Features with high entropy are more informative
 
+> **Saying it out loud.** Entropy is average surprise. A fair coin gives you exactly one bit, because you genuinely don't know and one yes-or-no answer settles it. A coin that lands heads ninety percent of the time gives you only about 0.47 bits, because you'd guess heads and mostly be right — there's less to learn. And a two-headed coin gives you zero, because there's no news in the outcome at all. The reason this matters practically is that entropy is the floor on compression — Shannon proved you can't encode a source in fewer bits than its entropy — and it's the split criterion in decision trees, where information gain is just the entropy you removed.
+
 ---
 
 ## Q2: What is cross-entropy? Why is it used as a loss function?
@@ -61,10 +65,10 @@ Where:
 **Why it's a good loss function:**
 
 **1. Penalizes confident wrong predictions:**
-- If true class is A (p=1.0) but model predicts B with high confidence (q=0.9)
-- Loss = -log(0.9) ≈ 0.15 (small penalty)
-- But if model predicts A with low confidence (q=0.1)
-- Loss = -log(0.1) ≈ 3.32 (large penalty)
+- If true class is A (p=1.0) and the model assigns A high probability (q=0.9)
+- Loss = -log₂(0.9) ≈ 0.15 bits (small penalty)
+- But if the model assigns A low probability (q=0.1), i.e. it confidently predicted some other class
+- Loss = -log₂(0.1) ≈ 3.32 bits (large penalty)
 - **Encourages calibrated probabilities**
 
 **2. Mathematically well-founded:**
@@ -84,8 +88,8 @@ Where:
 ```
 True distribution: [1.0, 0.0, 0.0]  (class 0)
 Perfect prediction: [1.0, 0.0, 0.0] → Cross-entropy = 0
-Good prediction: [0.8, 0.1, 0.1] → Cross-entropy ≈ 0.22
-Bad prediction: [0.1, 0.8, 0.1] → Cross-entropy ≈ 3.32
+Good prediction: [0.8, 0.1, 0.1] → Cross-entropy ≈ 0.32 bits
+Bad prediction: [0.1, 0.8, 0.1] → Cross-entropy ≈ 3.32 bits
 ```
 
 **Use Cases:**
@@ -93,9 +97,13 @@ Bad prediction: [0.1, 0.8, 0.1] → Cross-entropy ≈ 3.32
 - **Language modeling**: Next token prediction
 - **Any probabilistic prediction**: When comparing true vs predicted distributions
 
+> **Saying it out loud.** Cross-entropy asks "how surprised was the model by the right answer?" and makes that the loss. If the model gave the true class ninety percent, the penalty is tiny; if it gave the true class ten percent, the penalty is more than twenty times bigger, because the log blows up as the probability goes to zero. That asymmetric punishment is exactly what you want — it makes confident mistakes expensive and pushes toward honest, calibrated probabilities. It's also not an arbitrary choice: minimizing cross-entropy is maximum likelihood under a categorical distribution, and it equals the data's entropy plus the KL divergence to your model. The number that anchors it: guessing uniformly over a thousand classes gives you a loss of about 6.9 nats, so that's your "model has learned nothing" baseline.
+
 ---
 
 ## Q3: Explain KL divergence. Why is it asymmetric?
+
+**In plain terms.** KL divergence is the penalty for holding the wrong beliefs. If the world behaves like P and you planned for Q, KL says how much that mistake costs you, measured in bits. It is not a distance — being wrong about P in terms of Q is a different cost from the reverse.
 
 **Answer:**
 
@@ -129,8 +137,8 @@ Where:
 P = [0.5, 0.5]  (uniform)
 Q = [0.9, 0.1]  (biased)
 
-KL(P || Q) = 0.5*log(0.5/0.9) + 0.5*log(0.5/0.1) ≈ 0.51
-KL(Q || P) = 0.9*log(0.9/0.5) + 0.1*log(0.1/0.5) ≈ 0.33
+KL(P || Q) = 0.5*ln(0.5/0.9) + 0.5*ln(0.5/0.1) ≈ 0.51 nats
+KL(Q || P) = 0.9*ln(0.9/0.5) + 0.1*ln(0.1/0.5) ≈ 0.37 nats
 
 → Not equal (asymmetric)
 ```
@@ -146,6 +154,8 @@ KL(Q || P) = 0.9*log(0.9/0.5) + 0.1*log(0.1/0.5) ≈ 0.33
 - **VAEs**: KL between posterior and prior
 - **Model comparison**: Compare different models
 - **Regularization**: Prevent overfitting
+
+> **Saying it out loud.** KL divergence is the extra cost of using the wrong distribution — the bits you waste by planning for Q when the world runs on P. It's asymmetric because the expectation is taken under one of the two distributions, so whichever one you put first is the one whose regions of high probability get weighted. Concretely: putting near-zero probability where the truth has lots of mass is catastrophic and can even be infinite, but putting mass where the truth is thin is merely wasteful. That asymmetry is why direction matters — forward KL makes your model cover everything and produce bland averages, reverse KL makes it lock onto one mode and be confidently narrow. And it's why calling KL a distance in an interview will get you corrected: it fails symmetry and the triangle inequality both.
 
 ---
 
@@ -165,7 +175,7 @@ I(X; Y) = H(X) - H(X | Y)
 **Interpretation:**
 - **I(X; Y) = 0**: X and Y are independent (no information shared)
 - **I(X; Y) > 0**: X and Y are dependent (share information)
-- **I(X; Y) = H(X)**: X completely determines Y
+- **I(X; Y) = H(X)**: Y completely determines X (no uncertainty about X remains)
 - **Symmetric**: I(X; Y) = I(Y; X)
 
 **Example:**
@@ -206,6 +216,8 @@ Y = [2, 4, 6, 8, 10]  # Y = 2*X1
 - **Information bottleneck**: Compress while preserving information
 - **Clustering**: Measure cluster quality
 - **Dimensionality reduction**: Preserve mutual information
+
+> **Saying it out loud.** Mutual information asks how much knowing one thing tells you about another. Zero means completely independent — knowing the weather tells you nothing about the coin flip. Higher means one variable erases uncertainty about the other, and the maximum is when one determines the other entirely, at which point mutual information equals that variable's whole entropy. For feature selection, this is better than correlation because correlation only sees straight lines: a feature that's a perfect parabola of the target has zero correlation and high mutual information. The tradeoff to name is that mutual information is univariate as usually applied — it scores each feature against the target independently, so it happily keeps two redundant features and misses combinations that only matter jointly.
 
 ---
 
@@ -266,6 +278,8 @@ Entropy = -0.9*log₂(0.9) - 0.1*log₂(0.1) ≈ 0.47
 - Both are maximized when uniform
 - Gini is faster, entropy is more standard
 
+> **Saying it out loud.** Gini and entropy are two ways of asking the same question — how mixed up are the labels in this node — and in practice they almost never disagree about which split to take. Entropy uses logarithms, which makes it slightly slower but gives it the information-theoretic story: information gain is literally the uncertainty you removed. Gini is one minus the sum of squared probabilities, which has a neat reading of its own: it's the probability you'd misclassify a random item if you labeled it by randomly drawing from the node's class distribution. The honest answer is that the choice is not where your model's accuracy comes from — depth, number of trees, and feature quality matter far more, and studies find the two criteria disagree on well under five percent of splits.
+
 ---
 
 ## Q6: What is Jensen-Shannon divergence? How does it differ from KL divergence?
@@ -288,7 +302,7 @@ M = 0.5 * (P + Q)  (average distribution)
 |----------|---------------|---------------|
 | **Symmetric** | No | Yes |
 | **Bounded** | No (can be ∞) | Yes [0, 1] |
-| **Metric** | No | Yes (satisfies triangle inequality) |
+| **Metric** | No | √JS is a metric; JS itself does not satisfy the triangle inequality |
 | **Stability** | Can be unstable | More stable |
 
 **Why JS Divergence?**
@@ -303,10 +317,10 @@ M = 0.5 * (P + Q)  (average distribution)
 - Easier to interpret
 - KL can be infinite when distributions don't overlap
 
-**3. Metric:**
-- Satisfies triangle inequality
-- Can use as distance metric
-- KL doesn't satisfy triangle inequality
+**3. Metric (via its square root):**
+- √JS satisfies the triangle inequality, so it is a true metric
+- JS itself is bounded and symmetric but not a metric
+- KL is neither symmetric nor a metric
 
 **4. Stability:**
 - More stable when distributions are very different
@@ -323,11 +337,13 @@ M = 0.5 * (P + Q)  (average distribution)
 P = [0.5, 0.5]
 Q = [0.9, 0.1]
 
-KL(P || Q) ≈ 0.51
-KL(Q || P) ≈ 0.33  (different!)
+KL(P || Q) ≈ 0.51 nats
+KL(Q || P) ≈ 0.37 nats  (different!)
 
-JS(P || Q) = JS(Q || P) ≈ 0.21  (symmetric)
+JS(P || Q) = JS(Q || P) ≈ 0.10 nats  (symmetric)
 ```
+
+> **Saying it out loud.** Jensen-Shannon is the symmetric cousin of KL: instead of comparing P to Q, you compare each of them to their average. That fixes the two things that make KL awkward — it's symmetric, so there's no "reference" distribution to choose, and it's bounded by log two, so it never blows up to infinity when the supports don't overlap. Its square root is even a genuine metric, satisfying the triangle inequality. The catch is that its boundedness is also its weakness: when two distributions don't overlap at all, JS is pegged at its maximum with a flat gradient, which is exactly the vanishing-gradient failure that made early GANs so hard to train and motivated the switch to Wasserstein distance.
 
 ---
 
@@ -364,6 +380,8 @@ JS(P || Q) = JS(Q || P) ≈ 0.21  (symmetric)
 - **GANs**: Measure distance between distributions
 - **Model comparison**: When you need symmetric metric
 - **Clustering**: When KL is unstable
+
+> **Saying it out loud.** The way I keep these straight is by what each one is for. Entropy is a property of one distribution — how uncertain it is — and it's what decision trees minimize when they split. Cross-entropy compares your prediction to the truth and is the loss you actually train on. KL is the same comparison with the data's own entropy removed, which makes it the right tool when you want a regularizer rather than a loss — the KL anchor in RLHF, the prior term in a VAE. Mutual information is about pairs of variables and is the feature-selection and representation-learning tool. And Gini is just a cheaper entropy for trees. If someone asks which to use, the answer is almost always determined by whether you're comparing one distribution to itself, to another, or to a joint.
 
 ---
 

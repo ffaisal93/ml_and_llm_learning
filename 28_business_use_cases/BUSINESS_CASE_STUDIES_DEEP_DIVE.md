@@ -24,6 +24,8 @@ Almost identical to ML system design but tilts heavier on product reasoning and 
 
 The step that distinguishes seniors: **steps 1, 2, 7, 9.** Junior candidates rush to step 6. Seniors anchor everything in the business metric.
 
+> **Saying it out loud.** The framework is really just nine questions in a fixed order, and the whole trick is refusing to jump to the model. Start with what the business actually wants, pick the one number you'd move, and only then turn it into inputs, labels and a loss. Most candidates burn their first five minutes on architecture and never come back to the metric, which is exactly what makes them read as junior. If you spend two minutes on "what does success look like and what am I not allowed to break," you've already separated yourself. The tradeoff to name out loud is time: steps one, two, seven and nine are where the signal is, so budget accordingly.
+
 ---
 
 ## 2. The metric framework
@@ -44,9 +46,13 @@ Example, churn:
 - Guardrail: email unsubscribe rate.
 - Guardrail: revenue per active user.
 
+> **Saying it out loud.** I think about metrics on three levels, and I say all three. There's the business KPI, which is what an exec cares about — retention, dollars of fraud stopped, revenue per impression. There's the ML proxy, which is what the model actually optimizes, like probability of churn in thirty days. And there's the engineering metric, like AUPRC or calibration, which tells me whether the model is any good at all. Then I pick one primary metric that decides launch and a few guardrails that can veto it, because without guardrails you'll happily ship something that boosts the primary by spamming users into unsubscribing.
+
 ---
 
 ## 3. Cost-asymmetry thinking
+
+**In plain terms.** This section is about the fact that being wrong in one direction usually costs way more than being wrong in the other. Missing a fraudulent charge costs real money; blocking a real customer costs trust. Once you accept that the two errors have different price tags, the "right" decision threshold stops being 0.5 and becomes whatever number minimizes total cost.
 
 Every case study has cost asymmetry. Default to mentioning it explicitly.
 
@@ -67,6 +73,8 @@ $$
 
 Mentioning cost asymmetry early scores enormous points.
 
+> **Saying it out loud.** The default threshold of 0.5 is almost always wrong, and that's the point. Half of it is that the two mistakes cost wildly different amounts — missing fraud costs you the transaction, but wrongly declining a customer costs you a relationship. So instead of picking 0.5, I pick the threshold that minimizes the cost-weighted sum of false positives and false negatives, which means I need the cost ratio from the business before I can even set it. A useful anchor: fraud is roughly a hundred to one against false negatives, while spam filtering is about ten to one the other way, so the same math pushes the threshold in opposite directions.
+
 ---
 
 ## 4. Worked example 1 — predicting subscription churn
@@ -76,7 +84,7 @@ Mentioning cost asymmetry early scores enormous points.
 ### Business context (don't skip)
 
 - The product is a B2B SaaS tool with a \$200/month plan.
-- Customer acquisition cost (CAC) is ~\$1500. Each saved churn = $200/mo × avg lifetime → $2000-5000.
+- Customer acquisition cost (CAC) is ~\$1500. Each saved churn = \$200/mo × avg lifetime → \$2000-5000.
 - The customer success team has 20 people who can each do ~10 outreach/day = 200/day, ~6000/month.
 - So we need to identify the **top 6000 highest-risk** customers per month for proactive outreach.
 
@@ -97,6 +105,8 @@ Two framings — they sound similar but lead to different models:
 **Framing B: predict treatment uplift.** $p(\mathrm{retained} | \text{outreach}) - p(\mathrm{retained} | \text{no outreach})$. The customer who *responds* to outreach is what we want, not the most-likely-to-churn customer (who may churn regardless of intervention).
 
 Senior framing is uplift modeling. Mention it. Then say: "v1: predict churn. v2: uplift model after we collect treatment-vs-control data."
+
+> **Saying it out loud.** There are two ways to frame churn and they sound the same but they aren't. The obvious one is: predict who's likely to leave. The better one is: predict who'd stay *if we called them* — that's uplift modeling, and it's a different target. The reason it matters is that your most at-risk customers are often the ones already gone, so calling them wastes your team's day. So I'd say v1 predicts churn because that's the data we have, and v2 becomes an uplift model once the A/B has given us treatment-versus-control labels. The failure mode I'd name is spending your whole outreach budget on customers who were going to churn no matter what.
 
 ### Data audit
 
@@ -156,6 +166,8 @@ Class imbalance: churn rate ~3-5%. Use class weights or under-sampling negatives
 - Saved value if churn prevented: \$2000-5000 LTV.
 - → Intervene whenever $p(\mathrm{churn}) \cdot \mathrm{value\_saved} > c_{\mathrm{intervention}}$, i.e., $p > 0.005$. So you'd be intervening on a much wider top group than 6000 if budget allowed.
 
+> **Saying it out loud.** The threshold isn't a modeling decision here, it's an arithmetic one. An outreach call costs about ten dollars of a CSM's time, and saving a customer is worth two to five thousand in lifetime value, so the break-even probability is about half a percent. That means, on pure economics, you'd want to intervene on a much wider group than the top six thousand. The real constraint isn't the model, it's that you only have twenty people making two hundred calls a day. So the honest framing is: the model ranks, and headcount picks the cutoff.
+
 ### Deployment & monitoring
 
 - **Cadence**: batch score nightly. Daily list to CSMs.
@@ -184,6 +196,8 @@ When asked, mention:
 - Holdout group for measuring true causal effect.
 - Cost-asymmetry-aware thresholds.
 - Distinction between "predict churn" and "predict moveable churn."
+
+> **Saying it out loud.** For churn my whole answer hangs off one number: the customer success team can do about six thousand outreaches a month, so this is a ranking problem, not a probability-for-everyone problem. I'd build lag and trajectory features — usage now versus ninety days ago, days since last login — because the *slope* of engagement predicts churn far better than the level. Gradient-boosted trees for v1, then an uplift model for v2 once we've run treatment versus control. I'd measure it with an actual A/B on the outreach list, not offline AUC, since what we care about is retention lift. And I'd flag the self-fulfilling-prophecy failure mode: if sales deprioritizes anyone the model calls high-risk, the model looks accurate while actively causing the churn.
 
 ---
 
@@ -233,6 +247,8 @@ transaction
 
 A single threshold loses information: at 0.3 probability, blocking is too aggressive; allowing is too risky. With three tiers (allow / 2FA / block), you tune the *type* of friction to match the risk level. This is the difference between "good ML" and "ML deployed thoughtfully."
 
+> **Saying it out loud.** One threshold throws away information, and that's the whole argument. At a fraud score of 0.3 you're stuck — blocking is too aggressive, letting it through is too risky — so instead of one cut you use three, and you match the *type* of friction to the level of risk. Below one percent it goes through silently, in the middle you send a push notification for two-factor confirmation, and only above ninety percent do you hard-block. The tradeoff you're managing is customer friction against dollars of fraud, and tiering lets you buy a lot of protection with very little annoyance. The target I'd quote is under one percent false-positive rate on legitimate transactions.
+
 ### Iteration: graph-based features
 
 For v2: build a graph of (card, merchant, device, IP) nodes and transaction edges. Run community detection or GNN to flag anomalous clusters (fraud rings). Catches coordinated attacks that single-transaction features miss.
@@ -243,6 +259,8 @@ For v2: build a graph of (card, merchant, device, IP) nodes and transaction edge
 - Adversarial nature (fraudsters adapt) → daily retraining + drift monitoring.
 - Distinguishing "novel attack" from "model decay."
 - Holdback group on old model to detect when new model regresses.
+
+> **Saying it out loud.** Fraud detection is the classic cost-asymmetry problem with an adversary attached. Roughly one in a thousand transactions is fraud, so accuracy is meaningless and I'd optimize recall at a fixed low false-positive rate instead. Real-time velocity and geo features do most of the work — this card in three countries in an hour is a much stronger signal than anything about the merchant. The part people forget is that fraudsters adapt, so this isn't a model you train once; it's daily retraining plus drift monitoring, and you keep a holdback on the old model so you can tell a novel attack apart from your new model quietly regressing.
 
 ---
 
@@ -302,6 +320,8 @@ both → ranker (with content features as input) → final list
 
 ### Cold-start exit
 
+**In plain terms.** A brand-new item has no clicks, so you have to guess its click-through rate from its content. Once clicks start arriving you want to stop guessing and trust the data — but not all at once, because ten impressions isn't evidence. This formula is just a dial that slides smoothly from "trust the guess" to "trust the data" as evidence accumulates.
+
 After an item accumulates ~50 impressions of behavioral data, transition it from "cold" to "warm." Ranking smoothly switches from content-dominant to behavior-dominant via Bayesian shrinkage:
 
 $$
@@ -309,6 +329,8 @@ $$
 $$
 
 with $\alpha \sim 50$ (effective prior strength). At $n=0$, all weight on predicted; at $n=500$, mostly empirical.
+
+> **Saying it out loud.** The way you move an item from cold to warm is a weighted average, not a switch. You blend the content-model's predicted click-through rate with the item's actual observed rate, weighting the observed rate by how many impressions it's had. With a prior strength of about fifty, a brand-new item is one hundred percent prediction, an item with fifty impressions is a fifty-fifty blend, and by five hundred impressions it's essentially all real data. The reason you don't just flip a switch at some impression count is that small samples are wildly noisy — one lucky click on ten impressions would look like a ten percent CTR and rocket a junk item to the top of the feed.
 
 ### Evaluation
 
@@ -328,6 +350,8 @@ with $\alpha \sim 50$ (effective prior strength). At $n=0$, all weight on predic
 - Bayesian shrinkage formula for transitioning cold → warm.
 - Thompson sampling vs ε-greedy for exploration.
 - The death-spiral dynamic and why it justifies forced exposure.
+
+> **Saying it out loud.** Cold start on a marketplace is a death spiral, and naming the spiral is most of the answer. New items get no impressions, so they get no clicks, so the ranker sees no evidence and ranks them even lower — and the seller leaves, which starves your supply side. I'd break it in three places: score new items from content, using text and image embeddings instead of behavior; reserve five to ten percent of feed slots as forced exposure so new items get data at all; and use Thompson sampling so items with wide uncertainty get explored more. Then blend into behavioral signals with Bayesian shrinkage as clicks arrive. The metric that matters isn't platform CTR, it's coverage — what fraction of the catalog gets at least ten impressions in week one — and the tradeoff is that forced exposure costs you a small, measurable amount of aggregate CTR.
 
 ---
 
@@ -350,6 +374,8 @@ with $\alpha \sim 50$ (effective prior strength). At $n=0$, all weight on predic
 
 ### Why quantile loss not MSE
 
+**In plain terms.** If you ask a model for the average demand, you'll be short half the time — and running out of stock costs more than throwing food away. So instead of predicting the average, you predict a high percentile, deliberately over-ordering. Quantile loss is just a lopsided error function that punishes under-predicting more than over-predicting.
+
 MSE optimizes the *mean*. For inventory under cost asymmetry, we want a *high quantile* (P95-ish) of demand to avoid stockouts. Quantile regression directly optimizes that:
 
 $$
@@ -357,6 +383,8 @@ L_\tau(y, \hat y) = \begin{cases} \tau \cdot (y - \hat y) & \text{if } y > \hat 
 $$
 
 Set $\tau = 0.83 \approx 5/(5+2)$ from cost ratio, and the optimal forecast is the 83rd percentile of demand — exactly the inventory level that minimizes expected cost.
+
+> **Saying it out loud.** You don't want the average here, and that's the insight. Squared error gives you the mean demand, which by definition means you're short about half the time — and a stockout costs roughly five dollars of lost sale and goodwill, while an extra unit on the shelf costs about two. So I'd train with quantile loss instead, which just weights under-prediction and over-prediction differently. Set the quantile to five over five-plus-two, about 0.83, and the model's output *is* the order quantity that minimizes expected cost. That one substitution — MSE to pinball loss at tau equals 0.83 — is the whole trick, and it turns a forecasting problem into a direct answer to "how many should we order."
 
 ### Frame as ML problem
 
@@ -389,6 +417,8 @@ LightGBM with **quantile loss** ($\tau=0.83$). One unified model across all (pro
 
 Forecasts at finer granularity (SKU × store) sum up to coarser ones (SKU total, store total). Forecasts almost never agree across hierarchies. Reconciliation methods (MinT, hierarchical Bayesian) post-process forecasts to be consistent — and usually improve accuracy on the leaves.
 
+> **Saying it out loud.** Forecasts at different levels of aggregation never add up, and that's a real operational problem, not a rounding issue. Your per-store, per-SKU forecasts might sum to a national number that contradicts the national forecast, and ops will notice. Reconciliation methods like MinT push all the levels into agreement after the fact, and the pleasant surprise is that it usually improves accuracy on the individual cells too, because the coarse forecasts are built on more data and are less noisy. The tradeoff is an extra pipeline stage and some latency; the payoff is that nobody spends the Monday meeting arguing about which number is right.
+
 ### Evaluation
 
 - Quantile loss at training $\tau$.
@@ -413,6 +443,8 @@ Forecasts at finer granularity (SKU × store) sum up to coarser ones (SKU total,
 - Hierarchical reconciliation.
 - Feature engineering (lags, rolling stats, calendar).
 - Override interface for the ops team.
+
+> **Saying it out loud.** Demand forecasting for inventory is a cost-asymmetry problem wearing a time-series costume. There are a billion product-store-day cells, so I wouldn't fit a billion models — I'd fit one gradient-boosted model across all of them with product and store as categorical features, plus lags, rolling stats and calendar features. The key move is training with quantile loss at about 0.83 rather than squared error, because stockouts cost more than overstock, so we deliberately over-forecast. I'd evaluate with a cost simulation on historical data, not just MAPE, since MAPE doesn't know that being short is worse. The failure modes I'd flag are black swans and new products with no history — both need manual override tools for the ops team, because no model handles a hurricane.
 
 ---
 
@@ -451,6 +483,8 @@ Three things to check:
 | Heterogeneous treatment effect | Average effect may be tiny, but specific cohorts huge — segment analysis |
 | Power | Underpowered tests give noisy estimates → false positives and negatives |
 
+> **Saying it out loud.** The one that catches everyone is peeking. If you keep checking the p-value and stop the moment it dips under 0.05, you're taking a lot of shots and reporting only the hit — so your real false-positive rate is way above five percent. The fix is either committing to a fixed sample size upfront or using sequential, always-valid p-values that are designed to be looked at continuously. The other big ones are sample-ratio mismatch, which means randomization itself is broken and nothing downstream is trustworthy, and novelty effects, where a shiny new feature spikes in week one and settles by week two. If you only remember one thing: check the split ratio before you look at any metric.
+
 ### Cost-of-decision framing
 
 Even with p<0.05 and positive effect, launch decision needs:
@@ -466,6 +500,8 @@ Even with p<0.05 and positive effect, launch decision needs:
 - Distinguish statistical significance from practical significance.
 
 (For more: `30_ab_testing/AB_TESTING_DEEP_DIVE.md`.)
+
+> **Saying it out loud.** When someone hands me an A/B result, I don't start with the p-value. First I check the sample ratio — if the split was supposed to be five-five-ninety and it came out four-seven-five-two, randomization is broken and the whole test is garbage. Then I look at the effect size with a confidence interval, because a statistically significant 0.1 percent lift and a significant five percent lift are completely different business decisions. Then guardrails: if the primary is up but latency or unsubscribes are down past threshold, that's a no-launch. And I'd ask whether the effect is durable, which means running a holdback for thirty days after launch — novelty effects mean week one is often the best week the feature will ever have.
 
 ---
 
@@ -491,6 +527,8 @@ Standard regression: price → demand. But your past prices were *set based on p
 
 ### Solutions to endogeneity
 
+**In plain terms.** The problem is that your past prices weren't random — you raised them precisely when you expected demand to be high. So the data seems to say "higher prices go with higher demand," which is backwards. Everything below is a different way of manufacturing the randomness you'd have gotten from an experiment.
+
 **Option A: Randomized experiments**.
 Set price randomly within a range for some bookings. The randomness breaks the confounding. Expensive (you sometimes underprice winners, overprice losers) but the cleanest signal.
 
@@ -504,6 +542,8 @@ Decompose: $D = f(\text{features}) + \theta \cdot P + \epsilon$ where $\theta$ i
 Frame as a bandit: each price level is an arm; reward is revenue. Thompson-sample over price. Natural exploration. Standard for marketplace platforms.
 
 In practice: A or D for sites with their own pricing power; B/C for analyzing observational data.
+
+> **Saying it out loud.** You can't just regress demand on price, and this is the thing the interviewer is actually testing. Your historical prices weren't set randomly — you raised them when you expected demand to be strong — so the raw correlation says higher prices cause more demand, which is exactly backwards. There are four ways out. Randomize prices for a slice of traffic, which is the cleanest but costs you real revenue. Find an instrument like a competitor's price that moves your price but not this customer's demand. Use DoubleML to strip out the confounding features and isolate the causal elasticity. Or frame it as a bandit and let Thompson sampling explore prices for you. In practice I'd pick randomization or bandits if we control pricing, and DoubleML if all we have is observational history.
 
 ### Frame as ML problem
 
@@ -560,6 +600,8 @@ Treat dynamic pricing as a sequential decision problem: today's price affects to
 - DoubleML / IV / RCT options.
 - Constraints (rate parity, fairness).
 
+> **Saying it out loud.** Dynamic pricing looks like a prediction problem but it's really a causal one. You predict demand at each candidate price, multiply by price, and take the revenue-maximizing point — that part is easy. The hard part is that your training data is confounded, because past prices were chosen in response to expected demand, so a naive model will tell you raising prices doesn't hurt demand. Fixing that needs randomization, instruments, or DoubleML. And I'd add smoothing on top so prices don't jump day to day, because the guardrail here is customer trust — occupancy and review scores, not just RevPAR. The failure mode worth naming is that if every platform prices off competitor signals, you get a race to the bottom.
+
 ---
 
 ## 10. Worked example 7 — content moderation product flow
@@ -610,6 +652,8 @@ Every moderation system needs an appeal flow:
   - If denied → user informed; pattern may inform retraining.
 - Track: appeal rate per policy. High appeal rate (>20%) = model is over-moderating that policy.
 
+> **Saying it out loud.** Appeals are the most underrated part of a moderation system, and I'd volunteer that unprompted. Every appeal that gets granted is a labeled false positive, handed to you for free by the person best positioned to notice it — so an appeals flow isn't just fairness theater, it's your highest-quality training data source. I'd track appeal rate per policy, because if more than about twenty percent of removals under one policy get overturned, that classifier is over-moderating and needs its threshold moved. The tradeoff is cost: appeals need a *different* human reviewer than the original decision, which isn't cheap, but skipping it means you never find out what your model gets wrong.
+
 ### Reviewer wellness
 
 Real concern. Moderators see traumatic content daily. Production systems include:
@@ -625,6 +669,8 @@ Real concern. Moderators see traumatic content daily. Production systems include
 - Reviewer wellness as a metric.
 - Per-policy precision-recall tuning.
 
+> **Saying it out loud.** Moderation isn't one decision, it's a pipeline with different actions at different confidence levels. High-confidence severe content gets blocked before it publishes; ambiguous stuff publishes and gets flagged for review; and a lot of borderline content gets quietly demoted rather than removed, because removal is loud and invites backlash while demotion is invisible. The pre-publish versus post-publish call is the core tradeoff: pre-publish stops harm but adds latency and frustrates real users, post-publish is a better experience but lets harm spread. I'd mix them — pre for the severe categories, post for the ambiguous ones — and I'd make sure appeals feed back into training, since that's the only steady supply of false-positive labels you'll ever get.
+
 ---
 
 ## 11. Worked example 8 — building an LLM-powered customer support agent
@@ -634,7 +680,7 @@ Real concern. Moderators see traumatic content daily. Production systems include
 ### Business context
 
 - 100K tickets/day, 70% are repetitive (refunds, password resets, status checks).
-- Current cost: $5/ticket × 100K = $500K/day in human time.
+- Current cost: \$5/ticket × 100K = \$500K/day in human time.
 - Goal: deflect 50% of tickets to AI; route the rest to humans.
 - Cost asymmetry: AI giving wrong answer = customer angry → escalation to human + complaint. Worse than just routing to human in the first place.
 
@@ -701,6 +747,8 @@ ticket comes in
 - AI explicitly tells user "I'm escalating to a human" if confidence drops or user dissatisfied.
 - Conversation log goes to human alongside agent's transcript.
 
+> **Saying it out loud.** The architecture is really about deciding what the LLM is *not* allowed to do. A small fast intent classifier goes first, and if it isn't confident, the ticket goes straight to a human — no LLM involved. If it is confident, we retrieve the relevant knowledge-base articles so the model answers from documents instead of memory, and we give it tools like account lookup and refund initiation. But every tool is gated server-side, so the model can request a refund and the server decides whether it's allowed. That's the difference between a demo and a production system: the model's authority lives in the tool layer, not in the prompt, because prompts can be talked out of things.
+
 ### Evaluation
 
 **Offline**:
@@ -741,6 +789,8 @@ ticket comes in
 
 (For agent implementation patterns: see `07_llm_problems/AGENT_IN_30_MIN.md`.)
 
+> **Saying it out loud.** An LLM support agent is mostly a routing and gating problem, not a prompting problem. Seventy percent of a hundred thousand daily tickets are repetitive, so the upside is huge, but the cost asymmetry cuts the other way: a wrong AI answer is worse than no answer, because now the customer is angry *and* still needs a human. So I'd put a confidence-gated intent classifier in front, use retrieval so answers are grounded in real policy docs, and never let the model actually move money — tool calls get verified server-side with hard limits. The metric I'd optimize is deflection rate times CSAT, with post-AI escalation rate as the guardrail, since a rising escalation rate means the AI is making things worse while looking successful on the deflection dashboard.
+
 ---
 
 ## 12. Cross-cutting interview probes
@@ -751,25 +801,37 @@ After your design, expect these:
 
 Audit per-segment performance (gender, race, geography, age). Use constrained optimization (minimize worst-segment loss) or post-hoc thresholding (different operating point per group, where allowed). Data augmentation on underrepresented segments. Continuous monitoring.
 
+> **Saying it out loud.** First I'd figure out whether the bias is in the data or in the outcome, because they need different fixes. I'd slice performance by segment — geography, age, whatever's relevant and legal — since an aggregate AUC can look great while one group gets served terribly. Then the options are rebalancing or augmenting the underrepresented data, adding a constraint that minimizes worst-group loss rather than average loss, or setting different operating thresholds per group where that's legally allowed. And I'd set up ongoing per-segment monitoring, because bias isn't a launch-day checkbox — the distribution drifts and it comes back.
+
 ### "What if labels are expensive?"
 
 Active learning (label uncertain examples first). Weak supervision (rules + heuristics combined). Pretrain on related data + fine-tune on small labeled set. Synthetic data via LLM. Crowd sourcing with multi-rater consensus.
+
+> **Saying it out loud.** When labels are expensive, the goal is to make each label buy more. Active learning is the first move: have the model label everything, then send only the examples it's most uncertain about to a human, which typically gets you the same accuracy for a fraction of the labeling budget. Weak supervision is the second — write noisy heuristics and rules, combine them into probabilistic labels, and train on those. And pretraining on a related task then fine-tuning on a few thousand labels is often better than either. The tradeoff with active learning is that your labeled set ends up deliberately non-representative, so hold out a random sample for honest evaluation.
 
 ### "What if we can't run a true A/B test?" (legal, ethical, business reasons)
 
 Off-policy evaluation. Counterfactual estimation via importance sampling. Quasi-experiments (regression discontinuity, instrumental variables). Observational with strong adjustment (DoubleML). Document caveats explicitly.
 
+> **Saying it out loud.** If you can't randomize, you have to find randomness that already happened. Regression discontinuity works when a rule creates an arbitrary cutoff — people just above and just below a score threshold are basically identical, so the jump at the boundary is causal. Instrumental variables work if something shuffles treatment without touching the outcome directly. Off-policy evaluation with importance sampling lets you estimate what a new policy would have done using logged data from the old one, as long as the old policy had some randomness in it. All of these are weaker than an A/B, and I'd say so out loud — you state the assumption each one rests on and you document the caveat rather than pretending it's an experiment.
+
 ### "What about long-term effects?"
 
 Holdback group on old version. Cohort tracking over 30/60/90/180 days. Look for delayed retention, long-tail revenue, brand-trust proxies.
+
+> **Saying it out loud.** Two-week tests measure two-week effects, and those often reverse. Novelty inflates week one, and some of the nastiest regressions — users getting fatigued, trust eroding, a recommender narrowing everyone's feed — only show up over months. So I'd keep a long-term holdback: a small slice of users, one to five percent, who never get the new version, and compare cohorts at thirty, sixty and ninety days. The cost is real, since you're deliberately withholding a feature you believe is good from some users, but it's the only way to catch the case where a launch looks like a two percent lift and is actually a slow retention leak.
 
 ### "How would you scale this to 10×?"
 
 Profile bottlenecks: feature pipeline, model inference, ANN index, ranker. Each scales differently. Maybe distill model. Maybe shard data. Maybe degrade fancy features for tail traffic.
 
+> **Saying it out loud.** Ten-x doesn't scale everything equally, so I'd profile before I redesign. Feature computation, model inference, the nearest-neighbor index and the ranker all bottleneck at different points — usually the retrieval index goes first because approximate nearest neighbor memory grows with the corpus. From there the levers are distillation to make the model cheaper, sharding the index, caching whatever's repeated, and degrading gracefully: serve the tail of traffic from a lighter model with fewer features rather than falling over. The tradeoff to name is that every one of those trades a little accuracy for headroom, so you should know what your quality budget is before you spend it.
+
 ### "What's the cheapest version that ships?"
 
 Always have a "v0" answer that fits in a week of engineering. Demonstrates you can prioritize. Never over-engineer the first version.
+
+> **Saying it out loud.** There's always a v0 that ships in a week, and having one ready is a signal all by itself. For most of these it's a heuristic or a logistic regression on a handful of features, batch-scored nightly, output written to a table someone can query. It won't be the best model, but it gets you the serving path, the monitoring, the label pipeline and — most importantly — a real baseline to beat. The failure mode on the other side is spending a quarter building a transformer when a rules engine would have captured most of the value, and then having nothing to show at review time.
 
 ---
 
@@ -807,6 +869,8 @@ When the case study is winding down, volunteer 1-2 of these unprompted:
 - **Failure mode list** (3-5 things that go wrong).
 
 These are the things junior candidates miss and seniors lead with.
+
+> **Saying it out loud.** If I've got time left at the end of a case study, these are the things I bring up without being asked. Cost-asymmetric thresholds instead of 0.5. Uplift modeling instead of plain prediction whenever we're deciding who to intervene on. Endogeneity whenever price or treatment appears in the data. A long-term holdback so we know the effect is durable. And a short, honest list of three to five ways the system fails, with a mitigation for each. The reason these score is that they're all things that only show up after you've shipped something and watched it go wrong, so they're hard to fake.
 
 ---
 
