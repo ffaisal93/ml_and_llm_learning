@@ -18,9 +18,13 @@ Every regularization technique is one of:
 
 The deep idea: with infinite data you don't need regularization; you fit any function and the data tells you which is right. With finite data, multiple functions fit equally well; regularization picks the "simpler" one. Bayesian rephrasing: regularization = prior; data + prior = posterior.
 
+> **Saying it out loud.** Regularization is anything that tells the model "when several answers fit the data equally well, prefer the simpler one." That's the whole idea, and every technique is just a different way of saying what simple means — small weights for L2, few non-zero weights for L1, don't depend on any single neuron for dropout, don't train long enough to memorise for early stopping. The reason you need it at all is that with finite data there are many functions that fit your training set perfectly and disagree everywhere else. The clean framing to give: with infinite data you wouldn't need any of this, so regularization is a statement about what to believe when the data runs out.
+
 ---
 
 ## 2. The bias-variance decomposition
+
+> **In plain language.** This is the accounting identity for prediction error. Split your error into three buckets: how wrong you'd be *on average* across all possible training sets (bias), how much your model jumps around when the training set changes (variance), and the noise nobody can predict. Regularization is the dial that trades the second bucket for the first.
 
 For squared error on a fresh test point $x$:
 
@@ -35,6 +39,8 @@ $$
 Regularization **trades variance for bias**. A simpler model has lower variance (small dataset → similar function each time) but higher bias (can't fit complex truth). The regularized optimum is the sweet spot.
 
 This is the central interview talking point. Strong candidates frame every regularization technique as "increases bias slightly, reduces variance substantially."
+
+> **Saying it out loud.** Prediction error splits into three parts: bias, which is how wrong you are on average; variance, which is how much your model swings when you resample the training data; and irreducible noise, which you can't touch. A tiny model has high bias and low variance — it's consistently wrong in the same way. A huge unregularized model is the opposite — it fits each training set beautifully and differently, so it's unreliable. Regularization deliberately adds a bit of bias to remove a lot of variance, and the framing that scores is being able to say that sentence about whichever technique the interviewer names.
 
 ---
 
@@ -70,6 +76,8 @@ Adding $\lambda I$ to the Hessian shifts every eigenvalue up by $\lambda$. Impro
 
 Almost always. L2 is the default. If you're not sure what regularization to use, use L2 with $\lambda \in [10^{-4}, 10^{-1}]$.
 
+> **Saying it out loud.** L2 adds a penalty on the sum of squared weights, so the optimiser is trading off fitting the data against keeping the weights small. Geometrically the constraint region is a sphere, which has no corners, so the solution shrinks every coefficient proportionally toward zero but essentially never sets one exactly to zero. From the Bayesian side it's a Gaussian prior on the weights — you're saying you believe weights are small before seeing any data, and $\lambda$ is the inverse of that prior's variance. The practical payoff worth naming: adding $\lambda I$ lifts every Hessian eigenvalue, which fixes the singular matrix you'd otherwise get from collinear features and makes optimisation better conditioned.
+
 ---
 
 ## 4. L1 (Lasso) regularization
@@ -102,6 +110,8 @@ L1 corresponds to a **Laplace (double-exponential) prior**: $P(w_j) \propto \exp
 - Convex but not strictly convex along the zero-axes; multiple optima possible.
 - Optimization is non-trivial (not differentiable at 0); standard tools: subgradient, proximal gradient (ISTA/FISTA), coordinate descent.
 
+> **Saying it out loud.** L1 penalises the sum of absolute values, and the headline property is that it drives coefficients to exactly zero rather than merely small — so it does feature selection for free. The geometric answer is that the L1 constraint region is a diamond with corners on the axes, and a corner is where a random contour is most likely to first touch, and being on an axis means that coordinate is zero. The algebraic answer, which is the stronger one: the derivative of the absolute value jumps from $-\lambda$ to $+\lambda$ at zero, so if the data gradient is smaller than $\lambda$ in magnitude, nothing can push the weight off zero. Failure mode to name: with correlated features L1 arbitrarily keeps one and zeroes the rest, so the selection is unstable across resamples — which is exactly why elastic net exists.
+
 ---
 
 ## 5. Elastic Net
@@ -120,6 +130,8 @@ Combines L1 and L2. The $\alpha \in [0, 1]$ controls the mix.
 ### Bayesian interpretation
 
 Mixture of Laplace and Gaussian priors. Heavier tails near 0 (sparsity) plus smooth quadratic shrinkage (stability).
+
+> **Saying it out loud.** Elastic net is just L1 plus L2 with a mixing knob. You want it when your features are correlated, because L1 alone will pick one of a correlated group essentially at random and zero the others, and that choice flips if you resample the data. Adding the L2 term makes the objective strictly convex, so correlated features get shrunk together instead of fighting — the grouping effect. You keep most of the sparsity and gain stability, at the cost of a second hyperparameter to tune.
 
 ---
 
@@ -174,6 +186,8 @@ $$
 - Inference scaling error: forgetting $1/(1-p)$ at training time silently breaks inference.
 - Inconsistent train/eval mode: forgetting `model.eval()` keeps dropout active at inference.
 
+> **Saying it out loud.** Dropout randomly switches off a fraction of activations on every forward pass during training, and scales the survivors up by $1/(1-p)$ so the expected signal stays the same. At inference you turn it off entirely — that's the question people get wrong, and the reason nothing else is needed is precisely that training-time scaling. Why it works has two stories: you're implicitly training an exponential ensemble of subnetworks, and you're stopping neurons from co-adapting, since no unit can rely on any specific other unit being present. The modern caveat is the interesting part: large LLMs often use zero dropout, because with enough data you're not overfitting and dropout just slows learning down.
+
 ---
 
 ## 7. Early stopping
@@ -195,6 +209,8 @@ For squared loss with gradient flow, early stopping at time $t$ is approximately
 - Need a reliable validation set (no leakage).
 - Patience: how many epochs without improvement before stopping?
 - Restoration: keep the best-validation weights, not just the last.
+
+> **Saying it out loud.** Early stopping is the cheapest regularizer there is — watch validation loss and stop when it turns around. It works because the model fits the broad signal early and the noise late, so cutting training short means you never fit the noise. The elegant result to cite is that for gradient descent on a squared loss, stopping at step $t$ is approximately equivalent to L2 with $\lambda$ proportional to $1/t$ — training longer literally *is* weakening your regularisation. Practical failure mode: you must restore the best checkpoint, not the last one, and you need a patience window, because validation loss is noisy and stopping on the first uptick is usually premature.
 
 ---
 
@@ -230,9 +246,13 @@ Splice a rectangular region from one image into another; mix labels by area frac
 
 Because the model can memorize specific training points but not their continuum of perturbations. Forces learning the underlying invariances rather than the specific examples.
 
+> **Saying it out loud.** Augmentation is you telling the model what shouldn't matter. A rotated cat is still a cat, so if you show the model rotated versions you're encoding rotation invariance into it without changing the architecture. That's why it's more than just "more data" — it's a statement about the structure of the problem, which is why augmentations that break the label, like flipping a digit 6, actively hurt. MixUp is the interesting one to name: blend two images and blend their labels in the same proportion, which forces the model to behave linearly between examples and reliably improves calibration as well as accuracy.
+
 ---
 
 ## 9. Label smoothing
+
+> **In plain language.** Instead of telling the model "this is class 3, probability 1, everything else 0," you tell it "class 3, probability 0.9, and spread the remaining 0.1 across the others." That small change stops the model chasing infinite confidence, because a one-hot target can only be matched exactly by pushing a logit to infinity.
 
 $$
 y_{\text{smooth}} = (1 - \varepsilon) \cdot y_{\text{one-hot}} + \frac{\varepsilon}{K}
@@ -254,6 +274,8 @@ Cross-entropy with one-hot labels can be made arbitrarily small only by pushing 
 
 Many vision and NLP recipes (label smoothing 0.1 is common in transformer pretraining). LLM pretraining often uses it (or doesn't, depending on the recipe).
 
+> **Saying it out loud.** Label smoothing replaces a hard one-hot target with a slightly soft one — typically 0.9 on the true class and the remaining 0.1 spread over the rest. The reason is that with a hard target, cross-entropy is only truly minimised by driving the correct logit to infinity, so the model learns unbounded overconfidence. Softening the target puts a floor under the loss and therefore a ceiling on the logits. The payoff is calibration: the model stops claiming 99.9% on things it gets wrong. The tradeoff worth naming is that it slightly hurts the quality of the learned representations for downstream transfer, and it makes distillation harder, since you've erased some of the fine structure in the output distribution.
+
 ---
 
 ## 10. Weight decay (revisited)
@@ -262,9 +284,13 @@ For SGD, weight decay = L2 regularization. For Adam, they differ; AdamW decouple
 
 In LLM training: weight decay $0.1$ is typical. Decoupled (AdamW) so that high-gradient parameters are still penalized uniformly.
 
+> **Saying it out loud.** Weight decay just means shrinking every weight a little every step. For plain SGD that's mathematically identical to L2, because the gradient of the squared-norm penalty is proportional to the weight itself. For Adam they come apart, because L2 goes into the gradient and then gets divided by the adaptive denominator, so parameters with noisy gradients quietly get less regularisation than you intended. AdamW fixes that by applying the decay directly to the weights, outside the preconditioner. The number to have ready: 0.1 for LLM pretraining, and near zero for fine-tuning.
+
 ---
 
 ## 11. Sharpness-Aware Minimization (SAM)
+
+> **In plain language.** SAM doesn't ask "is the loss low here?" — it asks "is the loss low everywhere *near* here?" The min-max formula just says: find the worst point within a small radius $\rho$ of your weights, and minimise the loss there. In practice you take a small step uphill, compute the gradient at that worse point, and apply it back at your original weights.
 
 Foret et al. 2020. Recent regularizer based on the loss landscape.
 
@@ -280,6 +306,8 @@ Find weights where the **maximum nearby loss** is small — i.e., flat regions o
 4. Apply that gradient as the actual update at $w$.
 
 Empirically improves generalization on vision tasks. **Doubles training time** (two forward-backward passes per step). For LLMs, mostly research-stage; production runs use cheaper alternatives.
+
+> **Saying it out loud.** SAM chases flat minima on purpose. The idea is that a sharp minimum is fragile — shift the weights slightly, or shift the data distribution slightly, and the loss jumps — whereas a flat one is robust, and robustness to perturbation is basically what generalisation is. So instead of minimising the loss at your current weights, you minimise the worst loss within a small ball around them. Implementation is two passes: step uphill to find the nastiest nearby point, take the gradient there, and apply it back at your original weights. The tradeoff is blunt and it's the thing to end on — it doubles your training cost, which is why it's common in vision research and essentially absent from LLM pretraining.
 
 ---
 
@@ -299,6 +327,8 @@ With more parameters than data points, there are infinitely many functions that 
 
 The whole "deep learning works" story is implicit-regularization-driven. Explicit regularization (weight decay, dropout) helps but isn't the main thing. Frontier-lab interviews often probe this: do you understand that SGD is implicitly biasing toward generalizable solutions?
 
+> **Saying it out loud.** The surprising fact about deep learning is that a model with far more parameters than data points should overfit catastrophically, and it doesn't. The explanation is that the optimiser is itself a regularizer. Mini-batch noise, which scales with learning rate over batch size, makes sharp minima unstable — you get shaken out of them — so SGD settles into flat basins that happen to generalise. And among the infinitely many weight settings that fit the data perfectly, gradient descent doesn't pick a random one, it picks something close to where it started. That's the mechanism behind double descent, and the takeaway to say out loud is that your learning rate and batch size are regularisation hyperparameters, not just speed knobs.
+
 ---
 
 ## 13. Inductive bias as regularization
@@ -311,6 +341,8 @@ Architecture choices regularize by restricting the function class:
 - **Pooling** enforces invariance to small spatial perturbations.
 
 These are stronger than explicit L2 penalties for many tasks because they encode domain knowledge directly into the model structure.
+
+> **Saying it out loud.** The strongest regularizer is usually the architecture itself. A convolution is a fully connected layer where you've hard-coded that a feature means the same thing wherever it appears, and that one restriction is worth more than any weight-decay setting you could pick. Same story for pooling giving you small-shift invariance, or attention deliberately having no built-in notion of order. The interesting tension for scale: strong inductive bias wins when data is scarce, and weak bias wins when data is abundant — which is exactly why vision transformers lose to CNNs on small datasets and beat them once you have hundreds of millions of images.
 
 ---
 

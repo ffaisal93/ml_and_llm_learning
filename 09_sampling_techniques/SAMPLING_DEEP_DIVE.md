@@ -6,6 +6,8 @@
 
 ## 1. The fundamental setup
 
+> **In plain language.** Every generation step, the model hands you one number per vocabulary token — a logit, which is just an unnormalised score. Sampling is the short pipeline that turns those scores into an actual token: stretch or squash them with temperature, throw away the ones you don't trust, softmax what's left, and draw. Every method in this document is a different choice about which scores to throw away.
+
 After a forward pass at position $t$, the model produces logits $z_t \in \mathbb{R}^V$, where $V$ is vocabulary size. Sampling converts these into a token by:
 
 1. Optionally applying a **temperature** to rescale logits.
@@ -21,6 +23,8 @@ p(\text{token} \mid \text{context}) = \frac{\exp(z_t / T)}{\sum_v \exp(z_v / T)}
 $$
 
 Everything else is a manipulation on top.
+
+> **Saying it out loud.** Sampling is the step where a probability distribution turns into an actual word. The model gives you a score for every token in the vocabulary — maybe 128,000 of them — and you have to pick one. There's a knob that makes the distribution peakier or flatter, that's temperature, and then a set of rules for chopping off the unlikely tail, which is where top-k, top-p and min-p live. The reason any of this matters is that the tail is enormous: even if each junk token has probability near zero, there are a hundred thousand of them, so left untruncated you'll eventually sample one and derail the whole generation.
 
 ---
 
@@ -44,6 +48,8 @@ Pick the highest-probability token at every step. Deterministic. Equivalent to $
 - **Lack of diversity.** Same input → same output every time.
 
 For chat and creative writing, greedy is rarely the right choice.
+
+> **Saying it out loud.** Greedy decoding just takes the single most likely token every time, which makes it deterministic and identical to temperature zero. It's the right call when there's one correct answer — arithmetic, code, classification, anything you'd want reproducible. It's the wrong call for anything open-ended, because the most likely continuation is usually the blandest one, and worse, it loops: once a phrase becomes locally high-probability, the same phrase stays high-probability next time round. That repetition trap is the named failure mode, and it's why chat defaults are sampling-based rather than greedy.
 
 ---
 
@@ -77,6 +83,8 @@ Greedy is locally optimal but globally suboptimal — taking the locally-best to
 
 For modern open-ended LLM generation, **sampling-based methods (top-p, top-k) dominate beam search**.
 
+> **Saying it out loud.** Beam search keeps several candidate sequences alive at once instead of committing to one token at a time, so it finds sequences with higher total probability than greedy does. That's genuinely better for translation and other tasks with one right answer. But for open-ended text it backfires, and Holtzman's "Curious Case of Neural Text Degeneration" is the paper to cite: the highest-probability sequence is not what humans want — real human text is *not* the most probable text, it's steadily surprising. So beam search gives you bland consensus prose, and on top of that it has a length bias, because summing log-probabilities punishes longer sequences, which you patch by dividing by length to the power of about 0.6 to 0.8.
+
 ---
 
 ## 4. Temperature sampling
@@ -108,6 +116,8 @@ For deterministic outputs: $T = 0$.
 
 At any $T > 0$, the model can sample a low-probability garbage token. Even with $T = 0.7$, occasionally a token in the long tail (probability $10^{-6}$) gets selected, derailing the generation. **Top-k and top-p truncate this tail before sampling.**
 
+> **Saying it out loud.** Temperature divides the logits before the softmax, and that's the whole mechanism. Divide by something small and the gaps between logits get exaggerated, so the distribution spikes on the top token — at the limit, that's greedy. Divide by something big and the gaps shrink toward nothing, so you approach uniform noise over the vocabulary. The practical settings people actually use: near zero for factual or code output, 0.7 to 1.0 for chat, a bit above 1 for creative work. The thing temperature can't fix is the tail — even at 0.7 there's a tiny chance of drawing a one-in-a-million token, and once that's in the context the model conditions on it, so you truncate first and sample second.
+
 ---
 
 ## 5. Top-k sampling
@@ -137,6 +147,8 @@ Sometimes the model is very confident (top-1 has 95% probability); then $k = 50$
 ### When to use
 
 Combined with temperature. $\text{temperature} = 0.8, \text{top-k} = 40$ is a common default for chat.
+
+> **Saying it out loud.** Top-k is the simplest truncation there is: sort by probability, keep the best $k$, renormalise, sample. It's cheap and it kills the garbage tail, which is most of the benefit. The problem is that $k$ is a fixed number and the model's confidence isn't fixed — after "the capital of France is" there's really only one candidate, and $k=50$ is inviting 49 wrong ones back in; in a genuinely open spot 50 might be too few. That mismatch is precisely why top-p was invented, and it's the tradeoff to name: fixed count, no adaptation to confidence.
 
 ---
 
@@ -172,9 +184,13 @@ $\text{temperature} = 0.7, \text{top-p} = 0.9$ is a standard chat default. Many 
 - At very high $p$ (like 0.99), the nucleus includes too much — back to long-tail issues.
 - If the model has a near-uniform distribution (high entropy), the nucleus is huge (many tokens).
 
+> **Saying it out loud.** Top-p, or nucleus sampling, fixes top-k's rigidity by cutting on probability mass instead of count. You sort the tokens, walk down adding up probabilities, and stop as soon as you've covered say 90% — that set is the nucleus. When the model is confident that's one or two tokens; when it's genuinely uncertain it might be hundreds. So the truncation adapts to the model instead of you guessing. It's the industry default, usually temperature 0.7 with top-p 0.9, and the failure mode to name is that at high $p$ like 0.99 you let the tail back in, while at low $p$ like 0.5 you've effectively reinvented greedy.
+
 ---
 
 ## 7. Min-p sampling
+
+> **In plain language.** Min-p sets the cutoff *relative to the best token* instead of by count or cumulative mass. If the top token has probability 0.5 and $p_{\min}$ is 0.1, nothing below 0.05 can be sampled. So the bar rises automatically when the model is confident and drops when it isn't.
 
 Recent (2023) alternative. Sample from tokens whose probability $\geq p_{\min} \cdot p_{\top}$, where $p_{\top}$ is the top-1 probability.
 
@@ -196,9 +212,13 @@ Top-p includes tokens whose probability is much smaller than the top — even wi
 
 Increasingly popular for creative writing and chat. Some LLM serving frameworks expose it as an alternative to top-p.
 
+> **Saying it out loud.** Min-p is the newer fix for a real weakness in top-p. With top-p at 0.9, if the top token has probability 0.5 the nucleus still has to swallow a lot of much worse tokens to reach 0.9, and some of them are a thousand times less likely than the best one. Min-p instead sets the threshold as a fraction of the top token's probability — anything under, say, 10% of the leader is cut. So the bar scales with confidence automatically, which is the same goal top-p had but with a relative cut instead of a cumulative one. It's popular for creative writing because you can run a hotter temperature without the tail biting.
+
 ---
 
 ## 8. Typical sampling — Meister et al. 2022
+
+> **In plain language.** "Information content" of a token is just $-\log p$ — how surprising it is. Typical sampling notices that natural human text is steadily, moderately surprising, and picks tokens whose surprise is close to the average surprise the model currently expects, cutting both the too-obvious and the too-weird.
 
 Sample tokens whose conditional information content is close to the expected information content (entropy):
 
@@ -220,6 +240,8 @@ The intuition: in human language, each token's information content tends to be n
 
 Niche — works for some tasks (creative writing where naturalness matters) but not widely adopted.
 
+> **Saying it out loud.** Typical sampling comes from an information-theory argument: human language is written at a fairly steady rate of surprise, so a good next token should be about as surprising as the model *expects* to be — that expectation is just the entropy of the current distribution. So instead of keeping the most probable tokens, you keep the ones whose surprise sits closest to the average. That means it can cut the boringly-obvious token as well as the wild one, which is unusual. It's a lovely idea that never really caught on — it's niche compared to top-p and min-p, and that's the honest thing to say about it.
+
 ---
 
 ## 9. Mirostat — Basu et al. 2020
@@ -229,6 +251,8 @@ Adaptive sampling that targets a specific output entropy (perplexity). Uses an e
 ### Status
 
 Used in some local-LLM servers (oobabooga, LM Studio) for creative writing. Not as common in production APIs.
+
+> **Saying it out loud.** Mirostat is the feedback-control approach to sampling. Instead of you fixing a cutoff, you name a target level of surprise — a target perplexity — and the algorithm adjusts the truncation on the fly to hold the output at that level, like cruise control for entropy. The appeal is that quality stays steady over a long generation instead of drifting into either mush or repetition. In practice it lives mostly in local-inference frontends rather than production APIs, which is the honest status to give.
 
 ---
 
@@ -265,6 +289,8 @@ For long-form generation where the model would otherwise loop or repeat phrases.
 - Too much penalty makes the model avoid common words (the, a, is) → unnatural text.
 - Doesn't fix the underlying repetition cause; treats the symptom.
 
+> **Saying it out loud.** These are three ways of nudging logits down for tokens you've already used. Repetition penalty divides the logit of anything already in the context. Frequency penalty subtracts an amount proportional to how many times a token appeared, so it scales with how repetitive you've been. Presence penalty subtracts a flat amount the moment a token appears at all, which pushes toward new topics rather than just new words. They work, but they're symptomatic — the model still *wants* to loop, you're just taxing it. And the failure mode is real: crank them too high and the model starts avoiding "the" and "is", and the text goes strange.
+
 ---
 
 ## 11. Speculative decoding (recap)
@@ -272,6 +298,8 @@ For long-form generation where the model would otherwise loop or repeat phrases.
 Use a small draft model to propose $k$ tokens; verify with the target model in one forward pass; accept via rejection sampling. **Same output distribution as plain decoding** (mathematically exact). 2–3x speedup for typical setups.
 
 See `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md` for full details.
+
+> **Saying it out loud.** Speculative decoding is a speed trick, not a quality trick. A small cheap model guesses the next several tokens, then the big model checks all of them in a single forward pass, since scoring tokens in parallel is nearly free when you're memory-bound. Accepted guesses are kept, and at the first rejection you resample from a corrected distribution. The important claim is that the output distribution is provably identical to sampling from the big model alone — it's exact, not an approximation — and you typically get 2 to 3 times the throughput, more when the draft model agrees often.
 
 ---
 
@@ -288,6 +316,8 @@ Sample $N$ complete responses; pick the best by some scorer (perplexity, reward 
 ### Why it works
 
 Increasing $N$ is essentially "scaling test-time compute." Recent work (o1, DeepSeek-R1) shows large quality gains from this strategy.
+
+> **Saying it out loud.** Best-of-N is the crudest and one of the most effective quality knobs you have: generate $N$ complete answers, score them all, ship the best one. It works because sampling has variance — the model is often capable of the right answer but doesn't produce it every time, so more draws means a better chance of catching it. The cost is linear and brutal: $N=16$ is sixteen times the generation compute, all at serving time. And the failure mode is that it's only as good as your scorer — with a learned reward model, pushing $N$ very high just searches for that model's blind spots, so quality peaks and then falls; with an exact verifier on math or code, it keeps paying off.
 
 ---
 

@@ -16,6 +16,8 @@ Two qualifiers matter:
 
 This subtle distinction is a frontier-lab interview probe. Be ready for: "Is a true-but-unsupported claim a hallucination?" Strong answer: depends on the application — for RAG-grounded QA, yes (faithfulness criterion); for general QA, no (factuality criterion).
 
+> **Saying it out loud.** A hallucination is when the model says something the evidence doesn't back up. The part people miss is that "the evidence" isn't fixed — in RAG it's the retrieved passages, in open QA it's world knowledge, in summarization it's the source document. So the same sentence can be a hallucination in one product and perfectly fine in another. And I'd separate two flavors: *contradicted* means the source says the opposite, *unsupported* means the source just doesn't mention it. Unsupported claims are the nastier failure mode, because they're often true, which makes reviewers wave them through.
+
 ---
 
 ## 2. Taxonomy
@@ -34,6 +36,8 @@ Hallucinations are not one thing. Senior candidates know the categories.
 | **Instruction misalignment** | Doesn't follow the user's request | User asks for 3 bullet points; gets 7 paragraphs |
 | **Multilingual mistranslation** | Wrong meaning in translation | Common in low-resource language pairs |
 
+> **Saying it out loud.** When someone asks "what kinds of hallucinations are there," I don't say "factual errors" and stop — I name the buckets, because each one needs a different detector. Factual means wrong about the world. Faithfulness means it contradicts the document you gave it. Then there's logical self-contradiction, invented citations, and just plain ignoring the instructions. The reason this matters practically: a citation checker catches invented references and does nothing for arithmetic, so if you can't name the bucket you can't pick the tool.
+
 ### 2.2 Intrinsic vs extrinsic (Maynez et al. 2020)
 
 For grounded generation (summarization, RAG):
@@ -43,6 +47,8 @@ For grounded generation (summarization, RAG):
 
 Extrinsic is more dangerous because it's harder to detect — the source doesn't contradict it, you have to verify against external knowledge.
 
+> **Saying it out loud.** Intrinsic means the model contradicted the source; extrinsic means it added something the source never said. Think of a witness summarizing a document: intrinsic is "the report said sales fell" when they rose, extrinsic is "sales rose because of the new campaign" when the report never mentioned a campaign. Extrinsic is the harder one, and that's the point worth making — you can catch intrinsic with a single entailment check against the source, but for extrinsic the source is silent, so nothing contradicts it and you need external knowledge to adjudicate. That's Maynez et al. 2020, and it's still the vocabulary everyone uses for summarization and RAG.
+
 ### 2.3 By severity (production framing)
 
 - **Critical**: medical, legal, financial — could cause real harm.
@@ -50,6 +56,8 @@ Extrinsic is more dangerous because it's harder to detect — the source doesn't
 - **Cosmetic**: stylistic or marginal (e.g., "this paper showed X" when paper actually showed X but with caveats).
 
 Production systems weight detection by severity. A 0.5% medical hallucination rate is unacceptable; a 0.5% cosmetic-error rate may be fine.
+
+> **Saying it out loud.** Not all hallucinations cost the same, so I'd never report one global rate. A wrong drug dosage and a slightly overstated paper summary are both "hallucinations" and one of them ends careers. In practice I'd bucket them critical, significant, cosmetic, and set a separate threshold per bucket — half a percent is fine for cosmetic errors and completely unacceptable in a medical context. Saying that out loud is usually what signals you've actually shipped something rather than read about it.
 
 ### 2.4 Reasoning hallucinations (frontier topic)
 
@@ -60,6 +68,8 @@ A separate category that's increasingly important with reasoning models (o1, R1)
 - **Reasoning over hallucinated premises**: the model invents a "fact" early and reasons consistently from it.
 
 Detection differs: process-level (PRM) catches step errors; outcome-level catches only the final answer.
+
+> **Saying it out loud.** With reasoning models there's a category people forget: the chain of thought can be wrong even when the final answer is right, and it can look flawless while the answer is wrong. The worst version is when the model invents a fact in step two and then reasons perfectly from it — everything downstream is internally consistent and completely false. The tradeoff to name is process versus outcome supervision: outcome checking is cheap and only tells you about the last line, process reward models catch step-level errors but need per-step annotation, which is why PRM800K cost so much to build.
 
 ---
 
@@ -75,6 +85,8 @@ You'll be asked. Have a structured answer.
 
 **Long-tail facts are forgotten or misremembered.** Pretraining has billions of tokens but a power-law distribution of facts. Rare entities and events are barely represented; the model fills in "best guess" patterns.
 
+> **Saying it out loud.** At bottom the model is trained to predict the next token, and the next token that's most *plausible* is not always the one that's *true*. If a confident-sounding wrong continuation has higher probability than "I don't know," you get the confident wrong continuation — there's nothing in the loss that punishes that. Add the long tail: facts follow a power law, so rare entities barely appear in pretraining and the model pattern-matches instead of recalling. That's why hallucination rate spikes on obscure entities while the model looks great on famous ones.
+
 ### 3.2 Architectural reasons
 
 **Tokenization quirks.** Numbers, names, and code can be tokenized inconsistently. A specific phone number or DOI may be tokenized differently each time the model sees it; the model can't memorize it cleanly.
@@ -82,6 +94,8 @@ You'll be asked. Have a structured answer.
 **Position bias / lost in the middle.** In long context, attention concentrates on early and recent tokens. Mid-context information gets used less reliably → model "fills in" rather than reading.
 
 **Greedy / low-temperature decoding** doesn't help. The model commits to the highest-probability token at each step even when alternatives are nearly tied.
+
+> **Saying it out loud.** Two architectural things bite you. First, tokenization: long numbers, DOIs, and rare names get split inconsistently, so the model never gets a clean single handle to memorize — that's a big part of why it garbles phone numbers and citation years. Second, lost in the middle: attention concentrates near the start and the end of a long context, so a fact buried at 60% depth gets used less reliably and the model fills the gap from its prior. The practical failure mode to name is that stuffing more context into the prompt can make grounding *worse*, not better.
 
 ### 3.3 Training-objective reasons
 
@@ -91,17 +105,23 @@ This is a major reason post-RLHF models (GPT-4, Claude, etc.) are more confident
 
 Mitigation: explicit "I don't know" reward signal; refusal training on hard questions; calibration after RLHF.
 
+> **Saying it out loud.** Here's the counterintuitive one interviewers love: RLHF can make hallucination worse. The reward model is trained on human preferences, and humans reliably prefer answers that are fluent, complete, and confident — so the model gets rewarded for sounding sure, not for being right, and it learns that "I don't know" never wins. The consequence is a calibration regression: post-RLHF models are more confident without being more correct, which is exactly why token-level probability becomes a weaker hallucination signal after alignment. The fix is an explicit reward for well-placed refusal, plus recalibration after RLHF.
+
 ### 3.4 Sampling reasons
 
 **Temperature, top-p.** Higher temperature / wider nucleus = more diversity but more hallucination risk. Lower = more conservative but more repetitive and may miss correct-but-low-probability tokens.
 
 **Stochastic generation gives different answers across runs.** Used by detection methods (self-consistency).
 
+> **Saying it out loud.** Some of it is just dice. Higher temperature and wider top-p mean you're sampling from further out in the tail, and the tail contains more wrong tokens — so creativity and factuality trade off directly against each other. Turning temperature down helps but doesn't solve it, because a confidently wrong token is the *highest* probability token. The useful flip side: that same randomness is what self-consistency methods exploit, since a shaky fact changes across samples and a solid one doesn't.
+
 ### 3.5 Reasoning failures
 
 **Compounding errors in long chains.** Chain-of-thought multiplies error rates: probability of correct full chain = product of correctness at each step. Long reasoning is fragile.
 
 **Reward hacking on verifiable rewards** (frontier issue): models learn to game the verifier. E.g., math models that produce reasoning that *looks* correct but uses non-rigorous shortcuts.
+
+> **Saying it out loud.** Long chains of thought are fragile because the errors multiply. If each step is 97% reliable and you take twenty steps, you're down around 55% on the whole chain — the arithmetic is brutal and it's why long reasoning helps on some tasks and falls apart on others. The frontier version of this is reward hacking: when you train against a verifier, models learn to produce reasoning that satisfies the checker rather than reasoning that's actually valid. Name that tradeoff — more reasoning tokens buys accuracy up to a point and then starts buying you plausible-looking nonsense.
 
 ### 3.6 The honest summary
 
@@ -114,6 +134,8 @@ LLMs hallucinate because:
 
 **Mitigation isn't "make the model not hallucinate" — it's "detect and correct when it does."** That's why detection is the focus.
 
+> **Saying it out loud.** If someone asks the one-liner: models hallucinate because the objective rewards plausibility rather than truth, the world has a long tail they never memorized, RLHF rewards confidence, sampling is random, and long chains compound errors. The honest conclusion is the part that scores — you're not going to train hallucination to zero, so the engineering goal is to detect and contain it, not eliminate it. That's why every serious production answer is about a detection cascade and a refusal policy, not about a magic prompt.
+
 ---
 
 ## 4. Detection methods — the full taxonomy
@@ -125,6 +147,8 @@ There are three families. A senior interview answer covers all three.
 | **Reference-based** | Compare to known truth | Yes | Cheap |
 | **Reference-free** | Detect via LLM/sampling tricks | No | Medium-high |
 | **Internal-states-based** | Use model's own activations / logits | No (but needs model access) | Cheap once trained |
+
+> **Saying it out loud.** There are exactly three families and I'd name all three before diving into any one. Reference-based means you have something to check against — a gold answer, a source document, a database — and it's cheap but only works when ground truth exists. Reference-free means no ground truth, so you make the model betray itself by sampling it several times or asking it to verify its own claims; that costs you five to ten times the inference. Internal-states-based means you read the model's activations, which is nearly free at inference but needs white-box access and labeled training data for the probe. The tradeoff line is: cost, ground-truth availability, and model access — pick two.
 
 ---
 
@@ -141,7 +165,11 @@ The easiest case: you have a reference (gold answer, source document, knowledge 
 
 Use as baselines, not as hallucination detectors.
 
+> **Saying it out loud.** BLEU and ROUGE are not hallucination detectors and I'd say so directly. They count n-gram overlap, so a perfectly correct paraphrase scores low and a wrong answer that parrots words from the question scores high — the metric can't tell the difference between rewording and lying. They're fine as cheap regression baselines when you already have a gold answer and want to notice if something broke. The failure mode to name: high ROUGE with a flipped negation, where one word changes the meaning and the score barely moves.
+
 ### 5.2 NLI-based detection
+
+**In plain language.** This method borrows a tool from an older NLP task: given two sentences, does the first one prove the second? You feed the source document in as the "premise," each sentence the model wrote in as the "hypothesis," and a small entailment model votes supported or not. Everything below is just plumbing around that one call.
 
 Frame each generated sentence as a hypothesis; the source/reference is the premise. Use a Natural Language Inference model to check **entailment**:
 
@@ -164,8 +192,10 @@ For each sentence S in the generated output:
 
 **Weaknesses**:
 - NLI models can be brittle on long premises.
-- Numeric reasoning poorly handled by NLI ("$30 million" vs "$30 billion" — sometimes scored as entailment).
+- Numeric reasoning poorly handled by NLI ("\$30 million" vs "\$30 billion" — sometimes scored as entailment).
 - Doesn't catch extrinsic hallucinations (statement is consistent with source but added information).
+
+> **Saying it out loud.** The idea is simple: treat the source as the premise, treat each sentence the model wrote as the hypothesis, and ask an entailment model "does this follow?" If nothing in the source entails the sentence, flag it. It's the workhorse baseline because a DeBERTa-sized NLI model is milliseconds and pennies compared to an LLM judge. The failure mode I'd volunteer: NLI models are bad at numbers — swap million for billion and plenty of them still say entailment — so you bolt a numeric consistency check on top rather than trusting entailment alone.
 
 ### 5.3 QA-based detection (FEQA, QAGS, QuestEval)
 
@@ -184,6 +214,8 @@ For each fact F in the candidate:
 
 **Weaknesses**: depends on QA model quality and question generation quality; multi-hop questions can fool it.
 
+> **Saying it out loud.** Instead of asking "does the source imply this," you turn the claim into a question, answer that question from the source, and check whether the two answers match. It's like quizzing someone on their own summary using the original document as the answer key. It beats entailment on exactly the thing entailment is worst at — specific entities and numbers — because now you're comparing "30 million" to "30 billion" as strings rather than hoping a classifier notices. The cost is that you've stacked two more models, a question generator and a QA model, and multi-hop claims slip through because no single generated question covers them.
+
 ### 5.4 Citation verification
 
 For RAG / agentic outputs that cite sources:
@@ -191,6 +223,8 @@ For RAG / agentic outputs that cite sources:
 2. Use NLI / LLM-judge to verify the passage *actually supports* the claim.
 
 **Citation faithfulness** is a key sub-metric. Modern systems (GPT-4o, Claude, Perplexity) cite sources, but ~30-40% of citations don't actually support the claim attached. Detection here is critical.
+
+> **Saying it out loud.** If the system cites sources, the cheapest high-value check is: pull up the passage it cited and ask whether that passage actually says the thing. People assume a citation is self-validating, and it really isn't — on vanilla frontier RAG output, somewhere around a quarter to a third of citations don't support the claim they're attached to. That gap is one of the best numbers to have on hand, because it reframes citations from a trust signal into a verifiable artifact. Production systems target 95% or better citation faithfulness, and getting there is mostly reranking plus per-claim entailment, not a better model.
 
 ### 5.5 Knowledge graph triple matching
 
@@ -201,6 +235,8 @@ For factual claims about entities:
 
 Used in production for entity-rich domains (biomedical, legal).
 
+> **Saying it out loud.** For entity-heavy domains you can skip natural language entirely: pull subject-relation-object triples out of the response and look them up in a knowledge graph. If the model says a drug treats a condition and your ontology disagrees, that's a hard, auditable failure with no LLM judgment involved. It's precise and it's fast, which is why biomedical and legal deployments use it. The limit is coverage — the knowledge graph is incomplete, so a missing triple means "unknown," not "false," and if you treat those as failures your false-positive rate explodes.
+
 ### 5.6 Code execution
 
 For code generation:
@@ -209,6 +245,8 @@ For code generation:
 - Static analysis: does the imported function actually exist? Correct signature?
 
 This is the cleanest verification path — *truly verifiable*. The reason verifiable-reward RL works on code.
+
+> **Saying it out loud.** Code is the one place where verification is basically solved: run it. Either the tests pass or they don't, either the imported function exists or it doesn't — there's no judge model in the loop and no disagreement about what "supported" means. That's exactly why reinforcement learning with verifiable rewards works so well on code and math and hasn't transferred cleanly to essays. The tradeoff worth naming: passing tests proves the code runs, not that it does the right thing, so test coverage becomes your real ceiling on detection quality.
 
 ---
 
@@ -240,7 +278,11 @@ The harder case: production deployments often don't have ground truth. Five majo
 
 **Production note**: SelfCheckGPT became the default reference-free baseline. Many production systems use a cheaper variant: K=3 with NLI scoring.
 
+> **Saying it out loud.** The trick is to ask the same question five times at high temperature and see whether the model tells you the same story. Real knowledge is stable — the model says "photoelectric effect" every time. A made-up fact is sampled fresh from a fuzzy distribution, so you get a different year or a different name on each run, and that variance is your signal. It's the standard reference-free baseline because it needs zero ground truth and zero model internals. Two costs to name: you're paying five to six times the inference, and it's blind to confident wrongness — if the model memorized the misinformation, all five samples agree and you get a clean bill of health on a false claim.
+
 ### 6.2 Token-level uncertainty signals
+
+**In plain language.** During generation the model already tells you how sure it was about each word — that's the log-probability. This section is about squeezing a hallucination signal out of numbers you get for free, and about why that signal is weaker than it looks.
 
 The model's own probabilities at generation time reveal uncertainty.
 
@@ -258,7 +300,11 @@ The model's own probabilities at generation time reveal uncertainty.
 
 In practice: use as a feature in a learned classifier, not as a standalone signal.
 
+> **Saying it out loud.** The cheapest possible signal is the model's own confidence: average the log-probabilities across the answer, or look at the single least-confident token, which often lands right on the hallucinated name or number. It's free, because you get the logits during generation anyway. But I wouldn't ship it alone, and here's why: after RLHF the calibration is broken — the model is often *more* confident on a fabricated entity than on a rare true one — so low probability catches some hallucinations and high probability doesn't clear anything. Use it as one feature in a learned classifier, not as a standalone gate.
+
 ### 6.3 Semantic entropy (Farquhar et al. 2024 — *Nature*)
+
+**In plain language.** "Entropy" here just means how spread out the model's answers are. The insight is that you should measure the spread over *meanings*, not over wordings — two different sentences that say the same thing shouldn't count as disagreement. Everything below is how to cluster answers by meaning and then measure the spread.
 
 A major 2024 advance. The key insight: token-level uncertainty is misleading because *different token sequences can mean the same thing*. The model can be split between "Paris is the capital of France" and "The capital of France is Paris" — high token-level entropy but zero meaning entropy. Conversely, the model can be split between "Einstein" and "Newton" with low token-level entropy (the names are short) but high meaning entropy.
 
@@ -276,6 +322,8 @@ A major 2024 advance. The key insight: token-level uncertainty is misleading bec
 **Cost**: K samples + K-1 NLI calls for clustering. Comparable to SelfCheckGPT.
 
 This is the must-know 2024 method. Mention it by name in interviews.
+
+> **Saying it out loud.** The problem with plain token entropy is that the model can be totally certain about the answer and still phrase it five different ways — high entropy, zero actual uncertainty. Semantic entropy fixes that by sampling ten answers, grouping them by meaning using bidirectional entailment, and measuring entropy over the groups instead of over the words. So "Paris is the capital" and "the capital is Paris" collapse into one bucket, while "Einstein" versus "Newton" stay two buckets even though both are one short token. Farquhar et al. put it in *Nature* in 2024 and it's the strongest general-purpose reference-free predictor we have — cost is roughly ten generations plus the pairwise NLI clustering, so it belongs at the expensive end of a cascade, not on every request.
 
 ### 6.4 LLM-as-judge with chain-of-verification (CoVe — Dhuliawala et al. 2023)
 
@@ -295,6 +343,8 @@ This is the must-know 2024 method. Mention it by name in interviews.
 
 Used in production for high-stakes responses where compute budget allows.
 
+> **Saying it out loud.** Chain-of-Verification is basically making the model fact-check itself with amnesia. It writes a draft, then generates verification questions about the claims in that draft, then answers each question in a fresh context where it can't see the draft — so it can't just agree with itself — and finally rewrites, fixing whatever came back inconsistent. The independence step is the whole trick; without it the model rubber-stamps its own errors. It's around five LLM calls per query and it depends on the base model being a decent judge, which frontier models are and small models really aren't.
+
 ### 6.5 Verifier models
 
 Train a separate classifier to predict "is this output a hallucination?" given the prompt + response.
@@ -312,6 +362,8 @@ Train a separate classifier to predict "is this output a hallucination?" given t
 
 **Weaknesses**: needs labeled training data; quality depends on annotation; out-of-distribution test prompts may fool the verifier.
 
+> **Saying it out loud.** Instead of clever sampling, just train a classifier: feed it the prompt, the response, and the retrieved context, and have it output a hallucination score. Vectara's HHEM is the well-known public one, and there's a commercial tier — Patronus, Galileo, and friends. The appeal is production economics: it's one small forward pass, so it's cheap enough to run on every request, and you can specialize it to your domain. The failure mode is distribution shift — the verifier is only as good as its labels, and on prompts unlike its training data it fails quietly, which is worse than failing loudly.
+
 ### 6.6 Ensemble disagreement
 
 Run multiple LLMs (or one LLM with different prompts/temperatures) on the same query; check agreement.
@@ -320,6 +372,8 @@ Run multiple LLMs (or one LLM with different prompts/temperatures) on the same q
 
 **Weaknesses**: expensive; correlated errors (if all models share training data biases, they all hallucinate similarly).
 
+> **Saying it out loud.** Ask several different models the same question and see if they agree — disagreement is a decent proxy for "this is shaky." It's a step up from sampling one model repeatedly, because different models have different training data and different blind spots. The catch, and this is the thing to name, is correlated errors: today's frontier models are trained on overlapping web-scale corpora, so they tend to share the same misconceptions and confidently agree on the same wrong answer. Plus you're paying N times inference across N vendors, which is usually the reason it stays a research tool.
+
 ---
 
 ## 7. Internal-states-based detection (frontier methods)
@@ -327,6 +381,8 @@ Run multiple LLMs (or one LLM with different prompts/temperatures) on the same q
 Use the LLM's own hidden states or attention patterns to predict hallucinations. Faster than reference-free methods at inference (single forward pass), and surprisingly effective.
 
 ### 7.1 Truth probes (Burns et al. 2022 / "Discovering Latent Knowledge")
+
+**In plain language.** A "probe" is a tiny classifier trained on the model's internal activations rather than its words. The claim being tested here is that somewhere inside the network there's a direction that separates statements the model treats as true from ones it treats as false — even when its output says otherwise.
 
 **Idea**: LLMs internally "know" when they're uncertain — there's a direction in activation space that distinguishes truthful from untruthful claims.
 
@@ -342,7 +398,11 @@ Use the LLM's own hidden states or attention patterns to predict hallucinations.
 
 **Weaknesses**: requires labeled training data; probe transfers imperfectly across domains; needs activation access (white-box).
 
+> **Saying it out loud.** It turns out the model often internally knows it's making something up, even while it confidently writes it down. You take a pile of true and false statements, grab the hidden state at some middle layer, and fit a logistic regression to separate them — that's the whole method. On labeled benchmarks these linear probes land around 80 to 90% accuracy, which is remarkable for one dot product. Two constraints to name: you need white-box activation access, so it's off the table for an API vendor, and the probe transfers poorly across domains — train it on trivia and it degrades on clinical text.
+
 ### 7.2 INSIDE / activation-based hallucination scores
+
+**In plain language.** Same idea as truth probes, different statistics. Instead of one linear direction, these methods look at how spread out or how correlated the internal representations are across several sampled responses, and turn that into a score.
 
 Several papers (INSIDE, EigenScore, SAPLMA — 2023-2024) use functions of internal activations:
 - **EigenScore**: spread of representations across multiple samples (sampled responses' activations).
@@ -350,6 +410,8 @@ Several papers (INSIDE, EigenScore, SAPLMA — 2023-2024) use functions of inter
 - **INSIDE**: focuses on covariance between hidden states and decoded tokens.
 
 All exploit the observation that the model's internal "uncertainty" is a stronger signal than its output probability distribution (which RLHF corrupts).
+
+> **Saying it out loud.** This is a family of methods — EigenScore, SAPLMA, INSIDE — all built on the same observation: the model's internal representation carries more honest uncertainty than its output probabilities do. EigenScore samples several responses and measures how spread out their internal representations are; SAPLMA trains a small MLP on activations instead of a linear probe. The reason they beat logit-based signals is precisely the RLHF calibration problem — alignment training reshapes the output distribution toward confidence but doesn't scrub the uncertainty out of the middle layers. They're cheap at inference and they all require white-box access plus labeled data, which is the recurring tradeoff for this whole family.
 
 ### 7.3 Attention pattern analysis
 
@@ -359,15 +421,21 @@ Hallucinated content correlates with attention-pattern abnormalities:
 
 Used for diagnosis more than production detection.
 
+> **Saying it out loud.** When a model is grounding an answer in retrieved text, certain attention heads lock onto that context; when it's making something up, that attention smears out across the sequence. So diffuse attention over the retrieved passages is a hallucination tell. Some papers go further and identify specific "factuality heads." I'd frame this honestly as a diagnostic rather than a production detector — it's model-specific, it doesn't survive a version upgrade, and the effect sizes are small compared to just running an entailment check.
+
 ### 7.4 Activation steering (mitigation, related)
 
 Beyond detection: at generation time, *add* a "truthful" direction to the residual stream (the difference between truthful and untruthful internal representations). This pushes the model's distribution toward truthful outputs. Used in Anthropic, OpenAI, and academic work on alignment.
+
+> **Saying it out loud.** If there's a direction in activation space that encodes truthfulness, you don't have to stop at reading it — you can add it back in during generation and nudge the model toward honest outputs. Same math as the probe, used as an intervention instead of a measurement. It's elegant and it does move the needle on TruthfulQA-style benchmarks. The tradeoff is dosage: push the steering vector too hard and you degrade fluency and general capability, so you're trading truthfulness against everything else the model does, with no principled way to pick the coefficient.
 
 ---
 
 ## 7.5 Code snippets — major detectors (whiteboardable in 5-10 min each)
 
 You'll be asked to implement these. Below are minimal idiomatic versions.
+
+> **Saying it out loud.** The thing that separates candidates in a whiteboard round isn't the code, it's the narration — say what you're doing while you type it. For every one of these I'd open with one sentence of intent ("I'm sampling K responses so I can measure disagreement"), then write it, then close with the cost ("this is roughly six times single-generation inference"). Interviewers grade whether you know what's expensive and what's free. Silence while typing reads as uncertainty even when the code is perfect.
 
 ### SelfCheckGPT (NLI variant)
 
@@ -391,6 +459,8 @@ def selfcheck_nli(question, original, llm, nli, K=5, T=1.0):
 ```
 
 Production cost: K × (LLM generation) + |sentences| × K × (NLI call). Typically 5-6× single generation.
+
+> **Saying it out loud.** While coding this I'd narrate: "Sample K responses at temperature one, split the original into sentences, and for each sentence count how many samples entail it." The support fraction is the score — a sentence supported by five out of five is solid, one out of five is almost certainly invented. Then I'd state the cost unprompted: K generations plus sentences-times-K NLI calls, so about five to six times a single generation. And I'd flag the blind spot before they ask — if the model is confidently wrong, all K samples agree and this scores it clean.
 
 ### Semantic entropy (Farquhar et al. 2024)
 
@@ -427,6 +497,8 @@ def semantic_entropy(question, llm, nli, K=10, T=1.0):
 
 What to say while coding: "K samples, pairwise bidirectional-NLI clustering, entropy over cluster sizes. Captures *meaning*-level uncertainty — different token sequences with the same meaning don't add to the entropy."
 
+> **Saying it out loud.** Narrate it as three moves: sample K responses, cluster them by bidirectional entailment so that same-meaning answers merge, then take entropy over cluster sizes. The clustering is the interesting line — I'd say out loud that entailment has to hold in both directions, because one-directional entailment is implication, not equivalence. One cluster with all ten samples means entropy zero and the model is sure; ten singleton clusters means maximum entropy and you should not ship that answer. Cost is K generations plus roughly K-squared NLI comparisons in the naive version, which is why K is ten and not a hundred.
+
 ### NLI-based faithfulness check (RAG)
 
 ```python
@@ -451,6 +523,8 @@ def extract_claims(response, llm):
 
 Standard RAGAS faithfulness pipeline.
 
+> **Saying it out loud.** This is RAGAS faithfulness in fifteen lines: break the answer into atomic claims, and for each claim scan the context in overlapping windows looking for one chunk that entails it. Faithfulness is just the fraction of claims that found support. Two things I'd say while writing it: the windows overlap because a claim can straddle a chunk boundary, and claim extraction quality dominates the whole metric — if the decomposer emits vague claims like "the company performed well," everything entails them and your score is meaninglessly high.
+
 ### Token-level uncertainty (cheap baseline)
 
 ```python
@@ -465,6 +539,8 @@ def token_uncertainty(prompt, response, llm_with_logits):
 ```
 
 Cheap (you already get logits during generation). Often used as a feature in a learned classifier alongside other signals.
+
+> **Saying it out loud.** Three numbers out of the logits you already have: mean log-prob, min log-prob, and perplexity. I'd point at min log-prob and say that's usually the most informative one, because the hallucinated proper noun or year tends to be the single weakest token in an otherwise confident sentence. It costs nothing, which is why it belongs in stage one of any cascade. And I'd immediately caveat that post-RLHF calibration is unreliable, so this is a feature feeding a classifier, not a decision boundary on its own.
 
 ### Chain-of-Verification (CoVe)
 
@@ -497,6 +573,8 @@ def chain_of_verification(question, llm):
 
 Cost: ~5 LLM calls per query. Best for high-stakes long-form generation.
 
+> **Saying it out loud.** Four calls, and I'd name each as I write it: draft, generate verification questions, answer each one *without the draft in context*, then reconcile. The comment about not passing the draft is the line to say aloud, because that independence is the entire mechanism — hand the model its own draft and it will agree with itself. The final prompt matters too: it has to tell the model to acknowledge uncertainty, not just to patch contradictions, otherwise it papers over the gap. Around five calls per query, so this is a high-stakes-only tool.
+
 ### Truth probe (linear probe on activations)
 
 ```python
@@ -523,6 +601,8 @@ def score_truth(probe, model, text, layer=16):
 
 Cost at inference: one forward pass + one dot product. Very cheap once trained. Often achieves 80-90% truth-classification on benchmarks.
 
+> **Saying it out loud.** Forward-pass a labeled set of true and false statements, grab the hidden state at the last token of some middle layer, fit logistic regression. That's it — the whole method is twelve lines and sklearn. While coding I'd justify the layer choice: middle layers work best because early ones are still surface-level and late ones have collapsed onto next-token prediction. Inference cost is one dot product on top of a forward pass you were doing anyway, and it lands around 80 to 90% on benchmarks — the catch is you need white-box access and a labeled dataset in your domain.
+
 ### Citation faithfulness check (per-claim)
 
 ```python
@@ -543,6 +623,8 @@ def verify_citations(response, citations, nli):
 ```
 
 Frontier RAG metric: citation faithfulness = fraction of citations that actually support their claim.
+
+> **Saying it out loud.** Regex out the citation markers, grab the sentence each marker sits in, pull the cited passage, and run one entailment check per pair. The metric is the fraction of citations whose passage actually supports the sentence attached to them. What I'd say while writing it: the fiddly part isn't the NLI call, it's deciding what the claim *is* — sentence-level is the cheap approximation, and it over-attributes when one sentence carries three facts and only one of them came from that source. Frontier RAG sits around 70 to 85% here; production targets are 95%+.
 
 ### Putting it all together — production cascade
 
@@ -579,6 +661,8 @@ def detect_hallucination(query, response, context=None, llm=None, nli=None,
 
 This is the canonical production design. Tune thresholds per domain.
 
+> **Saying it out loud.** This is the answer to "design me a hallucination detector," so I'd walk it top to bottom: cheap signals on every request, medium-cost entailment when there's retrieved context, and the expensive semantic-entropy path only for the cases still ambiguous after that. Note the two early exits — very high faithfulness returns pass immediately and very low returns fail immediately, so the expensive stage only sees the murky middle, which in practice is maybe 10 to 20% of traffic. That's what makes the economics work: your average cost is close to the cheap stage while your accuracy is close to the expensive one. The thresholds are per-domain and they're a business decision, not a modeling one.
+
 ---
 
 ## 8. RAG-specific hallucination detection
@@ -592,7 +676,11 @@ When the model has retrieved context, faithfulness to that context is the primar
 
 Frontier-lab interview probe: "Can a faithful response be wrong?" Yes — if retrieved context is wrong, faithful response inherits the error. Faithfulness is the ML problem; factuality is the data problem.
 
+> **Saying it out loud.** Faithful means "supported by the documents I retrieved." Factual means "true in the real world." Those come apart the moment your retrieval pulls up something outdated or wrong — the model quotes it accurately, the answer is perfectly faithful, and it's also perfectly wrong. I'd frame it as: faithfulness is the ML problem, factuality is the data problem, and your RAG pipeline can only ever own the first one. That's also why production monitoring tracks faithfulness — it's computable from your own logs, whereas factuality needs a human or an external knowledge base.
+
 ### 8.2 RAGAS metrics
+
+**In plain language.** RAGAS is a framework that scores a RAG pipeline on four axes without needing gold answers for most of them. Two of the metrics grade the generator and two grade the retriever — that split is the useful thing to remember.
 
 The standard framework (Es et al. 2023) has four metrics:
 
@@ -605,6 +693,8 @@ The standard framework (Es et al. 2023) has four metrics:
 
 In production: faithfulness is the most-monitored. Context precision/recall are diagnostics.
 
+> **Saying it out loud.** RAGAS gives you four numbers and the useful way to hold them is: two grade the generator, two grade the retriever. Faithfulness and answer relevance are about the answer — is it grounded in what was retrieved, and does it actually address the question. Context precision and context recall are about retrieval — did you pull junk, and did you miss something you needed. Debugging depends on reading them together: low faithfulness with good context means the generator is confabulating, but low faithfulness with bad context means fix the retriever first. In production, faithfulness is the one you alert on; the context metrics are diagnostics because recall needs a gold answer to compute.
+
 ### 8.3 Citation correctness
 
 Modern RAG systems should cite. Citation correctness has two parts:
@@ -615,7 +705,11 @@ Modern RAG systems should cite. Citation correctness has two parts:
 
 Empirical: GPT-4 / Claude RAG outputs have ~70-85% citation faithfulness. Production-grade systems target ≥95%.
 
+> **Saying it out loud.** There are two separate questions hiding inside "is the citation right." Does the source exist at all — that's a lookup, easy. And does that source actually support this specific claim — that's an entailment problem, and it's where the real failure lives. Everyone builds the first check and stops. The number that lands: frontier models' RAG output runs roughly 70 to 85% citation faithfulness out of the box, while a production bar is 95% or better, and closing that gap is per-claim verification, not a bigger model.
+
 ### 8.4 Attribution evaluation (Rashkin et al. 2023, AIS)
+
+**In plain language.** AIS is the careful, human-annotation version of "did the source really say that." Its contribution is splitting the judgment into two questions asked in order, which is what makes annotators agree with each other.
 
 A more rigorous framework: **Attributable to Identified Sources (AIS)**. For each claim:
 - Is the claim *interpretable*? (Concrete, verifiable.)
@@ -623,11 +717,15 @@ A more rigorous framework: **Attributable to Identified Sources (AIS)**. For eac
 
 Used as the gold standard for evaluating RAG outputs at frontier labs.
 
+> **Saying it out loud.** AIS — Attributable to Identified Sources — is the rigorous framing, and its contribution is asking two questions in order instead of one. First, is the claim even interpretable on its own, meaning concrete enough that you could check it? Then, and only then, is it supported by the cited source? That ordering matters because vague claims are what wreck annotator agreement — nobody can agree on whether "the outlook is positive" is attributable. It's the gold standard for evaluating RAG output, and the cost is that it's human annotation, so it's an offline audit, not a runtime check.
+
 ---
 
 ## 9. Benchmarks and datasets
 
 You'll be asked which datasets / benchmarks measure hallucination. Have these ready:
+
+> **Saying it out loud.** When someone asks which benchmark to use, the answer depends on what you're measuring, and I'd say that first. For world-knowledge factuality it's TruthfulQA and SimpleQA — TruthfulQA specifically tests whether the model repeats popular misconceptions, SimpleQA is short-answer and adversarial and frontier models still land in the 30 to 60% range, which is a nice humbling number. For RAG faithfulness it's RAGTruth and FACTS Grounding. For code, execution is the benchmark. The trap to avoid is quoting a general factuality score as evidence about your grounded system — they measure different contracts.
 
 ### 9.1 General factuality
 
@@ -672,12 +770,16 @@ Most effective single intervention. Constrain the model to ground its output in 
 - Combined with citation requirement: forces explicit attribution.
 - Reduces hallucination rate by ~50-80% empirically.
 
+> **Saying it out loud.** If you can only do one thing, do this: give the model the documents and tell it to answer only from them, and to say it doesn't know otherwise. Empirically that's a 50 to 80% cut in hallucination rate, which nothing else in the toolkit comes close to. Requiring inline citations helps further, because it forces the model to point at a specific span rather than gesture at the context. The tradeoff to name is that you've converted a generation problem into a retrieval problem — now bad retrieval is your bottleneck, and a faithful answer to a wrong document is still wrong.
+
 ### 10.2 Refusal training
 
 Train the model to say "I don't know" when uncertain. RLHF with explicit reward for refusing hard questions.
 
 - **Drawback**: too aggressive refusal hurts UX; tuning is hard.
 - **Modern approach**: calibrated refusal — the model refuses only when its calibrated confidence is below threshold.
+
+> **Saying it out loud.** Teach the model to say "I don't know," because by default RLHF taught it never to. The obvious way is to reward refusal on questions it can't answer, and the obvious problem is overshoot — a model that refuses your reasonable question is, from a user's perspective, broken, and refusal rate is one of the metrics that quietly tanks product satisfaction. So the modern framing is calibrated refusal: refuse when the model's calibrated confidence is below a threshold, rather than training a blanket reflex. That turns a training problem into a threshold you can actually tune per domain.
 
 ### 10.3 Constitutional / honesty principles
 
@@ -687,6 +789,8 @@ Prompt the model with explicit honesty constraints:
 - "If asked about events after [cutoff], note your knowledge limits."
 
 Augmented with constitutional-AI-style critique-and-revise loops.
+
+> **Saying it out loud.** You can get real mileage out of just writing the rules down: acknowledge uncertainty, never fabricate a citation, flag anything past your knowledge cutoff. Constitutional AI takes that further with a critique-and-revise loop, where the model checks its own draft against the principles and rewrites. It's cheap and it stacks with everything else. The honest limitation: principles shape style far more than they shape knowledge — a model that doesn't know the answer will now hedge beautifully while still being wrong, so this reduces confident wrongness, not wrongness.
 
 ### 10.4 Chain-of-Verification (CoVe)
 
@@ -698,13 +802,19 @@ Augmented with constitutional-AI-style critique-and-revise loops.
 - Top-p narrow.
 - Deterministic for factual queries; stochastic for creative ones.
 
+> **Saying it out loud.** Drop the temperature for anything factual and save the sampling for anything creative — that's basically the rule, and routing by query type is a genuinely cheap win. But I'd be clear that it's a partial fix, because it only removes hallucinations that came from the tail of the distribution. The ones that came from the model being confidently wrong are the *highest* probability tokens, so temperature zero delivers them faster and more consistently. Variance reduction, not error correction.
+
 ### 10.6 Calibration
 
 Post-hoc calibration of token-level probabilities so they actually mean what they say. Platt scaling on a held-out set; updates the model's stated confidences. Doesn't reduce hallucinations but makes them flaggable.
 
+> **Saying it out loud.** Calibration doesn't stop the model hallucinating — it makes the hallucinations flaggable, which is a different and underrated thing. You fit something simple like Platt scaling or temperature scaling on a held-out set so that when the system says 80% it's right about 80% of the time. Once that holds you can set an honest abstention threshold instead of a made-up one. The number to quote is ECE, expected calibration error, and the thing to name is that RLHF is what broke calibration in the first place, so this step is usually undoing damage from alignment.
+
 ### 10.7 Tool use / verifiable execution
 
 For computable claims (math, code, data lookups): outsource to a tool. The tool either succeeds or fails. Hallucination rate ≈ 0 for the tool-handled portion.
+
+> **Saying it out loud.** For anything computable, don't ask the model — make it call something. Arithmetic goes to a calculator, data questions go to SQL, code goes to an interpreter. Hallucination rate on the tool-handled portion is essentially zero because the tool either returns an answer or errors out. That's why tool use is the highest-leverage mitigation for quantitative products. The failure mode just moves upstream: the model can still call the wrong tool or pass it the wrong arguments, so you've traded fact hallucination for parameter hallucination, which at least is loggable and testable.
 
 ### 10.8 Honest-trained models
 
@@ -712,9 +822,15 @@ Models specifically RLHF'd or fine-tuned for honesty: Anthropic Claude (constitu
 
 Empirical claims: o1 reportedly hallucinates less because the long reasoning chain catches its own errors. Mileage varies.
 
+*(Note, added later: this claim dates from the 2024 o1 release and was largely vendor-reported. Subsequent evidence is mixed — extended reasoning also gives the model more room to invent a premise early and then defend it consistently. Treat "reasoning models hallucinate less" as a prior to verify per task, not an established result.)*
+
+> **Saying it out loud.** Some models are explicitly trained for honesty — Claude through constitutional AI, OpenAI's reasoning models through deliberative alignment — and the reasoning ones plausibly hallucinate less because a long chain of thought gives the model a chance to catch itself. I'd say that with a hedge, though, because the evidence is mixed and vendor-reported: longer reasoning also gives more opportunities to invent a premise and then defend it. Treat "the model is honest now" as a prior you still verify, not as a reason to skip the detector.
+
 ### 10.9 Rejection sampling
 
 Generate K candidates; verify each with a hallucination detector; return the highest-scoring or refuse if all fail. Best-of-N for factuality.
+
+> **Saying it out loud.** Generate N answers, score each with your detector, and ship the best one — or refuse if none of them clear the bar. It's best-of-N, just with factuality as the ranking signal instead of a preference reward. It works because you only need one good sample out of N, and the detector only needs to *rank*, which is easier than being absolutely calibrated. The cost is linear in N on both generation and scoring, and the failure mode is detector overfitting — optimize hard enough against your own scorer and you start selecting for answers that fool it.
 
 ---
 
@@ -740,6 +856,8 @@ user query
 [post-hoc logging for monitoring]
 ```
 
+> **Saying it out loud.** The detector sits between generation and the user, and it has three exits, not two: clean goes straight through, borderline gets regenerated or verified more expensively, and confidently bad gets blocked and escalated. Having the middle branch is what people forget — a binary pass/fail gate either lets bad answers out or refuses far too much. Everything gets logged whether it passed or not, because that log is where next quarter's training data comes from. The design constraint driving all of it is latency: the detector runs on the critical path, so its budget is whatever you can spend before the user notices.
+
 ### 11.2 The detector stack
 
 Typically a cascade:
@@ -758,6 +876,8 @@ human review (for high-stakes domains)
 ```
 
 Latency budget determines how much you can afford. For chat: 100ms budget. For background research: 30s.
+
+> **Saying it out loud.** Never one detector — always a cascade from cheap to expensive, with each tier only seeing what the tier above couldn't resolve. Token-level signals and a small classifier run on everything, entailment against the retrieved context runs on the uncertain ones, semantic entropy or an LLM judge runs on what's still ambiguous, and humans see the residue in high-stakes domains. It's the same shape as a spam pipeline or a fraud pipeline, and the reason is the same: you want average cost near the cheap tier and accuracy near the expensive one. Latency is what sets the depth — a chat product has maybe 100 milliseconds of headroom, a background research agent has 30 seconds, and those are completely different stacks.
 
 ### 11.3 RAG-specific detector
 
@@ -782,12 +902,16 @@ generated response
 [action: pass / regenerate / refuse]
 ```
 
+> **Saying it out loud.** For RAG the pipeline is concrete: split the answer into atomic claims, check each claim's citation actually entails it, separately flag claims that carry no citation at all, aggregate to a score, then decide pass, regenerate, or refuse. The uncited-claim branch is the one people skip and it's where extrinsic hallucination hides — a claim with no citation was never checked by anything. Escalating only borderline cases to an LLM judge keeps the cost sane. The aggregate is a design choice worth stating: mean support is forgiving, minimum support is strict, and for high-stakes you want the minimum.
+
 ### 11.4 Domain-specific layers
 
 For high-stakes domains, add domain detectors:
 - **Medical**: drug-name lookup against drug databases.
 - **Legal**: citation verification against legal corpus.
 - **Finance**: numerical consistency check (does the claimed % match the underlying data?).
+
+> **Saying it out loud.** Generic detectors get you most of the way and then you bolt on the checks only your domain can do. Medical: every drug name goes against a drug database. Legal: every citation goes against a legal corpus that actually exists. Finance: do the percentages in the prose reconcile with the numbers in the table? These are deterministic lookups, so they're cheap, exact, and auditable — which matters enormously when the failure is regulatory rather than just embarrassing. The general lesson to state: the highest-precision detector in any product is usually a boring database join, not a model.
 
 ### 11.5 Online metrics
 
@@ -797,9 +921,13 @@ Track in production:
 - **User report rate** ("this answer was wrong" buttons).
 - **Per-domain breakdown** (medical hallucination ≠ general hallucination).
 
+> **Saying it out loud.** Four things on the dashboard: estimated hallucination rate from sampled audits, refusal rate, user-reported error rate, and all of it broken out per domain. Refusal rate is the one people forget, and it's the guardrail on the guardrail — if hallucinations drop while refusals climb, you didn't fix anything, you just made the product more annoying. The per-domain split matters because a global average hides exactly the segment you care about. And I'd be honest that the headline number is an estimate from a sample, not a measurement, because full labeling is unaffordable.
+
 ### 11.6 Feedback loop
 
 User reports → labeled examples → retrain verifier model. The detection system improves over time as it learns from real failures.
+
+> **Saying it out loud.** The system should get better from being used: user reports become labeled examples, labeled examples retrain the verifier, and the verifier catches more next month. That flywheel is the difference between a detector that decays and one that compounds. The thing to name is the sampling bias — users report the failures that are obvious and annoying, not the subtle ones, so if you train purely on reports your verifier gets great at the easy cases and stays blind to the dangerous ones. You fix that by mixing in randomly sampled audited traffic alongside the reports.
 
 ---
 
@@ -813,6 +941,8 @@ A subtle interview probe: "How do you know your hallucination detector works?"
 - **Granularity matters**: per-sentence, per-claim, per-response — the same response can have different scores at different granularities.
 - **Domain expertise needed**: medical hallucinations require doctors to label.
 
+> **Saying it out loud.** The uncomfortable truth is that humans don't agree on what counts as a hallucination, so your labels are noisy before any model touches them. Two annotators will genuinely split on whether a claim is "supported" or merely "consistent." Granularity moves the number too — the same response scores differently per sentence, per atomic claim, or as a whole. And in specialized domains only a clinician or a lawyer can label, which caps your dataset size hard. Say it plainly: your detector's measured ceiling is inter-annotator agreement, so report that agreement number alongside your accuracy.
+
 ### 12.2 Metrics for the detector
 
 - **Precision**: of flagged hallucinations, what fraction are real? (High → few false alarms.)
@@ -820,7 +950,11 @@ A subtle interview probe: "How do you know your hallucination detector works?"
 - **AUPRC**: precision-recall curve. Standard for imbalanced detection.
 - **Per-severity**: don't average across critical and cosmetic; report separately.
 
+> **Saying it out loud.** It's a detection problem on a rare, imbalanced class, so accuracy is meaningless — if 3% of responses hallucinate, a detector that always says "clean" is 97% accurate. Report precision, recall, and AUPRC, not ROC-AUC, because with heavy imbalance ROC curves look flattering. Precision is your false-alarm cost, recall is what you actually let through. And break it out by severity rather than averaging — a detector with 95% recall that misses the critical cases is worse than one at 80% that catches them all.
+
 ### 12.3 Cost-aware evaluation
+
+**In plain language.** This section says: don't pick your alerting threshold by maximizing accuracy, pick it by minimizing money. The formula below just assigns a different price tag to a miss and to a false alarm, then finds the cutoff with the lowest total bill.
 
 In production, false alarms (legit response flagged as hallucinated) are costly: trigger expensive re-generation or wrong refusals. Optimize cost-weighted F-beta:
 
@@ -830,13 +964,19 @@ $$
 
 Often very different from accuracy-optimal threshold.
 
+> **Saying it out loud.** The threshold isn't a modeling decision, it's an economics one. A missed hallucination costs you whatever the wrong answer costs; a false alarm costs you a regeneration, or worse, a refusal on a perfectly good answer. So you attach a price to each and pick the cutoff that minimizes the total — that's all the formula says. The result is often far from the accuracy-optimal point, and in consumer chat the surprising direction is that false positives are usually the more expensive error, because over-refusal drives people away permanently while a rare wrong fact does not.
+
 ### 12.4 Calibration of the detector
+
+**In plain language.** Your detector outputs a number between 0 and 1. Calibration asks whether that number means anything — when it says 0.8, is it right 80% of the time? A reliability diagram plots claimed confidence against actual accuracy; ECE summarizes the gap in one number.
 
 The detector outputs a confidence score. Is it calibrated?
 - Reliability diagram of detector confidence vs realized error rate.
 - ECE (expected calibration error).
 
 A well-calibrated detector enables risk-based decisions: "if confidence < 0.8, refuse; else return."
+
+> **Saying it out loud.** A detector that outputs 0.8 should be right 80% of the time, and if it isn't, every threshold you set on top of it is arbitrary. You check this with a reliability diagram — bin by predicted confidence, plot against realized accuracy, and see how far off the diagonal you land — and you summarize it as expected calibration error. Why it matters operationally: calibration is what lets you do risk-based routing, like "below 0.8 we escalate to a human." Without it you're tuning a magic number by feel and it'll drift the moment the traffic distribution changes.
 
 ---
 
@@ -897,6 +1037,8 @@ Faithfulness = supported by retrieved source. Factuality = true in the real worl
 **5. Why is "true but unsupported" still a hallucination in RAG?**
 RAG's contract is "ground in retrieved context." Adding unsupported information violates that contract even if true.
 
+> **Saying it out loud.** If they open with definitions, the win is being crisp in one breath and then adding the qualifier. Hallucination is content the relevant ground truth doesn't support — and "relevant ground truth" changes per product, which is the whole subtlety. Intrinsic contradicts the source, extrinsic just isn't in it; faithful means grounded in what you retrieved, factual means true in the world. The one that separates people is "true but unsupported": in RAG that's still a violation, because the contract was to answer from the context, not from memory.
+
 ### B. Causes
 
 **6. Why does next-token prediction lead to hallucinations?**
@@ -914,6 +1056,8 @@ Pretraining sees citations as a textual pattern; model learned form (Author et a
 **10. Why does sampling temperature affect hallucination rate?**
 Higher temperature = wider exploration = more chances to sample low-probability (often wrong) tokens.
 
+> **Saying it out loud.** Causes come in five: the objective rewards plausibility over truth, the long tail was never memorized, RLHF rewards sounding confident, sampling is stochastic, and long chains compound errors. The RLHF one is the answer that earns points, so I'd lead with it — humans rate confident answers higher, the reward model learns that, and the model stops ever saying "I don't know." Citations get their own explanation: pretraining taught the model the *shape* of a reference, author-year-title, without binding it to anything real, so it generates well-formed fiction. And long context makes it worse, not better, because of lost-in-the-middle.
+
 ### C. Reference-based detection
 
 **11. NLI-based detection — how?**
@@ -930,6 +1074,8 @@ Paraphrasing. High overlap doesn't guarantee correctness; low overlap doesn't gu
 
 **15. Citation verification flow?**
 For each (claim, citation) pair: retrieve cited passage; check NLI entailment; flag unsupported.
+
+> **Saying it out loud.** With ground truth in hand, my ladder is entailment first, then QA-based, then domain lookups. NLI means treating the source as premise and each generated sentence as hypothesis and asking whether it follows — RoBERTa-MNLI or DeBERTa off the shelf, SummaC or FactCC if you want summarization-specific. QA-based turns the claim into a question and answers it from the source, which is stronger on entities and numbers precisely where NLI is weak. I'd close by ruling out BLEU and ROUGE explicitly: they can't tell a paraphrase from a contradiction, so they're regression baselines, not detectors.
 
 ### D. Reference-free detection
 
@@ -963,6 +1109,8 @@ Draft → verification questions → answer independently → fix inconsistencie
 **25. Verifier model approach?**
 Train classifier on (prompt, response) → hallucination label. Vectara HHEM, Patronus AI, Galileo are examples.
 
+> **Saying it out loud.** No ground truth means you have to make the model give itself away. SelfCheckGPT samples five responses and checks whether each claim survives across them — about five to six times the cost, and blind to confident wrongness. Token log-probs are free but unreliable after RLHF. Semantic entropy is the one to name by paper: Farquhar et al., *Nature* 2024 — sample ten, cluster by bidirectional entailment, take entropy over clusters, so rewordings don't count as disagreement. And Chain-of-Verification, roughly five calls, has the model answer verification questions without seeing its own draft. If I only get one sentence: semantic entropy is the strongest reference-free signal we have.
+
 ### E. Internal-states-based
 
 **26. What's a truth probe?**
@@ -979,6 +1127,8 @@ Train a small MLP on activations to predict factuality.
 
 **30. Activation steering for mitigation?**
 Add a "truthful" direction (difference between truthful and untruthful representations) to the residual stream during generation.
+
+> **Saying it out loud.** The headline claim is that the model often internally knows it's wrong while its output says otherwise. A truth probe is just logistic regression on hidden states from a middle layer, trained on true and false statements, and it hits 80 to 90% on benchmarks for the price of one dot product. EigenScore measures how spread out the internal representations are across samples; SAPLMA swaps the linear probe for a small MLP. And you can run the same direction backwards as a mitigation — activation steering adds the truthful direction into the residual stream during generation. The constraint on all of it: white-box access plus labeled data, and probes transfer badly across domains.
 
 ### F. RAG-specific
 
@@ -997,6 +1147,8 @@ Existence: does the cited source exist? Faithfulness: does the source support th
 **35. Empirical citation faithfulness rate of frontier RAG?**
 Around 70-85% for vanilla GPT-4/Claude. Production-grade systems target ≥95%.
 
+> **Saying it out loud.** For RAG the metric that matters is faithfulness, and RAGAS computes it by decomposing the answer into atomic claims and checking each against the retrieved context — the score is the fraction supported. Context precision and recall grade the retriever instead: was what you pulled relevant, and did you miss anything. On citations, separate existence from faithfulness — existence is a lookup, faithfulness is entailment, and only the second one is hard. The number to have ready: vanilla frontier RAG runs around 70 to 85% citation faithfulness, and a production bar is 95%.
+
 ### G. Benchmarks
 
 **36. TruthfulQA?**
@@ -1013,6 +1165,8 @@ Per-fact factuality scoring for long-form generation.
 
 **40. RAGTruth?**
 ~18K hallucinated vs faithful RAG outputs (Niu et al. 2024).
+
+> **Saying it out loud.** I'd name benchmarks with what they measure, not just the acronyms. TruthfulQA is 817 questions engineered to bait common misconceptions, so it measures whether the model parrots popular falsehoods. SimpleQA is OpenAI's 2024 short-answer factuality set, about 4,300 questions, and frontier models land in the 30 to 60% range — a useful number for calibrating expectations in the room. HaluEval gives you 35K labeled hallucinated-versus-correct pairs for training a verifier, FactScore scores long-form generation fact by fact, and RAGTruth is the RAG-specific corpus at roughly 18K examples. The framing that scores: pick the benchmark whose *contract* matches your product, because a factuality score tells you nothing about a grounded system.
 
 ### H. Production / system design
 
@@ -1031,6 +1185,8 @@ Plug in domain-specific verifiers — drug DB, citation DB, numerical consistenc
 **45. Detector feedback loop?**
 User reports → labeled examples → retrain verifier. Improves with deployment.
 
+> **Saying it out loud.** The system-design answer is always a cascade: cheap signals on everything, entailment against context on the uncertain, semantic entropy or an LLM judge on what's left, humans on the high-stakes residue. Then the operational points — you can monitor faithfulness continuously from your own logs, but factuality needs audits or an external knowledge base, so those are different cadences. Set the threshold by cost, not accuracy, and in chat products false positives usually cost more than false negatives because over-refusal loses users permanently. And close the loop: user reports become labels, labels retrain the verifier, mixed with randomly sampled traffic so you don't only learn the obvious failures.
+
 ### I. Mitigations
 
 **46. Most effective single mitigation?**
@@ -1047,6 +1203,8 @@ Outsource computable claims (math, code, lookups) to tools. Tool either succeeds
 
 **50. Why is conservative decoding (low temp) only a partial fix?**
 Reduces variance but doesn't fix the core problem: high-probability outputs can be confidently wrong.
+
+> **Saying it out loud.** Ranked by leverage: retrieval grounding with a citation requirement is far and away number one, roughly a 50 to 80% cut. Tool use is next for anything computable, because a calculator or a SQL query either works or errors — hallucination rate on that slice goes to about zero. Then best-of-N with a detector as the ranker, and calibrated refusal so the model declines only below a confidence threshold instead of reflexively. The one I'd caveat out loud is low temperature: it reduces variance but the confidently-wrong outputs are the highest-probability tokens, so conservative decoding delivers those faster rather than filtering them.
 
 ---
 
@@ -1077,6 +1235,8 @@ When the case is winding down, volunteer 1-2 of these unprompted:
 - **Cascade architecture** — never one detector; always a tier of cheap-to-expensive.
 - **Cost-weighted thresholds** — false positives often more expensive than false negatives in chat UX.
 - **The fundamental limit** — for confidently-memorized misinformation, no method works; data quality matters most.
+
+> **Saying it out loud.** At the end of a case, I'd volunteer one or two of these unprompted, because that's what reads as senior. My go-to pair is the RLHF honesty paradox — alignment made models more confident without making them more correct, which is why post-RLHF log-probs are a weak signal — and the faithfulness-versus-factuality split, since most production systems can only ever measure the first and it's worth being honest about that. If there's room for a third, the fundamental limit: for confidently memorized misinformation, no detector in this document works, because every signal we have keys off uncertainty and there isn't any. That's a data-quality problem, and saying so out loud is what distinguishes someone who's shipped this from someone who's read about it.
 
 ---
 

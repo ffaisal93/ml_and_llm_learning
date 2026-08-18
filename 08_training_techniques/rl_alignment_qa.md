@@ -46,6 +46,8 @@ Where:
 - RL optimization can be unstable
 - Cost: Expensive to collect human preferences
 
+> **Saying it out loud.** RLHF is three stages and each adds a different signal. SFT teaches the model the shape of being an assistant — you're just doing cross-entropy on human-written answers. Then you train a reward model on pairwise comparisons, so instead of "here's the right answer" it learns "this one beats that one." Then you run RL, usually PPO, to push the policy toward high reward while a KL penalty keeps it from wandering off the SFT model. The one-line summary: SFT teaches format, the reward model captures taste, and RL is what actually moves the distribution — and the KL term is what stops the whole thing degenerating into reward hacking.
+
 ---
 
 ## Q2: How does DPO differ from RLHF? When would you use each?
@@ -102,6 +104,10 @@ Where:
 **Trade-off:**
 - DPO is simpler but less flexible
 - RLHF is more complex but more powerful
+
+> **Saying it out loud.** The core difference is that DPO deletes the reward model and the RL loop. Rafailov showed that the RLHF objective has a closed-form optimum, so you can rewrite the reward as the log-ratio between your policy and the frozen reference, and when you plug that into the preference model the intractable constant cancels — what's left is an ordinary supervised loss on preference pairs. So DPO is two models in memory instead of four and no rollouts at all. I'd use DPO when I have good preference pairs and limited compute, and PPO or GRPO when the reward is verifiable, I can afford to generate, or I need to hand-shape the reward.
+
+> **Contested, not settled.** Whether DPO genuinely matches online RLHF is an open argument and shouldn't be stated as fact. The DPO paper and most open recipes report rough parity on chat benchmarks, while Xu et al. 2024 ("Is DPO Superior to PPO for LLM Alignment?") and Tajwar et al. 2024 report a well-tuned PPO ahead on harder, more out-of-distribution settings. Safest framing: DPO is competitive and much cheaper on static preference data; on-policy methods still lead where the policy has to move far from that data — which is exactly why iterative/online DPO exists.
 
 ---
 
@@ -225,64 +231,83 @@ L = min(ratio*A, clip(ratio)*A) + c_v*(V-R)² + β*KL(π_θ||π_ref)
 
 See `ppo_models_detailed.md` for complete mathematical details!
 
+
+> **Saying it out loud.** PPO is a policy-gradient method with a safety belt. The problem it solves is that you're learning from your own samples, so one bad batch can shove the policy somewhere it can't recover from — PPO stops that by computing the ratio of new to old probability for each token and clipping it to roughly 0.8 to 1.2, so no single update can move things too far. That's what lets you reuse a batch of expensive rollouts for several gradient steps instead of one. The thing to have ready is the four-models answer: policy, frozen reference for KL, reward model, and critic — which for a 70B policy is about a terabyte of weights, and is exactly the cost GRPO and DPO were invented to cut.
+
 ---
 
 ## Q4: What is GRPO (Group Relative Policy Optimization)? When is it useful?
 
 **Answer:**
 
+> **Correction (2026-08-18).** The original text of this answer described GRPO as optimizing across *demographic or user groups* (age groups, regions, skill levels). That is wrong and would be a costly thing to say in an interview. In GRPO, a "group" is a set of $G$ sampled completions for the **same prompt**. The answer below is the corrected version.
+
 **What is GRPO?**
-GRPO extends PPO to handle multiple groups with different preferences. Instead of optimizing absolute reward, it optimizes relative to group baseline.
+GRPO (Shao et al. 2024, introduced in DeepSeekMath and popularized by DeepSeek-R1) is PPO with the **value network removed**. PPO needs a learned critic to estimate the baseline "how good did we expect this to be?" GRPO estimates that baseline empirically instead: for each prompt, sample a *group* of $G$ completions from the current policy, score them all, and use the group's own mean reward as the baseline.
 
 **Mathematical Formulation:**
-```
-L_GRPO = -E[r(θ) * (R_group - R_baseline)] + β * KL(π_θ || π_ref)
 
-Where:
-- R_group: Reward for specific group
-- R_baseline: Average reward across all groups
-- r(θ): Importance sampling ratio
-- β: KL penalty coefficient
-```
+For each prompt $x$, sample $G$ completions $y_1, \dots, y_G \sim \pi_{\theta_{\mathrm{old}}}(\cdot \mid x)$ and score them to get $r_1, \dots, r_G$. The advantage of completion $i$ is the reward **standardized within its own group**:
+
+$$
+\hat A_i = \frac{r_i - \mu_{\mathrm{group}}}{\sigma_{\mathrm{group}}},
+\qquad
+\mu_{\mathrm{group}} = \frac{1}{G}\sum_{j=1}^{G} r_j,
+\qquad
+\sigma_{\mathrm{group}} = \mathrm{std}(r_1, \dots, r_G)
+$$
+
+This single scalar $\hat A_i$ is shared by every token of completion $i$. The rest is standard PPO:
+
+$$
+\mathcal{L}_{\mathrm{GRPO}} = -\mathbb{E}\!\left[\frac{1}{|y_i|}\sum_t \min\!\big(\rho_t \hat A_i,\ \mathrm{clip}(\rho_t, 1-\epsilon, 1+\epsilon)\,\hat A_i\big)\right] + \beta\, \mathrm{KL}(\pi_\theta \,\|\, \pi_{\mathrm{ref}})
+$$
+
+where $\rho_t = \pi_\theta(y_t \mid x, y_{<t}) / \pi_{\theta_{\mathrm{old}}}(y_t \mid x, y_{<t})$ is the usual importance ratio.
 
 **Why GRPO?**
-- **Multiple preferences**: Different user groups have different preferences
-- **Relative optimization**: Optimize to be better than baseline, not absolute
-- **Fairness**: Ensures all groups improve relative to average
-- **Prevents over-optimization**: KL penalty keeps policy reasonable
+- **No critic**: removes a full-size value network from memory and from the list of things that can destabilize training.
+- **Better baseline for LLMs**: the critic is hard to fit when there is one sparse scalar reward per long response; a measured group mean is a low-variance, unbiased-enough substitute.
+- **Natural fit for sampling-heavy pipelines**: if you are already sampling many candidates per prompt (math, code), the group comes for free.
+- **Prevents over-optimization**: the KL anchor to $\pi_{\mathrm{ref}}$ is retained, exactly as in PPO-RLHF.
 
 **Use Cases:**
-1. **Demographic groups**: Different age groups, regions, cultures
-2. **Use case groups**: Different applications (coding, writing, analysis)
-3. **Skill level groups**: Beginners vs experts
-4. **Domain groups**: Different topics (science, literature, etc.)
+1. **Verifiable-reward tasks**: math (exact-match on the final answer), code (unit tests pass), format compliance (valid JSON, correct tool call).
+2. **Reasoning RL at scale**: DeepSeek-R1, Qwen QwQ and similar systems train long chain-of-thought this way.
+3. **Any setting where sampling $G$ candidates is cheap and grading them is cheap and deterministic.**
+4. **Memory-constrained RLHF**: dropping the critic is a large, immediate saving.
 
 **Example:**
-- Group A (young users): Prefer concise, casual responses
-- Group B (professionals): Prefer detailed, formal responses
-- Group C (students): Prefer educational, step-by-step responses
-
-GRPO optimizes policy to be better than baseline for each group.
+- Prompt: "What is the remainder when $7^{100}$ is divided by 13?"
+- Sample $G = 8$ completions from the current policy.
+- Grade each against the gold answer: rewards $= [1, 0, 1, 0, 0, 1, 0, 0]$.
+- Group mean $= 0.375$. So the three correct completions get positive advantage and the five wrong ones get negative advantage — all measured against *how hard this particular prompt turned out to be*, with no critic involved.
+- Degenerate case: if all 8 were correct (or all 8 wrong), $\sigma_{\mathrm{group}} = 0$, the advantage is undefined/zero, and the prompt contributes no learning signal. DAPO's "dynamic sampling" trick exists to drop exactly these prompts.
 
 **How it differs from PPO:**
-- **PPO**: Optimizes absolute reward
-- **GRPO**: Optimizes relative reward (group - baseline)
-- **GRPO**: Handles multiple groups simultaneously
-- **GRPO**: Ensures fairness across groups
+- **PPO**: baseline comes from a *learned* value network $V_\phi(s)$; four models in memory (policy, reference, reward model, critic).
+- **GRPO**: baseline comes from the *measured mean of $G$ sibling completions of the same prompt*; three models in memory (policy, reference, reward model or verifier).
+- **PPO**: one rollout per prompt is enough; **GRPO**: needs $G$ rollouts per prompt (typically 8–64), so it trades critic compute for generation compute.
+- **PPO**: per-token advantages via GAE; **GRPO**: one advantage per completion, broadcast to all its tokens (cruder credit assignment).
 
 **Implementation:**
 ```python
-# Compute group rewards
-group_rewards = [reward_model(group_responses) for group in groups]
-baseline = mean(group_rewards)
+# For ONE prompt: G completions sampled from the current policy
+completions = [policy.sample(prompt) for _ in range(G)]
+rewards = torch.tensor([verifier(prompt, c) for c in completions])   # [G]
 
-# Relative advantages
-relative_advantages = group_rewards - baseline
+# Group-relative advantage: standardize WITHIN this prompt's group
+advantages = (rewards - rewards.mean()) / (rewards.std() + 1e-8)     # [G]
 
-# Optimize with relative advantages
-loss = -ratio * relative_advantages + β * KL_penalty
+# Same scalar advantage for every token of a given completion
+ratio = torch.exp(policy_logprobs - old_logprobs)                    # [G, L]
+surr1 = ratio * advantages.unsqueeze(-1)
+surr2 = torch.clamp(ratio, 1 - eps, 1 + eps) * advantages.unsqueeze(-1)
+loss = -torch.min(surr1, surr2).mean() + beta * kl_to_reference
 ```
 
+
+> **Saying it out loud.** GRPO is PPO with the value network deleted. PPO needs a critic to answer "was this better than expected?", and for language that critic is miserable to train — one sparse reward at the end of a thousand-token response, and a target that keeps moving as the policy improves. GRPO answers the same question by measuring instead of predicting: sample $G$ completions for the *same prompt*, grade them all, and each one's advantage is its reward minus the group mean over the group's standard deviation. Be precise about "group" — it means a group of completions for one prompt, never a group of users. The tradeoff is clean: you drop a whole model and its instability, and you pay in generation, which is why GRPO wins exactly where grading is cheap and deterministic, like math and code.
 ---
 
 ## Q5: What are the main challenges in RL alignment? How do you address them?
@@ -344,6 +369,8 @@ loss = -ratio * relative_advantages + β * KL_penalty
   - Red teaming
   - Real-world testing
 
+
+> **Saying it out loud.** If I had to name the hard parts in order, it's reward hacking, distribution shift, and evaluation. Reward hacking is the model getting better at the score than at the job, because the reward model is an approximation and optimisation finds approximation errors. Distribution shift is the same problem from the other side — as the policy improves it leaves the region where the reward model was trained, so the scores stop meaning anything, which is why people refresh the reward model or re-collect preferences. And evaluation is genuinely unsolved: loss curves tell you nothing, so you're stuck with expensive human comparison as ground truth and cheap LLM judges as a proxy. The unifying answer to most of these is the KL anchor plus early stopping, because the true-quality curve peaks well before the reward curve does.
 ---
 
 ## Q6: How do you prevent reward hacking in RLHF?
@@ -419,6 +446,8 @@ def robust_reward(response, base_reward):
     return reward
 ```
 
+
+> **Saying it out loud.** You can't eliminate reward hacking, only bound it, and the KL anchor is the main way you bound it. Beyond that it's layered defence: shape the reward to kill the hacks you know about (length, repetition, evasive refusals), use an ensemble of reward models so there's no single weakness to exploit, and grade with a held-out reward model or humans so you can see the gap open up. The detection signal is the important one to say out loud — if reward-model score climbs while human win-rate flattens or drops, you're hacking, and that's Goodhart's law. In practice the cheapest effective mitigation is early stopping on a KL budget, because the true-quality peak comes well before the reward stops improving.
 ---
 
 ## Q7: Explain the KL penalty in RLHF. Why is it important?
@@ -481,6 +510,8 @@ total_loss = policy_loss + kl_penalty
 - If KL too low: Decrease β
 - Target: KL ≈ 0.1-0.5 nats per token
 
+
+> **Saying it out loud.** The KL penalty is a leash back to the SFT model, and it's doing more work than the word "regularisation" suggests. It bounds reward hacking, because you can only exploit the reward model within a limited radius. It preserves capabilities the preference data never touches, so you don't lose coding ability while optimising for politeness. And it keeps you where the reward model was actually trained, which is the only place its scores are trustworthy. Beta is the knob — worth noting most published RLHF recipes sit at 0.01 to 0.1 rather than higher — and the practical failure mode is that too small a beta gives you gibberish and capability collapse, while too large a beta gives you a model that barely changed.
 ---
 
 ## Q8: How would you implement a complete RLHF pipeline?
@@ -550,6 +581,8 @@ def rlhf_training(policy, reference, reward_model, preferences):
 3. **Training**: SFT → Reward → RL
 4. **Monitoring**: Reward, KL, human evaluation
 
+
+> **Saying it out loud.** If someone asks me to build it, I'd walk the three stages and be explicit about what's frozen at each one. SFT is plain cross-entropy on demonstrations with the loss masked so you never grade the model on the user's own tokens — that mask is the bug interviewers look for. Then the reward model: initialise from the SFT checkpoint, swap the LM head for a scalar head, train with logistic loss on preference pairs. Then PPO, holding four models — policy, frozen reference, reward model, critic — with token-level reward being the reward-model score at the end of the sequence plus a per-token KL penalty. And I'd say what I'd monitor, because that's the part people forget: reward, KL to reference, and output entropy, with a held-out human eval, because reward alone will happily go up while the model gets worse.
 ---
 
 ## Summary
