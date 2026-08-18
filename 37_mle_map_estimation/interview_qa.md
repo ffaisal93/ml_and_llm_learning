@@ -39,6 +39,8 @@ k = nθ
 
 **Intuition:** The MLE is simply the observed proportion!
 
+> **Saying it out loud.** For a coin, maximum likelihood gives you exactly what your gut says: the fraction of flips that came up heads. The derivation is four lines — write the likelihood as theta to the heads times one-minus-theta to the tails, take the log so the product becomes a sum, differentiate, set it to zero, and $k/n$ falls out. I'd say it that way because the interviewer wants to see that you can go from a probability model to an estimator mechanically. The part worth adding unprompted is the failure mode: with three flips and three heads, MLE confidently reports a probability of 1.0, which is nonsense, and that's precisely the gap a prior fills — Beta(1,1) turns that into 4/5.
+
 ---
 
 ## Q2: Derive MLE for linear regression.
@@ -82,6 +84,8 @@ ŵ_MLE = (XᵀX)⁻¹Xᵀy  (Ordinary Least Squares!)
 
 **Key Insight:** MLE for linear regression with Gaussian noise = OLS!
 
+> **Saying it out loud.** The punchline is that least squares isn't an arbitrary choice of loss — it's what you get when you assume Gaussian noise and do maximum likelihood. Write the likelihood of the residuals under a Gaussian, take the log, and everything except minus one over two sigma squared times the sum of squared residuals is a constant that doesn't touch $w$. So maximizing likelihood is minimizing squared error, and setting the gradient to zero gives the normal equations, $w = (X^\top X)^{-1}X^\top y$. That reframing is useful because it tells you when to stop using squared loss: if your errors have heavy tails, the Gaussian assumption is wrong and a single outlier, once squared, can drag the whole fit. Swap to a Laplace noise model and you get absolute error instead.
+
 ---
 
 ## Q3: Explain the connection between MLE and MAP.
@@ -117,6 +121,8 @@ MAP = MLE + Prior
 - **L2 (Ridge)**: MAP with Gaussian prior
 - **L1 (Lasso)**: MAP with Laplace prior
 - **Regularization = Bayesian prior**
+
+> **Saying it out loud.** MAP is MLE plus a prior, and because you're working in log space the prior shows up as an additive term rather than a multiplication. That single fact is why every regularizer you use has a Bayesian reading: L2 is a Gaussian prior centered at zero, L1 is a Laplace prior. Two boundary cases are worth stating because they show you understand the mechanics. With a uniform prior the log-prior is a constant, so MAP is identical to MLE. And as the dataset grows, the likelihood term grows with $n$ while the prior stays fixed, so MAP converges to MLE — the data drowns out your opinion. The practical read: priors matter enormously with a hundred examples and are essentially decorative with ten million.
 
 ---
 
@@ -167,6 +173,8 @@ ŵ_MAP = (XᵀX + λI)⁻¹Xᵀy  (Ridge regression!)
 
 **Key Insight:** MAP with Gaussian prior = Ridge regression (L2 regularization)!
 
+> **Saying it out loud.** Ridge regression is MAP with a zero-mean Gaussian prior on the weights. The log of that prior is minus the squared norm of $w$ over twice the prior variance, so adding it to the Gaussian log-likelihood gives you squared error plus an L2 penalty, and setting the gradient to zero gives $(X^\top X + \lambda I)^{-1}X^\top y$. The satisfying part is where $\lambda$ comes from: it's the noise variance divided by the prior variance. So a tight prior means heavy regularization, and noisy data means heavy regularization, both for reasons you can state in English. And there's a numerical bonus worth mentioning — adding $\lambda I$ makes the matrix invertible even when features are perfectly collinear, which is exactly when plain OLS blows up.
+
 ---
 
 ## Q5: Why do we use log-likelihood instead of likelihood?
@@ -199,6 +207,8 @@ ŵ_MAP = (XᵀX + λI)⁻¹Xᵀy  (Ridge regression!)
 L(θ) = 0.1 × 0.1 × 0.1 = 0.001  (hard to work with)
 log L(θ) = log(0.1) + log(0.1) + log(0.1) = -3 × log(10) ≈ -6.91  (easier!)
 ```
+
+> **Saying it out loud.** Three reasons, and the first one is the one that actually bites you in code. Multiply a thousand probabilities together and you underflow to exactly zero in floating point — a product of a thousand values around 0.1 is $10^{-1000}$, and double precision bottoms out near $10^{-308}$. Take logs and it's a sum around $-2300$, perfectly representable. Second, logs turn products into sums, so derivatives are term-by-term and you never touch the product rule. Third, and this is what makes it legal, log is monotonically increasing, so whatever maximizes the log-likelihood also maximizes the likelihood — you get the numerical benefits for free without changing the answer.
 
 ---
 
@@ -242,6 +252,8 @@ log L(θ) = log(0.1) + log(0.1) + log(0.1) = -3 × log(10) ≈ -6.91  (easier!)
 - **MLE**: Large data, simple models, no prior knowledge
 - **MAP**: Small data, need regularization, have domain knowledge
 
+> **Saying it out loud.** The practical difference shows up entirely in the small-data regime. MLE has no opinion, so it commits fully to whatever it saw — three heads out of three means probability one. MAP brings a prior that acts like extra pseudo-observations, which pulls the estimate back toward something sane. Once you have a lot of data the two converge, since the likelihood scales with $n$ and the prior doesn't, so the argument becomes moot. Computationally they cost the same; MAP is just one extra additive term in the objective. The honest limitation worth naming: MAP is still a single point estimate, the mode of the posterior. It does not give you uncertainty. If you need error bars you have to go full Bayesian and carry the whole posterior.
+
 ---
 
 ## Q7: How does MAP relate to regularization?
@@ -280,6 +292,8 @@ Loss = MSE + λ||w||₁
 - Understanding regularization as prior helps choose λ
 - Bayesian interpretation provides theoretical foundation
 - Can use Bayesian methods to learn λ from data
+
+> **Saying it out loud.** The cleanest way to say this: your regularized loss is just the negative log posterior. Data-fit term is the negative log-likelihood, penalty term is the negative log-prior, and minimizing the sum is finding the posterior mode. From there L2 and L1 stop being two arbitrary penalties and become two different beliefs about weights — a Gaussian prior says weights are small but nonzero, a Laplace prior has a sharp spike at zero, which is why lasso actually drives coefficients to exactly zero and ridge only shrinks them. And $\lambda$ isn't a magic knob, it's the ratio of noise variance to prior variance, so turning it up literally means "I trust my prior more than my data." That's a much better story than "I grid-searched it."
 
 ---
 

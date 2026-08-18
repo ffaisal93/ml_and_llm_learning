@@ -12,6 +12,8 @@ Bag-of-words / TF-IDF (1970s–) → distributed word vectors (Word2Vec 2013, Gl
 
 The driver: each stage handles *more context* and *more modalities* with the same fundamental idea — produce a vector that captures meaning.
 
+> **Saying it out loud.** The whole history is one idea getting progressively less crude: turn meaning into a vector. Bag of words gave every word its own dimension, so nothing was similar to anything. Word2Vec made the vectors dense so similar words got similar vectors, but each word got exactly one vector forever. BERT made the vector depend on the sentence, so "bank" finally had two meanings. Sentence-BERT made it work at the sentence level, CLIP put images and text in the same space, and multimodal LLMs put that space inside a generative model. Each step fixed the specific thing the previous one couldn't do, and the through-line is that the amount of context folded into a single vector kept growing.
+
 ---
 
 ## 2. Bag-of-words and TF-IDF
@@ -29,6 +31,8 @@ Common terms get downweighted; rare informative terms upweighted. Standard for i
 **Strengths**: cheap, interpretable, surprisingly strong baseline for retrieval (still used in BM25 / hybrid search).
 
 **Weaknesses**: doesn't capture word similarity ("dog" and "puppy" are orthogonal vectors); doesn't model word order; no semantic generalization.
+
+> **Saying it out loud.** Bag of words counts words and throws away everything else. TF-IDF makes that useful by weighting each count by how rare the word is across the corpus, so "the" contributes nothing and "photosynthesis" contributes a lot, with a log to keep the rare-word weights from exploding. It's cheap, it's interpretable, and BM25 — the refined version — is still a hard baseline in retrieval today. The two named weaknesses are that "dog" and "puppy" are perfectly orthogonal, so there's zero semantic generalization, and word order is gone, so "dog bites man" and "man bites dog" are literally the same vector.
 
 ---
 
@@ -65,6 +69,8 @@ with $f$ a weighting function. Works similarly to Word2Vec; sometimes a bit bett
 - Static — same embedding regardless of context.
 - No phrase/sentence representation (averaging is a bad baseline).
 
+> **Saying it out loud.** Word2Vec's move was to stop treating words as IDs and start treating them as points in a few hundred dimensions, learned from the company they keep. Skip-gram with negative sampling is the workhorse: given a word, push its vector toward the words that actually appeared near it and away from randomly sampled words, which turns an expensive softmax over the vocabulary into cheap binary classification with maybe five negatives. GloVe gets to a similar place by directly fitting dot products to log co-occurrence counts over the whole corpus at once. Both produce the king-minus-man-plus-woman geometry. And both share the fatal limitation: one vector per word, permanently, so "bank" has a single blurry embedding that averages the river and the money.
+
 ---
 
 ## 4. Contextual embeddings — ELMo, BERT, GPT
@@ -91,6 +97,8 @@ Causal (left-to-right) transformer decoder. Trained as autoregressive language m
 
 "The bank by the river" vs "The bank gave me a loan" → BERT gives different vectors for "bank" in each. Static embeddings (Word2Vec) cannot.
 
+> **Saying it out loud.** Contextual embeddings mean the representation is computed from the sentence rather than looked up in a table. ELMo did it with two LSTMs, one running each direction, and combined their hidden states. BERT did it properly with a transformer encoder and masked language modeling — blank out 15% of tokens and predict them using both sides at once, which is what makes the representation deeply bidirectional. GPT went the other way with causal masking, which is worse for understanding tasks and is the only thing that makes generation possible. The concrete payoff: "the bank by the river" and "the bank gave me a loan" now produce genuinely different vectors for the same word, which no static embedding can do.
+
 ---
 
 ## 5. Sentence embeddings — making BERT useful for retrieval
@@ -114,6 +122,8 @@ Train two-tower (query encoder + passage encoder) on (query, relevant passage) p
 - OpenAI text-embedding-3 (2024): commercial.
 
 These power RAG retrieval, semantic search, classification.
+
+> **Saying it out loud.** BERT gives you a vector per token, but retrieval needs one vector per sentence, and the obvious fix — averaging the token vectors — works badly. It's actually worse than averaging GloVe vectors, which is the embarrassing result that started this line of work. The reason is that nothing in masked language modeling ever asked for the geometry to encode sentence similarity. Sentence-BERT fixes it by training for the thing you want: run two copies of BERT with shared weights over a sentence pair and use a loss that pulls similar pairs together. The huge practical win is precomputation — you embed each document once and compare with a dot product, so scoring ten thousand candidates is ten thousand dot products instead of ten thousand transformer forward passes.
 
 ---
 
@@ -150,9 +160,13 @@ $$
 - **EVA-CLIP**: scaling laws + better training recipes.
 - **SigLIP** (Google 2023): replace softmax with sigmoid loss → faster, better at small batch.
 
+> **Saying it out loud.** CLIP is two encoders, one for images and one for text, trained so that a picture and its own caption land near each other in a shared space and far from every other caption in the batch. You build an N-by-N similarity matrix, the diagonal is correct, and you run cross-entropy across rows and columns. What made it a watershed wasn't the loss, it was the data — four hundred million image-caption pairs scraped off the web, which is free supervision over an open-ended vocabulary instead of a thousand fixed ImageNet labels. That's what buys zero-shot classification: embed "a photo of a {class}" for whatever classes you invent today and take the nearest. The tradeoff is batch size — with softmax, difficulty scales with batch, and CLIP needed 32,768, which is why SigLIP's sigmoid variant matters for anyone without a warehouse of GPUs.
+
 ---
 
 ## 7. InfoNCE — the contrastive loss in general
+
+*In plain language:* InfoNCE is the general form of the loss CLIP uses. It's a multiple-choice question: here's an anchor, here's one correct partner and $K$ wrong ones, pick the right one. The formula below is ordinary softmax cross-entropy where the "classes" are candidate partners and the logits are similarities divided by a temperature.
 
 The CLIP loss is an instance of InfoNCE (van den Oord et al. 2018):
 
@@ -172,6 +186,8 @@ One positive pair, $K$ negatives.
 - **CodeContrast / CodeSage**: contrastive on code.
 
 The recipe is the same: define positive pairs (semantically equivalent / paired across modalities), pull them together, push everything else apart.
+
+> **Saying it out loud.** InfoNCE is the general recipe underneath all of this, and it's just multiple choice. Take an anchor, take one true partner and a pile of distractors, score all of them, and use cross-entropy to make the true one win. What changes between methods is only where the positive pair comes from: two augmentations of the same photo gives you SimCLR, an image and its caption gives you CLIP, a sentence and its entailment gives you Sentence-BERT. Formally it maximizes a lower bound on the mutual information between the two views. The number worth naming is that the bound is capped at $\log K$ for $K$ negatives, so with 256 negatives you can't certify more than about 5.5 nats — which is exactly why everyone fights for bigger batches and negative queues.
 
 ---
 
@@ -207,6 +223,8 @@ Newer models (Gemini 1.5+, GPT-4o) train on multiple modalities from scratch, no
 - AudioLM, MusicLM: tokenize audio for generative LLMs.
 - Multimodal foundation models increasingly handle text + image + audio + video natively.
 
+> **Saying it out loud.** There are really two designs. Flamingo's is "don't touch the language model" — freeze the LLM, freeze the vision encoder, and insert new gated cross-attention layers between them, with gates initialized at zero so the model starts out behaving exactly like the original LLM. LLaVA's is even simpler and is what most people copy: run CLIP over the image, push the patch features through one projection matrix so they look like word embeddings, and paste them into the token sequence. The LLM doesn't know some of its tokens came from pixels. Frontier models have since moved toward native multimodal pretraining, where images and audio are in the mix from step one, which reasons across modalities much better. The tradeoff is blunt: an adapter costs a day on a few GPUs, native pretraining is a full frontier run you can't redo.
+
 ---
 
 ## 9. Embeddings in production — vector search
@@ -225,6 +243,8 @@ Pinecone, Weaviate, Qdrant, Milvus, FAISS. All implement ANN + metadata filters 
 ### Hybrid search (BM25 + dense)
 Combine sparse (lexical) and dense (semantic) retrieval. Dense catches paraphrases; sparse catches rare entities/terms.
 
+> **Saying it out loud.** In production, an embedding is only as good as the index around it. Brute force is exact but linear, so past a few million vectors you switch to approximate search — HNSW if you want the best recall-latency curve and can afford the memory, IVF-PQ if you need to fit a billion vectors in RAM, since product quantization takes a 3-kilobyte float vector down to about 64 bytes. Then you almost always run BM25 alongside and fuse the rankings, because dense retrieval handles paraphrase and sparse retrieval handles exact strings like part numbers and error codes, and those failure modes barely overlap. Finish with a cross-encoder reranker over the top 50 or 100. The tradeoff to name at every stage is recall versus latency — ANN recall is a tunable knob, typically set around 95 to 99 percent.
+
 ---
 
 ## 10. Common interview gotchas
@@ -238,6 +258,8 @@ Combine sparse (lexical) and dense (semantic) retrieval. Dense catches paraphras
 | Multimodal LLM = LLM with vision encoder? | Yes | Almost — need projection / cross-attention to align modalities |
 | InfoNCE optimizes? | Cosine similarity | Lower bound on mutual information |
 | Hybrid retrieval — what fuses? | Random | Rank fusion (RRF) or score combination |
+
+> **Saying it out loud.** The traps here are mostly about vagueness. Word2Vec is a shallow network, not a transformer — it predates transformers by four years. Averaging BERT tokens isn't the standard way to get a sentence embedding, it's the naive way, and it underperforms averaged GloVe. CLIP's loss isn't just "cross-entropy," it's *symmetric* InfoNCE over the full batch similarity matrix, both directions. InfoNCE isn't optimizing cosine similarity, it's bounding mutual information. And hybrid search doesn't fuse by averaging raw scores, since BM25 and cosine live on incomparable scales — it's reciprocal rank fusion, which uses ranks and ignores the scores entirely.
 
 ---
 

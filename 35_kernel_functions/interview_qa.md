@@ -48,6 +48,8 @@ This gives us the same result as φ(x) · φ(y), but:
 2. **Flexibility**: Can use infinite-dimensional spaces (RBF kernel)
 3. **Power**: Make linear algorithms work on non-linear data
 
+> **Saying it out loud.** A kernel is just a similarity score between two data points that happens to equal a dot product in some bigger space you never build. The trick is realizing that algorithms like SVM never look at a data point on its own — they only ever ask "how similar is point $i$ to point $j$?" So if I can answer that question directly for the expanded space, I get all the power of those extra features and none of the cost. Concretely, squaring a two-dimensional dot product gives me the same answer as building all the quadratic terms and dotting those, except it's one multiply instead of eight. The catch is that the model now has to keep training points around to make predictions, so cost scales with the number of examples rather than the number of features.
+
 ---
 
 ## Q2: Explain different types of kernels. When would you use each?
@@ -156,6 +158,8 @@ Similar to neural network activation function. Less commonly used.
 
 **Note:** Usually not recommended. Use RBF instead.
 
+> **Saying it out loud.** In practice there are really three kernels. Linear is a plain dot product, and it's the right answer more often than people expect — high-dimensional sparse data like TF-IDF text is usually already close to linearly separable. Polynomial gives you interaction terms up to some degree, so it handles things like circular boundaries, and degree 2 or 3 is basically the whole useful range. RBF measures similarity by distance, with a bump around each point, and it's the default when you have no idea what shape the boundary is. Sigmoid you can skip — it isn't even guaranteed positive semi-definite. The tradeoff to name is the usual one: linear is fastest and hardest to overfit, RBF is most flexible and overfits the instant you set gamma too high.
+
 ---
 
 ## Q3: How do you choose the right kernel?
@@ -202,6 +206,8 @@ Similar to neural network activation function. Less commonly used.
 - Try different kernels and parameters
 - Use cross-validation to compare
 - Choose best based on validation performance
+
+> **Saying it out loud.** My kernel selection process is boring on purpose. Start with linear, because it's fast, it's hard to overfit, and on high-dimensional data it often just wins — if it works, you're done and you have an interpretable model. If linear underfits, go to RBF and grid search gamma and C together, because they interact: a big C with a big gamma is a memorization machine. If RBF keeps overfitting even at low gamma, drop to polynomial degree 2 or 3, which is a more constrained hypothesis class. Sigmoid never. And the thing people forget that costs them the answer: always standardize your features first, because RBF is built on Euclidean distance and one feature measured in dollars will drown out everything else.
 
 ---
 
@@ -262,6 +268,8 @@ Wide bumps      Narrow bumps
 3. Use cross-validation
 4. Look at support vectors: Too many → gamma too high
 
+> **Saying it out loud.** Think of the RBF kernel as putting a little hill of influence on every training point, and gamma sets how wide those hills are. Low gamma means broad hills that overlap heavily, so every point has a say everywhere and the boundary comes out smooth — that's the underfitting end. High gamma means each hill is a narrow spike, so a point only affects its immediate neighborhood, and the boundary wraps tightly around individual examples. At the extreme, every training point becomes its own island and the model has memorized the data. The diagnostic I actually use is the support vector count: if a large fraction of your training set ends up as support vectors, gamma is too high. A sane starting point is $\gamma = 1/(n_{\text{features}} \cdot \mathrm{var}(X))$, which is what scikit-learn's `gamma='scale'` does.
+
 ---
 
 ## Q5: What is the kernel trick? Why is it important?
@@ -304,6 +312,8 @@ We only need K(xᵢ, x), not φ(xᵢ) or φ(x)!
 ```
 
 This is why the kernel trick works - we never need the transformed features, only their dot products.
+
+> **Saying it out loud.** The kernel trick matters for two reasons that are worth separating. The cheap one is speed: you skip building the expanded feature vectors and just compute similarity directly. The deep one is that it lets you use feature spaces you could never build at all — the RBF kernel corresponds to an infinite-dimensional map, and no amount of memory would let you write that down, but the kernel evaluates in a handful of flops. What makes it legal is that the SVM's decision function is $f(x) = \sum_i \alpha_i y_i K(x_i, x) + b$: only kernel values appear, never a feature vector. So any algorithm you can rewrite in terms of inner products gets a nonlinear version for free. The price is quadratic memory in the number of training points, which is why kernel methods stall around $10^5$ examples.
 
 ---
 
@@ -348,6 +358,8 @@ This is why the kernel trick works - we never need the transformed features, onl
 1. Try linear first
 2. If fails, use RBF
 3. If RBF overfits, try polynomial
+
+> **Saying it out loud.** If I had to rank them: linear is fastest, least flexible, and least likely to overfit, and it has one knob, C. Polynomial sits in the middle — it buys you interaction terms and curved boundaries at the cost of two extra knobs and a real risk of blowing up numerically at high degree. RBF is the most flexible and the default for anything nonlinear, but it's the slowest and the easiest to overfit. The right instinct isn't "RBF is better," it's "match the kernel to how much data you have." With thousands of features and few examples, linear regularizes itself. With few features and lots of examples and a boundary that clearly curves, RBF earns its keep. Named failure mode for RBF: high gamma plus high C gives you 100% training accuracy and a model that has memorized every point.
 
 ---
 
@@ -406,6 +418,8 @@ best_params = grid_search.best_params_
 - **Validation accuracy**: Should improve
 - **Support vectors**: Too many → overfitting
 - **Decision boundary**: Should match data complexity
+
+> **Saying it out loud.** Tuning an RBF SVM is really tuning two knobs that fight each other, so you have to search them jointly, not one at a time. Gamma controls how local the kernel is — how wiggly the boundary can get. C controls how much you punish margin violations — how much the model is allowed to ignore awkward points. High C plus high gamma is the overfitting corner; low C plus low gamma is the underfitting corner. So a 2D grid search with cross-validation, log-spaced, something like C in $[0.1, 1, 10, 100]$ crossed with gamma in $[0.001, 0.01, 0.1, 1, 10]$, and you always scale features first. The extra diagnostic that shows you know the model: watch the support vector fraction, and if it's creeping toward all of your training data, you're overfitting regardless of what the training accuracy says.
 
 ---
 

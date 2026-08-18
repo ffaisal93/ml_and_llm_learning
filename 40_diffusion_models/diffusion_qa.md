@@ -36,9 +36,13 @@
 - Each step only needs to remove small amount of noise
 - Much easier to learn than generating directly
 
+> **Saying it out loud.** Picture a photo slowly dissolving into television static. Making that happen is trivial — you just keep sprinkling in Gaussian noise, and there's no learning involved. The model's entire job is learning to run that film backwards one frame at a time. Then to generate something new, you start from actual static and let it walk all the way back. The reason this beats trying to paint a picture in one shot is that each step is an easy, local problem — "this is slightly noisy, clean it up a bit" — and you get hundreds of them to gradually commit to a coherent image. The tradeoff is right there in the design: one network call per step, so generation is inherently slow.
+
 ---
 
 ## Q2: What is the mathematical formulation of diffusion models?
+
+*In plain language:* this section writes down, in symbols, the two processes described above. The forward equations say how much of the original image survives at each step and how much noise replaces it. The reverse equations say what the network outputs and how you turn that output into the slightly-less-noisy image for the next step. Nothing new is happening conceptually — it's the same "destroy, then learn to undo" story in notation.
 
 **Answer:**
 
@@ -92,6 +96,8 @@ Given predicted noise ε_θ, compute:
 x_{t-1} ~ N(μ_θ, Σ_t)
 ```
 
+> **Saying it out loud.** The math has three pieces worth being able to say. The forward step mixes the previous image with noise, scaling the signal down by $\sqrt{1-\beta_t}$ so the total variance stays around one. Then the identity that makes everything tractable: because Gaussians compose, you can jump from the clean image straight to any timestep in one line — $\sqrt{\bar\alpha_t}$ times the original plus $\sqrt{1-\bar\alpha_t}$ times a single noise draw. And the reverse step: the network predicts the noise, and you algebraically convert that prediction into the mean of the previous step. If I could only write one equation on the board it'd be the closed form, because it's what makes training possible at all.
+
 ---
 
 ## Q3: How do you train a diffusion model?
@@ -131,6 +137,8 @@ For each batch:
 **Variance Schedule:**
 - Linear: β_t = (β_max - β_min) * (t/T) + β_min
 - Cosine: ᾱ_t = cos²(π/2 * (t/T)) (often better)
+
+> **Saying it out loud.** Training is genuinely four lines and that surprises people. Sample a clean image, roll a random timestep, draw a noise vector, construct the noisy image with the closed form, and train the network to output exactly the noise you drew — plain MSE. No adversary, no sampling loop inside training, no instability. And because every example jumps directly to its own random timestep, training parallelizes perfectly across the batch. The schedule is the one design choice that matters: DDPM's linear ramp destroys the image too early, so the last third of timesteps teach the model very little, and the cosine schedule keeps information around longer, which matters more the higher your resolution.
 
 ---
 
@@ -175,6 +183,8 @@ x_0  # Generated sample
 - Condition on text, class, etc.
 - Model becomes: ε_θ(x_t, t, c)
 - Same process but with conditioning
+
+> **Saying it out loud.** Generation is the loop that costs you. Start from pure noise, ask the model what noise it sees, subtract most of it, add a little fresh noise back — that last part is what gives you variety across seeds — and repeat. The number to say is a thousand: vanilla DDPM needs a thousand sequential forward passes per image, and they can't be parallelized, since each step depends on the one before. DDIM fixes this by making the reverse process deterministic, which turns it into an ODE you're allowed to take big steps along, so fifty to a hundred steps match the old thousand with the same trained model. What you lose as you shorten the chain is fine detail and sample diversity.
 
 ---
 
@@ -228,6 +238,8 @@ Where p_θ(x_t, t) is probability distribution over vocabulary.
 - Mask some tokens: "The [MASK] sat on the [MASK]"
 - Use reverse diffusion to fill in masked tokens
 - Better than autoregressive for editing
+
+> **Saying it out loud.** Discrete diffusion exists because you can't add a little Gaussian noise to the word "cat." So instead of continuous noise, the corruption process is something discrete — progressively masking tokens, or randomly swapping them for other vocabulary items — and the model learns to undo that. The appeal is real: you'd generate a whole sequence in parallel rather than one token at a time, and infilling would be native rather than a hack, which is why editing tasks are the natural fit. The reason it hasn't taken over is quality per unit of compute. Autoregressive models have an exact likelihood and a decade of tooling, and discrete diffusion is still well behind on open-ended generation.
 
 ---
 
@@ -286,6 +298,8 @@ Where p_θ(x_t, t) is probability distribution over vocabulary.
 - Compare with baselines
 - Generate samples during training
 - Monitor metrics over time
+
+> **Saying it out loud.** Evaluating generative models is genuinely unsolved, and the honest answer says so. For images, FID is the standard — it embeds real and generated samples with an Inception network and compares the two Gaussians fitted to those features, so lower means the distributions overlap more. Inception Score is older and worse because it never looks at your real data at all. The thing to name is what FID misses: it's sensitive to sample count and to the specific feature extractor, it can be gamed by a model that memorizes training images, and it says nothing about whether the image matches the prompt — that's what CLIP score is for. So you report FID for fidelity, CLIP score for prompt adherence, and human evaluation when the decision actually matters.
 
 ---
 
@@ -346,6 +360,8 @@ Where p_θ(x_t, t) is probability distribution over vocabulary.
 | Training | Stable | Unstable | Stable |
 | Flexibility | High | Medium | Low |
 
+> **Saying it out loud.** The case for diffusion is training stability and mode coverage. It's a regression problem — predict the noise, minimize MSE — so there's no minimax game, no discriminator to balance, and no mode collapse, which means it reliably covers the whole data distribution rather than finding a few outputs that work. It also scales monotonically, which is why the field bet on it. The case against is one number: sampling needs anywhere from twenty to a thousand forward passes where a GAN needs one, so inference is orders of magnitude more expensive. That's the whole tradeoff — stable training and full mode coverage, paid for with sequential sampling — and every fast-sampling paper since 2021 is an attempt to stop paying it.
+
 ---
 
 ## Q8: What are use cases of diffusion models in NLP?
@@ -397,6 +413,8 @@ Where p_θ(x_t, t) is probability distribution over vocabulary.
 - Stable Diffusion: Open-source text-to-image
 - Research: Non-autoregressive text generation
 - Editing tools: Text inpainting and rewriting
+
+> **Saying it out loud.** In NLP, diffusion is mostly promise rather than practice, and the use cases that actually make sense are the ones where autoregression is awkward. Infilling is the big one — filling a gap in the middle of a document is native to diffusion and unnatural for a left-to-right model. Controlled generation is another, because you can steer the denoising trajectory with a classifier or guidance in a way you can't easily do mid-sequence with sampling. And parallel generation is the speed argument, since you'd produce all positions at once instead of token by token. Where it's genuinely deployed today, though, is on the multimodal side — text-to-image, where the text is the condition and the diffusion happens over pixels.
 
 ---
 
@@ -463,6 +481,8 @@ Where p_θ(x_t, t) is probability distribution over vocabulary.
 - Discrete diffusion promising for text
 - Active area of research
 
+> **Saying it out loud.** The comparison comes down to the factorization. Autoregressive models factor a sequence into a product of next-token conditionals by the chain rule, which gives an exact likelihood, a stable training objective, and one token at a time at inference. Diffusion models generate all positions in parallel but need many refinement passes, and they have no exact likelihood, only a bound. For text, autoregression wins decisively right now, and the reason is that the discrete structure of language fits the chain rule perfectly while it fights the continuous Gaussian machinery diffusion was built on. For images, diffusion won for the mirror-image reason — pixels have no natural ordering, so forcing them into a sequence was always a hack.
+
 ---
 
 ## Q10: How do you implement a simple diffusion model from scratch?
@@ -516,6 +536,8 @@ for t in reversed(range(timesteps)):
 ```
 
 **See [`diffusion_code.py`](diffusion_code_py.md) for complete implementation!**
+
+> **Saying it out loud.** If someone asks you to code it, the whole thing is four moving parts. First, precompute the schedule — the betas, the alphas, and the cumulative product $\bar\alpha_t$ — once, up front. Second, the training step: sample a batch, roll random timesteps, draw noise, build $x_t$ with the closed form, and take MSE between the network's output and the noise you drew. Third, the model itself, a UNet that takes the noisy input plus a sinusoidal embedding of the timestep, because it genuinely needs to know how noisy its input is. Fourth, the sampling loop, which is the reverse recursion with fresh noise added at every step except the last. The bug that bites everyone is index alignment on the alpha bars — off by one there and your samples come out as noise with no error message.
 
 ---
 

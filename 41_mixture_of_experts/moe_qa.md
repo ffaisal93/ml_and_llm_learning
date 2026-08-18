@@ -45,6 +45,8 @@ output = sum(probs[i] * Expert[i](x) for i in top_k_indices)
 - Active parameters: k × params_per_expert (small)
 - Enables scaling without proportional compute increase
 
+> **Saying it out loud.** Mixture of experts is the idea that a model doesn't need to use all of itself on every input. Instead of one big feed-forward block that every token passes through, you keep eight or sixty-four smaller ones and a little router that picks two per token. Think of a hospital: you don't run every patient past every specialist — reception looks at the case and sends them to two of them. So the model's total knowledge scales with the number of experts while the work per token stays roughly flat. The tradeoff to name up front is that you still have to hold every expert in memory even though you only compute with two, so MoE buys you compute efficiency, not memory efficiency.
+
 ---
 
 ## Q2: How does MoE reduce computation compared to dense models?
@@ -62,25 +64,27 @@ output = sum(probs[i] * Expert[i](x) for i in top_k_indices)
 - Computation: O(k × d_model²) per token
 
 **Example: Mixtral-8x7B**
-- 8 experts, each 7B parameters
-- Total: 8 × 7B = 56B parameters
-- Active: k=2, so 2 × 7B = 14B parameters per token
-- Computation: Only 14B parameters active (not 56B!)
+- 8 experts in each FFN layer; only the FFN blocks are replicated
+- Total: **46.7B** parameters — *not* 8 × 7B = 56B, because attention layers, embeddings and norms are **shared** across all experts and counted once
+- Active: k=2, so **12.9B** parameters per token (again less than 2 × 7B, for the same sharing reason)
+- Computation: Only ~12.9B parameters active (not 46.7B!)
 
 **Efficiency:**
-- Total capacity: 56B parameters
-- Computation: Only 14B parameters
-- 4× more parameters, but similar computation to 14B dense model
+- Total capacity: 46.7B parameters
+- Computation: Only ~12.9B parameters
+- ~3.6× more parameters, but similar computation to a ~13B dense model
 
 **Memory:**
-- During training: Need all expert parameters (56B)
-- During inference: Can load only active experts (14B)
+- During training: Need all expert parameters (46.7B)
+- During inference: Can load only active experts (~12.9B)
 - KV cache: Same as dense model (not affected by MoE)
 
 **Reduction:**
 - Computation: (num_experts / k)× reduction
 - Example: 8 experts, k=2 → 4× reduction in computation
 - But total parameters: num_experts× more
+
+> **Saying it out loud.** The saving is real but it's narrower than people assume. Compute per token scales with *active* parameters, so a top-2-of-8 model does roughly the work of a model a quarter the size — Mixtral is 46.7 billion total and about 12.9 billion active, and it runs at roughly 13B speed. Note that the arithmetic isn't naive multiplication: attention layers, embeddings, and norms are shared across all experts and counted once, which is why 8 times 7 doesn't give you 56. And the thing that doesn't shrink at all is memory, because you must have every expert resident to serve any token. So the honest framing is that MoE trades memory for compute, and it only pays off when you're memory-rich and compute-bound.
 
 ---
 
@@ -133,9 +137,13 @@ for i, expert_idx in enumerate(top_k_indices):
 - Soft routing: Use all experts with weights (less efficient)
 - Top-k balances efficiency and flexibility
 
+> **Saying it out loud.** Routing is a tiny linear layer that maps each token to one score per expert, and you take the top few. Two details matter. First, the routing decision is per token, not per sequence, so different words in the same sentence go to different experts — and the router runs at every MoE layer, so a token's path through the network is a different pair of experts at each depth. Second, you renormalize the selected probabilities so they sum to one, otherwise the block's output magnitude varies with how confident the router happened to be. The problem to name is that `topk` is a discrete operation, so there's no gradient through *which* experts were chosen — the router only learns through the weights it assigned to the ones it picked.
+
 ---
 
 ## Q4: What is load balancing? Why is it important?
+
+*In plain language:* left alone, the router develops favourites — a couple of experts get picked constantly and the rest are dead weight you're still paying to store. Load balancing is an extra term in the loss whose only job is to punish that. The tricky part, spelled out below, is that "how many tokens went to expert 3" is a counting operation with no gradient, so the loss has to be built out of the router's soft probabilities if it's going to teach the router anything.
 
 **Answer:**
 
@@ -151,9 +159,17 @@ for i, expert_idx in enumerate(top_k_indices):
 - Prevent expert collapse
 
 **Load Balancing Loss:**
+
+A loss written purely in terms of hard token counts has **no gradient with respect to the router** — `topk` is a discrete operation, so counts are piecewise-constant and differentiate to zero. The Switch Transformer / GShard auxiliary loss avoids this by pairing the (constant) hard fraction with the (differentiable) mean router probability:
+
 ```
-L_balance = (1/num_experts) * sum(load_i)²
+f_i = fraction of tokens whose top-k set contains expert i   # hard count, no gradient
+P_i = mean over tokens of softmax(router_logits)_i           # soft, differentiable
+
+L_balance = num_experts * sum_i (f_i * P_i)
 ```
+
+The gradient flows only through `P_i`, using `f_i` as a per-expert weight: an overloaded expert has a large `f_i`, so the loss pushes its router logits *down*. Minimized when `f_i ≈ P_i ≈ 1/num_experts`, where the loss equals 1 regardless of expert count (that is what the leading `num_experts` factor is for).
 
 Where load_i is fraction of tokens routed to expert i.
 
@@ -172,6 +188,8 @@ Where load_i is fraction of tokens routed to expert i.
 - Add load balancing loss to total loss
 - L_total = L_main + α * L_balance
 - Encourages router to distribute tokens
+
+> **Saying it out loud.** Without a balancing term, MoE collapses. It's a rich-get-richer loop: an expert that gets slightly more tokens early trains slightly faster, so the router likes it more, so it gets more tokens — and within a few thousand steps you have two experts doing everything and six dead ones you're still paying to store. The fix is an auxiliary loss, and the subtle part is making it differentiable. Counting how many tokens went to expert three gives you a number with zero gradient, because `topk` is discrete. So Switch Transformer multiplies that hard count by the *mean softmax probability* the router assigned to that expert — the count is a constant weight and the gradient flows through the probability, pushing an overloaded expert's logits down. Weight it around 0.01: too low and you collapse, too high and the router balances at the cost of routing sensibly.
 
 ---
 
@@ -209,6 +227,8 @@ Where load_i is fraction of tokens routed to expert i.
 - **Dense**: Small-medium models, simplicity
 - **MoE**: Large models, need efficiency, diverse inputs
 
+> **Saying it out loud.** The comparison comes down to what resource you're short of. A dense model uses every parameter on every token, which is simple, trains stably, and is easy to serve. An MoE gets you far more total parameters at the same compute per token, which is why every frontier lab uses one. What you pay is threefold: memory, since every expert has to be resident; engineering, since experts get sharded across devices and now every forward pass involves an all-to-all communication step; and training stability, since you've added a router that can collapse. The rule of thumb worth stating is that MoE wins when you're memory-rich and compute-bound — a big training cluster or a well-provisioned inference fleet — and loses on a single GPU where you simply can't fit the parameters you never use.
+
 ---
 
 ## Q6: How is MoE used in modern LLMs like GPT-4 and Mixtral?
@@ -222,10 +242,10 @@ Where load_i is fraction of tokens routed to expert i.
 - Enables very large model (trillions of parameters)
 
 **Mixtral-8x7B:**
-- 8 experts, each 7B parameters
-- Total: 56B parameters
+- 8 experts per FFN layer (the name refers to 8 experts sized like a 7B model's FFN, not 8 independent 7B models)
+- Total: **46.7B** parameters — attention, embeddings and norms are shared across experts, so the naive 8 × 7B = 56B is wrong
 - Top-2 routing (k=2)
-- Active: 14B parameters per token
+- Active: **12.9B** parameters per token
 
 **Architecture:**
 - Replace standard FFN with MoE-FFN
@@ -233,15 +253,17 @@ Where load_i is fraction of tokens routed to expert i.
 - Router decides which experts per token
 
 **Efficiency:**
-- Total capacity: 56B parameters
-- Computation: Only 14B parameters active
-- Similar computation to 14B dense model
-- But 4× more capacity
+- Total capacity: 46.7B parameters
+- Computation: Only ~12.9B parameters active
+- Similar computation to a ~13B dense model
+- But ~3.6× more capacity
 
 **Quality:**
 - Achieves quality of larger dense models
 - With computation of smaller models
 - Best of both worlds
+
+> **Saying it out loud.** Mixtral is the model to use as the concrete example. Eight experts per feed-forward layer, top-2 routing, 46.7 billion parameters total, about 12.9 billion active per token. The number people get wrong is that total — the naive eight times seven gives 56 billion, but attention, embeddings, and layer norms are shared across all experts and counted once, so only the FFN blocks are actually replicated. That correction is worth volunteering, because it shows you understand where MoE is actually applied in the architecture. GPT-4 is widely believed to be an MoE but nothing is confirmed, so I'd flag it as rumor rather than state it. The headline result is that Mixtral matches or beats a 70B dense model at roughly 13B inference cost.
 
 ---
 
@@ -281,9 +303,11 @@ Where load_i is fraction of tokens routed to expert i.
 - Gradient clipping
 - Careful initialization
 
+> **Saying it out loud.** Almost every MoE training problem is the router. Collapse is the headline one — the rich-get-richer feedback loop that leaves most of your experts untrained — and it's why the auxiliary loss exists. Related is that gradients only reach the experts that were selected, so a dead expert stays dead and there's no automatic recovery. Then there's capacity: in a real distributed implementation each expert has a fixed buffer per batch, so if too many tokens route to one expert, the overflow gets *dropped* and skips the layer entirely, which is a silent quality loss you'll only see if you log it. Add router z-loss to stop the logits from drifting large, keep the balance coefficient near 0.01, and log expert utilization every step — that last habit is what separates people who've trained one from people who've read about it.
+
 ---
 
 ## Summary
 
-Mixture of Experts enables training models with trillions of parameters while keeping computation efficient. By activating only a subset of experts for each input, MoE achieves the capacity of very large models with the computation of much smaller models. Key components include multiple expert networks, a routing mechanism for expert selection, and load balancing to ensure all experts are utilized. Modern models like GPT-4 and Mixtral-8x7B use MoE to achieve unprecedented scale and efficiency.
+Mixture of Experts enables training models with trillions of parameters while keeping computation efficient. By activating only a subset of experts for each input, MoE achieves the capacity of very large models with the computation of much smaller models. Key components include multiple expert networks, a routing mechanism for expert selection, and load balancing to ensure all experts are utilized. Modern models like GPT-4 and Mixtral-8x7B (46.7B total / 12.9B active) use MoE to achieve unprecedented scale and efficiency.
 

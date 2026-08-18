@@ -8,6 +8,8 @@ This topic underpins almost everything in classical and modern ML. Cross-entropy
 
 ## 1. The likelihood function
 
+*In plain language:* the likelihood is a score for how well a candidate set of parameters explains the data you actually saw. Same formula as a probability, but you hold the data fixed and turn the parameter into the variable. Everything below is bookkeeping on that one flip.
+
 Given iid data $X_1, \ldots, X_n \sim p(\cdot | \theta)$ and a parametric family $\{p(\cdot | \theta) : \theta \in \Theta\}$:
 
 $$
@@ -19,6 +21,8 @@ The likelihood treats $\theta$ as the variable and the data as fixed — opposit
 **Why log?** Sums are easier than products, numerically stable (no underflow), and convex programming on $\ell$ is often tractable.
 
 **MLE**: $\hat{\theta}_{\mathrm{MLE}} = \arg\max_\theta \ell(\theta)$.
+
+> **Saying it out loud.** Maximum likelihood asks a very natural question: of all the parameter settings I could pick, which one makes the data I actually observed look least surprising? So you write down the probability of your dataset as a function of the parameters and push it as high as it goes. The reason you always see a log in front is purely practical — multiplying a million probabilities underflows to zero in floating point, whereas summing a million log-probabilities is fine, and the log doesn't move the maximum because it's monotonic. It also turns products into sums, which makes the derivatives clean. The thing to name is what MLE gives up: it's a single point estimate with no notion of uncertainty, so with small data it will happily overfit — a coin flipped three times and landing heads three times gets you an estimate of exactly 1.0.
 
 ---
 
@@ -40,6 +44,8 @@ $$
 
 Pure intuition: MLE for Bernoulli is the empirical frequency.
 
+> **Saying it out loud.** The Bernoulli case is the one to have completely memorized because it's the warmup they use to see if you can actually do the algebra. Write the log-likelihood as heads times log theta plus tails times log one-minus-theta, take the derivative, set it to zero, and out pops the answer everyone would have guessed anyway: the fraction of heads. That's reassuring — MLE recovers common sense here. But it also shows the failure mode in miniature: flip a coin three times, get three heads, and MLE tells you the coin lands heads with probability 1, which is a confident statement about the future based on three observations. That's exactly the hole a prior fills.
+
 ### Gaussian (mean and variance unknown)
 
 $$
@@ -51,6 +57,8 @@ $\partial \ell/\partial \mu = 0$: $\hat{\mu} = \bar{x}$.
 $\partial \ell/\partial \sigma^2 = 0$: $\hat{\sigma}^2 = \frac{1}{n}\sum_i (x_i - \bar{x})^2$.
 
 The variance MLE has a $1/n$, not $1/(n-1)$. It's biased (too small) — Bessel's correction unbiases it.
+
+> **Saying it out loud.** For a Gaussian, MLE gives you the sample mean for $\mu$, which surprises nobody, and the average squared deviation for the variance — but with $1/n$ out front, not the $1/(n-1)$ you learned in stats class. That difference is the whole point of the question. The MLE variance is biased low, and the reason is intuitive: you're measuring spread around the sample mean, and the sample mean is by construction the point that sits closest to your data, closer than the true mean does. So the deviations you measure are systematically too small. Dividing by $n-1$ instead — Bessel's correction — fixes it, and it's a good concrete answer to "is MLE unbiased?" No, and here's the standard counterexample.
 
 ### Multinomial
 
@@ -90,6 +98,8 @@ $$
 
 **Key insight: OLS *is* MLE under Gaussian noise.** The choice of squared loss isn't arbitrary — it's the negative log-likelihood of a Gaussian.
 
+> **Saying it out loud.** Here's the connection worth stating slowly, because it reframes half of machine learning. Ordinary least squares isn't a loss somebody picked because squaring is convenient. If you assume your targets are a linear function of the inputs plus Gaussian noise, and you write out the log-likelihood, all the constants fall away and what's left is exactly minus one half the sum of squared residuals. So minimizing squared error *is* maximum likelihood under a Gaussian noise assumption. The immediate payoff is that you now know when squared loss is the wrong choice: if your noise has heavy tails, the Gaussian assumption is wrong, a single outlier gets squared and dominates the fit, and you should be using something like a Laplace noise model — which gives you absolute error, the median instead of the mean.
+
 ### Logistic regression
 
 $y_i \in \{0, 1\}$, $p(y=1|x) = \sigma(w^\top x)$.
@@ -100,9 +110,13 @@ $$
 
 This is the negative cross-entropy loss (up to sign). MLE = minimize cross-entropy. No closed form; use iteratively reweighted least squares (IRLS) or gradient descent.
 
+> **Saying it out loud.** Logistic regression closes the loop: assume the label is Bernoulli with a probability given by a sigmoid of a linear score, write the log-likelihood, and what you get is exactly the negative of the binary cross-entropy loss that every deep learning framework ships. So cross-entropy isn't a separate idea from maximum likelihood — it *is* maximum likelihood for categorical data. Unlike the linear regression case there's no closed form, because the sigmoid makes the equations nonlinear, so you fit it with gradient descent or IRLS. The objective is still concave, which is why it converges reliably. The failure mode to name is perfectly separable data: the likelihood keeps increasing as the weights grow without bound, so the fit diverges unless you add regularization.
+
 ---
 
 ## 3. Asymptotic theory of MLE
+
+*In plain language:* this section answers "if I collect more and more data, does MLE eventually get the right answer, and how fast?" The results say yes, it converges to the truth, its error shrinks like $1/\sqrt{n}$, and no other well-behaved estimator beats it in the limit. The Fisher information below is just a measure of how sharply peaked the likelihood is — a sharp peak means the data pins the parameter down tightly.
 
 Under regularity conditions (smooth likelihood, identifiable, true $\theta_0$ in interior of parameter space):
 
@@ -122,9 +136,13 @@ where $I(\theta) = -\mathbb{E}_x[\partial^2 \log p(x|\theta)/\partial \theta^2]$
 
 These properties make MLE the *default* estimator in classical ML — but only asymptotically. Finite-sample MLE can be biased, can overfit, and can be unbounded.
 
+> **Saying it out loud.** The reason statisticians reach for MLE by default is a package of asymptotic guarantees. As you collect more data it converges to the true parameter — that's consistency. Its error distribution becomes Gaussian around the truth with variance given by the inverse Fisher information, which means the error shrinks like one over root $n$. And it's efficient: it hits the Cramér-Rao lower bound, so asymptotically no unbiased estimator does better. There's also invariance — the MLE of a function of a parameter is that function of the MLE, so the MLE of standard deviation is just the square root of the MLE of variance. The tradeoff to name is that every one of those words is "asymptotically." In finite samples MLE can be biased, can overfit hard, and in things like Gaussian mixtures the likelihood is literally unbounded.
+
 ---
 
 ## 4. Bayesian setup and MAP
+
+*In plain language:* MAP is MLE with an opinion. You write down a prior belief about what the parameters should look like before seeing data, multiply it by the likelihood, and take the peak of the result. The payoff, shown below, is that every regularizer you already use is secretly one of these priors — L2 is a Gaussian, L1 is a Laplace.
 
 Bayes' theorem applied to a parameter:
 
@@ -152,6 +170,8 @@ $$
 
 Multiply through by $\sigma^2$: ridge regression with $\lambda = \sigma^2/\tau^2$.
 
+> **Saying it out loud.** Ridge regression is MAP estimation with a zero-mean Gaussian prior on the weights, and the derivation is two lines. The log of a Gaussian prior is minus the squared norm of $w$ over twice the prior variance, so when you add it to the Gaussian log-likelihood you get squared error plus an L2 penalty. Multiply through and the regularization strength is $\lambda = \sigma^2/\tau^2$ — noise variance over prior variance. That ratio is the whole interpretation: a tight prior, small $\tau$, means you strongly believe the weights are near zero and you regularize hard; noisy data, large $\sigma$, also means regularize hard because the data is less trustworthy. So weight decay in your neural network is not a hack, it's a stated belief that the weights are small, and $\lambda$ is how strongly you believe it.
+
 ### Laplace prior → Lasso
 
 $p(w_j) \propto \exp(-|w_j|/b)$. Log-prior is $-|w|/b$ → $\ell_1$ penalty. Lasso = MAP under Laplace prior.
@@ -165,6 +185,8 @@ MAP: mode of Beta = $\frac{\alpha + s - 1}{\alpha + \beta + n - 2}$ (when $\alph
 Posterior mean: $\frac{\alpha + s}{\alpha + \beta + n}$ — gives a *smoothed* estimate. With $\alpha = \beta = 1$ (uniform prior), posterior mean is $(s+1)/(n+2)$ — Laplace smoothing.
 
 This is exactly what NLP people call add-one smoothing.
+
+> **Saying it out loud.** The Beta-Bernoulli case is where priors stop being abstract. Put a Beta prior on a coin's bias, observe some flips, and the posterior is Beta again with the successes and failures simply added to the prior's parameters — that's what conjugacy buys you. The prior parameters behave exactly like pseudo-counts, imaginary flips you saw before the experiment started. With a uniform Beta(1,1) prior, the posterior mean is successes plus one over trials plus two, which is Laplace's rule of succession, and it's the same add-one smoothing NLP people use on n-gram counts. Three heads out of three now gives you 4/5 rather than 1.0, which is the whole point. One precision item they like to probe: MAP is the *mode* of the posterior and the posterior mean is a different number — for Beta(1,1) the mode is still 1.0 and only the mean is smoothed.
 
 ---
 
@@ -182,6 +204,8 @@ This is exactly what NLP people call add-one smoothing.
 
 Conjugate priors give closed-form posteriors. They also yield clean intuition: hyperparameters of the prior look like *pseudo-counts* — the prior acts as if you'd seen some imaginary data before.
 
+> **Saying it out loud.** A conjugate prior is a prior that, when you multiply it by your likelihood, gives back a posterior in the same family. Beta with Bernoulli gives Beta; Dirichlet with multinomial gives Dirichlet; Gamma with Poisson gives Gamma. That's not a coincidence, it's the exponential family structure, and it means Bayesian updating collapses from an integral you can't compute into adding counts to parameters. The intuition that makes it stick is pseudo-counts: a Beta(3,2) prior is literally "pretend I already saw three heads and two tails." The tradeoff is honesty about why you chose it — conjugate priors are picked for tractability, not because they express your real beliefs, and once you leave the conjugate world you're back to MCMC or variational inference, which is orders of magnitude more expensive.
+
 ---
 
 ## 6. MLE vs MAP vs Bayesian — the spectrum
@@ -194,9 +218,13 @@ Conjugate priors give closed-form posteriors. They also yield clean intuition: h
 
 Modern deep learning is almost entirely MLE (cross-entropy, MSE) plus MAP (weight decay, dropout). True Bayesian deep learning is a research area (Bayesian NNs, dropout-as-Bayes-approx, deep ensembles for posterior approximation).
 
+> **Saying it out loud.** Think of it as a spectrum of how much of the posterior you keep. MLE keeps nothing but the peak of the likelihood — cheapest, and fine when you have plenty of data. MAP keeps the peak of the posterior, so you get regularization from the prior, still one number per parameter, still just optimization. Full Bayesian keeps the entire posterior distribution, which is the only one that gives you genuine uncertainty, and it costs you MCMC or variational inference. Two useful facts to land: as data grows the likelihood swamps the prior, so MAP converges to MLE and the choice stops mattering; and everything you train today is MLE plus MAP, since cross-entropy is the likelihood and weight decay is the Gaussian prior. Deep ensembles are the cheap stand-in for the real posterior.
+
 ---
 
 ## 7. Why MLE = minimum cross-entropy = minimum forward KL
+
+*In plain language:* this section shows the three things you thought were different objectives are literally the same objective. Maximizing likelihood, minimizing cross-entropy loss, and minimizing KL divergence from the true data distribution to your model all differ only by constants that don't involve the parameters.
 
 For data drawn from true distribution $p^*$:
 
@@ -212,6 +240,8 @@ $$
 
 The $H(p^*)$ term doesn't depend on $\theta$, so MLE = minimize forward KL from $p^*$ to model. This is the "mode-covering" KL — penalizes putting low probability on regions where $p^*$ is high. (Reverse KL would be mode-seeking; that's what variational inference uses.)
 
+> **Saying it out loud.** Maximizing likelihood, minimizing cross-entropy, and minimizing forward KL are three names for one thing. Cross-entropy is just the negative average log-likelihood, and cross-entropy equals KL from the true distribution to your model plus the true distribution's own entropy — and that entropy term is a constant you can't change, so the argmin is identical. The part that's actually interesting is the *direction* of the KL. Forward KL, which is what training does, blows up whenever the true distribution has mass somewhere your model assigns near-zero probability. So it's mode-covering: your model is forced to spread out and cover everything, even at the cost of putting probability where there's no data. Reverse KL, which variational inference uses, is mode-seeking and will happily collapse onto one mode. That's precisely why maximum-likelihood generative models produce blurry, over-smoothed samples.
+
 ---
 
 ## 8. Common interview gotchas
@@ -225,6 +255,8 @@ The $H(p^*)$ term doesn't depend on $\theta$, so MLE = minimize forward KL from 
 | Why log-likelihood instead of likelihood? | Same thing | Numerics + sums vs products + matches concavity for many models |
 | Why is MLE for variance biased? | It isn't | Plug-in $\bar{x}$ is closer to data than $\mu$, so $\sum(x-\bar{x})^2$ is too small |
 | MAP = mean of posterior? | Yes | No, it's the *mode*. Posterior mean is a different point estimator |
+
+> **Saying it out loud.** The traps here cluster around three claims. One: MLE is not unbiased in general — Gaussian variance is the counterexample everyone should have in their pocket. Two: MAP is not a different thing from regularization, it *is* regularization, with L2 being a Gaussian prior and L1 a Laplace prior, and the strength $\lambda$ being the ratio of noise variance to prior variance. Three: MAP is the mode of the posterior, not the mean, and those genuinely differ for skewed posteriors — with a Beta(1,1) prior and three heads out of three, the mode is 1.0 and the mean is 0.8. Get those three right and you've covered most of what this topic tests.
 
 ---
 

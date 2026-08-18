@@ -12,6 +12,8 @@
 
 ## Maximum Likelihood Estimation (MLE)
 
+*In plain language:* this whole section is one idea repeated on four different models. You have a knob (the parameter), you turn it until the data you actually collected looks as unsurprising as possible, and wherever the knob stops is your estimate. The calculus below is only the mechanical way of finding where it stops — take the log, differentiate, set to zero, solve.
+
 ### Intuitive Explanation
 
 **The Core Idea:**
@@ -89,6 +91,8 @@ log L(θ) = log ∏ᵢ P(xᵢ|θ)
 
 This gives us the maximum likelihood estimate.
 
+> **Saying it out loud.** The recipe never changes, so it's worth being able to recite it as a procedure. Write down the probability of your whole dataset as a function of the parameter — that's a product, because the observations are independent. Take the log, which turns the product into a sum and keeps the maximum in the same place because log is monotonic. Differentiate the sum, set it equal to zero, solve. That's it; every derivation in this file is that same four-step loop. The reason the log step is non-negotiable in practice is numerical: multiplying a thousand probabilities underflows to exactly zero in double precision, since the smallest representable value is around $10^{-308}$.
+
 ### Example 1: MLE for Coin Flip (Bernoulli)
 
 **Setup:**
@@ -135,6 +139,8 @@ k = nθ
 
 **Intuition:**
 The MLE estimate is simply the observed proportion! This makes sense: if you see 7 heads out of 10, the best estimate is 0.7.
+
+> **Saying it out loud.** The coin flip is the derivation to have completely automatic. Likelihood is theta to the number of heads times one-minus-theta to the number of tails. Log it, and you get heads times log theta plus tails times log one-minus-theta. Differentiate, set to zero, and after one line of algebra you get theta equals heads over total flips — the observed proportion, exactly what anyone would have guessed. That's the reassuring part. The part I'd volunteer without being asked is the failure: three flips, three heads, and MLE says the coin never lands tails. It's the honest maximum-likelihood answer and it's a terrible prediction, which is the entire motivation for the MAP section.
 
 ### Example 2: MLE for Normal Distribution
 
@@ -201,6 +207,8 @@ Set to zero:
 - MLE for mean = sample mean (makes sense!)
 - MLE for variance = average squared deviation from mean
 
+> **Saying it out loud.** For a Gaussian you're fitting two parameters, and they come out in sequence. The mean estimate is just the sample average. Plug that back in and the variance estimate is the average squared distance from that average — with a $1/n$ in front, not the $1/(n-1)$ from your statistics course. That gap is the interesting part and it's a favorite follow-up. The MLE variance is biased low, because you're measuring spread around the sample mean, and the sample mean is by definition the point sitting closest to your own data — closer than the true mean would be. So your measured spread is systematically a little too small, and dividing by $n-1$ instead is Bessel's correction fixing exactly that.
+
 ### Example 3: MLE for Linear Regression
 
 **Setup:**
@@ -247,9 +255,13 @@ MLE for linear regression with Gaussian noise = Ordinary Least Squares (OLS)!
 - Maximizing likelihood = minimizing sum of squared errors
 - This is exactly what OLS does!
 
+> **Saying it out loud.** This is the derivation that changes how you see loss functions. Assume the targets are a linear function of the inputs plus Gaussian noise. Write the likelihood of the observed residuals, take the log, and every term except the sum of squared residuals is a constant that has nothing to do with $w$. So maximizing likelihood *is* minimizing squared error, and solving gives the normal equations. Least squares was never an arbitrary choice — it's the Gaussian assumption in disguise. And that tells you exactly when to abandon it: heavy-tailed noise breaks the assumption, a single outlier gets squared and dominates the fit, and the right move is a Laplace noise model, which hands you absolute error and the median instead of the mean.
+
 ---
 
 ## Maximum A Posteriori (MAP)
+
+*In plain language:* MAP is the same procedure with one extra term. Before looking at the data you write down what you already believe about the parameter, and then you find the value that best balances your belief against the evidence. Because everything happens in log space, that belief shows up as something you simply add to the objective — which is why it ends up looking exactly like a regularization penalty.
 
 ### Intuitive Explanation
 
@@ -376,6 +388,8 @@ So:
 - With informative prior, MAP incorporates prior knowledge
 - Prior acts like "pseudo-observations": α-1 heads, β-1 tails
 
+> **Saying it out loud.** The Beta prior is the cleanest illustration of what a prior actually does, because it behaves like fake data you saw before the experiment. A Beta(α, β) prior on a coin acts like α−1 extra heads and β−1 extra tails already in your tally, so the MAP estimate is just the observed counts plus those pseudo-counts. That instantly fixes the three-heads-out-of-three disaster: the prior drags the answer back toward one half instead of letting it slam into 1.0. It also shows both boundary cases at once. A uniform Beta(1,1) contributes zero pseudo-counts, so MAP collapses back to MLE. And as real flips pile up, the fixed pseudo-counts become negligible, so MAP converges to MLE — the tradeoff is that a prior only buys you anything when data is scarce.
+
 ### Example 2: MAP for Linear Regression with Gaussian Prior
 
 **Setup:**
@@ -427,6 +441,8 @@ MAP for linear regression with Gaussian prior = Ridge regression (L2 regularizat
 - Prior: w ~ N(0, σ²_prior) means we believe parameters should be small
 - This is exactly L2 regularization!
 - λ = σ²/σ²_prior controls regularization strength
+
+> **Saying it out loud.** Ridge regression is MAP with a Gaussian prior centered at zero, and the derivation is short enough to do live. The log of that prior is minus the squared norm of $w$ over twice the prior variance, so adding it to the Gaussian log-likelihood gives squared error plus an L2 penalty. Set the gradient to zero and you get $(X^\top X + \lambda I)^{-1}X^\top y$ — the OLS solution with a small amount added along the diagonal. The satisfying part is that lambda isn't a free knob, it's the noise variance divided by the prior variance. Noisy data means regularize harder; a confident prior means regularize harder. And there's a practical bonus: that $\lambda I$ makes the matrix invertible even with perfectly collinear features, which is precisely the case where plain OLS blows up.
 
 ---
 
@@ -494,6 +510,8 @@ Loss = MSE + λ||w||₁
 Regularization = Bayesian prior
 Regularized optimization = MAP estimation
 
+> **Saying it out loud.** The single sentence to walk away with is that your regularized training objective is the negative log posterior. The data-fit term is the negative log-likelihood, the penalty term is the negative log-prior, and minimizing their sum is finding the mode of the posterior. That reframes L2 and L1 from arbitrary penalties into two different beliefs about weights: a Gaussian prior says weights are probably small, and a Laplace prior puts a sharp spike at zero, which is why lasso zeroes coefficients outright while ridge only shrinks them. The two cases where MAP and MLE coincide are worth naming too — a uniform prior, and a large dataset, since the likelihood grows with $n$ while the prior stays fixed.
+
 ---
 
 ## Examples
@@ -541,6 +559,8 @@ ŵ_MAP = (XᵀX + λI)⁻¹Xᵀy
 - Prevents overfitting
 - More stable with small data
 
+> **Saying it out loud.** Side by side the difference is easiest to see on the two examples. On the coin, MLE gives you the raw proportion and MAP gives you the proportion with pseudo-counts added, which is what keeps small samples from producing absurd answers. On linear regression, MLE gives you OLS and MAP gives you ridge, which is OLS plus lambda on the diagonal. Same likelihood, one extra term, and the effect is entirely about stability. The number that makes it concrete: with two nearly collinear features, the OLS solution can have coefficients in the thousands that cancel each other out, and any tiny amount of ridge regularization collapses them to something sane with essentially no loss in fit.
+
 ---
 
 ## When to Use Each
@@ -569,6 +589,8 @@ ŵ_MAP = (XᵀX + λI)⁻¹Xᵀy
 **For research:**
 - **Frequentist**: MLE
 - **Bayesian**: MAP (or full Bayesian inference)
+
+> **Saying it out loud.** Practically, the choice almost makes itself. With a lot of data, use MLE, because the likelihood dominates and the prior is decoration. With little data, or when you genuinely know something about the parameters ahead of time, use MAP — and if you're using weight decay you're already doing MAP whether you call it that or not. The limitation to name so you don't get caught: MAP is still just a point estimate, the mode of the posterior, and it gives you no uncertainty at all. If someone needs a confidence interval or a risk estimate, neither MLE nor MAP delivers it, and you have to carry the full posterior with MCMC or variational inference, which costs orders of magnitude more compute.
 
 ---
 
