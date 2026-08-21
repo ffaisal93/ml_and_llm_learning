@@ -41,7 +41,16 @@ Comprehensive interview questions and answers for ML/LLM coding interviews.
 
 ### Q1: Implement linear regression from scratch.
 
-**Answer:**
+> **In 30 seconds.** "Linear regression predicts a weighted sum of the features plus an intercept, and I score it with mean squared error. Fitting is just gradient descent: predict, take the residual, and push the weights in the direction that shrinks it — the weight gradient is `X.T @ residual / n` and the bias gradient is the mean residual. It's a convex problem, so with a sane learning rate you land on the global optimum."
+
+**The short version.**
+
+- Model: $\hat{y} = Xw + b$. Loss: MSE.
+- Weight gradient: `dw = X.T @ (y_pred - y) / n`. Bias gradient: `db = mean(y_pred - y)`.
+- Update: `w -= lr * dw`, `b -= lr * db`, repeat.
+- Convex bowl → one minimum, no local traps.
+- Standardise features first, or the biggest-scale column owns the step size.
+
 ```python
 class LinearRegression:
     def __init__(self, lr=0.01, n_iter=1000):
@@ -66,30 +75,33 @@ class LinearRegression:
         return X.dot(self.weights) + self.bias
 ```
 
-**Key Points:**
-- Gradient descent: Update weights using gradients
-- Cost function: MSE = mean((y_pred - y)²)
-- Gradients: dw = X.T @ (y_pred - y) / n, db = mean(y_pred - y)
+**Why it works.**
 
-**Walkthrough — what the algorithm is actually doing.**
+Linear regression assumes the target is a weighted sum of the features plus a constant offset, so the model is $\hat{y} = Xw + b$, where $X$ is the $n \times d$ design matrix ($n$ rows of data, $d$ features per row), $w$ is the length-$d$ vector of weights, and $b$ is a single scalar called the bias or intercept. "Fitting" means choosing $w$ and $b$ so the predictions are as close as possible to the observed targets, where "close" is measured by the mean squared error.
 
-Linear regression assumes the target is a weighted sum of the features plus a constant offset, so the model is $\hat{y} = Xw + b$, where $X$ is the $n \times d$ design matrix ($n$ rows of data, $d$ features per row), $w$ is the length-$d$ vector of weights, and $b$ is a single scalar called the bias or intercept. "Fitting" means choosing $w$ and $b$ so the predictions are as close as possible to the observed targets, where "close" is measured by the mean squared error (MSE), the average of the squared gaps:
+Gradient descent is the method used here. The gradient $\nabla J$ is the vector of partial derivatives; it points in the direction of steepest *increase* of the loss, so stepping in the *negative* gradient direction reduces the loss. Doing that repeatedly with a small step size walks downhill to the bottom of the bowl.
+
+**Line by line.** `__init__` stores the two hyperparameters — `lr`, the step size, and `n_iter`, how many full passes to take — and leaves the parameters as `None` because they cannot be sized until we see the data. In `fit`, `X.shape` gives us `n_samples` and `n_features`, and the weights are initialised to a zero vector of length `n_features` with the bias at zero; for a convex problem the starting point does not affect the final answer, only how long it takes to get there. Inside the loop, `y_pred = X.dot(self.weights) + self.bias` is one matrix-vector product that computes all $n$ predictions at once. `y_pred - y` is the residual vector $e$. `X.T.dot(y_pred - y)` contracts that residual against every feature column simultaneously, giving all $d$ partial derivatives in one operation, and dividing by `n_samples` turns the sum into a mean so the learning rate does not have to be retuned when the dataset size changes. `np.sum(y_pred - y) / n_samples` is the bias gradient. The two subtraction lines take the downhill step. `predict` simply reapplies the learned affine map. This is full-batch gradient descent: every iteration touches every row, which is exact but slow on large data; swapping in a random subset per step turns it into stochastic (mini-batch) gradient descent.
+
+**The math, and what it buys you.**
+
+The loss being minimised is the average of the squared gaps:
 
 $$J(w, b) = \frac{1}{n}\sum_{i=1}^{n}\left(\hat{y}_i - y_i\right)^2$$
 
 The squares matter for two reasons: they make every error positive so overshoots and undershoots do not cancel, and they make $J$ a smooth convex bowl in $(w, b)$, which means there is exactly one minimum and gradient descent cannot get stuck anywhere else.
 
-Gradient descent is the method used here. The gradient $\nabla J$ is the vector of partial derivatives; it points in the direction of steepest *increase* of the loss, so stepping in the *negative* gradient direction reduces the loss. Doing that repeatedly with a small step size walks downhill to the bottom of the bowl.
-
 **Where the gradients come from.** Write the residual for row $i$ as $e_i = \hat{y}_i - y_i$. Differentiating the MSE with respect to weight $j$ and applying the chain rule (the outer derivative of $e_i^2$ is $2e_i$, the inner derivative of $\hat{y}_i = \sum_j x_{ij}w_j + b$ with respect to $w_j$ is $x_{ij}$):
 
 $$\frac{\partial J}{\partial w_j} = \frac{2}{n}\sum_{i=1}^{n} e_i\, x_{ij}, \qquad \frac{\partial J}{\partial b} = \frac{2}{n}\sum_{i=1}^{n} e_i$$
 
-Stacked over all $j$, the first expression is exactly $\frac{2}{n}X^\top e$. The code drops the factor of 2 because it is a constant that just rescales the learning rate — a common and harmless simplification. Notice what the weight gradient says intuitively: a feature gets a large gradient when it is large *and* correlated with the direction we are currently getting wrong. The bias gradient is just the average residual, which nudges the whole prediction line up or down.
+Stacked over all $j$, the first expression is exactly $\frac{2}{n}X^\top e$ — which is the one line of code in `fit`. The code drops the factor of 2 because it is a constant that just rescales the learning rate — a common and harmless simplification. Notice what the weight gradient says intuitively: a feature gets a large gradient when it is large *and* correlated with the direction we are currently getting wrong. The bias gradient is just the average residual, which nudges the whole prediction line up or down.
 
-**Line by line.** `__init__` stores the two hyperparameters — `lr`, the step size, and `n_iter`, how many full passes to take — and leaves the parameters as `None` because they cannot be sized until we see the data. In `fit`, `X.shape` gives us `n_samples` and `n_features`, and the weights are initialised to a zero vector of length `n_features` with the bias at zero; for a convex problem the starting point does not affect the final answer, only how long it takes to get there. Inside the loop, `y_pred = X.dot(self.weights) + self.bias` is one matrix-vector product that computes all $n$ predictions at once. `y_pred - y` is the residual vector $e$. `X.T.dot(y_pred - y)` contracts that residual against every feature column simultaneously, giving all $d$ partial derivatives in one operation, and dividing by `n_samples` turns the sum into a mean so the learning rate does not have to be retuned when the dataset size changes. `np.sum(y_pred - y) / n_samples` is the bias gradient. The two subtraction lines take the downhill step. `predict` simply reapplies the learned affine map. This is full-batch gradient descent: every iteration touches every row, which is exact but slow on large data; swapping in a random subset per step turns it into stochastic (mini-batch) gradient descent.
+**Good and bad.**
 
-**One practical caveat.** Because the same `lr` is used for every weight, features on wildly different scales converge at wildly different rates and the loss surface becomes a long narrow valley that gradient descent zigzags down. Standardising each feature to zero mean and unit variance before fitting fixes this. If `lr` is too large the updates overshoot the minimum and the loss diverges to `nan`; if too small it crawls.
+- **Good:** convex, so a global optimum is guaranteed; $O(nd)$ per step, so it streams over data too big for memory; the same recipe extends unchanged to models with no closed form.
+- **Bad:** needs feature standardisation — because the same `lr` is used for every weight, features on wildly different scales converge at wildly different rates and the loss surface becomes a long narrow valley that gradient descent zigzags down.
+- **Bad:** learning-rate sensitive. Too large and the updates overshoot the minimum and the loss diverges to `nan`; too small and it crawls.
 
 **Follow-up:** *Why iterate at all when linear regression has a closed-form solution?* The normal equation $w = (X^\top X)^{-1} X^\top y$ gives the exact optimum in one shot, and for a few thousand features it is the better choice. But it costs roughly $O(d^3)$ to invert (or factorise) a $d \times d$ matrix and requires $X^\top X$ to be invertible, which fails under exact multicollinearity. Gradient descent costs $O(nd)$ per step, streams over data that does not fit in memory, extends unchanged to models with no closed form, and degrades gracefully when features are collinear.
 
@@ -101,7 +113,9 @@ Stacked over all $j$, the first expression is exactly $\frac{2}{n}X^\top e$. The
 
 ### Q2: What's the difference between linear and logistic regression?
 
-**Answer:**
+> **In 30 seconds.** "They share the same linear core — weights dot features plus a bias. Linear regression uses that number directly as the prediction; logistic regression squashes it through a sigmoid so it comes out as a probability, which means the linear part is really modelling log-odds. And because the output changed, the loss has to change too: MSE on top of a sigmoid loses convexity and kills the gradient exactly when the model is most wrong."
+
+**The short version.**
 
 | Aspect | Linear Regression | Logistic Regression |
 |--------|-------------------|---------------------|
@@ -115,13 +129,15 @@ Stacked over all $j$, the first expression is exactly $\frac{2}{n}X^\top e$. The
 - Linear: y = w*x + b
 - Logistic: p = sigmoid(w*x + b), then classify p > 0.5
 
-**The mechanism behind the table.**
+**Why it works.**
 
 The two models share a linear core, $z = w^\top x + b$. Linear regression stops there and treats $z$ as the prediction. Logistic regression pushes $z$ through the sigmoid (also called the logistic function),
 
 $$\sigma(z) = \frac{1}{1 + e^{-z}}$$
 
 which is a smooth S-shaped squash from the whole real line into the open interval $(0, 1)$, so the output can be read as a probability. Inverting it shows what the linear part really means: $z = \log\frac{p}{1-p}$, the *log-odds* (the log of the ratio of the probability of the event to the probability of its complement). So logistic regression is a linear model in log-odds space, not in probability space. A one-unit increase in a feature adds a fixed amount to the log-odds, which multiplies the odds by a constant factor $e^{w_j}$ — that is the standard way to interpret a logistic coefficient.
+
+**The math, and what it buys you.**
 
 **Why log loss and not MSE — the part follow-ups probe.** There are two independent reasons.
 
@@ -133,6 +149,11 @@ $$\frac{\partial \mathcal{L}}{\partial z} = p - y$$
 
 which for the same case is $0.001 - 1 = -0.999$: a full-strength correction. The size of the update is proportional to how wrong the probability is, which is exactly what you want. (The same cancellation is why softmax-with-cross-entropy is implemented as a single fused op in every framework.)
 
+**Good and bad.**
+
+- **Linear regression — good:** directly interpretable coefficients in the target's own units; closed-form solution available. **Bad:** unbounded output, so it is meaningless as a probability, and MSE punishes it hard on classification labels.
+- **Logistic regression — good:** calibrated probabilities, convex loss, clean $p - y$ gradient, coefficients readable as odds ratios. **Bad:** still a linear boundary in feature space; needs feature engineering or kernels for anything curved.
+
 **Follow-up:** *Can you use logistic regression on more than two classes?* Yes — replace the sigmoid with the softmax, $p_k = e^{z_k} / \sum_j e^{z_j}$, one linear score per class, and the loss becomes multiclass cross-entropy. The gradient keeps the same $p - y$ form with $y$ as a one-hot vector. This is multinomial logistic regression, also known as softmax regression, and it is precisely the output layer of almost every classification neural network.
 
 > **Why the interviewer asks this.** The surface answer is memorised by everyone; the real question underneath is whether you know why the loss function changes, not just that it does.
@@ -143,29 +164,17 @@ which for the same case is $0.001 - 1 = -0.999$: a full-strength correction. The
 
 ### Q3: Explain KNN algorithm.
 
-**Answer:**
-K-Nearest Neighbors is a lazy learning algorithm:
+> **In 30 seconds.** "KNN doesn't really train — it memorises the data. At prediction time you measure the distance from the new point to everything you stored, take the k closest, and let them vote, or average them for regression. Small k chases noise, big k smooths toward the majority class — that's the bias-variance dial. Two gotchas: scale your features, and don't expect it to work in high dimensions."
 
-**Algorithm:**
-1. Store all training data (no training phase)
-2. For new point, find k nearest neighbors
-3. For classification: Majority vote
-4. For regression: Average of neighbors
+**The short version.**
 
-**Distance Metric:**
-- Usually Euclidean: √(Σ(xi - yi)²)
-- Can use Manhattan, cosine, etc.
+- **Lazy, non-parametric.** Training: O(1), just store. Prediction: O(n) per query, compare to all points.
+- **Predict:** find the k nearest neighbours → majority vote (classification) or mean (regression).
+- **Distance:** usually Euclidean $\sqrt{\sum(x_i - y_i)^2}$; Manhattan or cosine also used.
+- **Small k** = sensitive to noise (high variance). **Large k** = smoother boundary (high bias). Rule of thumb: $k = \sqrt{n}$; prefer odd $k$ for binary problems so votes cannot tie.
+- **Must standardise features**, and it degrades badly as dimension grows.
 
-**K Value:**
-- Small k: More sensitive to noise (high variance)
-- Large k: Smoother decision boundary (high bias)
-- Rule of thumb: k = √n
-
-**Time Complexity:**
-- Training: O(1) - just store data
-- Prediction: O(n) - compare to all points
-
-**Walkthrough — the idea and the code.**
+**Why it works.**
 
 K-Nearest Neighbors makes one assumption and nothing else: points that are close together in feature space tend to have similar labels. So there is no model to fit — no weights, no loss function, no gradient. "Training" is memorising the dataset, which is why it is called a *lazy* learner (all the work is deferred to prediction time) and a *non-parametric* method (the number of things it remembers grows with the data rather than being fixed in advance).
 
@@ -198,9 +207,14 @@ class KNN:
 
 Reading it in order: `fit` casts and stores, and that is genuinely all it does. In `predict`, the broadcasting trick `X[:, None, :] - self.X_train[None, :, :]` creates an array of every coordinate-wise difference between every test point and every training point, squaring and summing along the feature axis gives the squared distance matrix. We use *squared* distance rather than taking the square root because the square root is monotonic — it does not change which neighbours are closest — and skipping it saves time. `np.argpartition` is used instead of `argsort` because we only need to know *which* $k$ are smallest, not their internal order, and partitioning is linear rather than $n\log n$. Indexing `y_train` by those positions gives the neighbours' labels, and `Counter(...).most_common(1)` performs the majority vote. For regression the last line becomes `neigh.mean(axis=1)`.
 
-**Why $k$ controls the bias-variance tradeoff.** With $k = 1$ every training point is classified perfectly by itself, and the decision boundary wraps tightly around individual points — including mislabelled ones. That is high variance: reshuffle the training set and the boundary moves a lot. As $k$ grows, each prediction averages more neighbours, noise cancels, and the boundary smooths; push $k$ to $n$ and the model always predicts the global majority class, which is maximum bias. Choose $k$ by cross-validation, and prefer odd $k$ for binary problems so votes cannot tie.
+**Why $k$ controls the bias-variance tradeoff.** With $k = 1$ every training point is classified perfectly by itself, and the decision boundary wraps tightly around individual points — including mislabelled ones. That is high variance: reshuffle the training set and the boundary moves a lot. As $k$ grows, each prediction averages more neighbours, noise cancels, and the boundary smooths; push $k$ to $n$ and the model always predicts the global majority class, which is maximum bias. Choose $k$ by cross-validation.
 
-**Two failure modes worth naming.** First, scaling: Euclidean distance sums squared differences across features, so a feature measured in the thousands (say, income) drowns out one measured in single digits (say, number of bedrooms). Standardise before using KNN, always. Second, the curse of dimensionality: as dimension $d$ grows, the ratio between the distance to the nearest and the farthest point converges to 1, so "nearest" stops carrying information. KNN is strong in low dimensions and weak in high ones unless you reduce dimensionality first.
+**Good and bad.**
+
+- **Good:** zero training cost, no assumptions about the decision boundary's shape, naturally multiclass, and trivially updated by appending new data.
+- **Bad — scaling:** Euclidean distance sums squared differences across features, so a feature measured in the thousands (say, income) drowns out one measured in single digits (say, number of bedrooms). Standardise before using KNN, always.
+- **Bad — curse of dimensionality:** as dimension $d$ grows, the ratio between the distance to the nearest and the farthest point converges to 1, so "nearest" stops carrying information. KNN is strong in low dimensions and weak in high ones unless you reduce dimensionality first.
+- **Bad — inference cost:** every query touches the whole training set, and the whole training set must stay in memory.
 
 **Follow-up:** *How do you make prediction faster than $O(nd)$ per query?* Build a spatial index — a KD-tree or ball tree — which prunes whole regions and gives roughly $O(\log n)$ queries in low dimensions, though both degrade to brute force past about 20 dimensions. Beyond that, use approximate nearest neighbour methods (HNSW graphs, IVF or product quantisation as in FAISS), which trade an exact guarantee for orders-of-magnitude speedups; this is the same machinery behind modern vector databases for embedding retrieval.
 
@@ -212,36 +226,29 @@ Reading it in order: `fit` casts and stores, and that is genuinely all it does. 
 
 ### Q4: How does K-means clustering work?
 
-**Answer:**
+> **In 30 seconds.** "K-means minimises the total squared distance from each point to its cluster's centre. It alternates two steps — assign every point to the nearest centre, then move each centre to the mean of the points that chose it. Each step is the exact best move given the other, so the objective only goes down and it always converges — but only to a local optimum, which is why you use k-means++ seeding and multiple restarts."
 
-**Algorithm:**
-1. Initialize k centroids randomly
-2. Assign each point to nearest centroid
-3. Update centroids to mean of assigned points
-4. Repeat steps 2-3 until convergence
+**The short version.**
 
-**Convergence:**
-- Centroids don't change
-- Or max iterations reached
+- **Algorithm:** initialise $k$ centroids → assign each point to nearest centroid → move each centroid to the mean of its members → repeat.
+- **Converges when** centroids stop moving, or max iterations is hit.
+- **Objective:** within-cluster sum of squares (inertia). Both steps are exact minimisers, so inertia is monotonically non-increasing.
+- **Initialisation matters:** random seeding can give poor results; k-means++ spreads the initial centres out.
+- **Limitations:** assumes spherical, similarly-sized clusters; you must specify $k$; sensitive to initialisation and outliers.
 
-**Initialization:**
-- Random: Can get poor results
-- K-means++: Better initialization
+**Why it works.**
 
-**Limitations:**
-- Assumes spherical clusters
-- Need to specify k
-- Sensitive to initialization
+K-means partitions $n$ points into $k$ groups by minimising the within-cluster sum of squares, also called inertia. Minimising this jointly over both the assignments and the centroids is NP-hard, so the standard algorithm — Lloyd's algorithm — alternates between optimising one while holding the other fixed. That is the whole trick, and it is why each of the two steps in the loop is not arbitrary but is the *exact* minimiser given the other.
 
-**Walkthrough — what the algorithm is optimising and why it stops.**
+Holding centroids fixed, the assignment that minimises the objective is obviously "put each point with its nearest centroid" — each point's contribution is minimised independently. Holding assignments fixed, the point $\mu$ minimising $\sum_{x \in C_j} \lVert x - \mu \rVert^2$ is the arithmetic mean of $C_j$ (set the derivative to zero and solve). Since each step can only decrease the objective and there are finitely many possible assignments, it is monotonically non-increasing and the algorithm must terminate — but only at a *local* minimum, which is exactly why initialisation matters.
 
-K-means partitions $n$ points into $k$ groups by minimising the within-cluster sum of squares, also called inertia:
+**The math, and what it buys you.**
+
+The objective is a single line, and everything about the algorithm's behaviour follows from it:
 
 $$J = \sum_{j=1}^{k} \sum_{x \in C_j} \lVert x - \mu_j \rVert^2$$
 
-where $C_j$ is the set of points assigned to cluster $j$ and $\mu_j$ is that cluster's centroid (its mean vector). Minimising this jointly over both the assignments and the centroids is NP-hard, so the standard algorithm — Lloyd's algorithm — alternates between optimising one while holding the other fixed. That is the whole trick, and it is why each of the two steps in the loop is not arbitrary but is the *exact* minimiser of $J$ given the other:
-
-Holding centroids fixed, the assignment that minimises $J$ is obviously "put each point with its nearest centroid" — each point's contribution is minimised independently. Holding assignments fixed, the point $\mu$ minimising $\sum_{x \in C_j} \lVert x - \mu \rVert^2$ is the arithmetic mean of $C_j$ (set the derivative to zero and solve). Since each step can only decrease $J$ and there are finitely many possible assignments, $J$ is monotonically non-increasing and the algorithm must terminate — but only at a *local* minimum, which is exactly why initialisation matters.
+where $C_j$ is the set of points assigned to cluster $j$ and $\mu_j$ is that cluster's centroid (its mean vector). Because $J$ uses *squared Euclidean* distance and summarises each cluster by a single *mean*, the algorithm is implicitly committed to round, equally-sized, outlier-free clusters — the limitations are not bugs, they are what this formula asks for.
 
 ```python
 import numpy as np
@@ -277,9 +284,14 @@ def kmeans(X, k, n_iter=100, tol=1e-6, seed=0):
 
 Step by step: the seeding block implements **k-means++**, which picks the first centre uniformly at random and then picks each subsequent centre with probability proportional to its squared distance from the nearest already-chosen centre. That biases the initial centres to be far apart, which avoids the classic failure where two centres land inside the same true cluster and split it while merging two others; it also comes with a proof that the expected inertia is within $O(\log k)$ of optimal. Inside the main loop, the distance matrix is built by the same broadcasting pattern as KNN, `argmin` along the centroid axis performs the assignment, and the list comprehension recomputes each centroid as the mean of its members — with a guard, because a cluster can end up empty and `mean` of an empty slice is `nan`. The convergence check compares how far the centres moved; when that is below tolerance nothing more will change. `inertia` is the objective value, useful for comparing runs.
 
-**Practical consequences of the objective.** Because $J$ uses squared Euclidean distance and each cluster is summarised by a single mean, K-means implicitly assumes clusters that are roughly spherical, similarly sized, and similarly dense; it will happily slice a long thin cluster in half or merge two crescents. Squared distance also makes it sensitive to outliers, since one far-away point drags a centroid toward it (K-medoids, which uses actual data points as centres, is the robust alternative). And since it depends on a local optimum, standard practice is `n_init` restarts keeping the lowest-inertia run — scikit-learn does this by default.
-
 **Choosing $k$.** Inertia decreases monotonically with $k$ (at $k = n$ it is zero), so you cannot just minimise it. The elbow method plots inertia against $k$ and looks for the bend where extra clusters stop buying much; the silhouette score, which compares each point's mean distance to its own cluster against its mean distance to the nearest other cluster, gives a value in $[-1, 1]$ that can be maximised directly and is usually the more defensible choice.
+
+**Good and bad.**
+
+- **Good:** $O(nkd)$ per iteration — linear in the number of points, so it scales to large data where hierarchical clustering ($O(n^2)$ memory at least) does not. Simple, and guaranteed to converge.
+- **Bad — shape assumption:** it will happily slice a long thin cluster in half or merge two crescents. DBSCAN or a Gaussian mixture handles elongated or nested shapes.
+- **Bad — outliers:** squared distance means one far-away point drags a centroid toward it. K-medoids, which uses actual data points as centres, is the robust alternative.
+- **Bad — local optima:** standard practice is `n_init` restarts keeping the lowest-inertia run; scikit-learn does this by default.
 
 **Follow-up:** *What is the time complexity?* Each iteration is $O(nkd)$ — every point against every centroid in $d$ dimensions — for $t$ iterations and $r$ restarts, so $O(tnkd \cdot r)$ overall. It is linear in the number of points, which is why K-means scales to large data where hierarchical clustering ($O(n^2)$ memory at least) does not.
 
@@ -293,7 +305,9 @@ Step by step: the seeding block implements **k-means++**, which picks the first 
 
 ### Q5: Explain the transformer architecture.
 
-**Answer:**
+> **In 30 seconds.** "Every token carries a vector up through the stack, and each layer reads that vector, computes something, and adds its result back — that's the residual stream. Inside a block there are exactly two jobs: attention moves information *between* positions, and the feed-forward net adds nonlinear capacity *within* a position. LayerNorm keeps the scale under control, positional information has to be injected because attention itself is order-blind, and modern LLMs are decoder-only with a causal mask, pre-norm, and rotary positions."
+
+**The short version.**
 
 **Components:**
 1. **Embedding Layer**: Token → Dense vectors
@@ -310,7 +324,15 @@ Step by step: the seeding block implements **k-means++**, which picks the first 
 - Parallel processing: All positions at once
 - Long-range dependencies: No RNN limitations
 
-**How the pieces fit together.**
+**The three configurations, side by side.**
+
+| Configuration | Attention | Trained by | Used for | Examples |
+|---|---|---|---|---|
+| **Encoder-decoder** | Bidirectional encoder + causal decoder with cross-attention | Seq2seq | Translation, the original 2017 design | T5, original Transformer |
+| **Encoder-only** | Bidirectional | Masked-token prediction | Understanding: classification, retrieval. Cannot generate autoregressively | BERT |
+| **Decoder-only** | Causal ($i$ sees only $\le i$) | Next-token prediction | Everything, via prompting — the dominant LLM design | GPT, Llama, Claude |
+
+**Why it works.**
 
 The clearest mental model of a transformer is the **residual stream**. Every token carries a vector of width $d_{\text{model}}$ from the bottom of the network to the top, and each sublayer *reads* from that vector, computes something, and *adds* the result back. That is what the residual connection means: the block computes $x \leftarrow x + \text{Sublayer}(\text{LayerNorm}(x))$, not $x \leftarrow \text{Sublayer}(x)$. Because the update is additive, gradients flow to the bottom layer along an unobstructed path (the derivative of $x + f(x)$ has an identity term in it), which is what makes stacking 100 blocks trainable at all.
 
@@ -320,7 +342,12 @@ Within a block the two sublayers have complementary jobs. **Attention moves info
 
 **Position encoding** is needed because attention is permutation-equivariant: with no positional signal, "dog bites man" and "man bites dog" produce identical sets of representations. The original design added fixed sinusoids of geometrically spaced frequencies to the embeddings; current models overwhelmingly use RoPE (rotary position embedding), which rotates the query and key vectors by an angle proportional to position so that the attention score depends only on the *relative* offset between two tokens — that relative property is what makes context-length extension via frequency scaling possible.
 
-**Three configurations.** The original paper is an encoder-decoder, built for translation: a bidirectional encoder reads the source, and a decoder generates the target while cross-attending to the encoder's output. **Encoder-only** models (BERT) keep bidirectional attention and are trained by masked-token prediction; they are for understanding tasks like classification and retrieval, and cannot generate autoregressively. **Decoder-only** models (GPT, Llama, Claude) use causal masking — position $i$ may attend only to positions $\le i$ — and are trained to predict the next token; this is the dominant design for LLMs today because a single next-token objective scales cleanly and covers generation, classification, and everything else via prompting.
+**Three configurations, in prose.** The original paper is an encoder-decoder, built for translation: a bidirectional encoder reads the source, and a decoder generates the target while cross-attending to the encoder's output. **Encoder-only** models (BERT) keep bidirectional attention and are trained by masked-token prediction; they are for understanding tasks like classification and retrieval, and cannot generate autoregressively. **Decoder-only** models (GPT, Llama, Claude) use causal masking — position $i$ may attend only to positions $\le i$ — and are trained to predict the next token; this is the dominant design for LLMs today because a single next-token objective scales cleanly and covers generation, classification, and everything else via prompting.
+
+**Good and bad.**
+
+- **Good:** all positions are processed in parallel during training (no RNN recurrence), long-range dependencies are one hop away rather than $n$ hops, and the additive residual stream makes very deep stacks trainable.
+- **Bad:** attention is $O(n^2)$ in sequence length; there is no built-in notion of order, so positions must be injected; and the parameter count is dominated by the FFN, which is mostly idle capacity for any given token.
 
 **Follow-up:** *Where does the quadratic cost come from, and what is done about it?* The attention score matrix is $n \times n$ for sequence length $n$, so compute is $O(n^2 d)$ and, naively, memory is $O(n^2)$ too. FlashAttention removes the memory term by tiling the computation and never materialising the full matrix — it is exact, just IO-aware. The compute term is attacked by sparse or sliding-window attention (attend only to a local neighbourhood plus a few global tokens) and by linear-attention or state-space alternatives such as Mamba, which trade some expressivity for $O(n)$ scaling.
 
@@ -332,7 +359,9 @@ Within a block the two sublayers have complementary jobs. **Attention moves info
 
 ### Q6: How does self-attention work?
 
-**Answer:**
+> **In 30 seconds.** "Each token projects into a query, a key, and a value. The query dotted with every key scores relevance, you divide by root d-k so the softmax doesn't saturate, softmax turns the scores into weights that sum to one, and the output is a weighted average of the values. The clean way to say it: query-key decides *where* you look, value-output decides *what* gets copied — it's a soft, content-addressable lookup."
+
+**The short version.**
 
 **Formula:**
 ```
@@ -346,13 +375,14 @@ Attention(Q, K, V) = softmax(QK^T / √d_k) × V
 4. Softmax to get attention weights
 5. Apply weights to V
 
-**Why it works:**
-- Query asks "what am I looking for?"
-- Key answers "what information do I have?"
-- Value is "the actual information"
-- Attention weights show relevance
+| Role | Question it answers | Circuit it belongs to |
+|---|---|---|
+| **Query** | "What am I looking for?" | QK — *where to look* |
+| **Key** | "What information do I have?" | QK — *where to look* |
+| **Value** | "The actual information" | OV — *what to move* |
+| **Attention weight** | "How relevant is that token to me?" | Output of softmax over QK |
 
-**The mechanism in full: two circuits, QK and OV.**
+**Why it works.**
 
 Start from the projections. Each token's residual-stream vector $x_i \in \mathbb{R}^{d_{\text{model}}}$ is multiplied by three learned matrices to give a query $q_i = W_Q x_i$, a key $k_i = W_K x_i$, and a value $v_i = W_V x_i$. The useful way to read this is that attention factors into two independent circuits:
 
@@ -361,11 +391,13 @@ Start from the projections. Each token's residual-stream vector $x_i \in \mathbb
 
 Splitting it this way explains attention's real function: it is a *soft, content-addressable lookup*. The QK circuit computes addresses, the softmax turns them into a normalised mixing weight, and the OV circuit is the payload. A concrete example is the induction head found in real models: the QK circuit matches the current token against earlier occurrences of the same token, and the OV circuit copies whatever followed it last time, which is how models do in-context pattern completion.
 
-**Why divide by $\sqrt{d_k}$ — with numbers.** Suppose the entries of $q$ and $k$ are roughly independent with mean 0 and variance 1. Their dot product is a sum of $d_k$ such products, so it has variance $d_k$ and typical magnitude $\sqrt{d_k}$. With $d_k = 64$ that is around $\pm 8$; with $d_k = 128$, around $\pm 11$. Feed scores that large into a softmax and it saturates — one weight goes to essentially 1 and the rest to essentially 0. Concretely, softmax over $[8, 0]$ gives $[0.99966, 0.00034]$, and the gradient of the softmax is proportional to $p(1-p)$, so at $p = 0.99966$ the gradient is about $3.4 \times 10^{-4}$: the attention pattern freezes and stops learning. Dividing by $\sqrt{d_k}$ renormalises the scores to unit variance regardless of head width, so the softmax stays in its responsive range. Softmax over $[1, 0]$ gives $[0.73, 0.27]$ with a healthy gradient.
+**Causal masking.** In a decoder, position $i$ must not see the future, or the model could cheat at next-token prediction. This is implemented by adding $-\infty$ (in practice a large negative number like $-10^9$) to all scores where $j > i$ *before* the softmax, so those weights come out as exactly zero after exponentiation. Doing it pre-softmax rather than zeroing afterwards matters, because it keeps the remaining weights correctly normalised to sum to one.
+
+**The math, and what it buys you.**
+
+**Why divide by $\sqrt{d_k}$ — with numbers.** The scaling factor is not decoration; it is what keeps the softmax's gradient alive. Suppose the entries of $q$ and $k$ are roughly independent with mean 0 and variance 1. Their dot product is a sum of $d_k$ such products, so it has variance $d_k$ and typical magnitude $\sqrt{d_k}$. With $d_k = 64$ that is around $\pm 8$; with $d_k = 128$, around $\pm 11$. Feed scores that large into a softmax and it saturates — one weight goes to essentially 1 and the rest to essentially 0. Concretely, softmax over $[8, 0]$ gives $[0.99966, 0.00034]$, and the gradient of the softmax is proportional to $p(1-p)$, so at $p = 0.99966$ the gradient is about $3.4 \times 10^{-4}$: the attention pattern freezes and stops learning. Dividing by $\sqrt{d_k}$ renormalises the scores to unit variance regardless of head width, so the softmax stays in its responsive range. Softmax over $[1, 0]$ gives $[0.73, 0.27]$ with a healthy gradient.
 
 **A small worked example.** Take $d_k = 2$ and three tokens with $q_2 = [1, 0]$ and keys $k_1 = [1, 0]$, $k_2 = [0, 1]$, $k_3 = [1, 1]$. The raw scores for query 2 are $q_2 \cdot k_j = [1, 0, 1]$. Scaling by $\sqrt{2} \approx 1.414$ gives $[0.707, 0, 0.707]$. Exponentiating gives $[2.028, 1.0, 2.028]$, which sums to $5.056$, so the attention weights are $[0.401, 0.198, 0.401]$. The output for position 2 is $0.401 v_1 + 0.198 v_2 + 0.401 v_3$ — a convex combination of the value vectors, weighted by query-key similarity. Every row of the attention matrix is a probability distribution over positions in exactly this way.
-
-**Causal masking.** In a decoder, position $i$ must not see the future, or the model could cheat at next-token prediction. This is implemented by adding $-\infty$ (in practice a large negative number like $-10^9$) to all scores where $j > i$ *before* the softmax, so those weights come out as exactly zero after exponentiation. Doing it pre-softmax rather than zeroing afterwards matters, because it keeps the remaining weights correctly normalised to sum to one.
 
 **Follow-up:** *Why do we need three separate projections — why not just use $x$ itself?* Because $x \cdot x$ is maximised by $x$ itself, so unprojected attention would collapse to every token attending mostly to itself, and the score would be forced to be symmetric — position $i$ would attend to $j$ exactly as much as $j$ attends to $i$. Separate $W_Q$ and $W_K$ break that symmetry and let "what I'm looking for" differ from "what I advertise". A separate $W_V$ then decouples relevance from content, so a token can be highly relevant as an address while contributing something entirely different as a payload.
 
@@ -377,30 +409,28 @@ Splitting it this way explains attention's real function: it is a *soft, content
 
 ### Q7: What is multi-head attention?
 
-**Answer:**
+> **In 30 seconds.** "Multi-head attention splits the model dimension across heads rather than duplicating it — 512 dimensions and 8 heads means each head works in 64, so the parameter count is identical to one wide head. What you buy is several attention distributions running in parallel instead of one. A single softmax has to spend all its probability mass in one place; eight heads can do eight different lookups at once."
 
-**Concept:**
-- Instead of one attention, use multiple "heads"
-- Each head learns different relationships
-- Concatenate all heads, then project
+**The short version.**
 
-**Why Multiple Heads:**
-- Different heads attend to different aspects
-- Example: One head for syntax, one for semantics
-- More expressive than single head
+- **Concept:** instead of one attention, use multiple heads; each learns different relationships; concatenate, then project.
+- **Implementation:** split $d_{\text{model}}$ into `num_heads` × $d_k$ → each head gets its own Q, K, V slice → attention per head → concatenate → final projection $W_O$.
+- **Parameters are partitioned, not multiplied:** total is $4 d_{\text{model}}^2$, the same as a single full-width head.
+- **Why it helps:** different heads attend to different aspects — one for syntax, one for semantics — which one distribution cannot do.
+- **The modern wrinkle:** KV cache scales with head count at inference, hence MQA and GQA.
 
-**Implementation:**
-1. Split d_model into num_heads × d_k
-2. Each head has its own Q, K, V
-3. Compute attention for each head
-4. Concatenate outputs
-5. Final projection
+**Why it works.**
 
-**The dimension arithmetic, concretely.**
+A single head produces one attention distribution per query position — it must commit to one weighted average. That is a hard constraint: a pronoun resolving its antecedent and a verb finding its subject are different lookups that a single softmax cannot perform at once, because probability mass spent on one is taken from the other. Eight heads give eight independent distributions whose results are summed into the residual stream, so the block can perform several distinct retrievals in parallel. The cost is that each head sees a lower-rank slice of the space, which is a real limitation — this is why very small $d_k$ (below about 32) tends to hurt, and why head count and head dimension are tuned together rather than head count alone being maximised.
 
-Multi-head attention does not add parameters over single-head attention of the same width — it *partitions* them. With $d_{\text{model}} = 512$ and $h = 8$ heads, each head gets $d_k = d_{\text{model}} / h = 64$. In practice you keep one big $512 \times 512$ matrix for $W_Q$ (and likewise $W_K$, $W_V$), project once, then reshape the result from $(\text{batch}, n, 512)$ to $(\text{batch}, n, 8, 64)$ and transpose to $(\text{batch}, 8, n, 64)$ so the eight heads become a batch dimension. Every head runs the scaled-dot-product attention of Q6 independently on its own 64-dimensional slice, producing $(\text{batch}, 8, n, 64)$. Transposing back and reshaping concatenates the heads into $(\text{batch}, n, 512)$, and the output projection $W_O$ (also $512 \times 512$) mixes them before the result is added to the residual stream. Total parameters: $4 d_{\text{model}}^2$, identical to one head of full width.
+**The math, and what it buys you.**
 
-**Why splitting helps rather than hurts.** A single head produces one attention distribution per query position — it must commit to one weighted average. That is a hard constraint: a pronoun resolving its antecedent and a verb finding its subject are different lookups that a single softmax cannot perform at once, because probability mass spent on one is taken from the other. Eight heads give eight independent distributions whose results are summed into the residual stream, so the block can perform several distinct retrievals in parallel. The cost is that each head sees a lower-rank slice of the space, which is a real limitation — this is why very small $d_k$ (below about 32) tends to hurt, and why head count and head dimension are tuned together rather than head count alone being maximised.
+The dimension arithmetic is the thing to be able to recite, because it shows the heads are free. With $d_{\text{model}} = 512$ and $h = 8$ heads, each head gets $d_k = d_{\text{model}} / h = 64$. In practice you keep one big $512 \times 512$ matrix for $W_Q$ (and likewise $W_K$, $W_V$), project once, then reshape the result from $(\text{batch}, n, 512)$ to $(\text{batch}, n, 8, 64)$ and transpose to $(\text{batch}, 8, n, 64)$ so the eight heads become a batch dimension. Every head runs the scaled-dot-product attention of Q6 independently on its own 64-dimensional slice, producing $(\text{batch}, 8, n, 64)$. Transposing back and reshaping concatenates the heads into $(\text{batch}, n, 512)$, and the output projection $W_O$ (also $512 \times 512$) mixes them before the result is added to the residual stream. Total parameters: $4 d_{\text{model}}^2$, identical to one head of full width — so multi-head attention buys parallel lookups at zero parameter cost.
+
+**Good and bad.**
+
+- **Good:** several independent retrievals per layer for the same parameter budget; heads specialise (positional heads, induction heads, syntax heads) and are individually interpretable.
+- **Bad:** each head operates in a lower-rank subspace, so pushing $d_k$ below roughly 32 degrades quality; and head count directly inflates the inference KV cache, which is why MQA and GQA exist.
 
 **Follow-up:** *What are MQA and GQA, and why do they exist?* The KV cache at inference stores one key and one value vector per head per token, so its size scales with head count — and at generation time the arithmetic is memory-bandwidth-bound, meaning the GPU spends most of its time reading that cache rather than doing math. **Multi-query attention (MQA)** keeps $h$ separate query heads but shares a *single* key/value head across all of them, shrinking the cache by a factor of $h$; it is fast but measurably degrades quality. **Grouped-query attention (GQA)** is the compromise now used by most open models: heads are split into $g$ groups (say 8 groups over 64 query heads) with one KV head per group, recovering most of the quality at most of the speed. Nothing about the query side changes; only the number of distinct K and V projections does.
 
@@ -414,19 +444,16 @@ Multi-head attention does not add parameters over single-head attention of the s
 
 ### Q8: How does KV caching work?
 
-**Answer:**
+> **In 30 seconds.** "Because of the causal mask, once you've computed a token's key and value they never change — nothing later can affect them. So instead of recomputing the whole sequence every step, you keep K and V and compute only the query for the new token. It turns generation from cubic in sequence length to quadratic, exactly, with no quality trade. The catch is memory: roughly half a megabyte per token on a 7B model."
 
-**Problem:**
-- Autoregressive generation: Generate token by token
-- Each token needs attention to all previous tokens
-- Without cache: Recompute attention for all tokens each step
+**The short version.**
 
-**Solution:**
-- Cache K and V matrices for previous tokens
-- New token: Only compute Q, reuse cached K/V
-- Append new K/V to cache
+- **Problem:** autoregressive generation recomputes attention over all previous tokens at every step.
+- **Solution:** cache K and V for previous tokens; for the new token compute only Q, reuse cached K/V, append the new K/V.
+- **Why only K and V:** old queries are never used again; the one new query must be scored against *every* previous key and value.
+- **Exact, not approximate.** Same outputs, up to float reduction order.
+- **Speedup:** 10-100x for generation. **Cost:** linear-in-context GPU memory.
 
-**Example:**
 ```
 Step 1: Token 1 → Compute Q1, K1, V1, cache K1, V1
 Step 2: Token 2 → Compute Q2, K2, V2
@@ -437,21 +464,26 @@ Step 3: Token 3 → Compute Q3, K3, V3
         → Cache: [K1, K2, K3], [V1, V2, V3]
 ```
 
-**Speedup:** 10-100x for generation
-
-**Why it works at all, and why only K and V.**
+**Why it works.**
 
 The reason caching is even possible is causal masking. In a decoder, position $j$ attends only to positions $\le j$, so once token $j$'s key and value vectors are computed they are *final* — no later token can change them, because nothing later flows into them. That is a property of the mask, not an approximation; KV caching is mathematically exact, producing bit-comparable outputs (up to floating-point reduction order), not a speed-for-quality trade.
 
 Why keys and values but not queries: at each generation step you have exactly one new token, so you need exactly one new query — the queries of earlier tokens are never used again, because their outputs were already computed and consumed. But that single new query must be scored against *every* previous key and must read from *every* previous value. So K and V accumulate; Q does not.
 
+**The math, and what it buys you.**
+
 **What this does to the cost.** Without a cache, generating token $t$ means a full forward pass over $t$ tokens, which is $O(t^2 d)$ of attention work, and generating a whole sequence of length $n$ costs $O(n^3 d)$. With the cache, each step is one query against $t$ keys, so $O(td)$ per step and $O(n^2 d)$ overall — a factor of $n$ saved. This is also why LLM inference has two distinct phases with very different characteristics: **prefill**, where the whole prompt is processed in one parallel pass and the GPU is compute-bound, and **decode**, where one token is produced at a time and the GPU is memory-bandwidth-bound because it must stream the entire cache and all model weights per token.
 
-**The cost is memory, and the formula is worth knowing.**
+**The cost is memory, and this formula is the one to know** — it tells you how many concurrent requests a GPU can hold:
 
 $$\text{cache bytes} = 2 \times n_{\text{layers}} \times n_{\text{kv heads}} \times d_{\text{head}} \times \text{seq len} \times \text{batch} \times \text{bytes per element}$$
 
 The leading 2 is for K and V. Take a 7B-class model with 32 layers, 32 KV heads, head dimension 128, in FP16 (2 bytes): that is $2 \times 32 \times 32 \times 128 \times 2 = 524{,}288$ bytes per token, or about 0.5 MB. At 4,096 tokens of context that is roughly 2 GB for a *single* sequence — and it scales linearly with batch size, so 16 concurrent requests at that length is about 32 GB, comfortably more than the model weights themselves. This is the single biggest constraint on serving throughput, and it is what motivates GQA (fewer KV heads), KV-cache quantisation to INT8 or FP8, and PagedAttention in vLLM, which stores the cache in fixed-size non-contiguous blocks like OS virtual memory so that fragmentation and over-reservation stop wasting the majority of GPU memory.
+
+**Good and bad.**
+
+- **Good:** exact, no quality cost; removes a whole factor of $n$ from generation; enables prefix caching across requests that share a system prompt.
+- **Bad:** memory grows linearly with context *and* batch, and quickly exceeds the weights themselves; fragmentation wastes more of it unless you use a paged allocator; and any change at the *front* of a prompt invalidates everything after it.
 
 **Follow-up:** *What breaks if the prompt changes at the front?* Everything downstream of the change, because each cached key depends on all preceding tokens through the attention of earlier layers. This is why prefix caching works — a shared system prompt at the *start* can be computed once and reused across requests — but appending to the beginning of a prompt invalidates the whole cache. It is a concrete reason to put stable content first and variable content last in prompt templates.
 
@@ -463,43 +495,46 @@ The leading 2 is for K and V. Take a 7B-class model with 32 layers, 32 KV heads,
 
 ### Q9: What is quantization and why use it?
 
-**Answer:**
+> **In 30 seconds.** "Quantisation stores weights as low-bit integers plus a scale, so you can reconstruct an approximate float. The accuracy cost is just bounded rounding error — what actually hurts is outliers, because one huge weight blows up the scale for everything sharing it. And the win is bigger than the arithmetic suggests, because decoding is memory-bandwidth-bound: halving the bytes roughly halves latency before you touch the math."
 
-**Quantization:** Reduce model precision
-- FP32 → FP16: 2x smaller, 2x faster
-- FP16 → INT8: 2x smaller, 2x faster
-- INT8 → INT4: 2x smaller, 2x faster
+**The short version.**
 
-**Why:**
-- **Memory**: Smaller models fit in memory
-- **Speed**: Faster computation
-- **Cost**: Lower inference cost
+- **Each halving of precision is roughly 2x smaller and 2x faster:** FP32 → FP16 → INT8 → INT4.
+- **Why:** memory (bigger models fit), speed (bandwidth-bound decode), cost (cheaper inference).
+- **Process:** find min/max of the weights → compute a scale factor → round to the integer range → store the scale for dequantisation.
+- **Trade-off:** small accuracy loss; INT8/INT4 need calibration.
+- **The real enemy is outliers**, not average precision — hence group-wise scales.
 
-**Trade-off:**
-- Accuracy may decrease slightly
-- Need calibration for INT8/INT4
+| Bit width | Typical quality cost | Notes |
+|---|---|---|
+| **FP16** | None | The baseline for serving |
+| **INT8** | Near-lossless on quality benchmarks | Calibration needed for activations |
+| **INT4** (grouped) | Small, and uneven — reasoning, arithmetic and rare languages degrade first | GPTQ / AWQ / NF4 territory |
+| **Below 4-bit** | Falls off sharply | Needs specialised methods |
 
-**Process:**
-1. Find min/max of weights
-2. Calculate scale factor
-3. Quantize to integer range
-4. Store scale for dequantization
+**Why it works.**
 
-**The mechanism: an affine map between floats and integers.**
-
-Quantisation replaces a high-precision tensor with low-precision integers plus a small amount of metadata to reconstruct approximate floats. The standard *asymmetric* (affine) scheme picks a scale $s$ and a zero-point $z$ so that
-
-$$q = \text{round}\!\left(\frac{x}{s}\right) + z, \qquad \hat{x} = s\,(q - z)$$
-
-with $s = (x_{\max} - x_{\min}) / (q_{\max} - q_{\min})$ and $z$ chosen so that real zero maps exactly to an integer (which matters, because padding and ReLU outputs produce a lot of exact zeros and you do not want them to drift). The *symmetric* variant fixes $z = 0$ and uses $s = \max|x| / q_{\max}$; it is cheaper because the dequantisation has no offset term, and it is the usual choice for weights, which are roughly zero-centred.
-
-**A worked example.** Suppose a weight block ranges over $[-0.8, 1.2]$ and we quantise to INT8, which covers $[-128, 127]$. Asymmetrically, $s = (1.2 - (-0.8)) / 255 = 0.00784$. A weight of $0.5$ maps to $\text{round}(0.5 / 0.00784) = 64$ (plus the zero-point offset), and dequantising gives $64 \times 0.00784 = 0.5018$ — an error of about 0.0018, roughly half a step of $s$. That bounded round-off is the entire accuracy cost. Now note what happens with one outlier: if a single weight in the block were $12.0$, the scale would jump to $0.05$ and every ordinary weight would carry 27 times more error. Outliers, not average precision, are what actually break quantisation — which is why modern methods quantise in small **groups** (say 64 or 128 weights sharing one scale) rather than per-tensor, and why LLM.int8() keeps a handful of outlier channels in FP16 while quantising the rest.
+Quantisation replaces a high-precision tensor with low-precision integers plus a small amount of metadata to reconstruct approximate floats.
 
 **Why the speedup is bigger than the arithmetic suggests.** During single-token decoding the GPU is memory-bandwidth-bound: it must read every weight from HBM to produce one token, and the matrix multiplies are small. Halving the bytes per weight therefore roughly halves the time per token even if the arithmetic itself runs at the same rate. This is why weight-only quantisation — store INT4, dequantise to FP16 in the kernel, multiply in FP16 — is so popular for LLM serving: it captures the bandwidth win without needing integer matmul support or activation calibration.
 
 **The families worth naming.** *Post-training quantisation (PTQ)* converts an already-trained model, optionally using a few hundred calibration samples to set activation ranges; GPTQ (which uses second-order information to compensate rounding error weight by weight) and AWQ (which scales up the channels the activations actually depend on before quantising) are the standard 4-bit PTQ methods. *Quantisation-aware training (QAT)* simulates rounding during training with a straight-through estimator for the gradient, costing a training run but retaining more accuracy at very low bit widths. QLoRA is the hybrid people actually use for fine-tuning: freeze a 4-bit NF4 base model and train small LoRA adapters in higher precision on top.
 
-**The honest trade-off.** Going FP16 to INT8 is typically near-lossless on quality benchmarks. INT4 with good grouping loses a little, and it loses it unevenly — long-chain reasoning, arithmetic, and rarely-seen languages degrade before general fluency does, so a perplexity check alone can look fine while a task benchmark drops. Below 4 bits quality falls off sharply without specialised methods.
+**The math, and what it buys you.**
+
+The whole scheme is one affine map between floats and integers. The standard *asymmetric* (affine) scheme picks a scale $s$ and a zero-point $z$ so that
+
+$$q = \text{round}\!\left(\frac{x}{s}\right) + z, \qquad \hat{x} = s\,(q - z)$$
+
+with $s = (x_{\max} - x_{\min}) / (q_{\max} - q_{\min})$ and $z$ chosen so that real zero maps exactly to an integer (which matters, because padding and ReLU outputs produce a lot of exact zeros and you do not want them to drift). The *symmetric* variant fixes $z = 0$ and uses $s = \max|x| / q_{\max}$; it is cheaper because the dequantisation has no offset term, and it is the usual choice for weights, which are roughly zero-centred.
+
+**A worked example — and it shows exactly where the danger is.** Suppose a weight block ranges over $[-0.8, 1.2]$ and we quantise to INT8, which covers $[-128, 127]$. Asymmetrically, $s = (1.2 - (-0.8)) / 255 = 0.00784$. A weight of $0.5$ maps to $\text{round}(0.5 / 0.00784) = 64$ (plus the zero-point offset), and dequantising gives $64 \times 0.00784 = 0.5018$ — an error of about 0.0018, roughly half a step of $s$. That bounded round-off is the entire accuracy cost. Now note what happens with one outlier: if a single weight in the block were $12.0$, the scale would jump to $0.05$ and every ordinary weight would carry 27 times more error. Outliers, not average precision, are what actually break quantisation — which is why modern methods quantise in small **groups** (say 64 or 128 weights sharing one scale) rather than per-tensor, and why LLM.int8() keeps a handful of outlier channels in FP16 while quantising the rest.
+
+**Good and bad.**
+
+- **Good:** proportional memory savings, proportional latency savings during bandwidth-bound decode, and lower serving cost; INT8 is effectively free in quality terms.
+- **Bad — the honest trade-off:** INT4 with good grouping loses a little, and it loses it unevenly — long-chain reasoning, arithmetic, and rarely-seen languages degrade before general fluency does, so a perplexity check alone can look fine while a task benchmark drops. Below 4 bits quality falls off sharply without specialised methods.
+- **Bad:** activation quantisation needs calibration data and can be exceeded at run time; outlier channels make naive per-tensor scales lossy.
 
 **Follow-up:** *Why not just quantise activations too?* You can, and INT8 activations are what let you use integer tensor cores for a genuine compute win. But activations depend on the input, so their range must be estimated from calibration data and can be exceeded at run time, and transformer activations contain systematic large-magnitude outlier channels that make per-tensor activation scales very lossy. That is exactly the problem LLM.int8() and SmoothQuant (which migrates the difficulty from activations into weights by rescaling) were designed to solve.
 
@@ -511,7 +546,9 @@ with $s = (x_{\max} - x_{\min}) / (q_{\max} - q_{\min})$ and $z$ chosen so that 
 
 ### Q10: Explain top-p (nucleus) sampling.
 
-**Answer:**
+> **In 30 seconds.** "Top-p keeps the smallest set of tokens whose probabilities add up to p — say 0.9 — and samples from that after renormalising. The point is that the set size adapts: when the model is confident that's one token and you're effectively greedy; when it's genuinely uncertain it might be hundreds. Fixed top-k can't do either — it lets junk in when the model is sure and cuts off good options when it isn't."
+
+**The short version.**
 
 **Algorithm:**
 1. Sort tokens by probability (descending)
@@ -520,28 +557,36 @@ with $s = (x_{\max} - x_{\min}) / (q_{\max} - q_{\min})$ and $z$ chosen so that 
 4. Sample from this "nucleus"
 5. Renormalize probabilities
 
-**Why it works:**
-- Adaptive: Number of tokens varies
-- High probability tokens: Always included
-- Low probability tokens: Excluded
-- Better than top-k (fixed size)
+| | Top-k | Top-p (nucleus) |
+|---|---|---|
+| **What is fixed** | The number of tokens | The probability mass kept |
+| **What floats** | The mass kept | The number of tokens |
+| **Peaked distribution** | Admits $k-1$ tokens that should be ruled out | Collapses to ~1 token, effectively greedy |
+| **Flat distribution** | Truncates hundreds of legitimate options | Widens to include them |
 
-**Example:**
 ```
 Probabilities: [0.5, 0.3, 0.1, 0.05, 0.03, ...]
 Cumulative:    [0.5, 0.8, 0.9, 0.95, 0.98, ...]
 Top-p=0.9: Nucleus = first 3 tokens (cum_prob = 0.9)
 ```
 
-**Why the adaptive set size is the whole point.**
+**Why it works.**
 
 The problem top-p solves is that a language model's next-token distribution has wildly varying shape from step to step. After "the capital of France is" the distribution is nearly a spike — one token holds most of the mass. After "she opened the door and saw a" it is broad, with hundreds of plausible continuations. Top-k with a fixed $k$ handles neither well: at the spike it admits $k-1$ tokens that should have been ruled out, and at the broad step it truncates hundreds of legitimate options. Top-p instead fixes the *probability mass* to keep and lets the *count* float, so the nucleus is 1 token in the first case and several hundred in the second. That is the entire argument for it.
 
-**A worked example.** Take probabilities $[0.5, 0.3, 0.1, 0.05, 0.03, 0.02]$ over six tokens, with $p = 0.9$. The cumulative sums are $[0.5, 0.8, 0.9, 0.95, 0.98, 1.0]$. The smallest prefix reaching 0.9 is the first three, so the nucleus is $\{0.5, 0.3, 0.1\}$, summing to 0.9, and after renormalising (dividing by 0.9) we sample from $[0.556, 0.333, 0.111]$. Now take the peaked case $[0.95, 0.02, 0.015, 0.01, 0.005]$: the first token alone already reaches 0.95 which is $\ge 0.9$, so the nucleus is a single token and generation is effectively greedy at that step. Same $p$, completely different set size — which is exactly what you want. (Note the standard convention: the nucleus is the smallest prefix whose cumulative probability is *at least* $p$, so the kept mass is always $\ge p$, never less.)
+**What it is actually fixing.** The tail of a softmax over a 100k-token vocabulary contains tens of thousands of tokens each with tiny probability, but their *sum* can be a few percent. Sample long enough and you will draw from that tail, and one bad token conditions everything after it — the model has no way to take it back, and degeneration into incoherence follows. Truncation sampling exists because the model's tail is less trustworthy than its head, not because the tail has zero mass.
 
 **How it composes with temperature.** Temperature $T$ rescales the logits before the softmax, $p_i \propto \exp(z_i / T)$. Below 1 it sharpens the distribution and above 1 it flattens it. Order matters: temperature is applied *first*, then top-k/top-p truncation, then renormalisation. So raising temperature does not only make sampling more random — it also enlarges the nucleus, because flattening the distribution means more tokens are needed to accumulate mass $p$. The two knobs interact, which is why tuning both at once tends to be confusing and why most practitioners fix one (commonly $T = 1$ with $p \approx 0.9$–$0.95$, or $p = 1$ with a tuned temperature).
 
-**What it is actually fixing.** The tail of a softmax over a 100k-token vocabulary contains tens of thousands of tokens each with tiny probability, but their *sum* can be a few percent. Sample long enough and you will draw from that tail, and one bad token conditions everything after it — the model has no way to take it back, and degeneration into incoherence follows. Truncation sampling exists because the model's tail is less trustworthy than its head, not because the tail has zero mass.
+**The math, and what it buys you.**
+
+Running the numbers on two different steps shows the adaptivity directly. Take probabilities $[0.5, 0.3, 0.1, 0.05, 0.03, 0.02]$ over six tokens, with $p = 0.9$. The cumulative sums are $[0.5, 0.8, 0.9, 0.95, 0.98, 1.0]$. The smallest prefix reaching 0.9 is the first three, so the nucleus is $\{0.5, 0.3, 0.1\}$, summing to 0.9, and after renormalising (dividing by 0.9) we sample from $[0.556, 0.333, 0.111]$. Now take the peaked case $[0.95, 0.02, 0.015, 0.01, 0.005]$: the first token alone already reaches 0.95 which is $\ge 0.9$, so the nucleus is a single token and generation is effectively greedy at that step. Same $p$, completely different set size — which is exactly what you want. (Note the standard convention: the nucleus is the smallest prefix whose cumulative probability is *at least* $p$, so the kept mass is always $\ge p$, never less.)
+
+**Good and bad.**
+
+- **Top-p — good:** adapts to the model's confidence step by step; cuts the untrustworthy tail without capping variety when variety is warranted; one intuitive knob.
+- **Top-p — bad:** interacts confusingly with temperature; a single $p$ is still a blunt global setting; and it does nothing for a model whose head of the distribution is simply wrong.
+- **Top-k — good:** trivially cheap and bounded. **Bad:** fixed set size is wrong at both ends of the confidence range.
 
 **Follow-up:** *When would you not want to sample at all?* Whenever there is a single correct answer and diversity is a liability: extraction, classification, structured or JSON output, most tool-call arguments, and any evaluation you want to be reproducible. There greedy decoding ($T \to 0$, equivalently top-k of 1) is right. Sampling is for open-ended generation where you want variety across runs. A common middle ground for reasoning tasks is to sample several times at moderate temperature and take a majority vote over final answers — self-consistency — which uses diversity as a search strategy rather than as an end in itself.
 
@@ -555,40 +600,47 @@ The problem top-p solves is that a language model's next-token distribution has 
 
 ### Q11: Explain RLHF (Reinforcement Learning from Human Feedback).
 
-**Answer:**
+> **In 30 seconds.** "RLHF is three stages: fine-tune on human demonstrations to teach the model what a response looks like, train a reward model on preference pairs because people compare far better than they score, then run RL — usually PPO — to push the policy toward higher reward with a KL leash back to the SFT model. The fragile stage is the reward model: the policy actively hunts its blind spots, so true quality peaks and then declines while the score keeps rising."
 
-**Pipeline:**
-1. **Supervised Fine-tuning**: Train on human demonstrations
-2. **Reward Model**: Train on human preferences (chosen vs rejected)
-3. **RL Optimization**: Use PPO to optimize policy with reward model
+**The short version.**
 
-**Why RLHF:**
-- Align models with human preferences
-- Make models helpful, harmless, honest
-- Improve response quality
+| Stage | What it trains on | What it actually teaches | Failure mode |
+|---|---|---|---|
+| **1. Supervised fine-tuning** | Human-written prompt-response pairs | Format — that a question gets answered | Bland, imitates the demonstrator's ceiling |
+| **2. Reward model** | Preference pairs (chosen vs rejected) | A scalar proxy for human judgement | Only valid near its training distribution |
+| **3. RL optimisation (PPO)** | Policy samples scored by the RM | Higher expected reward, KL-constrained | Reward hacking; needs 4 models in memory |
 
-**Challenges:**
-- Need human feedback data
-- Reward model training
-- RL optimization complexity
+- **Why RLHF:** align models with human preferences; helpful, harmless, honest; better response quality.
+- **Challenges:** collecting human feedback, training the reward model, RL complexity.
 
-**Filling in the mechanism at each stage.**
+**Why it works.**
 
 *Stage 1, supervised fine-tuning (SFT).* Start from a pretrained base model, which can only continue text, and train it on human-written prompt-response pairs with ordinary next-token cross-entropy. This does not teach new knowledge; it teaches *format* — that a question should be answered rather than continued with more questions. It also matters technically, because the RL stage needs a starting policy that already produces plausible outputs; RL from a raw base model would spend its entire budget rediscovering the response format.
 
-*Stage 2, the reward model (RM).* Humans are unreliable at assigning absolute scores ("how good is this answer out of 10?") but quite reliable at comparisons ("which of these two is better?"), so the data collected is preference pairs. The reward model is usually the SFT model with the token-prediction head replaced by a scalar head, trained with the Bradley-Terry loss
+*Stage 2, the reward model (RM).* Humans are unreliable at assigning absolute scores ("how good is this answer out of 10?") but quite reliable at comparisons ("which of these two is better?"), so the data collected is preference pairs.
+
+*Stage 3, RL optimisation.* The policy generates responses, the RM scores them, and PPO updates the policy to raise expected reward while a KL penalty against the frozen SFT model keeps it from wandering.
+
+**Why the reward model is the weak link.** It is trained on a finite sample of on-distribution responses, but the policy immediately starts producing responses the RM never saw. Since the policy is explicitly optimising the RM's output, it will find and exploit whatever regions the RM overestimates — this is Goodhart's law in its purest engineering form. Empirically, measured true quality rises, peaks, and then *falls* while the RM's score keeps climbing. The standard mitigations are the KL penalty (Q17), early stopping on the KL budget rather than on RM score, and periodically collecting fresh preferences on the current policy's outputs, which is what "iterated RLHF" means.
+
+**The math, and what it buys you.**
+
+The reward model is usually the SFT model with the token-prediction head replaced by a scalar head, trained with the Bradley-Terry loss:
 
 $$\mathcal{L}_{RM} = -\log \sigma\big(r_\phi(x, y_w) - r_\phi(x, y_l)\big)$$
 
 where $y_w$ is the preferred ("won") response, $y_l$ the rejected one, and $\sigma$ the sigmoid. Note what this objective does and does not pin down: it constrains *differences* in reward, so the scale is arbitrary and the absolute value of a reward is meaningless — only comparisons within a prompt are trustworthy. The model implicitly assumes preferences follow the Bradley-Terry model, that the probability a human prefers $y_w$ is $\sigma(r_w - r_l)$.
 
-*Stage 3, RL optimisation.* The policy generates responses, the RM scores them, and PPO updates the policy to raise expected reward while a KL penalty against the frozen SFT model keeps it from wandering. The full per-token objective is
+The RL stage then optimises a per-token objective that is reward minus drift:
 
 $$R(x, y) = r_\phi(x, y) - \beta \log\frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)}$$
 
 The reward is *sparse and terminal* — one scalar for the whole response — which is why a value model is needed to spread credit back over the tokens, and why this stage is the fragile one.
 
-**Why the reward model is the weak link.** It is trained on a finite sample of on-distribution responses, but the policy immediately starts producing responses the RM never saw. Since the policy is explicitly optimising the RM's output, it will find and exploit whatever regions the RM overestimates — this is Goodhart's law in its purest engineering form. Empirically, measured true quality rises, peaks, and then *falls* while the RM's score keeps climbing. The standard mitigations are the KL penalty (Q17), early stopping on the KL budget rather than on RM score, and periodically collecting fresh preferences on the current policy's outputs, which is what "iterated RLHF" means.
+**Good and bad.**
+
+- **Good:** captures preferences that cannot be written down as a loss; can exceed the quality of the demonstrations, because it optimises judgement rather than imitation.
+- **Bad:** expensive human data; three stages of machinery and up to four models in GPU memory; and the learned reward is hackable by construction.
 
 **Follow-up:** *What replaced parts of this pipeline?* Two things, mostly. RLAIF / Constitutional AI replaces human labels with model-generated preferences guided by a written set of principles, which makes the preference data far cheaper to scale. And for anything with a checkable answer, RLVR — reinforcement learning from verifiable rewards — replaces the learned reward model with a program that checks correctness, which removes the hackable component entirely. DPO (Q12) removes the RL loop while keeping human preferences.
 
@@ -600,14 +652,9 @@ The reward is *sparse and terminal* — one scalar for the whole response — wh
 
 ### Q12: What is DPO and how does it differ from RLHF?
 
-**Answer:**
+> **In 30 seconds.** "DPO comes from noticing that the KL-constrained RLHF objective has a closed-form optimal policy. Invert it, and the reward can be written as the policy's log-ratio against the reference; plug that into the preference likelihood and the intractable normaliser cancels. So you get a plain supervised loss on preference pairs — no reward model, no sampling, no RL loop. The cost is that it's off-policy: it only ever sees the pairs in your dataset."
 
-**DPO (Direct Preference Optimization):**
-- Directly optimizes policy to prefer chosen over rejected
-- No reward model needed
-- Uses reference model instead
-
-**Key Difference:**
+**The short version.**
 
 | Aspect | RLHF | DPO |
 |--------|------|-----|
@@ -615,6 +662,11 @@ The reward is *sparse and terminal* — one scalar for the whole response — wh
 | **Reference Model** | Used in RL | Used directly |
 | **Complexity** | High | Lower |
 | **Flexibility** | More | Less |
+| **Data** | Online — fresh samples from the current policy | Off-policy — a fixed dataset of pairs |
+| **Models in memory** | 3-4 | 1 (reference log-probs precomputed) |
+
+- Directly optimises the policy to prefer chosen over rejected.
+- No reward model needed; uses the reference model instead.
 
 **DPO Loss:**
 ```
@@ -623,9 +675,15 @@ Loss = -log(σ(β * (log π_chosen - log π_rejected - log π_ref_chosen + log �
 
 Where σ is sigmoid, β is temperature.
 
-**Where the DPO loss comes from — the derivation that makes it click.**
+**Why it works.**
 
-The KL-constrained RLHF objective has a known closed-form optimum. If you maximise expected reward minus $\beta$ times KL to the reference, the optimal policy is
+The insight is that the language model *is* its own reward model — the log-ratio to the reference is an implicit reward — so you never have to instantiate a separate one, and you never have to sample from the policy during training. DPO is a supervised loss on a fixed dataset of pairs.
+
+**What the gradient does.** Differentiating gives a weight of $\sigma(\hat{r}_l - \hat{r}_w)$ on each pair: the update is large when the implicit reward currently ranks the pair *wrongly* and small when it already ranks it correctly. So DPO automatically focuses on the examples it has not yet learned, which is the same self-limiting behaviour that makes the logistic loss well-behaved.
+
+**The math, and what it buys you.**
+
+This derivation is the whole answer — it turns DPO from a heuristic into a consequence. The KL-constrained RLHF objective has a known closed-form optimum. If you maximise expected reward minus $\beta$ times KL to the reference, the optimal policy is
 
 $$\pi^*(y \mid x) = \frac{1}{Z(x)}\,\pi_{\text{ref}}(y \mid x)\exp\!\left(\frac{1}{\beta} r(x, y)\right)$$
 
@@ -637,11 +695,13 @@ Now substitute this into the Bradley-Terry preference likelihood $\sigma(r(x, y_
 
 $$\mathcal{L}_{\text{DPO}} = -\log \sigma\!\left(\beta \log\frac{\pi_\theta(y_w \mid x)}{\pi_{\text{ref}}(y_w \mid x)} - \beta \log\frac{\pi_\theta(y_l \mid x)}{\pi_{\text{ref}}(y_l \mid x)}\right)$$
 
-That is the formula in the box above, now with a reason. The insight is that the language model *is* its own reward model — the log-ratio to the reference is an implicit reward — so you never have to instantiate a separate one, and you never have to sample from the policy during training. DPO is a supervised loss on a fixed dataset of pairs.
+That is the formula in the box above, now with a reason.
 
-**What the gradient does.** Differentiating gives a weight of $\sigma(\hat{r}_l - \hat{r}_w)$ on each pair: the update is large when the implicit reward currently ranks the pair *wrongly* and small when it already ranks it correctly. So DPO automatically focuses on the examples it has not yet learned, which is the same self-limiting behaviour that makes the logistic loss well-behaved.
+**Good and bad.**
 
-**Where DPO is genuinely worse.** The comparison table is right that DPO is less flexible, and the mechanism is worth stating: DPO trains on a *fixed, off-policy* dataset, so it never sees the responses the current policy actually generates. RLHF's online loop keeps collecting fresh samples and scoring them, which is how it discovers and corrects new failure modes. A known DPO pathology follows from the loss: nothing constrains the *absolute* likelihood of the chosen response, only the gap, so the optimiser can and often does reduce the probability of both responses while widening the difference — pushing mass onto entirely unseen text. Practical fixes include adding an SFT term on the chosen responses (this is roughly what RPO/CPO do), and running iterative DPO where you periodically sample from the current policy, label those samples, and retrain.
+- **DPO — good:** one model in memory, a stable supervised loss, no reward-model training and no sampling loop; reference log-probs can be precomputed once for the whole dataset.
+- **DPO — bad:** trains on a *fixed, off-policy* dataset, so it never sees the responses the current policy actually generates. A known pathology follows from the loss: nothing constrains the *absolute* likelihood of the chosen response, only the gap, so the optimiser can and often does reduce the probability of both responses while widening the difference — pushing mass onto entirely unseen text. Practical fixes include adding an SFT term on the chosen responses (this is roughly what RPO/CPO do), and running iterative DPO where you periodically sample from the current policy, label those samples, and retrain.
+- **RLHF — good:** the online loop keeps collecting fresh samples and scoring them, which is how it discovers and corrects new failure modes. **Bad:** four models, a hackable proxy, and a fragile optimisation.
 
 **Follow-up:** *What does $\beta$ control in DPO?* It is the same KL strength as in RLHF, but it enters as the inverse temperature of the implicit reward. Small $\beta$ (say 0.01) means the policy is allowed to move far from the reference and fits preferences aggressively; large $\beta$ (0.5) keeps it tethered. Typical values are 0.1 to 0.5. Because the reference model appears explicitly in the loss, its log-probabilities can be precomputed once for the whole dataset, so DPO needs only one model in memory during training rather than PPO's three or four.
 
@@ -653,25 +713,13 @@ That is the formula in the box above, now with a reason. The insight is that the
 
 ### Q13: Explain PPO (Proximal Policy Optimization) in detail. Why is it used in RLHF?
 
-**Answer:**
+> **In 30 seconds.** "PPO exists so you can reuse a batch of samples for more than one gradient step. You do that with an importance ratio — new policy probability over old — but that ratio has ugly variance if the policy moves too far, so PPO clips it to a narrow band around one and takes the pessimistic branch with a min. Once you've pushed a good action up by twenty percent the gradient goes flat for that batch, but a bad action whose probability rose still gets the full correction."
 
-**What is PPO?**
-PPO is a policy gradient algorithm that prevents large policy updates by clipping the objective function.
+**The short version.**
 
-**Mathematical Formulation:**
-```
-L^CLIP(θ) = E[min(r(θ)A, clip(r(θ), 1-ε, 1+ε)A)]
-
-Where:
-- r(θ) = π_θ(a|s) / π_θ_old(a|s) (importance sampling ratio)
-- A: Advantage estimate
-- ε: Clipping parameter (typically 0.1-0.3)
-```
-
-**Why Clipping?**
-- Prevents large updates that can destabilize training
-- Policy changes gradually (more stable)
-- Can reuse same data multiple times (sample efficient)
+- **What it is:** a policy-gradient algorithm that prevents large policy updates by clipping the objective.
+- **The ratio** $r(\theta) = \pi_\theta(a|s)/\pi_{\theta_{old}}(a|s)$ is what lets you reuse a batch; **the clip** is what stops the variance exploding.
+- **Why clipping:** prevents destabilising updates, changes the policy gradually, and makes the same data reusable across epochs.
 
 **Why PPO in RLHF:**
 1. **Stability**: Language models are sensitive - need stable updates
@@ -688,19 +736,34 @@ Where:
    - Update policy
 4. Update old policy
 
-**Why the ratio and the clip are shaped the way they are.**
+**Why it works.**
 
 Vanilla policy gradient computes $\nabla_\theta \mathbb{E}[R]$ from samples drawn by the *current* policy, so as soon as you take one gradient step the data is stale and must be thrown away. That is intolerable when each sample requires generating a full response from a large language model. Importance sampling fixes it: you can estimate an expectation under $\pi_\theta$ using samples from $\pi_{\theta_{old}}$ by reweighting each sample by $\rho = \pi_\theta(a \mid s) / \pi_{\theta_{old}}(a \mid s)$. That is where the ratio in the objective comes from — it is what licenses multiple epochs over the same batch.
 
-The problem is that importance sampling has unbounded variance: if the policy moves far from the sampler, some ratios blow up and a single sample dominates the gradient. TRPO handled this with a hard KL trust-region constraint and a second-order solve. PPO's contribution is to get almost the same effect with a first-order trick — clip the ratio and take the pessimistic branch:
-
-$$L^{CLIP} = \mathbb{E}\big[\min\big(\rho A,\ \text{clip}(\rho, 1-\epsilon, 1+\epsilon)A\big)\big]$$
-
-**Read the four cases and it becomes obvious.** With $\epsilon = 0.2$: if the advantage $A > 0$ (the action was better than expected) and $\rho$ has already grown past $1.2$, the clipped branch is flat, so the gradient is zero — you have already increased this action's probability enough for one batch, stop. If $A > 0$ and $\rho < 1$, no clipping applies and you get the full gradient. If $A < 0$ and $\rho$ has fallen below $0.8$, again flat, stop pushing it down. If $A < 0$ and $\rho > 1$, the unclipped term is *more* negative, and the `min` selects it — so a bad action whose probability accidentally increased still gets a full corrective gradient. The `min` is what makes the bound pessimistic rather than merely bounded: it only ever removes incentive to move further, never removes a correction.
+The problem is that importance sampling has unbounded variance: if the policy moves far from the sampler, some ratios blow up and a single sample dominates the gradient. TRPO handled this with a hard KL trust-region constraint and a second-order solve. PPO's contribution is to get almost the same effect with a first-order trick — clip the ratio and take the pessimistic branch.
 
 **The advantage, and why RLHF needs a value model.** $A(s, a) = Q(s, a) - V(s)$ asks "was this action better than the average action from this state", and subtracting the state-value baseline $V$ removes variance without introducing bias. PPO estimates it with GAE (generalised advantage estimation), an exponentially weighted average over $n$-step temporal-difference errors controlled by $\lambda$, which trades bias against variance. In RLHF the reward arrives only at the end of the response, so the value model's job is to spread that single scalar back across hundreds of token-level decisions. This is precisely the component GRPO removes.
 
-**The full RLHF-PPO loop in memory terms.** Four models are live: the policy being trained, a frozen reference for the KL term, the reward model, and the value model. That is the practical reason PPO-based RLHF is hard to run, and the reason both DPO (drop the RL loop) and GRPO (drop the critic) found adoption.
+**The math, and what it buys you.**
+
+```
+L^CLIP(θ) = E[min(r(θ)A, clip(r(θ), 1-ε, 1+ε)A)]
+
+Where:
+- r(θ) = π_θ(a|s) / π_θ_old(a|s) (importance sampling ratio)
+- A: Advantage estimate
+- ε: Clipping parameter (typically 0.1-0.3)
+```
+
+$$L^{CLIP} = \mathbb{E}\big[\min\big(\rho A,\ \text{clip}(\rho, 1-\epsilon, 1+\epsilon)A\big)\big]$$
+
+**Read the four cases and it becomes obvious what the formula buys you.** With $\epsilon = 0.2$: if the advantage $A > 0$ (the action was better than expected) and $\rho$ has already grown past $1.2$, the clipped branch is flat, so the gradient is zero — you have already increased this action's probability enough for one batch, stop. If $A > 0$ and $\rho < 1$, no clipping applies and you get the full gradient. If $A < 0$ and $\rho$ has fallen below $0.8$, again flat, stop pushing it down. If $A < 0$ and $\rho > 1$, the unclipped term is *more* negative, and the `min` selects it — so a bad action whose probability accidentally increased still gets a full corrective gradient. The `min` is what makes the bound pessimistic rather than merely bounded: it only ever removes incentive to move further, never removes a correction.
+
+**Good and bad.**
+
+- **Good:** sample-efficient (multiple epochs per batch), first-order and cheap compared with TRPO's second-order solve, and empirically the most reliable RLHF optimiser at scale.
+- **Bad — memory.** The full RLHF-PPO loop keeps four models live: the policy being trained, a frozen reference for the KL term, the reward model, and the value model. That is the practical reason PPO-based RLHF is hard to run, and the reason both DPO (drop the RL loop) and GRPO (drop the critic) found adoption.
+- **Bad:** many interacting hyperparameters ($\epsilon$, epochs per batch, GAE $\lambda$, KL $\beta$, entropy bonus), and a value model that is itself hard to calibrate on long generations.
 
 **Follow-up:** *What typically goes wrong when PPO training destabilises?* Watch three numbers. If the KL to the reference climbs steadily, the policy is drifting and reward hacking usually follows — most implementations use an adaptive $\beta$ that increases when KL exceeds a target. If the clip fraction (the share of tokens hitting the clip boundary) rises above roughly 20-30%, the policy is moving too fast per batch, so lower the learning rate or take fewer epochs per batch. If entropy collapses, the policy has converged to a narrow set of phrasings — mode collapse — and an entropy bonus or a stronger KL term is the usual response.
 
@@ -712,13 +775,37 @@ $$L^{CLIP} = \mathbb{E}\big[\min\big(\rho A,\ \text{clip}(\rho, 1-\epsilon, 1+\e
 
 ### Q14: What is GRPO (Group Relative Policy Optimization)? When is it useful?
 
-**Answer:**
+> **In 30 seconds.** "GRPO is PPO with the critic deleted. Instead of learning a value function to predict expected reward, you sample a whole group of completions for the same prompt — say sixteen — and use the group's own mean reward as the baseline. So the advantage is just 'did this attempt beat my other attempts at this problem'. That kills one of the four models in memory, and it pairs beautifully with verifiable rewards. The cost is generation: sixteen completions per prompt instead of one."
 
-**What is GRPO?**
-GRPO (Shao et al., *DeepSeekMath*, 2024; the algorithm behind DeepSeek-R1) is a variant of PPO that **removes the learned value network**. The "group" in the name is a group of sampled responses to the *same prompt*, not a group of users. For each prompt, the policy samples $G$ completions (typically 8-64), each is scored, and the group's own reward statistics serve as the baseline that PPO would otherwise get from a critic.
+**The short version.**
 
-**Mathematical Formulation:**
-For a prompt $q$, sample outputs $o_1, \dots, o_G \sim \pi_{\theta_{old}}(\cdot \mid q)$ with rewards $r_1, \dots, r_G$. The advantage for output $i$ is the reward standardised within the group:
+| | PPO | GRPO |
+|---|---|---|
+| **Baseline for the advantage** | Learned value network | Mean reward of $G$ samples from the same prompt |
+| **Models in memory** | Policy, reference, reward, value | Policy, reference (+ reward, unless rule-based) |
+| **Extra cost** | Training and calibrating a critic | Generating $G$ completions per prompt |
+| **Best fit** | General RLHF with a learned reward model | Verifiable rewards: maths, code, unit tests |
+
+- GRPO (Shao et al., *DeepSeekMath*, 2024; the algorithm behind DeepSeek-R1) is a variant of PPO that **removes the learned value network**.
+- The "group" is a group of sampled responses to the *same prompt*, not a group of users. For each prompt, the policy samples $G$ completions (typically 8-64), each is scored, and the group's own reward statistics serve as the baseline that PPO would otherwise get from a critic.
+- **Use cases:** reasoning with verifiable answers — mathematics, competitive programming, unit-test-checked code — its original and strongest domain; and any setting where sampling several completions is cheap relative to training a critic.
+
+> **Note on a correction.** An earlier version of this answer described GRPO as optimising across *demographic or user groups with different preferences*. That is not what GRPO is. The "group" is a group of sampled completions for one prompt, and the method's purpose is to eliminate the value network. The text above has been corrected.
+
+**Why it works.**
+
+Any policy-gradient method needs a baseline subtracted from the reward, because $\mathbb{E}[\nabla \log \pi \cdot b] = 0$ for any $b$ that does not depend on the action — so subtracting a baseline reduces variance without introducing bias. PPO learns that baseline with a value network. GRPO observes that if you sample $G$ completions from the *same* prompt, their mean reward is already an unbiased, zero-cost estimate of that prompt's expected return. No network, no training, no calibration drift. Dividing by the group standard deviation additionally normalises the advantage scale across prompts, so an easy prompt where everything scores 0.9-1.0 and a hard prompt where everything scores 0.0-0.1 contribute comparably sized gradients.
+
+**Why GRPO, in three points.**
+- **No critic**: PPO needs a value model roughly the size of the policy, so it holds four models in memory (policy, reference, reward, value). Dropping the critic cuts memory and removes a second network that itself has to be trained and can be badly calibrated on long generations.
+- **Natural fit for verifiable rewards**: When the reward is a rule-based checker — does the maths answer match, do the unit tests pass — you get a clean scalar per sample and no reward model is needed either, leaving just policy and reference.
+- **Comparison is the signal**: The advantage says "was this attempt better or worse than my other attempts at the same problem", which is exactly the credit-assignment question, and it needs no learned estimate of expected return.
+
+**How this pairs with verifiable rewards.** GRPO became prominent because it composes so cleanly with rule-based rewards. If your reward is "does the final answer match" or "do the tests pass", you have removed the reward model; GRPO removes the value model; and you are left with a policy and a frozen reference. That configuration — sample many attempts, check them, upweight the ones that worked — is what produced the long chain-of-thought behaviour in DeepSeek-R1, where the model learned to backtrack and re-derive without ever being shown a demonstration of doing so.
+
+**The math, and what it buys you.**
+
+For a prompt $q$, sample outputs $o_1, \dots, o_G \sim \pi_{\theta_{old}}(\cdot \mid q)$ with rewards $r_1, \dots, r_G$. The advantage for output $i$ is the reward standardised within the group — this one line is what replaces the entire value network:
 
 $$\hat{A}_i = \frac{r_i - \text{mean}(r_1, \dots, r_G)}{\text{std}(r_1, \dots, r_G)}$$
 
@@ -728,29 +815,16 @@ $$\mathcal{L}_{\text{GRPO}} = \mathbb{E}\left[\frac{1}{G}\sum_{i=1}^{G}\frac{1}{
 
 where $\rho_{i,t} = \pi_\theta(o_{i,t} \mid q, o_{i,<t}) / \pi_{\theta_{old}}(o_{i,t} \mid q, o_{i,<t})$ is the per-token importance ratio.
 
-**Why GRPO?**
-- **No critic**: PPO needs a value model roughly the size of the policy, so it holds four models in memory (policy, reference, reward, value). Dropping the critic cuts memory and removes a second network that itself has to be trained and can be badly calibrated on long generations.
-- **Natural fit for verifiable rewards**: When the reward is a rule-based checker — does the maths answer match, do the unit tests pass — you get a clean scalar per sample and no reward model is needed either, leaving just policy and reference.
-- **Comparison is the signal**: The advantage says "was this attempt better or worse than my other attempts at the same problem", which is exactly the credit-assignment question, and it needs no learned estimate of expected return.
-
-**Use Cases:**
-- Reasoning with verifiable answers: mathematics, competitive programming, unit-test-checked code — its original and strongest domain.
-- Any setting where sampling several completions is cheap relative to training a critic.
-
-**Example:**
+**A worked example.**
 - Prompt: a maths problem. Sample 8 chains of thought; 3 reach the right answer, 5 do not.
 - Rewards are $[1, 1, 1, 0, 0, 0, 0, 0]$, so mean $= 0.375$ and std $\approx 0.484$.
 - Advantages are $\approx +1.29$ for the three correct chains and $\approx -0.77$ for the five wrong ones, pushing probability mass toward whatever the successful chains did — with no value network anywhere in the loop.
 
-> **Note on a correction.** An earlier version of this answer described GRPO as optimising across *demographic or user groups with different preferences*. That is not what GRPO is. The "group" is a group of sampled completions for one prompt, and the method's purpose is to eliminate the value network. The text above has been corrected.
+**Good and bad.**
 
-**Why standardising within the group is the right baseline.**
-
-Any policy-gradient method needs a baseline subtracted from the reward, because $\mathbb{E}[\nabla \log \pi \cdot b] = 0$ for any $b$ that does not depend on the action — so subtracting a baseline reduces variance without introducing bias. PPO learns that baseline with a value network. GRPO observes that if you sample $G$ completions from the *same* prompt, their mean reward is already an unbiased, zero-cost estimate of that prompt's expected return. No network, no training, no calibration drift. Dividing by the group standard deviation additionally normalises the advantage scale across prompts, so an easy prompt where everything scores 0.9-1.0 and a hard prompt where everything scores 0.0-0.1 contribute comparably sized gradients.
-
-That normalisation is also GRPO's main known bias. If every completion in a group gets the same reward — all correct or all wrong — the standard deviation is zero, the advantage is undefined or zero, and the prompt contributes nothing; those prompts are simply wasted compute. And dividing by the standard deviation systematically upweights prompts where the group happened to disagree, which is a difficulty bias rather than a learning signal. Later variants (Dr. GRPO and the loss-normalisation fixes in DAPO) drop the standard-deviation divisor and change the token-length normalisation for exactly these reasons.
-
-**How this pairs with verifiable rewards.** GRPO became prominent because it composes so cleanly with rule-based rewards. If your reward is "does the final answer match" or "do the tests pass", you have removed the reward model; GRPO removes the value model; and you are left with a policy and a frozen reference. That configuration — sample many attempts, check them, upweight the ones that worked — is what produced the long chain-of-thought behaviour in DeepSeek-R1, where the model learned to backtrack and re-derive without ever being shown a demonstration of doing so.
+- **Good:** one fewer model to hold and train; a baseline that cannot be miscalibrated because it is measured, not predicted; and a clean composition with rule-based rewards.
+- **Bad — the standard-deviation divisor.** If every completion in a group gets the same reward — all correct or all wrong — the standard deviation is zero, the advantage is undefined or zero, and the prompt contributes nothing; those prompts are simply wasted compute. And dividing by the standard deviation systematically upweights prompts where the group happened to disagree, which is a difficulty bias rather than a learning signal. Later variants (Dr. GRPO and the loss-normalisation fixes in DAPO) drop the standard-deviation divisor and change the token-length normalisation for exactly these reasons.
+- **Bad — sampling cost.** Group size is a real hyperparameter: too small and the baseline is noisy, too large and you are paying for redundant samples.
 
 **Follow-up:** *What is the practical cost?* Compute at sampling time. You are generating $G$ full completions per prompt instead of one, so a group size of 16 means 16 times the generation work per prompt — and generation, not the gradient step, dominates RL wall-clock for LLMs. The trade you are making is critic memory and critic instability in exchange for sampling throughput, which is a good trade when generation is well-optimised and a bad one when it is not. Group size is a real hyperparameter: too small and the baseline is noisy, too large and you are paying for redundant samples.
 
@@ -762,33 +836,27 @@ That normalisation is also GRPO's main known bias. If every completion in a grou
 
 ### Q15: What are the main challenges in RL alignment? How do you address them?
 
-**Answer:**
+> **In 30 seconds.** "Almost all of these are one problem wearing different hats: you're optimising a learned proxy for human judgement, and the policy is actively hunting for places where that proxy is wrong. True quality goes up, peaks, then falls while the reward score keeps climbing. The main lever is the KL penalty, because it bounds how far you can get from the region where the reward model was actually trained."
 
-**Challenge 1: Reward Hacking**
-- **Problem**: Model finds ways to maximize reward that don't align with intent
-- **Solution**: Careful reward design, KL penalty, monitoring
+**The short version.**
 
-**Challenge 2: Distribution Shift**
-- **Problem**: Policy changes, but reward model trained on old distribution
-- **Solution**: Retrain reward model periodically, regularization
+| Challenge | Problem | Solution |
+|---|---|---|
+| **Reward hacking** | Model maximises reward in ways that miss the intent | Careful reward design, KL penalty, monitoring |
+| **Distribution shift** | Policy moves; reward model was trained on the old distribution | Retrain the RM periodically, regularisation |
+| **Mode collapse** | Policy collapses to a single response pattern | KL penalty, entropy bonus, diverse training data |
+| **Instability** | Training diverges | PPO clipping, gradient clipping, LR scheduling |
+| **Feedback quality** | Inconsistent or biased human labels | Multiple annotators, quality control, bias detection |
 
-**Challenge 3: Mode Collapse**
-- **Problem**: Policy collapses to single response pattern
-- **Solution**: KL penalty, entropy bonus, diverse training data
-
-**Challenge 4: Instability**
-- **Problem**: Training can be unstable
-- **Solution**: PPO clipping, gradient clipping, learning rate scheduling
-
-**Challenge 5: Human Feedback Quality**
-- **Problem**: Inconsistent or biased feedback
-- **Solution**: Multiple annotators, quality control, bias detection
+**Why it works.**
 
 **The common root.** Four of the five challenges above are the same phenomenon seen from different angles: you are optimising a *proxy* (a learned reward model) rather than the thing you care about (human judgement), using a policy that actively searches the proxy's input space. Reward hacking is the proxy being exploited; distribution shift is the proxy being evaluated off its training distribution; mode collapse is the policy concentrating on the narrow region where the proxy scores highest; instability is the optimisation running away in that direction. Framing it as one problem rather than five is what makes the mitigations cohere — the KL penalty appears in three of the five rows because it directly bounds how far into unmeasured territory the policy is allowed to go.
 
-**A number worth having.** Gao, Schulman and Hilton's scaling-law study of reward-model overoptimisation found that true reward, plotted against the square root of the KL divergence from the initial policy, rises and then falls in a predictable arc, with the peak moving further out as the reward model gets larger and is trained on more data. The practical implication is concrete: KL distance is the right x-axis for deciding when to stop, and "stop when the RM score plateaus" is the wrong criterion because the RM score keeps rising past the point where quality starts dropping.
-
 **On feedback quality specifically.** The failure is not only noise but *systematic* bias, and the biases are known: annotators reliably prefer longer responses, more confident phrasing, and more formatting (lists, bold headers) independent of content. Length bias is severe enough that some RLHF runs produce models that are longer and no better, and length-controlled evaluation exists precisely because of it. Mitigations are measurement-first — check the correlation between reward and response length, and if it is high, either debias the reward (subtract a length term) or resample the preference data to decorrelate them.
+
+**The math, and what it buys you.**
+
+**A number worth having.** Gao, Schulman and Hilton's scaling-law study of reward-model overoptimisation found that true reward, plotted against the square root of the KL divergence from the initial policy, rises and then falls in a predictable arc, with the peak moving further out as the reward model gets larger and is trained on more data. The practical implication is concrete: KL distance is the right x-axis for deciding when to stop, and "stop when the RM score plateaus" is the wrong criterion because the RM score keeps rising past the point where quality starts dropping.
 
 **Follow-up:** *How would you tell reward hacking apart from genuine improvement?* Use a held-out signal the policy is not being optimised against. Concretely: a separate reward model trained on different data or with a different seed (if scores diverge between the two, at least one is being gamed), pairwise human evaluation on a fresh sample, and task benchmarks the RM never saw. Add cheap behavioural monitors for the known degenerate modes — mean response length, refusal rate, n-gram repetition, entropy — because hacking usually shows up as a sharp change in one of those before it shows up in an aggregate score.
 
@@ -800,18 +868,23 @@ That normalisation is also GRPO's main known bias. If every completion in a grou
 
 ### Q16: How do you prevent reward hacking in RLHF?
 
-**Answer:**
+> **In 30 seconds.** "Reward hacking isn't a bug you fix — it's what optimisation does to any imperfect proxy; the policy's whole job is to find where your reward model is wrong. The concrete versions are consistent: longer, more sycophantic, more heavily formatted, more confident hedging. The main defence is the KL penalty, then a pessimistic reward-model ensemble, then monitoring length, entropy and refusal rate — because hacking shows up there before it shows up in any aggregate score."
 
-**What is Reward Hacking?**
-Model finds unintended ways to maximize reward (e.g., always says "I can't answer").
+**The short version.**
 
-**Prevention:**
-1. **Careful reward design**: Multiple signals, penalize hacks
-2. **Regularization**: KL penalty prevents extreme behaviors
-3. **Reward model robustness**: Diverse training, bias detection
-4. **Monitoring**: Track patterns, detect anomalies
-5. **Constrained optimization**: Hard/soft constraints
-6. **Iterative refinement**: Identify hacks, refine reward
+- **What it is:** the model finds unintended ways to maximise reward (e.g. always saying "I can't answer").
+- **Prevention:** careful reward design (multiple signals, penalise known hacks); regularisation (KL penalty); reward-model robustness (diverse training, bias detection); monitoring (track patterns, detect anomalies); constrained optimisation (hard/soft constraints); iterative refinement (identify hacks, refine the reward).
+- **Expect it by default.** You need a detection story, not only a prevention story.
+
+| Hack that actually shows up | What the RM learned instead of quality |
+|---|---|
+| **Length inflation** | Annotators mildly prefer longer answers, so the policy pads |
+| **Sycophancy** | Agreeing with the user's stated view scores well |
+| **Formatting theatre** | Bullets, bold headers and a confident summary score well regardless of content |
+| **Hedged non-answers** | On hard prompts a fluent refusal outscores a wrong attempt |
+| **Confident fabrication** | Certainty is rewarded, uncertainty is not, so calibration degrades |
+
+**Why it works.**
 
 **Why this is hard rather than just fiddly.** Reward hacking is not a bug in a particular reward model; it is what optimisation *does* to any imperfect proxy. Goodhart's law in its sharpest form: the reward model and human judgement agree on the distribution where preferences were collected, and the optimiser's job is to leave that distribution. So the goal is never "build an unhackable reward" — it is to make the gap costly to reach and to notice when it has been reached.
 
@@ -829,12 +902,14 @@ Model finds unintended ways to maximize reward (e.g., always says "I can't answe
 
 ### Q17: Explain the KL penalty in RLHF. Why is it important?
 
-**Answer:**
+> **In 30 seconds.** "The KL penalty measures how far the policy has drifted from the frozen reference model and charges it for that drift. It matters because the reward model was only ever validated near the reference distribution — that's where the preference data came from — so KL distance is a direct measure of how far outside your measurements you've wandered. Too small a beta and the policy runs off and hacks the reward; too large and it can't learn."
 
-**What is KL Penalty?**
-KL divergence measures how different policy is from reference. Penalty prevents large deviations.
+**The short version.**
 
-**Mathematical Formulation:**
+- **What it is:** KL divergence measures how different the policy is from the reference; the penalty prevents large deviations.
+- **Why it matters:** prevents mode collapse (keeps the policy diverse), prevents reward hacking (constrains to reasonable behaviours), maintains SFT capabilities, adds stability, and acts as a trust region.
+- **Choosing $\beta$:** too small and the policy deviates too much; too large and it cannot learn. Typical $\beta = 0.1$–$0.5$ — but it is usually adaptive, not fixed.
+
 ```
 KL(π_θ || π_ref) = E[log(π_θ(a|s) / π_ref(a|s))]
 
@@ -842,25 +917,22 @@ In practice:
 KL_penalty = β * (log π_θ - log π_ref)
 ```
 
-**Why Important:**
-1. **Prevents mode collapse**: Keeps policy diverse
-2. **Prevents reward hacking**: Constrains to reasonable behaviors
-3. **Maintains capabilities**: Preserves SFT capabilities
-4. **Stability**: Prevents large policy changes
-5. **Trust region**: Policy can't deviate too far
-
-**How to Choose β:**
-- Too small: Policy can deviate too much
-- Too large: Policy can't learn
-- Typical: β = 0.1-0.5
+**Why it works.**
 
 **What the penalty is doing, geometrically.** KL divergence $D_{KL}(\pi_\theta \parallel \pi_{\text{ref}})$ measures how much the trained policy's distribution has moved from the frozen reference. Adding $-\beta D_{KL}$ to the reward turns unconstrained reward maximisation into a *trust region*: the policy may buy reward, but it pays in distance, and the exchange rate is $\beta$. The reason this is the right currency is that the reward model's judgements are only validated near the reference distribution — that is where the preference data was collected. KL distance is therefore a direct proxy for "how far outside my measurement is this".
 
 **How it is actually computed.** You cannot evaluate the true expectation over all sequences, so implementations use the per-token log-ratio of the sampled tokens, $\log \pi_\theta(y_t \mid \cdot) - \log \pi_{\text{ref}}(y_t \mid \cdot)$, as a single-sample estimator and subtract $\beta$ times it from the reward at each token. That naive estimator is unbiased but high-variance and can go negative, which is confusing to read on a dashboard; the common fix is the low-variance estimator $\hat{k}_3 = (\rho - 1) - \log \rho$ where $\rho = \pi_{\text{ref}} / \pi_\theta$, which is always non-negative and much less noisy. Note also the implementation choice: adding the penalty *into the reward* (so it flows through the advantage and the value function) behaves differently from adding it as a separate loss term, and the two are not equivalent — the original RLHF papers put it in the reward.
 
+**Adaptive $\beta$.** Because the right $\beta$ depends on the reward model's scale, most implementations do not fix it. They set a *target* KL and use a controller that raises $\beta$ when measured KL exceeds the target and lowers it when it falls below. This makes the hyperparameter you tune ("how far am I willing to drift") interpretable in a way a raw coefficient is not.
+
+**The math, and what it buys you.**
+
 **A small worked example of what $\beta$ buys.** Suppose at some token the reference gives probability 0.10 to the token the policy sampled and the policy now gives it 0.60. The log-ratio is $\log(0.6/0.1) = 1.79$. With $\beta = 0.1$ the penalty is $0.179$ reward units at that token; with $\beta = 0.5$ it is $0.90$. If the reward model's scale is such that a typical good-versus-bad gap is around 1 unit, then at $\beta = 0.5$ this single-token deviation has consumed most of the available reward and the policy will not make it unless the payoff is genuinely large — whereas at $\beta = 0.1$ it is nearly free. That is the whole tuning intuition, and it also explains why $\beta$ cannot be transferred between runs without checking the reward model's scale.
 
-**Adaptive $\beta$.** Because the right $\beta$ depends on that scale, most implementations do not fix it. They set a *target* KL and use a controller that raises $\beta$ when measured KL exceeds the target and lowers it when it falls below. This makes the hyperparameter you tune ("how far am I willing to drift") interpretable in a way a raw coefficient is not.
+**Good and bad.**
+
+- **Good:** it is the single most effective brake on reward hacking, it preserves SFT capabilities, and — as an adaptive target-KL controller — it turns an opaque coefficient into a quantity you can reason about.
+- **Bad:** too large and learning stalls; the naive per-token estimator is noisy and can read negative; and the direction used is mode-seeking, which is part of why RLHF measurably reduces output diversity.
 
 **Follow-up:** *Which direction of KL is used, and does it matter?* RLHF uses the forward-from-the-policy form $D_{KL}(\pi_\theta \parallel \pi_{\text{ref}})$, which is *mode-seeking*: it heavily punishes the policy for putting mass where the reference puts almost none, but does not punish it for abandoning modes the reference covered. That asymmetry is convenient — it blocks the policy from inventing wholly new behaviour — but it is also part of why RLHF reduces output diversity, since dropping modes is cheap under this direction. The reverse direction would be mass-covering and would preserve diversity, but it would require sampling from the reference, which is more expensive.
 
@@ -878,16 +950,17 @@ See `08_training_techniques/rl_alignment_qa.md` for even more detailed answers!
 
 ### Q18: Explain the Adam optimizer.
 
-**Answer:**
+> **In 30 seconds.** "Adam is two ideas glued together. The first moment is momentum — an exponential average of gradients, so consistent directions build up and noisy ones cancel. The second moment averages squared gradients, and dividing by its square root gives every parameter its own effective learning rate, roughly the signal-to-noise ratio of that parameter's gradient. The bias correction exists because both averages start at zero and are wildly too small at step one."
 
-**Adam = Adaptive Moment Estimation**
+**The short version.**
 
-**Components:**
-1. **First moment (m)**: Exponential moving average of gradients (momentum)
-2. **Second moment (v)**: Exponential moving average of squared gradients (variance)
-3. **Bias correction**: Fix initial bias
+- **Adam = Adaptive Moment Estimation.**
+- **First moment (m):** exponential moving average of gradients — momentum.
+- **Second moment (v):** exponential moving average of squared gradients — a per-parameter learning rate.
+- **Bias correction:** fixes the toward-zero bias of both averages in early steps.
+- **Defaults:** $\beta_1 = 0.9$ (momentum), $\beta_2 = 0.999$ (variance), $\alpha = 0.001$ (learning rate).
+- **Cost:** two extra values per parameter in memory.
 
-**Update Rule:**
 ```
 m_t = β1 * m_{t-1} + (1-β1) * g_t
 v_t = β2 * v_{t-1} + (1-β2) * g_t²
@@ -896,17 +969,7 @@ v_hat = v_t / (1 - β2^t)
 θ_t = θ_{t-1} - α * m_hat / (√v_hat + ε)
 ```
 
-**Why it works:**
-- Adaptive learning rates per parameter
-- Momentum for smooth updates
-- Second moment adapts to gradient variance
-
-**Default hyperparameters:**
-- β1 = 0.9 (momentum)
-- β2 = 0.999 (variance)
-- α = 0.001 (learning rate)
-
-**Reading the update rule as two separate ideas glued together.**
+**Why it works.**
 
 Adam is momentum and RMSProp stacked, plus a correction for how they start.
 
@@ -914,11 +977,18 @@ Adam is momentum and RMSProp stacked, plus a correction for how they start.
 
 *The second moment is a per-parameter learning rate.* $v_t = \beta_2 v_{t-1} + (1-\beta_2) g_t^2$ tracks the average *squared* gradient with a much longer window, about 1000 steps at $\beta_2 = 0.999$. Dividing the step by $\sqrt{\hat{v}_t}$ means a parameter whose gradients have been consistently large takes small steps and one whose gradients have been small takes large ones. The effective step size becomes roughly $\alpha \cdot \text{mean}(g) / \text{RMS}(g)$, which is close to a signal-to-noise ratio: parameters with a consistent gradient direction move at nearly the full learning rate, parameters whose gradient is mostly noise barely move. This is why Adam works out of the box on problems — like transformers, with embeddings whose gradients are extremely sparse and layer norms whose gradients are not — where a single global learning rate would be badly wrong for most parameters.
 
-*Bias correction is not cosmetic.* Both averages start at zero, so early on they are biased toward zero. Concretely: at $t = 1$, $v_1 = (1 - 0.999) g_1^2 = 0.001 g_1^2$, so $\sqrt{v_1} \approx 0.032 |g_1|$ — about 30 times too small, which would make the first step about 30 times too large and can blow the model up immediately. The correction divides by $1 - \beta_2^t$, which at $t=1$ is exactly $0.001$, restoring $\hat{v}_1 = g_1^2$. The correction decays to nothing as $\beta^t \to 0$, so it only matters for roughly the first few thousand steps — precisely the fragile part of training. (Even with it, transformers usually still need learning-rate warmup, because the *variance* of Adam's update, not just its mean, is large when $v$ is estimated from few samples.)
-
 *Epsilon* sits inside the square root's denominator to stop division by zero, but it also quietly sets a floor: with $\epsilon = 10^{-8}$, any parameter whose gradient RMS falls below that gets a step proportional to $g/\epsilon$ rather than a normalised one. Raising $\epsilon$ to $10^{-6}$ or $10^{-4}$ is a standard stability fix for large-model training.
 
-**Worked micro-example.** Take a parameter with a steady gradient $g = 0.1$ every step, $\alpha = 0.001$. After a few steps $\hat{m} \approx 0.1$ and $\hat{v} \approx 0.01$, so $\sqrt{\hat{v}} = 0.1$ and the update is $0.001 \times 0.1/0.1 = 0.001$ — the full learning rate. Now a parameter whose gradient alternates $+0.1, -0.1$: $\hat{m} \approx 0$ but $\hat{v} \approx 0.01$ still, so the update is near zero. Same gradient magnitude, opposite treatment, based purely on consistency.
+**The math, and what it buys you.**
+
+*Bias correction is not cosmetic — here is the number that shows it.* Both averages start at zero, so early on they are biased toward zero. Concretely: at $t = 1$, $v_1 = (1 - 0.999) g_1^2 = 0.001 g_1^2$, so $\sqrt{v_1} \approx 0.032 |g_1|$ — about 30 times too small, which would make the first step about 30 times too large and can blow the model up immediately. The correction divides by $1 - \beta_2^t$, which at $t=1$ is exactly $0.001$, restoring $\hat{v}_1 = g_1^2$. The correction decays to nothing as $\beta^t \to 0$, so it only matters for roughly the first few thousand steps — precisely the fragile part of training. (Even with it, transformers usually still need learning-rate warmup, because the *variance* of Adam's update, not just its mean, is large when $v$ is estimated from few samples.)
+
+**Worked micro-example — what the adaptivity actually does.** Take a parameter with a steady gradient $g = 0.1$ every step, $\alpha = 0.001$. After a few steps $\hat{m} \approx 0.1$ and $\hat{v} \approx 0.01$, so $\sqrt{\hat{v}} = 0.1$ and the update is $0.001 \times 0.1/0.1 = 0.001$ — the full learning rate. Now a parameter whose gradient alternates $+0.1, -0.1$: $\hat{m} \approx 0$ but $\hat{v} \approx 0.01$ still, so the update is near zero. Same gradient magnitude, opposite treatment, based purely on consistency.
+
+**Good and bad.**
+
+- **Good:** works out of the box across very different architectures; per-parameter adaptivity handles sparse embedding gradients and dense norm gradients in the same run; momentum smooths minibatch noise.
+- **Bad:** memory — two extra values per parameter; sensitivity to $\epsilon$ at scale; and it still needs learning-rate warmup for transformers despite the bias correction.
 
 **Follow-up:** *Why does Adam use so much memory?* It stores $m$ and $v$ per parameter, so with FP32 master weights the optimiser state is 8 bytes per parameter on top of the 4 bytes of weights and 4 of gradients — roughly 16 bytes per parameter in total, meaning a 7B model needs about 112 GB just to hold training state before activations. This is exactly what ZeRO shards across devices, what 8-bit Adam quantises, and what memory-light optimisers like Adafactor (which factorises $v$ into row and column statistics) and Lion (which keeps only momentum) are trying to avoid.
 
@@ -930,17 +1000,17 @@ Adam is momentum and RMSProp stacked, plus a correction for how they start.
 
 ### Q19: What's the difference between Adam and AdamW?
 
-**Answer:**
+> **In 30 seconds.** "For plain SGD, adding an L2 term to the loss and decaying the weights are the same operation. For Adam they aren't, because the L2 term goes through the second-moment normalisation along with the real gradient — so parameters with big gradient histories get their decay divided down and end up barely regularised, while quiet parameters get hammered. AdamW applies the decay straight to the weights after the adaptive step, so everything shrinks by the same proportion."
 
-**Adam:** Weight decay applied to gradients
-**AdamW:** Weight decay decoupled (applied separately)
+**The short version.**
 
-**Why AdamW:**
-- Better weight decay
-- Improved generalization
-- More principled
+| | Adam (coupled L2) | AdamW (decoupled decay) |
+|---|---|---|
+| **Where the penalty enters** | Added to the gradient | Added to the weight update, after the adaptive step |
+| **Is it normalised by $\sqrt{\hat v}$?** | Yes — decay strength depends on gradient history | No — uniform relative shrinkage |
+| **Effect** | Busiest parameters are least regularised (backwards) | Every parameter shrinks by the same proportion |
+| **LR / decay interaction** | Coupled — tuning LR silently changes regularisation | Decoupled — hyperparameters transfer between runs |
 
-**Difference:**
 ```python
 # Adam: weight decay in gradient
 gradient = gradient + weight_decay * params
@@ -949,25 +1019,30 @@ gradient = gradient + weight_decay * params
 params = params - lr * (adam_update + weight_decay * params)
 ```
 
-**Why decoupling actually changes the answer.**
+**Why it works.**
 
-L2 regularisation and weight decay are the same thing for plain SGD and *different* things for Adam — that is the whole content of the AdamW paper, and it is worth being able to show why.
+L2 regularisation and weight decay are the same thing for plain SGD and *different* things for Adam — that is the whole content of the AdamW paper.
 
-With L2 regularisation you add $\frac{\lambda}{2}\lVert w \rVert^2$ to the loss, so the gradient becomes $g + \lambda w$. Feed that into Adam and the penalty term goes through the same second-moment normalisation as everything else: the update is
+With L2 regularisation you add $\frac{\lambda}{2}\lVert w \rVert^2$ to the loss, so the gradient becomes $g + \lambda w$. Feed that into Adam and the penalty term goes through the same second-moment normalisation as everything else. Because the denominator is large for parameters with large historical gradients, the decay those parameters receive is *divided down*. The consequence is backwards: parameters with big, consistent gradients — the ones doing the most work and most at risk of growing large — get the *least* regularisation, while parameters with tiny gradients get the most. The decay strength ends up coupled to the gradient history, which is not what anyone intends when they set a weight decay value.
+
+AdamW removes the penalty from the gradient entirely and applies it directly to the weights after the adaptive step. Now every parameter shrinks by the same relative amount per step regardless of its gradient statistics, which is what "weight decay" is supposed to mean. A practical side effect: the two hyperparameters decouple, so tuning the learning rate no longer silently changes the effective regularisation, which is why AdamW's hyperparameters transfer between runs far better.
+
+**The math, and what it buys you.**
+
+Adam with L2 in the gradient gives
 
 $$\Delta w = -\alpha \frac{\hat{m}(g + \lambda w)}{\sqrt{\hat{v}(g + \lambda w)} + \epsilon}$$
 
-Because the denominator is large for parameters with large historical gradients, the decay those parameters receive is *divided down*. The consequence is backwards: parameters with big, consistent gradients — the ones doing the most work and most at risk of growing large — get the *least* regularisation, while parameters with tiny gradients get the most. The decay strength ends up coupled to the gradient history, which is not what anyone intends when they set a weight decay value.
-
-AdamW removes the penalty from the gradient entirely and applies it directly to the weights after the adaptive step:
+— note the $\lambda w$ sitting *inside* the normalisation. AdamW instead applies
 
 $$w \leftarrow w - \alpha\left(\frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon} + \lambda w\right)$$
 
-Now every parameter shrinks by the same relative amount per step regardless of its gradient statistics, which is what "weight decay" is supposed to mean. A practical side effect: the two hyperparameters decouple, so tuning the learning rate no longer silently changes the effective regularisation, which is why AdamW's hyperparameters transfer between runs far better.
+**Numeric illustration of what that difference costs you.** Two parameters, both at $w = 1.0$, both with $\lambda = 0.01$. Parameter A has had a gradient RMS around $1.0$; parameter B around $0.01$. Under Adam-with-L2 the decay contributions are roughly $\lambda w / \sqrt{\hat{v}}$, so A gets $0.01/1.0 = 0.01$ and B gets $0.01/0.01 = 1.0$ — a hundredfold difference in regularisation strength that nobody asked for. Under AdamW both get exactly $\alpha \lambda w$.
 
-**Numeric illustration.** Two parameters, both at $w = 1.0$, both with $\lambda = 0.01$. Parameter A has had a gradient RMS around $1.0$; parameter B around $0.01$. Under Adam-with-L2 the decay contributions are roughly $\lambda w / \sqrt{\hat{v}}$, so A gets $0.01/1.0 = 0.01$ and B gets $0.01/0.01 = 1.0$ — a hundredfold difference in regularisation strength that nobody asked for. Under AdamW both get exactly $\alpha \lambda w$.
+**Good and bad.**
 
-**Practical note.** Because the decay is now applied to every parameter uniformly, you generally want to *exclude* biases, LayerNorm gains and (often) embeddings from it — decaying a normalisation gain toward zero has no regularising interpretation and just fights the layer. Every serious training script has a parameter-group split doing exactly this. Typical values are $\lambda = 0.1$ for large transformer pretraining and $0.01$ for fine-tuning; note these are much larger than classic L2 values, another consequence of the rescaling.
+- **AdamW — good:** better generalisation, more principled decay, and hyperparameters that transfer. **Bad:** because the decay now hits every parameter uniformly, you generally want to *exclude* biases, LayerNorm gains and (often) embeddings from it — decaying a normalisation gain toward zero has no regularising interpretation and just fights the layer. Every serious training script has a parameter-group split doing exactly this.
+- **Practical values:** $\lambda = 0.1$ for large transformer pretraining, $0.01$ for fine-tuning; note these are much larger than classic L2 values, another consequence of the rescaling.
 
 **Follow-up:** *If AdamW is strictly better, why does `torch.optim.Adam` still have a `weight_decay` argument?* Because it implements the coupled L2 form, which is what the original Adam paper described and what a lot of older code depends on for reproducibility. `Adam(weight_decay=0.01)` and `AdamW(weight_decay=0.01)` do genuinely different things — a real source of silent discrepancies when porting a config between codebases.
 
@@ -981,33 +1056,34 @@ Now every parameter shrinks by the same relative amount per step regardless of i
 
 ### Q20: Explain L1 vs L2 regularization.
 
-**Answer:**
+> **In 30 seconds.** "Both penalise the size of the weights, but the shape of the penalty changes the outcome. L2's gradient is proportional to the weight, so as a weight gets small the pressure on it gets small too — it shrinks toward zero and never arrives. L1's gradient is a constant lambda times the sign, so the push is just as strong at 0.001 as at 10; if the data's pull is weaker than lambda, the weight is pinned at exactly zero. That's why L1 selects features and L2 doesn't."
 
-**L1 (Lasso):**
-- Penalty: λ * Σ|w|
-- Effect: Many weights become exactly 0
-- Use: Feature selection, sparsity
-- Gradient: Constant (λ * sign(w))
+**The short version.**
 
-**L2 (Ridge):**
-- Penalty: λ * Σw²
-- Effect: Weights shrink toward 0 (but not 0)
-- Use: Generalization, most common
-- Gradient: Linear (2λ * w)
+| | L1 (Lasso) | L2 (Ridge) |
+|---|---|---|
+| **Penalty** | $\lambda \sum \lvert w \rvert$ | $\lambda \sum w^2$ |
+| **Gradient** | Constant: $\lambda\,\text{sign}(w)$ | Linear: $2\lambda w$ |
+| **Effect on weights** | Many become exactly 0 | Shrink toward 0, never reach it |
+| **Geometry** | Diamond with corners on the axes | Sphere, no corners |
+| **Use for** | Feature selection, sparsity, interpretability | Generalisation — the standard choice |
+| **Correlated features** | Picks one arbitrarily, zeroes the other; unstable | Splits weight between them |
 
-**When to use:**
-- L1: Want feature selection, interpretability
-- L2: Want generalization, standard choice
+**Elastic Net:** Combines both.
 
-**Elastic Net:** Combines both
-
-**Why L1 gives exact zeros and L2 does not — the gradient argument.**
+**Why it works.**
 
 This is the part an interviewer will push on, and the cleanest explanation is about what happens near zero. Consider a single weight $w$ with data-fit gradient $g$ at the optimum of the unregularised loss.
 
-Under L2, the penalty gradient is $2\lambda w$. As $w \to 0$ that gradient also $\to 0$, so the shrinkage force vanishes exactly where you would need it to be strongest. The weight settles wherever the data-fit gradient balances $2\lambda w$, which for any nonzero $g$ is a nonzero $w$. Solve the one-dimensional case and you get proportional shrinkage: $\hat{w}_{\text{ridge}} = \hat{w}_{\text{OLS}} / (1 + \lambda)$ — everything scaled down by a constant factor, nothing set to zero.
+Under L2, the penalty gradient is $2\lambda w$. As $w \to 0$ that gradient also $\to 0$, so the shrinkage force vanishes exactly where you would need it to be strongest. The weight settles wherever the data-fit gradient balances $2\lambda w$, which for any nonzero $g$ is a nonzero $w$.
 
-Under L1, the penalty gradient is $\lambda \cdot \text{sign}(w)$, which has magnitude $\lambda$ *no matter how small $w$ is*. So there is a constant force pushing toward zero that does not weaken on approach. If the data-fit gradient at $w = 0$ has magnitude less than $\lambda$, it cannot overcome that force and the weight is pinned at exactly zero. The closed form for the orthonormal case is the soft-threshold operator
+Under L1, the penalty gradient is $\lambda \cdot \text{sign}(w)$, which has magnitude $\lambda$ *no matter how small $w$ is*. So there is a constant force pushing toward zero that does not weaken on approach. If the data-fit gradient at $w = 0$ has magnitude less than $\lambda$, it cannot overcome that force and the weight is pinned at exactly zero.
+
+**The geometric picture, stated properly.** The constraint region for L1 is a diamond (a cross-polytope) whose corners lie *on* the axes; for L2 it is a sphere with no corners. The solution is where the elliptical contours of the squared-error loss first touch the constraint region, and an ellipse touching a diamond will generically touch at a corner — a corner being exactly a point where some coordinates are zero. A sphere has no preferred points, so contact happens at a generic location with all coordinates nonzero. This picture and the soft-threshold formula below are two views of the same fact.
+
+**The math, and what it buys you.**
+
+Solve the one-dimensional case under L2 and you get proportional shrinkage: $\hat{w}_{\text{ridge}} = \hat{w}_{\text{OLS}} / (1 + \lambda)$ — everything scaled down by a constant factor, nothing set to zero. The closed form for L1 in the orthonormal case is the soft-threshold operator, and it states the sparsity result outright:
 
 $$\hat{w}_{\text{lasso}} = \text{sign}(\hat{w}_{\text{OLS}}) \cdot \max\big(|\hat{w}_{\text{OLS}}| - \lambda,\ 0\big)$$
 
@@ -1015,9 +1091,11 @@ which says it plainly: subtract $\lambda$ from the magnitude, and if that goes n
 
 **A worked number.** With $\lambda = 0.5$ and OLS estimates $[3.0, 0.4, -0.3]$: L1 gives $[2.5, 0, 0]$ — the two small coefficients are eliminated and the large one is shifted. L2 with the same $\lambda$ gives $[2.0, 0.267, -0.2]$ — everything shrunk by a third, nothing removed. Same regularisation strength, completely different structure in the answer.
 
-**The geometric picture, stated properly.** The constraint region for L1 is a diamond (a cross-polytope) whose corners lie *on* the axes; for L2 it is a sphere with no corners. The solution is where the elliptical contours of the squared-error loss first touch the constraint region, and an ellipse touching a diamond will generically touch at a corner — a corner being exactly a point where some coordinates are zero. A sphere has no preferred points, so contact happens at a generic location with all coordinates nonzero. This picture and the soft-threshold formula are two views of the same fact.
+**Good and bad.**
 
-**Consequences you should mention.** L1 is not differentiable at zero, so plain gradient descent cannot land exactly on zero; solvers use coordinate descent, proximal gradient (ISTA/FISTA), or LARS. L1 handles correlated features badly — given two nearly identical predictors it picks one essentially arbitrarily and zeroes the other, and which one it picks is unstable across resamples, whereas L2 splits the weight between them. Elastic net, $\lambda_1\lVert w\rVert_1 + \lambda_2 \lVert w \rVert_2^2$, exists specifically to keep sparsity while making correlated groups enter or leave together.
+- **L1 — good:** genuine feature selection and interpretable sparse models. **Bad:** not differentiable at zero, so plain gradient descent cannot land exactly on zero — solvers use coordinate descent, proximal gradient (ISTA/FISTA), or LARS; and it handles correlated features badly, picking one of two near-identical predictors essentially arbitrarily, unstably across resamples.
+- **L2 — good:** smooth, closed-form, stable under correlated features, the default. **Bad:** never produces exact zeros, so it does no selection.
+- **Elastic net**, $\lambda_1\lVert w\rVert_1 + \lambda_2 \lVert w \rVert_2^2$, exists specifically to keep sparsity while making correlated groups enter or leave together.
 
 **Follow-up:** *Should you regularise the intercept?* No. The intercept is not a feature weight; shrinking it biases predictions toward zero output rather than toward a simpler function, and it makes the fit depend on where you happened to centre the target. Standard implementations exclude it — and for the same reason you should standardise features before regularising, since otherwise the penalty is applied in units that depend on arbitrary measurement scales.
 
@@ -1029,38 +1107,35 @@ which says it plainly: subtract $\lambda$ from the magnitude, and if that goes n
 
 ### Q21: How does dropout work?
 
-**Answer:**
+> **In 30 seconds.** "During training you randomly zero activations with probability p and scale the survivors up by 1/(1-p), so the expected value into the next layer is unchanged; at inference you do nothing at all. It helps because no unit can depend on a specific other unit being present — you don't get fragile co-adapted feature groups. The old 'use 0.5' advice is out of date: transformers use about 0.1 and large-scale pretraining often uses none."
 
-**During Training:**
-1. Randomly set some activations to 0 (with probability p)
-2. Scale remaining activations by 1/(1-p)
-3. This prevents co-adaptation
+**The short version.**
 
-**During Inference:**
-- No dropout
-- Scale all activations by (1-p) to maintain expected value
+- **Training:** zero each activation with probability $p$; scale survivors by $1/(1-p)$. Prevents co-adaptation.
+- **Inference (inverted dropout, what frameworks implement):** a no-op.
+- **Classic formulation:** no scaling at training, multiply all activations by $(1-p)$ at test time. Equivalent in expectation.
+- **Why it works:** prevents co-adaptation; forces robustness; acts as an ensemble of $2^n$ subnetworks.
+- **Rates (classic advice):** input 0.1-0.2, hidden 0.5, output usually none. **Modern practice:** ~0.1 in transformers, often 0 in LLM pretraining.
 
-**Why it works:**
-- Prevents neurons from co-adapting
-- Forces model to be robust
-- Acts as ensemble of sub-networks
-
-**Common rates:**
-- Input layer: 0.1-0.2
-- Hidden layers: 0.5
-- Output layer: Usually no dropout
-
-**The scaling detail, made precise.**
-
-There are two equivalent implementations and it is worth knowing which one frameworks use, because interviewers ask. *Classic dropout* zeroes activations with probability $p$ at training time and does nothing else, then at test time multiplies every activation by $(1-p)$ to match the expected value. *Inverted dropout* — what PyTorch, TensorFlow and everyone else actually implements — does the scaling at training time instead: zero with probability $p$, then divide the survivors by $(1-p)$. Test time is then a pure no-op, which is what you want, because inference should not need to know the training configuration.
-
-The arithmetic: if a unit has value $a$ and survives with probability $1-p$, then $\mathbb{E}[\text{output}] = (1-p) \cdot \frac{a}{1-p} + p \cdot 0 = a$. The expectation is preserved exactly, so the layers downstream see inputs with unchanged mean magnitude and do not have to be retuned between training and inference. (The description in the answer above states the classic form; note that in real frameworks the $1/(1-p)$ scaling happens during training and inference does nothing.)
+**Why it works.**
 
 **Why it regularises, in three compatible framings.** *Co-adaptation:* a unit cannot rely on a specific other unit being present, because that other unit vanishes half the time, so features must be individually useful rather than useful only in a fixed committee. *Implicit ensembling:* a network with $n$ droppable units defines $2^n$ subnetworks sharing weights; training samples one per minibatch and inference with the scaled weights approximates averaging over all of them, which is a very cheap ensemble. *Noise injection:* dropout is multiplicative Bernoulli noise on activations, and it can be shown that for a linear model with squared loss it reduces exactly to an L2 penalty scaled by each feature's magnitude — an adaptive weight decay.
 
-**Where the "0.5 for hidden layers" advice no longer holds.** That rate comes from 2012-era fully connected vision networks. Modern practice is much lower and much more targeted: convolutional layers use little or no dropout (spatial correlation means zeroing individual pixels removes little information — use DropBlock or SpatialDropout if you want it), and transformers use around 0.1 on attention weights and on the residual branches. Large-scale language model *pretraining* frequently uses dropout of 0 entirely, because with a corpus far larger than the parameter count the model is not in the overfitting regime and dropout just slows convergence; it comes back for fine-tuning on small datasets.
+**The two implementations, and which one you are using.** *Classic dropout* zeroes activations with probability $p$ at training time and does nothing else, then at test time multiplies every activation by $(1-p)$ to match the expected value. *Inverted dropout* — what PyTorch, TensorFlow and everyone else actually implements — does the scaling at training time instead: zero with probability $p$, then divide the survivors by $(1-p)$. Test time is then a pure no-op, which is what you want, because inference should not need to know the training configuration. (The bullet list above states the classic form as well; note that in real frameworks the $1/(1-p)$ scaling happens during training and inference does nothing.)
 
-**A real interaction to know.** Dropout and batch normalisation conflict. Dropout changes the variance of activations between training and inference, while batch norm has stored running statistics estimated under the training-time (noisy) distribution, so the two disagree at test time and accuracy drops. The usual resolutions are to put dropout only after all batch-norm layers, or to drop one of the two — which is part of why modern architectures with layer norm and heavy data augmentation often use very little dropout.
+**The math, and what it buys you.**
+
+One line explains the mysterious $1/(1-p)$: if a unit has value $a$ and survives with probability $1-p$, then
+
+$$\mathbb{E}[\text{output}] = (1-p) \cdot \frac{a}{1-p} + p \cdot 0 = a$$
+
+The expectation is preserved exactly, so the layers downstream see inputs with unchanged mean magnitude and do not have to be retuned between training and inference. That is the entire purpose of the factor.
+
+**Good and bad.**
+
+- **Good:** an extremely cheap ensemble; effective on small datasets and fully connected layers; no extra parameters.
+- **Bad — where the "0.5 for hidden layers" advice no longer holds.** That rate comes from 2012-era fully connected vision networks. Convolutional layers use little or no dropout (spatial correlation means zeroing individual pixels removes little information — use DropBlock or SpatialDropout if you want it), and transformers use around 0.1 on attention weights and on the residual branches. Large-scale language model *pretraining* frequently uses dropout of 0 entirely, because with a corpus far larger than the parameter count the model is not in the overfitting regime and dropout just slows convergence; it comes back for fine-tuning on small datasets.
+- **Bad — a real interaction to know.** Dropout and batch normalisation conflict. Dropout changes the variance of activations between training and inference, while batch norm has stored running statistics estimated under the training-time (noisy) distribution, so the two disagree at test time and accuracy drops. The usual resolutions are to put dropout only after all batch-norm layers, or to drop one of the two — which is part of why modern architectures with layer norm and heavy data augmentation often use very little dropout.
 
 **Follow-up:** *What is Monte Carlo dropout?* Leave dropout *on* at inference and run the same input through several times, then look at the spread of the predictions. Gal and Ghahramani showed this approximates Bayesian inference in a deep Gaussian process, so the variance across runs is a usable uncertainty estimate. It is one of the cheapest ways to get calibrated uncertainty out of a network that was not designed for it — at the cost of several forward passes per prediction.
 
@@ -1074,42 +1149,40 @@ The arithmetic: if a unit has value $a$ and survives with probability $1-p$, the
 
 ### Q22: Explain bias-variance tradeoff.
 
-**Answer:**
+> **In 30 seconds.** "Squared test error splits into bias squared, variance, and irreducible noise. Bias is how far the *average* model over all possible training sets is from the truth — the model class being too rigid. Variance is how much your particular fit moves when you resample the data. I care because it's a diagnosis: high training error means bias and more data won't help; low training error with a big test gap means variance, and data or regularisation will."
 
-**Bias:** Error from oversimplifying
-- High bias = Underfitting
-- Model too simple
+**The short version.**
 
-**Variance:** Error from sensitivity to training data
-- High variance = Overfitting
-- Model too complex
+| | High bias (underfitting) | High variance (overfitting) |
+|---|---|---|
+| **Cause** | Model too simple | Model too complex / too sensitive to the sample |
+| **Symptom** | High train error, high test error (similar) | Low train error, high test error (big gap) |
+| **Fix** | More capacity, better features, train longer | More data, regularisation, simpler model |
+| **Trade** | Simple model: high bias, low variance | Complex model: low bias, high variance |
 
-**Tradeoff:** Can't minimize both
-- Simple model: High bias, low variance
-- Complex model: Low bias, high variance
-- Goal: Find balance
+- **Irreducible error** is label noise; no model removes it, which is why 100% accuracy is usually not the target.
+- **Goal:** find the balance where the sum of the two controllable terms is minimised.
 
-**Diagnosis:**
-- High bias: High train error, high test error (similar)
-- High variance: Low train error, high test error (gap)
+**Why it works.**
 
-**Solutions:**
-- High bias: More complex model, better features
-- High variance: More data, regularization, simpler model
-
-**The decomposition the whole thing rests on.**
-
-For squared error, the expected test error at a point $x$ — expectation taken over random draws of the training set — decomposes exactly into three terms:
-
-$$\mathbb{E}\left[(y - \hat{f}(x))^2\right] = \underbrace{\left(\mathbb{E}[\hat{f}(x)] - f(x)\right)^2}_{\text{bias}^2} + \underbrace{\mathbb{E}\left[\left(\hat{f}(x) - \mathbb{E}[\hat{f}(x)]\right)^2\right]}_{\text{variance}} + \underbrace{\sigma^2}_{\text{irreducible}}$$
-
-Read the terms carefully, because the definitions matter. **Bias** is how far the *average* model — averaged over training sets you might have drawn — is from the truth; it is a property of the model class, not of any one fit. **Variance** is how much a particular fit bounces around that average when the training set changes. **Irreducible error** $\sigma^2$ is label noise; no model reduces it, and it is why 100% accuracy is usually not the target. The reason there is a tradeoff at all is that the two controllable terms respond in opposite directions to model flexibility: more capacity lets the average fit track the truth (bias down) but also lets each individual fit chase the noise in its particular sample (variance up).
+Read the decomposition's terms carefully, because the definitions matter. **Bias** is how far the *average* model — averaged over training sets you might have drawn — is from the truth; it is a property of the model class, not of any one fit. **Variance** is how much a particular fit bounces around that average when the training set changes. **Irreducible error** $\sigma^2$ is label noise. The reason there is a tradeoff at all is that the two controllable terms respond in opposite directions to model flexibility: more capacity lets the average fit track the truth (bias down) but also lets each individual fit chase the noise in its particular sample (variance up).
 
 **Making it concrete.** Fit polynomials to points from a sine curve plus noise. Degree 1: every training set gives roughly the same straight line, so variance is tiny, but no line is close to a sine, so bias is large. Degree 15: each training set gives a wildly different wiggly curve that passes through its own points exactly, so bias is near zero and variance is enormous. Degree 3-4 is where the sum is minimised.
 
 **How the standard fixes map onto the terms.** More training data reduces variance and does nothing to bias — which is why adding data does not fix an underfitting model. Regularisation *adds* bias deliberately to buy a larger reduction in variance. Bagging (random forests) averages many high-variance, low-bias trees, and because averaging $B$ roughly-independent estimators divides variance by up to $B$ while leaving bias unchanged, it attacks variance specifically; feature subsampling exists to decorrelate the trees so that division is closer to real. Boosting works the other way: it fits shallow, high-bias stumps sequentially, each correcting the previous residuals, so it reduces bias — which is why boosted models can overfit with too many rounds while random forests largely do not.
 
-**One honest caveat worth raising.** The classical U-shaped curve is not the whole story for modern overparameterised networks. Past the interpolation threshold — where the model has enough capacity to fit the training data exactly — test error can *decrease again* with further capacity, a phenomenon called double descent, observed in both model size and training time. So "more parameters means more variance" is a reliable rule for classical models and an unreliable one for large neural networks, where implicit regularisation from the optimiser changes the picture.
+**The math, and what it buys you.**
+
+The whole discussion rests on one exact identity. For squared error, the expected test error at a point $x$ — expectation taken over random draws of the training set — decomposes into three terms:
+
+$$\mathbb{E}\left[(y - \hat{f}(x))^2\right] = \underbrace{\left(\mathbb{E}[\hat{f}(x)] - f(x)\right)^2}_{\text{bias}^2} + \underbrace{\mathbb{E}\left[\left(\hat{f}(x) - \mathbb{E}[\hat{f}(x)]\right)^2\right]}_{\text{variance}} + \underbrace{\sigma^2}_{\text{irreducible}}$$
+
+What it buys you is the diagnosis: because the terms are separate and additive, each of your training numbers points at exactly one of them.
+
+**Good and bad.**
+
+- **The framework is good for:** deciding what to do next from two error numbers, and for explaining why bagging and boosting are different tools.
+- **One honest caveat worth raising.** The classical U-shaped curve is not the whole story for modern overparameterised networks. Past the interpolation threshold — where the model has enough capacity to fit the training data exactly — test error can *decrease again* with further capacity, a phenomenon called double descent, observed in both model size and training time. So "more parameters means more variance" is a reliable rule for classical models and an unreliable one for large neural networks, where implicit regularisation from the optimiser changes the picture.
 
 **Follow-up:** *You have 8% training error and 10% test error, and human performance is 1%. What do you do?* The gap is only 2 points, so variance is not the problem; the 7-point gap between human performance and training error is bias. Adding data or regularising will not help. Increase capacity, train longer, engineer better features, or check whether the input actually contains the information needed. The diagnostic move is always to compare training error against an irreducible-error estimate first, and only then look at the train-test gap.
 
@@ -1123,32 +1196,27 @@ Read the terms carefully, because the definitions matter. **Bias** is how far th
 
 ### Q23: Explain entropy. What does it measure?
 
-**Answer:**
+> **In 30 seconds.** "Entropy is the expected surprise of a distribution — surprise being minus log p, which is the only form that makes independent events add. The concrete meaning is compression: entropy in bits is the smallest average number of bits per symbol you can encode the source in. A fair coin is one bit and you can't do better; a ninety-ten coin is under half a bit because you can exploit the skew."
 
-**Entropy** measures uncertainty/randomness in a probability distribution.
+**The short version.**
 
-**Formula:** H(X) = -Σ p(x) * log₂(p(x))
+- **Formula:** $H(X) = -\sum p(x)\log_2 p(x)$ — the expected surprisal.
+- **High entropy** = high uncertainty (uniform); **low entropy** = concentrated; **zero** = deterministic.
+- **Fair coin:** $H = 1$ bit. **Biased 90/10 coin:** $H \approx 0.47$ bits. **Deterministic:** $H = 0$.
+- **Bounds:** $0 \le H(X) \le \log n$ for $n$ outcomes, using the convention $0\log 0 = 0$.
+- **Uses:** decision trees (information gain), compression (a lower bound on code length), feature selection.
 
-**Interpretation:**
-- High entropy: High uncertainty (uniform distribution)
-- Low entropy: Low uncertainty (concentrated distribution)
-- Zero entropy: Deterministic (one outcome has prob=1)
-
-**Example:**
-- Fair coin: H = 1 bit (maximum uncertainty)
-- Biased coin (90/10): H ≈ 0.47 bits (less uncertainty)
-- Deterministic: H = 0 bits (no uncertainty)
-
-**Use Cases:**
-- Decision trees: Information gain
-- Compression: Lower bound on code length
-- Feature selection: High entropy = more informative
+**Why it works.**
 
 **Where the formula comes from.** Entropy is not an arbitrary functional; it is forced by requiring that a measure of information be additive over independent events. The information content, or *surprisal*, of an outcome with probability $p$ is $-\log p$: it is zero for a certain event, grows as the event gets rarer, and — critically — the surprisal of two independent events is $-\log(p_1 p_2) = -\log p_1 - \log p_2$, so it adds. Only the logarithm turns multiplication of probabilities into addition. Entropy is then just the *expected* surprisal, $H(X) = \mathbb{E}[-\log p(X)]$, which is what the formula says.
 
-**The operational meaning is the one to give in an interview.** Shannon's source coding theorem says $H(X)$ in bits is the minimum average number of bits per symbol needed to encode messages from $X$ — no scheme does better, and schemes exist that get arbitrarily close. So entropy is not a metaphor for uncertainty; it is a compression bound. That is also the crispest way to explain the fair-coin answer: one bit per flip, and you cannot do better. For the 90/10 coin, $H = -0.9\log_2 0.9 - 0.1\log_2 0.1 = 0.137 + 0.332 = 0.469$ bits — meaning a long sequence of such flips can be compressed to under half a bit per flip, which run-length encoding does in practice.
+**The operational meaning is the one to give in an interview.** Shannon's source coding theorem says $H(X)$ in bits is the minimum average number of bits per symbol needed to encode messages from $X$ — no scheme does better, and schemes exist that get arbitrarily close. So entropy is not a metaphor for uncertainty; it is a compression bound.
 
-**Bounds and units.** For $n$ outcomes, $0 \le H(X) \le \log n$, with the maximum at the uniform distribution and the minimum when one outcome is certain (using the convention $0\log 0 = 0$). The base of the logarithm is only a unit choice: base 2 gives bits, base $e$ gives nats. Machine learning code uses nats because $\log$ is the natural log; multiply by $\log_2 e \approx 1.443$ to convert.
+**Units.** The base of the logarithm is only a unit choice: base 2 gives bits, base $e$ gives nats. Machine learning code uses nats because $\log$ is the natural log; multiply by $\log_2 e \approx 1.443$ to convert.
+
+**The math, and what it buys you.**
+
+Running the biased coin gives the compression claim a number: $H = -0.9\log_2 0.9 - 0.1\log_2 0.1 = 0.137 + 0.332 = 0.469$ bits — meaning a long sequence of such flips can be compressed to under half a bit per flip, which run-length encoding does in practice. The fair coin gives exactly 1 bit, and no scheme beats it.
 
 **The connection to language models.** Perplexity, the standard LM metric, is exactly $2^{H}$ (or $e^{H}$ in nats) where $H$ is the cross-entropy per token. It is interpretable as an *effective vocabulary size*: a perplexity of 20 means the model is, on average, as uncertain as if it were choosing uniformly among 20 tokens. This is why perplexity 10 versus 20 is a much bigger improvement than the numbers suggest — it is one full bit of information per token.
 
@@ -1162,22 +1230,20 @@ Read the terms carefully, because the definitions matter. **Bias** is how far th
 
 ### Q24: What is cross-entropy? Why is it used as a loss function?
 
-**Answer:**
+> **In 30 seconds.** "Cross-entropy is the expected number of bits you pay to encode data from P using a code built for Q, and it exceeds the true entropy by exactly the KL divergence — so minimising it is minimising KL from the data to your model. It's also just the negative log-likelihood, and it's a proper scoring rule, meaning you minimise it by reporting honest probabilities rather than by being overconfident."
 
-**Cross-Entropy:** H(P, Q) = -Σ p(x) * log(q(x))
+**The short version.**
 
-**Why good loss function:**
-1. **Penalizes confident wrong predictions**: -log(0.1) = 3.32 (large penalty)
-2. **Encourages calibrated probabilities**: Mathematically well-founded
-3. **Always ≥ entropy**: H(P, Q) ≥ H(P), equal when Q = P
-4. **Smooth gradients**: Well-behaved optimization
+- **Formula:** $H(P, Q) = -\sum p(x)\log q(x)$.
+- **Penalises confident wrong predictions:** $-\log(0.1) = 3.32$ — a large penalty, unbounded as $q \to 0$.
+- **Encourages calibrated probabilities:** it is a strictly proper scoring rule.
+- **Always $\ge$ entropy:** $H(P,Q) \ge H(P)$, with equality only when $Q = P$. The gap *is* the KL divergence.
+- **Smooth gradients**, and the same object as negative log-likelihood.
+- **Uses:** classification (the default loss), language modelling, any probabilistic prediction.
 
-**Use Cases:**
-- Classification (most common loss)
-- Language modeling
-- Any probabilistic prediction
+**Why it works.**
 
-**Three derivations that arrive at the same loss.**
+Three derivations arrive at the same loss, which is the real reason to trust it.
 
 *From coding.* $H(P, Q) = -\sum_x p(x)\log q(x)$ is the average number of bits used if you build an optimal code for $Q$ but the data actually comes from $P$. It exceeds the true entropy $H(P)$ by exactly $D_{KL}(P \parallel Q)$ — the wasted bits from being wrong. Since $H(P)$ is fixed by the data, **minimising cross-entropy is identical to minimising KL divergence from the true distribution to the model.** That is the cleanest statement of what training a classifier does.
 
@@ -1185,7 +1251,14 @@ Read the terms carefully, because the definitions matter. **Bias** is how far th
 
 *From calibration.* Cross-entropy is a *strictly proper scoring rule*, meaning its expected value is uniquely minimised when the model reports its true beliefs. If the real probability of the positive class is 0.7 and you report 0.9 to look decisive, your expected loss goes up. Accuracy is not proper — reporting 0.99 and reporting 0.51 score identically — which is precisely why you train on cross-entropy and only report accuracy.
 
+**The math, and what it buys you.**
+
 **Worked numbers on the "penalises confident wrong predictions" claim.** With the true label being class 1: predicting $q = 0.9$ costs $-\log 0.9 = 0.105$ nats; $q = 0.5$ costs $0.693$; $q = 0.1$ costs $2.303$; $q = 0.01$ costs $4.605$. The loss grows without bound as $q \to 0$, so a single confidently wrong prediction can dominate a whole batch. That unboundedness is a feature during training — it produces the large gradient that fixes the mistake — but it is also why numerically you must never compute $\log(\text{softmax}(z))$ separately (a rounded-to-zero probability gives $-\infty$) and instead use the fused `log_softmax` / `cross_entropy` op, which subtracts the max logit before exponentiating.
+
+**Good and bad.**
+
+- **Good:** identical to maximum likelihood, so it inherits its guarantees; proper, so it produces calibrated probabilities; and its gradient scales with how wrong you are.
+- **Bad:** unbounded, so a single mislabelled example can dominate a batch; numerically dangerous unless fused with the softmax; and dominated by the majority class under imbalance.
 
 **Follow-up:** *What if the classes are heavily imbalanced?* Plain cross-entropy is dominated by the majority class simply because there are more of its terms. Class weighting multiplies each term by $w_c$ (often inversely proportional to class frequency) to rebalance. Focal loss goes further and multiplies by $(1 - q_y)^\gamma$, which shrinks the contribution of already-well-classified examples so training focuses on the hard ones — it was designed for dense object detection where the background class outnumbers objects by a thousand to one. Both keep the log-likelihood structure and just reweight it.
 
@@ -1197,27 +1270,23 @@ Read the terms carefully, because the definitions matter. **Bias** is how far th
 
 ### Q25: Explain KL divergence. Why is it asymmetric?
 
-**Answer:**
+> **In 30 seconds.** "KL is an expectation under its *first* argument, and that single fact is the whole reason it's asymmetric. Forward KL only looks where P has mass and blows up if your model puts near-zero probability there — so it's mass-covering, and that's what maximum likelihood minimises. Reverse KL punishes putting mass where P has none but happily ignores a whole mode — mode-seeking, which is what variational inference uses, and why VI underestimates posterior variance."
 
-**KL Divergence:** KL(P || Q) = Σ p(x) * log(p(x) / q(x))
+**The short version.**
 
-**Why asymmetric:**
-- KL(P || Q): "How surprised when we expect Q but get P?"
-- KL(Q || P): "How surprised when we expect P but get Q?"
-- Different interpretations → different values
+| | Forward KL $D_{KL}(P \parallel Q)$ | Reverse KL $D_{KL}(Q \parallel P)$ |
+|---|---|---|
+| **Expectation taken under** | $P$ (the truth) | $Q$ (the model) |
+| **Behaviour** | Mass-covering / zero-avoiding | Mode-seeking / zero-forcing |
+| **Fitting one Gaussian to a bimodal P** | Stretches to span both modes, mass in the empty valley | Collapses onto one mode, abandons the other |
+| **Where you meet it** | Maximum likelihood | VAE ELBO, variational inference, RLHF penalty |
 
 **Properties:**
-- KL(P || Q) ≥ 0
-- KL(P || Q) = 0 if and only if P = Q
-- Not a metric (doesn't satisfy triangle inequality)
+- $KL(P \parallel Q) \ge 0$, and $= 0$ if and only if $P = Q$.
+- Not a metric — it fails the triangle inequality, and it is not symmetric.
+- **Uses:** RLHF KL penalty, VAEs (posterior vs prior), model comparison, regularisation.
 
-**Use Cases:**
-- RLHF: KL penalty
-- VAEs: KL between posterior and prior
-- Model comparison
-- Regularization
-
-**Where the asymmetry actually bites: mode-seeking versus mass-covering.**
+**Why it works.**
 
 The formula $D_{KL}(P \parallel Q) = \sum_x p(x)\log\frac{p(x)}{q(x)}$ is an expectation **under $P$**. That single fact drives everything. Only the regions where $p(x)$ is large contribute; regions where $p(x) = 0$ contribute nothing no matter what $Q$ does there. And if $q(x) \to 0$ where $p(x) > 0$, the log blows up and the divergence goes to infinity. In one sentence: $D_{KL}(P \parallel Q)$ punishes $Q$ for *failing to cover* $P$, and is indifferent to $Q$ putting mass where $P$ has none.
 
@@ -1226,7 +1295,9 @@ Now fit a single Gaussian $Q$ to a bimodal $P$ and the two directions give visib
 - **Forward KL, $D_{KL}(P \parallel Q)$ — mass-covering / zero-avoiding.** $Q$ must be nonzero everywhere $P$ is, or it takes an infinite penalty. So the fitted Gaussian stretches wide to span *both* modes, placing most of its mass in the empty valley between them. This is the direction minimised by maximum likelihood, which is why a maximum-likelihood language model will assign some probability to almost everything.
 - **Reverse KL, $D_{KL}(Q \parallel P)$ — mode-seeking / zero-forcing.** Now the expectation is under $Q$, so $Q$ is punished for putting mass where $P$ is small, but not for ignoring a mode entirely. The fitted Gaussian collapses onto *one* mode and abandons the other. This is the direction in the VAE's ELBO and in variational inference generally, and it is the standard explanation for posterior-variance underestimation in VI and for mode collapse in some distillation setups.
 
-**A numeric example.** Let $P = [0.5, 0.5, 0]$ and $Q = [0.9, 0.05, 0.05]$ over three outcomes. Forward: $0.5\log(0.5/0.9) + 0.5\log(0.5/0.05) + 0 = -0.294 + 1.151 = 0.857$ nats. Reverse: $0.9\log(0.9/0.5) + 0.05\log(0.05/0.5) + 0.05\log(0.05/0)= \infty$, because $Q$ puts mass on an outcome $P$ rules out. Same pair of distributions, radically different numbers — which is also a concrete demonstration that KL is not a distance and cannot be used where symmetry is assumed.
+**The math, and what it buys you.**
+
+**A numeric example that makes the asymmetry undeniable.** Let $P = [0.5, 0.5, 0]$ and $Q = [0.9, 0.05, 0.05]$ over three outcomes. Forward: $0.5\log(0.5/0.9) + 0.5\log(0.5/0.05) + 0 = -0.294 + 1.151 = 0.857$ nats. Reverse: $0.9\log(0.9/0.5) + 0.05\log(0.05/0.5) + 0.05\log(0.05/0)= \infty$, because $Q$ puts mass on an outcome $P$ rules out. Same pair of distributions, radically different numbers — which is also a concrete demonstration that KL is not a distance and cannot be used where symmetry is assumed.
 
 **Why it is non-negative.** By Jensen's inequality applied to the convex function $-\log$: $-\sum p \log(q/p) \ge -\log\sum p \cdot (q/p) = -\log \sum q = -\log 1 = 0$, with equality only when $q = p$ everywhere. This result is Gibbs' inequality, and it is what guarantees cross-entropy is always at least entropy.
 
@@ -1240,34 +1311,33 @@ Now fit a single Gaussian $Q$ to a bimodal $P$ and the two directions give visib
 
 ### Q26: What is mutual information? How is it used in feature selection?
 
-**Answer:**
+> **In 30 seconds.** "Mutual information is how much knowing one variable reduces your uncertainty about the other — equivalently, the KL divergence between the true joint and the product of the marginals, so it literally measures distance from independence. People reach for it over correlation because correlation only sees linear structure: if Y is X squared with X centred at zero, correlation is exactly zero and MI is maximal."
 
-**Mutual Information:** I(X; Y) = H(X) + H(Y) - H(X, Y)
+**The short version.**
 
-**Interpretation:**
-- I(X; Y) = 0: X and Y independent
-- I(X; Y) > 0: X and Y dependent
-- I(X; Y) = H(X): X completely determines Y
+- **Formula:** $I(X; Y) = H(X) + H(Y) - H(X, Y)$.
+- $I = 0$ means independent; $I > 0$ means dependent; $I(X;Y) = H(X)$ means $Y$ determines $X$.
+- **Feature selection:** compute $I(X_i; Y)$ per feature, keep the high ones.
+- **Why:** captures non-linear relationships (unlike correlation), removes irrelevant features ($I \approx 0$), has an information-theoretic foundation.
+- **Two failure modes:** the plug-in estimator is biased upward with many bins, and ranking features one at a time misses interactions.
 
-**Feature Selection:**
-1. Compute I(X_i; Y) for each feature
-2. Select features with high MI
-3. High MI = feature is informative about target
-
-**Why it works:**
-- Captures non-linear relationships (unlike correlation)
-- Removes irrelevant features (MI ≈ 0)
-- Information-theoretic foundation
+**Why it works.**
 
 **Three equivalent readings of the same quantity.** $I(X; Y) = H(X) - H(X \mid Y) = H(Y) - H(Y \mid X) = H(X) + H(Y) - H(X, Y)$. The first says "how much does knowing $Y$ reduce my uncertainty about $X$"; the second is the same statement with the roles swapped, which is why MI is symmetric; the third is the inclusion-exclusion form given above. A fourth reading is the most useful theoretically: $I(X; Y) = D_{KL}\big(P(X, Y) \parallel P(X)P(Y)\big)$ — mutual information is the KL divergence between the true joint and the joint you would have if they were independent. That immediately gives you $I \ge 0$ (KL is non-negative) and $I = 0$ exactly under independence.
 
 **One correction to the note above.** The line "$I(X; Y) = H(X)$: X completely determines Y" has it backwards. $I(X;Y) = H(X)$ means $H(X \mid Y) = 0$, i.e. knowing $Y$ leaves no uncertainty about $X$ — so $Y$ determines $X$. In general $I(X;Y) \le \min(H(X), H(Y))$, and it equals $H(X)$ precisely when $X$ is a deterministic function of $Y$.
 
-**Worked example against correlation.** Let $X$ be uniform on $[-1, 1]$ and $Y = X^2$. Pearson correlation is exactly 0 — the relationship is symmetric about zero, so the linear term cancels — yet $Y$ is a deterministic function of $X$, so $I(X; Y) = H(Y) > 0$, in fact maximal for that pair. A correlation-based filter discards this feature; a mutual-information filter keeps it. This is the single best example to have ready, because it makes "captures non-linear relationships" concrete instead of asserted.
+**The math, and what it buys you.**
+
+**Worked example against correlation — the one to have ready.** Let $X$ be uniform on $[-1, 1]$ and $Y = X^2$. Pearson correlation is exactly 0 — the relationship is symmetric about zero, so the linear term cancels — yet $Y$ is a deterministic function of $X$, so $I(X; Y) = H(Y) > 0$, in fact maximal for that pair. A correlation-based filter discards this feature; a mutual-information filter keeps it. This makes "captures non-linear relationships" concrete instead of asserted.
 
 **How it is actually estimated, and why that matters.** For discrete variables you count joint and marginal frequencies and plug in — but the plug-in estimator is *biased upward*, and the bias grows with the number of bins relative to the sample size. In the limit, a feature with as many distinct values as there are samples gets maximal apparent MI while carrying no signal at all, which is the same high-cardinality trap that afflicts decision-tree information gain. For continuous variables, binning is crude and bin-width-sensitive; the standard alternative is the Kraskov (KSG) $k$-nearest-neighbour estimator, which is what `sklearn.feature_selection.mutual_info_regression` uses. Normalised variants — dividing by $\min(H(X), H(Y))$ or by $\sqrt{H(X)H(Y)}$, or the adjusted mutual information — put values on a comparable $[0,1]$ scale and partially correct the cardinality bias.
 
-**The real limitation of MI feature selection.** Ranking features by individual $I(X_i; Y)$ is a *univariate filter*: it evaluates each feature in isolation. That misses both directions of interaction. It keeps redundant features — ten copies of the same predictor all score high and all get selected. And it discards features that are only useful jointly: in an XOR relationship, $I(X_1; Y) = I(X_2; Y) = 0$ while $I(X_1, X_2; Y)$ is maximal, so a univariate filter throws away both of the only useful features. The fix is a criterion that accounts for the already-selected set, such as mMRM (maximum relevance, minimum redundancy), which selects to maximise $I(X_i; Y) - \frac{1}{|S|}\sum_{j \in S} I(X_i; X_j)$.
+**Good and bad.**
+
+- **Good:** model-agnostic, cheap as a first-pass filter over thousands of candidate features, sensitive to any dependence rather than only linear ones, and invariant to monotone reparameterisation.
+- **Bad — the real limitation of MI feature selection.** Ranking features by individual $I(X_i; Y)$ is a *univariate filter*: it evaluates each feature in isolation. That misses both directions of interaction. It keeps redundant features — ten copies of the same predictor all score high and all get selected. And it discards features that are only useful jointly: in an XOR relationship, $I(X_1; Y) = I(X_2; Y) = 0$ while $I(X_1, X_2; Y)$ is maximal, so a univariate filter throws away both of the only useful features. The fix is a criterion that accounts for the already-selected set, such as mMRM (maximum relevance, minimum redundancy), which selects to maximise $I(X_i; Y) - \frac{1}{|S|}\sum_{j \in S} I(X_i; X_j)$.
+- **Bad:** upward estimation bias with high-cardinality features.
 
 **Follow-up:** *When would you use MI over a model-based importance measure?* When you want something model-agnostic and cheap as a first-pass filter over thousands of candidate features, or when you need a dependence measure that is invariant to monotone reparameterisation of the features. When you can afford it, wrapper or embedded methods — permutation importance, L1 paths, tree-based importances — usually select better because they account for feature interactions and for the specific model you intend to deploy.
 
@@ -1279,27 +1349,33 @@ Now fit a single Gaussian $Q$ to a bimodal $P$ and the two directions give visib
 
 ### Q27: Compare Gini impurity and entropy. When would you use each?
 
-**Answer:**
+> **In 30 seconds.** "They're measuring the same thing and they're almost the same curve — Taylor-expand entropy around a half and you get the Gini form back. Both are zero on a pure node, maximal when the classes are balanced, and they pick the same split the overwhelming majority of the time. If someone's tuning Gini versus entropy they're on the wrong knob: depth, minimum leaf size and high-cardinality bias matter far more."
 
-**Gini:** Gini = 1 - Σ p_i² (faster, no log)
-**Entropy:** H = -Σ p_i * log(p_i) (more theoretical)
+**The short version.**
 
-**Comparison:**
-- **Gini**: Faster computation, used in CART
-- **Entropy**: More theoretical, used in ID3/C4.5
-- **In practice**: Both work similarly, results usually very similar
+| | Gini impurity | Entropy |
+|---|---|---|
+| **Formula** | $1 - \sum p_i^2$ | $-\sum p_i \log p_i$ |
+| **Binary form** | $2p(1-p)$, peak 0.5 at $p=0.5$ | $-p\log_2 p - (1-p)\log_2(1-p)$, peak 1.0 |
+| **Algorithm** | CART | ID3 / C4.5 |
+| **Cost** | Faster — no logarithm | Slightly slower; irrelevant on modern hardware |
+| **Behaviour near purity** | Flatter; mild preference for one large mostly-pure child | Steeper; slightly keener to isolate a small pure subgroup |
+| **In practice** | Nearly identical results | Nearly identical results |
 
-**When to use:**
-- **Gini**: When speed matters, CART algorithm
-- **Entropy**: When you need information-theoretic interpretation
+**Why it works.**
 
-**Why they behave alike — they are the same curve to first order.** Both are concave functions of the class proportions, both are zero for a pure node and maximal at the uniform distribution, and both reward splits that produce purer children. For binary classification with positive-class fraction $p$: Gini is $2p(1-p)$, entropy is $-p\log_2 p - (1-p)\log_2(1-p)$. At $p = 0.5$ Gini peaks at 0.5 and entropy at 1.0; halve the entropy and the two curves agree to within about 0.03 everywhere on $[0,1]$. In fact the first two terms of the Taylor expansion of entropy about $p = 0.5$ give exactly the Gini form, which is the formal reason "results are usually very similar" — they are not similar by coincidence.
-
-**A worked comparison.** A node with 80 positives and 20 negatives has Gini $= 1 - (0.8^2 + 0.2^2) = 0.32$ and entropy $= 0.722$ bits. Split it into a pure child of 60 positives and an impure child of 20 positives / 20 negatives. Weighted Gini afterwards is $0.6 \times 0 + 0.4 \times 0.5 = 0.20$, a reduction of 0.12. Weighted entropy is $0.6 \times 0 + 0.4 \times 1.0 = 0.40$, a reduction of 0.322 bits. Different units, same ranking — and that is the general pattern: published comparisons find the two criteria disagree on the chosen split in only a small minority of cases, and the resulting trees differ in accuracy by amounts well inside cross-validation noise.
+**Why they behave alike — they are the same curve to first order.** Both are concave functions of the class proportions, both are zero for a pure node and maximal at the uniform distribution, and both reward splits that produce purer children. At $p = 0.5$ Gini peaks at 0.5 and entropy at 1.0; halve the entropy and the two curves agree to within about 0.03 everywhere on $[0,1]$. In fact the first two terms of the Taylor expansion of entropy about $p = 0.5$ give exactly the Gini form, which is the formal reason "results are usually very similar" — they are not similar by coincidence.
 
 **The one real difference.** Entropy's $-\log p$ term goes to infinity as $p \to 0$, so entropy is steeper near the pure ends of the range, which makes it slightly more willing to isolate a small pure subgroup. Gini, being quadratic, is flatter there and has a mild preference for splits that produce one large, mostly-pure child — it can be shown to favour balanced, high-purity partitions. In practice this is a second-order effect. The speed argument for Gini (no logarithm) was material in the 1980s and is largely irrelevant now that logs are a single instruction and split search is dominated by sorting.
 
-**What matters far more.** Neither criterion addresses the actual failure mode of impurity-based splitting: bias toward high-cardinality features. A feature with many distinct values can carve out pure children by memorising, so it wins on both Gini and entropy while generalising not at all. C4.5's gain ratio normalises information gain by the entropy of the split itself; CART restricts to binary splits, which limits the damage. If you are choosing between Gini and entropy you are tuning a knob that barely moves; if you are ignoring cardinality bias, tree depth, minimum leaf size, and the number of trees, you are ignoring the knobs that do.
+**The math, and what it buys you.**
+
+**A worked comparison, showing the two criteria agree.** A node with 80 positives and 20 negatives has Gini $= 1 - (0.8^2 + 0.2^2) = 0.32$ and entropy $= 0.722$ bits. Split it into a pure child of 60 positives and an impure child of 20 positives / 20 negatives. Weighted Gini afterwards is $0.6 \times 0 + 0.4 \times 0.5 = 0.20$, a reduction of 0.12. Weighted entropy is $0.6 \times 0 + 0.4 \times 1.0 = 0.40$, a reduction of 0.322 bits. Different units, same ranking — and that is the general pattern: published comparisons find the two criteria disagree on the chosen split in only a small minority of cases, and the resulting trees differ in accuracy by amounts well inside cross-validation noise.
+
+**Good and bad.**
+
+- **Gini — good:** cheap, the CART default, mildly favours balanced high-purity partitions. **Entropy — good:** an information-theoretic reading (information gain), slightly better at peeling off small pure groups.
+- **Bad, for both — what matters far more.** Neither criterion addresses the actual failure mode of impurity-based splitting: bias toward high-cardinality features. A feature with many distinct values can carve out pure children by memorising, so it wins on both Gini and entropy while generalising not at all. C4.5's gain ratio normalises information gain by the entropy of the split itself; CART restricts to binary splits, which limits the damage. If you are choosing between Gini and entropy you are tuning a knob that barely moves; if you are ignoring cardinality bias, tree depth, minimum leaf size, and the number of trees, you are ignoring the knobs that do.
 
 **Follow-up:** *What about regression trees?* Impurity is replaced by variance (equivalently, mean squared error within the node): score a split by the weighted reduction in variance of the target. Mean absolute error is the robust alternative when outliers matter, at the cost of being slower to compute since the optimal constant becomes the median rather than the mean. Gradient boosting generalises this further by fitting each tree to the gradient of an arbitrary differentiable loss, so the splitting criterion is derived from the loss rather than fixed.
 
@@ -1311,29 +1387,37 @@ Now fit a single Gaussian $Q$ to a bimodal $P$ and the two directions give visib
 
 ### Q28: What is Jensen-Shannon divergence? How does it differ from KL?
 
-**Answer:**
+> **In 30 seconds.** "JS is the symmetrised KL: build the midpoint mixture of the two distributions and average the KL from each one to that midpoint. The mixture has mass wherever either distribution does, so you never divide by zero and the value is capped at log 2 — where KL between disjoint distributions is just infinity. The catch is that same cap: if two distributions barely overlap, JS pins at its maximum and the gradient goes flat, which is the standard story for why GANs were hard to train."
 
-**JS Divergence:** JS(P || Q) = 0.5 * KL(P || M) + 0.5 * KL(Q || M)
-Where M = 0.5 * (P + Q)
+**The short version.**
 
-**Key Differences:**
-- **Symmetric**: JS(P || Q) = JS(Q || P) (KL is asymmetric)
-- **Bounded**: JS ∈ [0, 1] (KL can be infinite)
-- **Metric**: Satisfies triangle inequality (KL doesn't)
-- **Stable**: More stable when distributions very different
+| | KL divergence | JS divergence |
+|---|---|---|
+| **Symmetric?** | No | Yes |
+| **Bounded?** | No — can be infinite | Yes — capped at $\log 2$ (1 bit) |
+| **Metric?** | No | Not itself; its *square root* is |
+| **Disjoint supports** | Infinite, no gradient | Pinned at maximum, gradient ≈ 0 |
+| **Use for** | Maximum likelihood, VI, RLHF penalty — where direction is the point | Symmetric comparison: drift monitoring, clustering comparison, GANs |
 
-**Use Cases:**
-- GANs: Measure distance between distributions
-- Model comparison: When you need symmetric distance
-- When KL is unstable
+**Definition:** $JS(P \parallel Q) = 0.5\,KL(P \parallel M) + 0.5\,KL(Q \parallel M)$, where $M = 0.5(P + Q)$.
 
-**One precision fix on the claims above, then the mechanism.** JS divergence itself is bounded by $\log 2$ (that is 1 when measured in bits, $0.693$ in nats) and is *not* a metric — it fails the triangle inequality. What is a true metric is its square root, $\sqrt{JS}$, sometimes called the Jensen-Shannon distance; that is the quantity `scipy.spatial.distance.jensenshannon` returns. So the row above should read: bounded by $\log 2$, and metric after taking the square root.
+**One precision fix on the standard claims.** JS divergence itself is bounded by $\log 2$ (that is 1 when measured in bits, $0.693$ in nats) and is *not* a metric — it fails the triangle inequality. What is a true metric is its square root, $\sqrt{JS}$, sometimes called the Jensen-Shannon distance; that is the quantity `scipy.spatial.distance.jensenshannon` returns. So the table should read: bounded by $\log 2$, and metric after taking the square root.
+
+**Why it works.**
 
 **Why the mixture fixes KL's blowup.** The failure mode of KL is that $D_{KL}(P \parallel Q) = \infty$ whenever $Q$ assigns zero probability somewhere $P$ does not. JS compares each distribution not to the other but to the midpoint $M = \tfrac{1}{2}(P + Q)$, and $M$ is nonzero wherever *either* is nonzero. So the ratio $p/m$ can never exceed 2, the log never exceeds $\log 2$, and the whole quantity stays finite even for completely disjoint supports. Take the extreme case: $P$ and $Q$ with no overlap at all. Then wherever $p > 0$ we have $m = p/2$, so $D_{KL}(P \parallel M) = \sum p \log 2 = \log 2$, and likewise for $Q$, giving $JS = \log 2$ — the maximum. Contrast $D_{KL}(P \parallel Q) = \infty$ for the same pair.
 
-**A worked example.** With $P = [0.5, 0.5, 0]$ and $Q = [0, 0.5, 0.5]$: $M = [0.25, 0.5, 0.25]$. Then $D_{KL}(P \parallel M) = 0.5\log 2 + 0.5\log 1 = 0.347$ nats and by symmetry $D_{KL}(Q \parallel M) = 0.347$, so $JS = 0.347$ nats (0.5 bits) — a finite, interpretable number, where forward KL between $P$ and $Q$ is infinite in both directions.
+**The math, and what it buys you.**
+
+**A worked example.** With $P = [0.5, 0.5, 0]$ and $Q = [0, 0.5, 0.5]$: $M = [0.25, 0.5, 0.25]$. Then $D_{KL}(P \parallel M) = 0.5\log 2 + 0.5\log 1 = 0.347$ nats and by symmetry $D_{KL}(Q \parallel M) = 0.347$, so $JS = 0.347$ nats (0.5 bits) — a finite, interpretable number, where forward KL between $P$ and $Q$ is infinite in both directions. That finiteness is what JS buys you.
 
 **The GAN connection, and its punchline.** Goodfellow's original analysis showed that with an optimal discriminator, the generator's objective reduces to minimising $2\,JS(P_{\text{data}} \parallel P_{\text{gen}}) - \log 4$. That looks like good news until you notice the consequence of the boundedness argument above: early in training the generator's output distribution and the real data distribution lie on nearly disjoint low-dimensional manifolds, so JS sits pinned at its maximum $\log 2$ and its *gradient is essentially zero*. The generator gets no useful signal — this is the vanishing-gradient explanation for GAN training instability. Wasserstein GAN replaced JS with the earth-mover distance precisely because it varies smoothly with how far apart two disjoint distributions are, rather than saturating.
+
+**Good and bad.**
+
+- **JS — good:** symmetric, always finite, bounded, interpretable, and stable when the two distributions are very different in shape.
+- **JS — bad:** saturates on nearly disjoint supports, so it provides no gradient exactly when you most need one; and it throws away the directional information that makes KL useful.
+- **KL — good:** the direction *is* the modelling choice (mass-covering vs mode-seeking), and it has closed forms in the Gaussian cases you meet in practice. **Bad:** infinite on support mismatch.
 
 **Follow-up:** *When would you still prefer KL?* Whenever the asymmetry is the point. Maximum-likelihood training is forward KL and you want its mass-covering behaviour; variational inference is reverse KL and you want its mode-seeking behaviour; the RLHF penalty is one-directional because "how far has the policy moved from the reference" is inherently a directed question. Reach for JS when you need a symmetric, bounded comparison — measuring drift between two data distributions in monitoring, comparing two clusterings, or any case where you would otherwise be embarrassed to report a value of infinity.
 
@@ -1351,39 +1435,36 @@ See `33_information_theory/interview_qa.md` for even more detailed answers!
 
 ### Q29: Explain the difference between discriminative and generative models.
 
-**Answer:**
+> **In 30 seconds.** "A discriminative model learns the conditional — given the input, what's the label — so it only models what separates the classes. A generative model learns the joint, which means it has to describe what the data itself looks like. That's strictly more work, so with limited data the generative model's assumptions act as a prior and it wins; with plenty of data the discriminative model wins because it isn't spending capacity on the input distribution."
 
-**Discriminative Models:**
-- Learn P(Y|X) directly - the conditional probability of Y given X
-- Focus on finding the decision boundary between classes
-- Don't model the data distribution
-- Examples: Logistic Regression, SVM, Neural Networks, Decision Trees
-
-**Generative Models:**
-- Learn P(X, Y) = P(X|Y) * P(Y) - the joint probability distribution
-- Model how data is generated
-- Can generate new data samples
-- Examples: Naive Bayes, GMM, GANs, VAEs, Language Models
-
-**Key Differences:**
+**The short version.**
 
 | Aspect | Discriminative | Generative |
 |--------|---------------|------------|
-| **What they learn** | P(Y\|X) | P(X, Y) |
+| **What they learn** | P(Y\|X) | P(X, Y) = P(X\|Y)P(Y) |
 | **Can generate data** | No | Yes |
 | **Data efficiency** | More efficient | Less efficient |
 | **Complexity** | Simpler | More complex |
 | **Use case** | Prediction | Generation + Prediction |
+| **Examples** | Logistic regression, SVM, neural nets, decision trees | Naive Bayes, GMM, GANs, VAEs, language models |
+| **Missing features** | Must impute | Marginalise out |
 
 **When to use:**
-- **Discriminative**: When you only need predictions, have limited data
-- **Generative**: When you need to generate data, have missing data, want to understand distribution
+- **Discriminative**: When you only need predictions, have limited data.
+- **Generative**: When you need to generate data, have missing data, or want to understand the distribution.
 
-**The distinction restated so it survives a follow-up.**
+**Why it works.**
 
 The real dividing line is *what the model spends its capacity on*. A discriminative model only ever has to answer "given this input, which label?", so it can ignore everything about the input that does not separate classes. A generative model has to account for the input itself — $P(X \mid Y)$ requires describing what the data looks like — which is strictly more information and usually a much harder estimation problem.
 
+**The math, and what it buys you.**
+
 **The canonical worked contrast: naive Bayes versus logistic regression.** These two are a *generative-discriminative pair*: with the same features and a matched parametric form, they define the same hypothesis class of linear decision boundaries but fit it differently. Naive Bayes estimates $P(X \mid Y)$ and $P(Y)$ by counting, assuming features are conditionally independent given the label, then applies Bayes' rule. Logistic regression parameterises $P(Y \mid X)$ directly and maximises conditional likelihood. Ng and Jordan's result on this pair is the fact worth citing: naive Bayes converges to its (higher) asymptotic error much faster — in $O(\log d)$ samples versus $O(d)$ for logistic regression — so **the generative model wins on small data and the discriminative model wins once there is enough data**, with a crossover point. That is the mechanism behind the "data efficiency" row in the table, and it is more useful than the row itself: the generative model's assumptions act as a strong prior, which helps when data is scarce and hurts when the assumptions are wrong and data is plentiful.
+
+**Good and bad.**
+
+- **Discriminative — good:** spends all capacity on the decision boundary; better asymptotic accuracy; simpler estimation. **Bad:** cannot sample, cannot marginalise over missing features, and will confidently classify pure noise.
+- **Generative — good:** can generate, can marginalise, gives you $P(X)$ so anomaly detection is a quantity it can report; strong prior helps in low-data regimes. **Bad:** must model the input distribution, which is harder and wastes capacity if the assumptions are wrong.
 
 **A caution about modern usage.** The table's "generative models are more complex" is a statement about classical estimation, and today's usage of the word has drifted. A modern autoregressive language model is generative in the strict sense — it models $P(X)$, factorised as $\prod_t P(x_t \mid x_{<t})$ — and it is spectacularly effective, not handicapped. What changed is that modelling $P(X)$ over text turned out to be a rich enough task that solving it produces general capability, and that conditioning ($P(\text{answer} \mid \text{question})$) can be obtained from the same model by prompting. So "generative is less data efficient for classification" is still true when comparing matched pairs on a fixed task, and simultaneously the most capable classifiers available today are generative models used zero-shot. Both are true; they are answers to different questions.
 
@@ -1397,33 +1478,21 @@ The real dividing line is *what the model spends its capacity on*. A discriminat
 
 ### Q30: What are the assumptions of linear regression?
 
-**Answer:**
+> **In 30 seconds.** "I'd group them by what they protect. Linearity and errors uncorrelated with the predictors are what make the coefficients unbiased — if those fail, more data won't save you. Homoscedasticity and independence don't bias the coefficients, they bias your *standard errors*. Normality only matters for small-sample inference. And multicollinearity isn't really a model assumption at all — it doesn't hurt prediction, it just makes individual coefficients unstable."
 
-**1. Linearity:** Relationship between X and Y is linear
-- Check: Plot residuals vs predicted (should be random)
-- Fix: Add polynomial features, transformations
+**The short version.**
 
-**2. Independence of Errors:** Errors are independent
-- Check: Durbin-Watson test, plot residuals vs time
-- Fix: Use time series models for temporal data
+| Assumption | What it protects | How to check | Fix |
+|---|---|---|---|
+| **1. Linearity** | Unbiasedness of $\hat\beta$ | Residuals vs predicted (should be random) | Polynomial features, transformations |
+| **2. Independence of errors** | Correct standard errors | Durbin-Watson, residuals vs time | Time-series models; clustered SEs |
+| **3. Homoscedasticity** | Correct standard errors | Residuals vs predicted (look for a funnel) | Weighted least squares, robust (HC3) SEs |
+| **4. Normality of errors** | Exact small-sample inference only | Q-Q plot, Shapiro-Wilk | Transformations; fades as $n$ grows |
+| **5. No multicollinearity** | Interpretability of single coefficients — *not* prediction | Correlation matrix, VIF | Drop features, regularise |
 
-**3. Homoscedasticity:** Constant variance of errors
-- Check: Plot residuals vs predicted (look for funnel)
-- Fix: Weighted least squares, transformations
+**What happens if violated:** poor predictions, wrong standard errors, unreliable tests. See `34_discriminative_generative/model_assumptions_detailed.md` for detailed explanations.
 
-**4. Normality of Errors:** Errors are normally distributed
-- Check: Q-Q plot, Shapiro-Wilk test
-- Fix: Transformations (less critical for large samples)
-
-**5. No Multicollinearity:** Features not highly correlated
-- Check: Correlation matrix, VIF
-- Fix: Remove correlated features, regularization
-
-**What happens if violated:**
-- Poor predictions, wrong standard errors, unreliable tests
-- See `34_discriminative_generative/model_assumptions_detailed.md` for detailed explanations
-
-**Which assumptions matter for what — the distinction that makes this answer good.**
+**Why it works.**
 
 The five assumptions are not equally important, and they do not all protect the same thing. Split them:
 
@@ -1433,9 +1502,17 @@ The five assumptions are not equally important, and they do not all protect the 
 
 *Needed only for exact small-sample inference:* normality of errors. By the central limit theorem the sampling distribution of $\hat{\beta}$ is approximately normal for large $n$ regardless of the error distribution, so this assumption fades as $n$ grows. Note also what it is *not*: nothing requires $X$ or $y$ to be normally distributed — only the residuals, and only for inference.
 
-*Not an assumption of the model at all:* no multicollinearity. Perfect collinearity makes $X^\top X$ singular so the solution is not unique; severe-but-imperfect collinearity leaves predictions and $R^2$ completely fine and only inflates the variance of individual coefficients. So if you care about prediction, collinearity is close to a non-issue; if you care about interpreting a specific coefficient, it is fatal. The variance inflation factor $\text{VIF}_j = 1/(1 - R_j^2)$, where $R_j^2$ is from regressing feature $j$ on the others, quantifies it — VIF of 10 means that coefficient's standard error is $\sqrt{10} \approx 3.2$ times larger than it would be with uncorrelated features.
+*Not an assumption of the model at all:* no multicollinearity. Perfect collinearity makes $X^\top X$ singular so the solution is not unique; severe-but-imperfect collinearity leaves predictions and $R^2$ completely fine and only inflates the variance of individual coefficients. So if you care about prediction, collinearity is close to a non-issue; if you care about interpreting a specific coefficient, it is fatal.
 
 **Why residual plots are the single most useful diagnostic.** Plot residuals against fitted values and you can see three assumptions at once: curvature indicates a linearity violation, a funnel shape indicates heteroscedasticity, and clusters or drift indicate dependence. It is worth remembering Anscombe's quartet here — four datasets with identical means, variances, correlations and regression lines but completely different structure, visible instantly in a plot and invisible in the summary statistics.
+
+**The math, and what it buys you.**
+
+The variance inflation factor puts a number on how much collinearity costs you:
+
+$$\text{VIF}_j = \frac{1}{1 - R_j^2}$$
+
+where $R_j^2$ is from regressing feature $j$ on the others. A VIF of 10 means that coefficient's standard error is $\sqrt{10} \approx 3.2$ times larger than it would be with uncorrelated features — which tells you directly whether the instability is bad enough to act on.
 
 **Follow-up:** *Do these assumptions apply to ridge and lasso?* The estimation assumptions do not carry over cleanly, because both are *deliberately biased* estimators — the whole point of regularisation is to trade bias for variance, so unbiasedness was never on offer. Linearity still matters for the model to be right. Inference is genuinely harder: the standard $t$-tests do not apply to lasso coefficients, since the selection step is data-dependent, which is why post-selection inference is its own research area. In practice people using regularised regression for prediction check linearity and residual structure and skip the inference machinery entirely.
 
@@ -1447,31 +1524,22 @@ The five assumptions are not equally important, and they do not all protect the 
 
 ### Q31: What are the assumptions of logistic regression?
 
-**Answer:**
+> **In 30 seconds.** "The load-bearing assumption is that the *log-odds* are linear in the features — not the probability. So anything genuinely non-monotone, like risk being high at both extremes of a measurement, can't be represented without extra terms. You also need independent observations and enough *events*, not just rows. And the one that bites in practice is complete separation: coefficients run to infinity and the fit doesn't converge — a little L2 fixes it."
 
-**1. Binary Outcome:** Y must be binary (0 or 1)
-- Fix: Use multinomial logistic for multi-class
+**The short version.**
 
-**2. Linearity of Log-Odds:** Log-odds is linear in X
-- Check: Box-Tidwell test
-- Fix: Add polynomial features, interactions
-
-**3. Independence:** Observations are independent
-- Fix: Use mixed-effects models for correlated data
-
-**4. No Multicollinearity:** Features not highly correlated
-- Same as linear regression
-
-**5. Large Sample Size:** Need sufficient data
-- Rule of thumb: 10-20 observations per feature
-- Fix: Collect more data, reduce features
+1. **Binary outcome.** $Y \in \{0,1\}$; use multinomial logistic for multi-class.
+2. **Linearity of log-odds.** Check with the Box-Tidwell test; fix with polynomial terms, splines or interactions.
+3. **Independence** of observations; use mixed-effects models for correlated data.
+4. **No multicollinearity** — same story as linear regression.
+5. **Enough data**, and specifically enough *events*: 10-20 per predictor.
 
 **Differences from linear regression:**
-- No normality assumption (errors are binary)
-- No homoscedasticity (variance = p(1-p))
-- Probability is sigmoid (non-linear), not linear
+- No normality assumption (errors are binary).
+- No homoscedasticity (variance is $p(1-p)$ by construction).
+- The probability is sigmoid — non-linear — not linear.
 
-**Two things the list above understates.**
+**Why it works.**
 
 *Linearity of the log-odds is the assumption that actually does the work.* The model is $\log\frac{p}{1-p} = w^\top x + b$, so it is a linear model in log-odds space. On the *probability* scale the same relationship is S-shaped, which is why "logistic regression is a linear model" confuses people — it is linear in the link, not in the output. The practical consequence: a genuinely non-monotone relationship (risk high at both low and high values of a feature, as with blood pressure or dosage) cannot be captured, and no amount of data will reveal it. You have to add the quadratic term, spline the feature, or bin it.
 
@@ -1489,40 +1557,37 @@ The five assumptions are not equally important, and they do not all protect the 
 
 ### Q32: What are the assumptions of SVM?
 
-**Answer:**
+> **In 30 seconds.** "The main one is feature scaling, and it isn't optional — the SVM maximises a margin measured as Euclidean distance, so whichever feature has the biggest numeric range dominates the geometry, and with an RBF kernel that's even more true. Beyond that they're really choices rather than assumptions: pick a kernel that matches the structure, tune C and gamma together because they interact, and watch class imbalance since the margin doesn't know one class matters more."
 
-**1. Separable Data:** Data should be (nearly) separable
-- Hard-margin: Must be linearly separable
-- Soft-margin: Most points separable, some violations OK
-- Fix: Use kernel, allow margin violations
+**The short version.**
 
-**2. Feature Scaling:** Features must be scaled
-- **Critical!** SVM is very sensitive to scales
-- Fix: Always use StandardScaler or MinMaxScaler
+1. **Separable data.** Hard-margin needs linear separability; soft-margin tolerates violations. Fix: kernel, or allow margin violations.
+2. **Feature scaling — critical.** SVM is very sensitive to scale. Always `StandardScaler` or `MinMaxScaler`.
+3. **Appropriate kernel.** Linear for linearly separable; RBF for non-linear local structure; polynomial for polynomial relationships. Cross-validate.
+4. **Balanced classes.** Sensitive to imbalance; use class weights, SMOTE, cost-sensitive learning.
 
-**3. Appropriate Kernel:** Kernel should match data structure
-- Linear: Linearly separable data
-- RBF: Non-linear, local structure
-- Polynomial: Polynomial relationships
-- Fix: Try different kernels, use cross-validation
+**What SVM does *not* assume:** normal distributions, linear relationships (with kernels), or a large sample size.
 
-**4. Balanced Classes:** Can be sensitive to imbalance
-- Fix: Use class weights, SMOTE, cost-sensitive learning
+**Where the "assumptions" framing is loose.** SVM is not a probabilistic model, so it has no likelihood and therefore no distributional assumptions in the sense that linear regression has them. What it has are *requirements for the geometry to be meaningful* (scaling), *a modelling choice that must match the data* (the kernel), and *a known sensitivity* (class imbalance, because the margin term does not know that one class matters more; `class_weight='balanced'` rescales $C$ per class to fix it). It is worth saying this explicitly in an interview, because it shows you know why the question is phrased differently for SVM than for regression.
 
-**What SVM doesn't assume:**
-- Normal distributions
-- Linear relationships (with kernels)
-- Large sample size
+**Why it works.**
 
-**Why feature scaling is not a preference but a consequence of the objective.**
-
-The linear SVM maximises the margin, and the margin is $2/\lVert w \rVert$ measured in Euclidean distance in feature space. So the geometry of the answer depends directly on the units of your features. If income is in dollars (range $10^4$–$10^5$) and age is in years (range 20–80), a one-unit change in age is geometrically negligible next to a one-unit change in income, so the maximum-margin hyperplane will be almost entirely determined by income regardless of which feature is actually informative. The RBF kernel makes it worse: $\exp(-\gamma \lVert x - y\rVert^2)$ is dominated by whichever feature has the largest numeric spread, so the other features effectively vanish from the similarity computation. This is why the answer above marks scaling "critical" — it is not a tuning nicety, it is required for the objective to mean what you intend.
-
-**The regularisation parameter C, which the list omits.** Soft-margin SVM minimises $\frac{1}{2}\lVert w \rVert^2 + C\sum_i \xi_i$, where $\xi_i$ are slack variables measuring how far each point violates its margin. $C$ is the exchange rate between a wide margin and few violations. Small $C$ means violations are cheap, so the margin grows, more points end up as support vectors, and the model is smoother and higher-bias. Large $C$ means violations are expensive, so the boundary contorts to classify training points correctly — low bias, high variance, and in the limit $C \to \infty$ you recover the hard-margin SVM, which does not exist for non-separable data. $C$ and $\gamma$ interact strongly, which is why they are always tuned jointly on a 2-D grid rather than one at a time.
+**Why feature scaling is not a preference but a consequence of the objective.** The linear SVM maximises the margin, and the margin is $2/\lVert w \rVert$ measured in Euclidean distance in feature space. So the geometry of the answer depends directly on the units of your features. If income is in dollars (range $10^4$–$10^5$) and age is in years (range 20–80), a one-unit change in age is geometrically negligible next to a one-unit change in income, so the maximum-margin hyperplane will be almost entirely determined by income regardless of which feature is actually informative. The RBF kernel makes it worse: $\exp(-\gamma \lVert x - y\rVert^2)$ is dominated by whichever feature has the largest numeric spread, so the other features effectively vanish from the similarity computation. This is why scaling is marked "critical" — it is not a tuning nicety, it is required for the objective to mean what you intend.
 
 **What "support vector" means and why it matters.** Only the points on or inside the margin have nonzero dual coefficients; the solution depends on those alone. Delete every other training point and refit and you get the identical boundary. That is a genuinely unusual property — it makes SVM robust to far-away outliers of the *correct* class, but it also means a single mislabelled point sitting inside the opposite class's region becomes a support vector and can move the boundary substantially, especially with large $C$.
 
-**Where the "assumptions" framing is loose.** SVM is not a probabilistic model, so it has no likelihood and therefore no distributional assumptions in the sense that linear regression has them. What it has are *requirements for the geometry to be meaningful* (scaling), *a modelling choice that must match the data* (the kernel), and *a known sensitivity* (class imbalance, because the margin term does not know that one class matters more; `class_weight='balanced'` rescales $C$ per class to fix it). It is worth saying this explicitly in an interview, because it shows you know why the question is phrased differently for SVM than for regression.
+**The math, and what it buys you.**
+
+**The regularisation parameter C, which the assumption list omits.** Soft-margin SVM minimises
+
+$$\tfrac{1}{2}\lVert w \rVert^2 + C\sum_i \xi_i$$
+
+where $\xi_i$ are slack variables measuring how far each point violates its margin. $C$ is the exchange rate between a wide margin and few violations. Small $C$ means violations are cheap, so the margin grows, more points end up as support vectors, and the model is smoother and higher-bias. Large $C$ means violations are expensive, so the boundary contorts to classify training points correctly — low bias, high variance, and in the limit $C \to \infty$ you recover the hard-margin SVM, which does not exist for non-separable data. $C$ and $\gamma$ interact strongly, which is why they are always tuned jointly on a 2-D grid rather than one at a time.
+
+**Good and bad.**
+
+- **Good:** strong margins generalise well in high dimensions; the solution depends only on the support vectors, so far-away correct points are irrelevant; kernels give non-linearity without explicit feature maps.
+- **Bad:** requires scaling to be meaningful at all; no probabilities out of the box; sensitive to class imbalance and to mislabelled points near the boundary; and $C$/$\gamma$ tuning is a 2-D search.
 
 **Follow-up:** *SVM does not output probabilities — what do you do if you need them?* The decision function is a signed distance from the hyperplane, not a probability. Platt scaling fits a one-dimensional logistic regression to those distances on held-out data, which is what `probability=True` triggers in scikit-learn — note it runs an internal cross-validation, so it is slow and can produce probabilities that disagree with `predict`. Isotonic regression is the non-parametric alternative and fits better when you have enough calibration data. If probabilities are central to your problem, though, logistic regression or a gradient-boosted model is usually the better starting point.
 
@@ -1534,41 +1599,32 @@ The linear SVM maximises the margin, and the margin is $2/\lVert w \rVert$ measu
 
 ### Q33: Explain Bayes' theorem in detail.
 
-**Answer:**
+> **In 30 seconds.** "Bayes' theorem is how you update a belief when evidence arrives — posterior proportional to likelihood times prior. My go-to example is the medical test: one percent prevalence, ninety-five percent accurate, and a positive result still means only about a sixteen percent chance you're sick, because the false positives from the huge healthy group swamp the true positives. The odds form makes it even quicker: prior odds times the likelihood ratio."
 
-**Mathematical Formulation:**
+**The short version.**
+
 ```
 P(A|B) = P(B|A) * P(A) / P(B)
 ```
 
-**Components:**
-- **Prior P(A)**: Belief about A before seeing evidence
-- **Likelihood P(B|A)**: Probability of evidence B given A
-- **Evidence P(B)**: Total probability of B
-- **Posterior P(A|B)**: Updated belief about A after seeing B
-
-**Why it matters:**
-- Updates beliefs with evidence
-- Foundation of Bayesian statistics
-- Used in Naive Bayes, spam detection, medical diagnosis
-
-**Example:**
-- Disease prevalence: 1% (prior)
-- Test accuracy: 95% (likelihood)
-- Positive test → Only 16% chance of disease!
-- Why? False positives from large healthy population
-
-**Use Cases:**
-- Naive Bayes classifier
-- Spam detection
-- Medical diagnosis
-- Recommendation systems
+- **Prior P(A)**: belief about A before seeing evidence.
+- **Likelihood P(B|A)**: probability of the evidence given A.
+- **Evidence P(B)**: total probability of B — where all the computational work lives.
+- **Posterior P(A|B)**: updated belief after seeing B.
+- **The headline example:** 1% prevalence, 95% accurate test, positive result → only ~16% chance of disease, because of false positives from the large healthy population.
+- **Uses:** naive Bayes, spam detection, medical diagnosis, recommendation systems.
 
 See `34_discriminative_generative/bayes_theorem_detailed.md` for comprehensive explanation!
 
-**Working the medical example all the way through, because the number is the point.**
+**Why it works.**
 
-Let $D$ be "has the disease" and $+$ be "tests positive". Given prevalence $P(D) = 0.01$, sensitivity $P(+ \mid D) = 0.95$, and specificity $P(- \mid \neg D) = 0.95$ (so the false-positive rate is $P(+ \mid \neg D) = 0.05$):
+**Why the denominator is where the work is.** $P(B)$ is computed by the law of total probability, $\sum_A P(B \mid A)P(A)$, summing over every hypothesis. For a handful of discrete hypotheses this is arithmetic. For continuous parameters it becomes an integral over the whole parameter space that is usually intractable, and that single fact is the reason Bayesian computation exists as a field: MCMC samples from the posterior without ever evaluating the denominator (Metropolis-Hastings only needs ratios, in which it cancels), and variational inference sidesteps it by optimising a bound instead.
+
+**How naive Bayes uses this.** Classify by $\arg\max_y P(y)\prod_j P(x_j \mid y)$ — the denominator is dropped because it is the same for every class and cannot change the argmax. The "naive" part is the product: assuming features are conditionally independent given the class. That assumption is essentially always false in text (words are correlated), yet the classifier works well, because the argmax only needs the class *ranking* to be right, not the probabilities. The probabilities themselves come out wildly overconfident — typically saturated at 0 or 1 — which is why naive Bayes should not be trusted for calibrated output.
+
+**The math, and what it buys you.**
+
+**Working the medical example all the way through, because the number is the point.** Let $D$ be "has the disease" and $+$ be "tests positive". Given prevalence $P(D) = 0.01$, sensitivity $P(+ \mid D) = 0.95$, and specificity $P(- \mid \neg D) = 0.95$ (so the false-positive rate is $P(+ \mid \neg D) = 0.05$):
 
 $$P(D \mid +) = \frac{P(+ \mid D)P(D)}{P(+ \mid D)P(D) + P(+ \mid \neg D)P(\neg D)} = \frac{0.95 \times 0.01}{0.95 \times 0.01 + 0.05 \times 0.99} = \frac{0.0095}{0.0590} = 0.161$$
 
@@ -1579,10 +1635,6 @@ The intuition is easier in counts. Test 10,000 people: 100 have the disease and 
 $$\underbrace{\frac{P(D \mid +)}{P(\neg D \mid +)}}_{\text{posterior odds}} = \underbrace{\frac{P(D)}{P(\neg D)}}_{\text{prior odds}} \times \underbrace{\frac{P(+ \mid D)}{P(+ \mid \neg D)}}_{\text{likelihood ratio}}$$
 
 Here: prior odds $1{:}99$, likelihood ratio $0.95/0.05 = 19$, so posterior odds $19{:}99$, which is $19/118 = 0.161$. Same answer with no denominator to compute. This form also makes sequential updating trivial — a second independent positive test multiplies by 19 again, giving odds $361{:}99$, or 78% — and it shows exactly what evidence *is*: a multiplier on the odds, with strength given by the likelihood ratio.
-
-**Why the denominator is where the work is.** $P(B)$ is computed by the law of total probability, $\sum_A P(B \mid A)P(A)$, summing over every hypothesis. For a handful of discrete hypotheses this is arithmetic. For continuous parameters it becomes an integral over the whole parameter space that is usually intractable, and that single fact is the reason Bayesian computation exists as a field: MCMC samples from the posterior without ever evaluating the denominator (Metropolis-Hastings only needs ratios, in which it cancels), and variational inference sidesteps it by optimising a bound instead.
-
-**How naive Bayes uses this.** Classify by $\arg\max_y P(y)\prod_j P(x_j \mid y)$ — the denominator is dropped because it is the same for every class and cannot change the argmax. The "naive" part is the product: assuming features are conditionally independent given the class. That assumption is essentially always false in text (words are correlated), yet the classifier works well, because the argmax only needs the class *ranking* to be right, not the probabilities. The probabilities themselves come out wildly overconfident — typically saturated at 0 or 1 — which is why naive Bayes should not be trusted for calibrated output.
 
 **Follow-up:** *What happens to the posterior as evidence accumulates?* Under mild conditions the likelihood dominates and the posterior concentrates on the truth regardless of the prior — this is the Bernstein-von Mises theorem, and it is why prior choice matters most when data is scarce. The important exception is a prior that assigns exactly zero probability to some hypothesis: multiplying by zero stays zero forever, so no amount of evidence can recover it. Cromwell's rule — never assign a prior of exactly 0 or 1 to anything you are not logically certain of — is the practical statement, and it is the same reason Laplace smoothing (Q40) exists in naive Bayes.
 
@@ -1600,35 +1652,18 @@ See `34_discriminative_generative/model_assumptions_detailed.md` for detailed as
 
 ### Q34: What is a kernel function? Explain the kernel trick.
 
-**Answer:**
+> **In 30 seconds.** "A kernel gives you the dot product of two points in a high-dimensional feature space without ever building that space. Expand $(x \cdot y)^2$ in two dimensions and you get exactly the dot product of a three-dimensional feature map. It works because algorithms like SVMs only ever touch the data through dot products, so you just swap the kernel in. The price is an $n \times n$ Gram matrix, so it doesn't scale past about a hundred thousand samples."
 
-**Kernel Function:**
-Kernel K(x, y) computes dot product in high-dimensional space without explicitly computing the transformation.
+**The short version.**
 
-**Formula:** K(x, y) = φ(x) · φ(y)
+- **Definition:** $K(x, y) = \phi(x)\cdot\phi(y)$ — the dot product in a transformed space, computed without the transform.
+- **The problem it solves:** explicitly transforming to high dimensions is expensive; the kernel computes the dot product directly.
+- **Example (degree-2 polynomial):** without the trick, build $[x_1, x_2, x_1^2, x_2^2, x_1x_2, \ldots]$ (8 dimensions); with the trick, just compute $(x \cdot y)^2$ — same result, far faster.
+- **Why it works:** SVM and friends only need dot products, never the features themselves.
+- **Validity (Mercer's condition):** $K$ must be symmetric and positive semi-definite.
+- **Cost:** $O(n^2)$ in samples rather than $O(nD)$ in feature dimension.
 
-**Kernel Trick:**
-- **Problem**: Transform data to high dimensions (expensive)
-- **Solution**: Use kernel to compute dot product directly (cheap)
-- **Benefit**: Get high-dimensional features without computing them
-
-**Example:**
-Polynomial kernel (degree=2):
-- Without trick: Compute [x₁, x₂, x₁², x₂², x₁x₂, ...] (8 dimensions)
-- With trick: Just compute (x · y)² (same result, much faster!)
-
-**Why it works:**
-Algorithms like SVM only need dot products, not features themselves.
-
-**Doing the polynomial expansion explicitly, since that is what makes the trick concrete.**
-
-Take two-dimensional inputs $x = (x_1, x_2)$ and $y = (y_1, y_2)$ and expand the degree-2 kernel:
-
-$$(x \cdot y)^2 = (x_1y_1 + x_2y_2)^2 = x_1^2y_1^2 + 2x_1x_2y_1y_2 + x_2^2y_2^2 = \phi(x)\cdot\phi(y)$$
-
-with $\phi(x) = (x_1^2,\ \sqrt{2}\,x_1x_2,\ x_2^2)$. So a 3-dimensional feature map falls out, and the $\sqrt{2}$ on the cross term is not decorative — it is exactly what makes the dot product match. The inhomogeneous version $(x\cdot y + 1)^2$ gives six features, adding $\sqrt{2}x_1, \sqrt{2}x_2, 1$, which is where a count of "8" for the degree-2 map would come from only in three input dimensions. (In general, degree $d$ over $n$ input dimensions gives $\binom{n+d}{d}$ features, so a degree-4 kernel on 100 features corresponds to about 4.6 million explicit dimensions — computed by one dot product and one exponentiation.)
-
-The RBF kernel makes the point unanswerably: $\exp(-\gamma\lVert x-y\rVert^2)$ corresponds to an *infinite-dimensional* feature map (expand the exponential as a power series and every polynomial degree appears). You could never write $\phi(x)$ down, yet the kernel evaluates in a few floating-point operations.
+**Why it works.**
 
 **Why "algorithms only need dot products" is not a coincidence.** The SVM's dual formulation is
 $$\max_\alpha \sum_i \alpha_i - \frac{1}{2}\sum_{i,j}\alpha_i\alpha_j y_iy_j\,(x_i\cdot x_j)$$
@@ -1636,7 +1671,20 @@ and prediction is $f(x) = \sum_i \alpha_i y_i (x_i \cdot x) + b$. The inputs app
 
 **What makes a function a valid kernel.** Mercer's condition: $K$ must be symmetric and positive semi-definite, meaning the Gram matrix $K_{ij} = K(x_i, x_j)$ has no negative eigenvalues for any finite set of points. That is exactly the condition under which some $\phi$ exists with $K(x,y) = \phi(x)\cdot\phi(y)$, and it is also what keeps the SVM's dual problem convex. Kernels compose: sums, positive scalings, and products of valid kernels are valid, which is how structured kernels for text, graphs and time series get built.
 
-**The cost you are paying.** The trick converts an $O(n \cdot D)$ problem in explicit feature dimension $D$ into an $O(n^2)$ problem in the number of samples, because the Gram matrix is $n \times n$. That is a spectacular win when $D \gg n$ and a disaster when $n$ is large — kernel SVMs are impractical past roughly $10^5$ samples, since the matrix alone would need tens of gigabytes. Random Fourier features invert the trick for exactly this reason: they approximate the RBF kernel with an explicit low-dimensional random map, trading a little accuracy for linear-time training.
+**The math, and what it buys you.**
+
+Doing the polynomial expansion explicitly is what makes the trick concrete — it shows the feature map you never had to build. Take two-dimensional inputs $x = (x_1, x_2)$ and $y = (y_1, y_2)$:
+
+$$(x \cdot y)^2 = (x_1y_1 + x_2y_2)^2 = x_1^2y_1^2 + 2x_1x_2y_1y_2 + x_2^2y_2^2 = \phi(x)\cdot\phi(y)$$
+
+with $\phi(x) = (x_1^2,\ \sqrt{2}\,x_1x_2,\ x_2^2)$. So a 3-dimensional feature map falls out, and the $\sqrt{2}$ on the cross term is not decorative — it is exactly what makes the dot product match. The inhomogeneous version $(x\cdot y + 1)^2$ gives six features, adding $\sqrt{2}x_1, \sqrt{2}x_2, 1$, which is where a count of "8" for the degree-2 map would come from only in three input dimensions. (In general, degree $d$ over $n$ input dimensions gives $\binom{n+d}{d}$ features, so a degree-4 kernel on 100 features corresponds to about 4.6 million explicit dimensions — computed by one dot product and one exponentiation.)
+
+The RBF kernel makes the point unanswerably: $\exp(-\gamma\lVert x-y\rVert^2)$ corresponds to an *infinite-dimensional* feature map (expand the exponential as a power series and every polynomial degree appears). You could never write $\phi(x)$ down, yet the kernel evaluates in a few floating-point operations.
+
+**Good and bad.**
+
+- **Good:** non-linearity at the cost of one function evaluation; works on data with no natural vector representation; convexity preserved under Mercer's condition.
+- **Bad — the cost you are paying.** The trick converts an $O(n \cdot D)$ problem in explicit feature dimension $D$ into an $O(n^2)$ problem in the number of samples, because the Gram matrix is $n \times n$. That is a spectacular win when $D \gg n$ and a disaster when $n$ is large — kernel SVMs are impractical past roughly $10^5$ samples, since the matrix alone would need tens of gigabytes. Random Fourier features invert the trick for exactly this reason: they approximate the RBF kernel with an explicit low-dimensional random map, trading a little accuracy for linear-time training.
 
 **Follow-up:** *Is the kernel trick relevant in deep learning?* Directly, rarely — neural networks learn their feature map rather than fixing it, which is the whole advantage. Theoretically, very much so: an infinitely wide network trained by gradient descent behaves as kernel regression under the Neural Tangent Kernel, which is one of the main tools for analysing why overparameterised networks generalise. And attention itself is often described as a kernel: $\text{softmax}(q\cdot k)$ is a similarity function determining how much each value contributes, and linear-attention methods work precisely by replacing that softmax kernel with a factorisable feature map to escape the quadratic cost.
 
@@ -1648,29 +1696,22 @@ and prediction is $f(x) = \sum_i \alpha_i y_i (x_i \cdot x) + b$. The inputs app
 
 ### Q35: Explain different types of kernels. When would you use each?
 
-**Answer:**
+> **In 30 seconds.** "I think of a kernel as a statement about what 'similar' means, so picking one is picking a prior. Linear says similarity is directional alignment and is right when the data is already high-dimensional. RBF says similarity decays with distance — a local prior and a sensible default. Polynomial builds explicit feature interactions. Sigmoid isn't even positive semi-definite for most settings, so I'd skip it."
 
-**Linear Kernel:** K(x, y) = x · y
-- **Use when**: Linearly separable data, high-dimensional data
-- **Example**: Text classification with TF-IDF
+**The short version.**
 
-**Polynomial Kernel:** K(x, y) = (γx·y + r)^d
-- **Use when**: Polynomial relationships, moderate non-linearity
-- **Example**: Circular boundaries (degree=2)
+| Kernel | Formula | Similarity it encodes | Use when |
+|---|---|---|---|
+| **Linear** | $K = x \cdot y$ | Directional alignment | Linearly separable, high-dimensional data — e.g. TF-IDF text |
+| **Polynomial** | $K = (\gamma x\cdot y + r)^d$ | Conjunctions of features up to degree $d$ | Polynomial relationships, moderate non-linearity — e.g. circular boundaries at $d=2$ |
+| **RBF** | $K = \exp(-\gamma\lVert x-y\rVert^2)$ | Decay with distance (local) | The default for non-linear problems |
+| **Sigmoid** | $K = \tanh(\gamma x\cdot y + r)$ | Loose neural-net analogy | Rarely — RBF is better, and this one breaks Mercer |
 
-**RBF Kernel:** K(x, y) = exp(-γ||x-y||²)
-- **Use when**: Non-linear problems (default choice)
-- **Example**: Complex boundaries, most common kernel
+**Selection:** try linear first; if that fails, RBF; if RBF overfits, try polynomial.
 
-**Sigmoid Kernel:** K(x, y) = tanh(γx·y + r)
-- **Use when**: Rarely (RBF is usually better)
+**Why it works.**
 
-**Selection:**
-1. Try linear first
-2. If fails, use RBF
-3. If RBF overfits, try polynomial
-
-**What each kernel is really assuming.** A kernel is a similarity function, and choosing one is choosing a prior over what "similar" means — so the right framing is not "which is most powerful" but "which notion of similarity matches my data".
+A kernel is a similarity function, and choosing one is choosing a prior over what "similar" means — so the right framing is not "which is most powerful" but "which notion of similarity matches my data".
 
 The **linear kernel** says similarity is alignment of directions: two documents are similar if they share weighted vocabulary. It is the right choice when the data is already high-dimensional enough to be separable as it is, which is why it is standard for TF-IDF text — with 50,000 features and 5,000 documents, the data is almost certainly linearly separable and any extra flexibility only buys overfitting. It is also the only kernel whose weights you can inspect directly, since $w = \sum_i \alpha_i y_i x_i$ lives in the original feature space; every other kernel gives you a solution expressed in terms of support vectors instead.
 
@@ -1679,6 +1720,8 @@ The **polynomial kernel** says similarity comes from *conjunctions* of features 
 The **RBF (Gaussian) kernel** says similarity decays with distance, full stop. This is a *local* prior: nearby points should share labels and distant points are uninformative, with $\gamma$ setting the scale of "nearby". Because it can approximate any continuous decision boundary given enough support vectors, it is the sensible default when you have no structural belief about the data. Note it is stationary — $K$ depends only on $x - y$, not on where in the space you are — so it assumes the same length scale applies everywhere.
 
 The **sigmoid kernel** $\tanh(\gamma x\cdot y + r)$ is worth knowing mainly for the reason to avoid it: it is *not positive semi-definite* for most parameter settings, so it violates Mercer's condition, the dual problem stops being convex, and the solver may return something that is not a global optimum. Its historical appeal was a loose analogy to a two-layer neural network. RBF dominates it on essentially every benchmark.
+
+**The math, and what it buys you.**
 
 **A decision rule with actual numbers.** Compare the number of features $d$ to the number of samples $n$. If $d \gtrsim n$ (text, genomics, any wide sparse problem), use linear — the data is likely already separable and a nonlinear kernel adds variance for nothing. If $n \gg d$ (a few dozen dense features, tens of thousands of rows), the data probably needs curvature, so use RBF. If $n$ is very large, above $10^5$, drop kernels altogether: the $O(n^2)$ Gram matrix makes them infeasible, so use a linear SVM with a solver like LIBLINEAR, random Fourier features, or a gradient-boosted tree ensemble.
 
@@ -1692,29 +1735,26 @@ The **sigmoid kernel** $\tanh(\gamma x\cdot y + r)$ is worth knowing mainly for 
 
 ### Q36: Explain RBF kernel in detail. How does gamma affect it?
 
-**Answer:**
+> **In 30 seconds.** "The RBF kernel is similarity that decays with distance, and gamma is an inverse length scale — it sets how far apart two points can be and still count as similar. Tiny gamma and everything looks similar to everything, so you underfit to a constant; huge gamma and every point is similar only to itself, so you memorise the training set. You want gamma where typical pairs sit in the middle, and you tune it jointly with C."
 
-**RBF Kernel:** K(x, y) = exp(-γ||x-y||²)
+**The short version.**
 
-**What it does:**
-Measures similarity based on distance. Close points → high similarity, far points → low similarity.
+- **Formula:** $K(x, y) = \exp(-\gamma\lVert x-y\rVert^2)$ — close points similar, far points dissimilar.
+- **Low $\gamma$ (0.001):** wide kernel → simpler boundary, risk of underfitting.
+- **Medium $\gamma$ (0.1–1.0):** balanced, a good starting point.
+- **High $\gamma$ (10.0):** narrow kernel → complex boundary, risk of overfitting.
+- **Visual:** each point creates a bump. Low gamma = wide bumps (simple); high gamma = narrow bumps (complex).
+- **Tuning:** start at $\gamma = 1/(n_{\text{features}} \times \text{variance})$, then grid search — jointly with $C$.
 
-**Gamma Effect:**
-- **Low γ (0.001)**: Wide kernel → Simpler boundary, risk underfitting
-- **Medium γ (0.1-1.0)**: Balanced → Good starting point
-- **High γ (10.0)**: Narrow kernel → Complex boundary, risk overfitting
-
-**Visual:**
-Each point creates a "bump". Low gamma = wide bumps (simple), high gamma = narrow bumps (complex).
-
-**Tuning:**
-Start with γ = 1/(n_features * variance), then grid search.
-
-**Gamma as an inverse length scale, with numbers.**
+**Why it works.**
 
 Write the kernel as $\exp(-\lVert x - y\rVert^2 / 2\sigma^2)$ and you can read off $\gamma = 1/(2\sigma^2)$: gamma is an inverse squared length scale, so $\sigma = 1/\sqrt{2\gamma}$ is the distance over which similarity meaningfully decays. That conversion turns an abstract hyperparameter into something you can sanity-check against your data.
 
-Take two points at Euclidean distance 1 after standardisation:
+**How gamma and C interact, which is what people get wrong.** They are not independent knobs, because both control effective complexity. Large $\gamma$ with large $C$ is the classic overfitting corner: narrow bumps *and* an insistence that every training point be classified correctly, producing islands of one class around individual points. Small $\gamma$ with small $C$ underfits from both directions. There are also compensating diagonals — moderate $\gamma$ with large $C$ can behave much like large $\gamma$ with moderate $C$ — which is precisely why a joint 2-D grid finds good regions that two sequential 1-D searches miss.
+
+**The math, and what it buys you.**
+
+Putting numbers on gamma turns it from a mystery dial into a distance. Take two points at Euclidean distance 1 after standardisation:
 
 | $\gamma$ | $K$ at distance 1 | $K$ at distance 2 | $K$ at distance 3 | effective $\sigma$ |
 |---|---|---|---|---|
@@ -1727,8 +1767,6 @@ At $\gamma = 0.01$ every point in a standardised dataset is similar to every oth
 
 **The scikit-learn defaults, decoded.** `gamma='scale'` sets $\gamma = 1/(d \cdot \text{Var}(X))$ where $d$ is the number of features. The reasoning: for standardised data the expected squared distance between two random points is about $2d\,\text{Var}(X)$, so this choice puts the exponent at roughly $-2$ for a typical pair, landing $K$ near $0.14$ — squarely in the responsive region and, crucially, invariant to how many features you have and what scale they are on. The older `gamma='auto'` used $1/d$, which ignores variance and is why it was replaced. Either way, grid search on a logarithmic scale around that value, jointly with $C$.
 
-**How gamma and C interact, which is what people get wrong.** They are not independent knobs, because both control effective complexity. Large $\gamma$ with large $C$ is the classic overfitting corner: narrow bumps *and* an insistence that every training point be classified correctly, producing islands of one class around individual points. Small $\gamma$ with small $C$ underfits from both directions. There are also compensating diagonals — moderate $\gamma$ with large $C$ can behave much like large $\gamma$ with moderate $C$ — which is precisely why a joint 2-D grid finds good regions that two sequential 1-D searches miss.
-
 **Follow-up:** *Why is the RBF kernel called universal?* Because the function class it induces is dense in the space of continuous functions on a compact domain: with enough support vectors and a suitable $\gamma$, an RBF SVM can approximate any continuous decision boundary to arbitrary accuracy. That is the theoretical reason it is the default choice. It also explains why regularisation is not optional here — a model class that can represent anything will represent your noise if you let it, so $C$ and $\gamma$ are doing all the work of controlling capacity.
 
 > **Why the interviewer asks this.** Gamma is the hyperparameter people tune blindly; being able to convert it into a distance scale and predict what happens at the extremes shows you understand what you are tuning.
@@ -1739,31 +1777,37 @@ At $\gamma = 0.01$ every point in a standardised dataset is similar to every oth
 
 ### Q37: How do you choose the right kernel?
 
-**Answer:**
+> **In 30 seconds.** "I start from the shape of the data. If features are comparable to or more numerous than samples — text, genomics, anything wide and sparse — linear is almost always right, because the data is likely separable already. Few dense features and lots of rows, reach for RBF and grid-search C and gamma together on a log scale. Then read the learning curve rather than guessing. And on tabular data of any size, check gradient-boosted trees first."
 
-**Decision Process:**
-1. **Try linear first**: Fast, interpretable
-2. **If fails, try RBF**: Default for non-linear
-3. **If RBF overfits, try polynomial**: Less flexible
-4. **Never use sigmoid**: RBF is better
+**The short version.**
 
-**Parameter Tuning:**
-- **RBF**: Tune gamma [0.001, 0.01, 0.1, 1.0, 10.0] and C [0.1, 1, 10, 100, 1000]
-- **Polynomial**: Start with degree=2, gamma=1.0
-- **Use cross-validation**: Compare different kernels and parameters
+**Decision process:**
+1. **Try linear first**: fast, interpretable.
+2. **If it fails, try RBF**: the default for non-linear.
+3. **If RBF overfits, try polynomial**: less flexible.
+4. **Never use sigmoid**: RBF is better.
 
-**Key Points:**
-- Always scale features before SVM
-- Linear often works for high-dimensional data
-- RBF is most common for non-linear problems
+**Parameter tuning:**
+- **RBF**: gamma over $[0.001, 0.01, 0.1, 1.0, 10.0]$ and C over $[0.1, 1, 10, 100, 1000]$ — jointly.
+- **Polynomial**: start with degree 2, gamma 1.0.
+- **Always cross-validate** across kernels and parameters.
+
+**Key points:** always scale features before an SVM; linear often works for high-dimensional data; RBF is the most common non-linear choice.
+
+**Why it works.**
 
 **The rule behind the sequence.** "Try linear first" is not just about speed — it is a statement about the bias-variance tradeoff and about what your data's shape implies. A linear SVM in $d$ dimensions can shatter at most $d+1$ points, so its capacity is bounded by the feature count; an RBF SVM has effectively unbounded capacity. When $d$ is comparable to or larger than $n$, the linear model already has enough capacity to separate the data, and adding more can only add variance. That is why the linear-versus-RBF decision is well predicted by the ratio $d/n$ rather than by trial and error.
 
-**A concrete protocol.** Standardise the features (fitting the scaler on the training fold only, inside the cross-validation loop, or you leak test statistics into training). Fit a linear SVM across $C \in \{0.01, 0.1, 1, 10, 100\}$ and record cross-validated performance. Then fit RBF over the outer product of that $C$ grid with $\gamma \in \{10^{-4}, 10^{-3}, 10^{-2}, 10^{-1}, 1\}$ — 25 combinations, on a log scale because these parameters act multiplicatively. Compare the best of each. If RBF beats linear by less than the standard error across folds, take linear: it is faster, it gives interpretable weights, and it has fewer ways to fail on new data. Then refine with a finer grid around the winning region, or use random search, which finds good regions with fewer evaluations when only one of the two parameters actually matters.
-
 **Diagnosing rather than guessing.** The learning curve tells you which direction to move. If training and validation error are both high and close together, you are underfitting — a more expressive kernel or a larger $C$ will help. If training error is near zero and validation error is much higher, you are overfitting, and the answer is a simpler kernel, smaller $C$, smaller $\gamma$, or more data. Reading this off a curve is faster and more reliable than expanding the grid.
 
-**The honest caveat.** Before running any of this, ask whether an SVM is the right model. On tabular data of moderate size, gradient-boosted trees (XGBoost, LightGBM, CatBoost) typically beat a tuned kernel SVM while needing far less preprocessing — no scaling required, categorical features handled natively, missing values handled natively, and training that is near-linear in $n$ rather than quadratic. Kernel SVMs remain genuinely competitive in the small-$n$, high-$d$ regime (a few hundred samples, thousands of features, as in some biological assays), where trees struggle and the margin-maximisation prior is a real advantage. Saying this unprompted is usually a stronger signal than any amount of grid-search detail.
+**The math, and what it buys you.**
+
+**A concrete protocol.** Standardise the features (fitting the scaler on the training fold only, inside the cross-validation loop, or you leak test statistics into training). Fit a linear SVM across $C \in \{0.01, 0.1, 1, 10, 100\}$ and record cross-validated performance. Then fit RBF over the outer product of that $C$ grid with $\gamma \in \{10^{-4}, 10^{-3}, 10^{-2}, 10^{-1}, 1\}$ — 25 combinations, on a log scale because these parameters act multiplicatively. Compare the best of each. If RBF beats linear by less than the standard error across folds, take linear: it is faster, it gives interpretable weights, and it has fewer ways to fail on new data. Then refine with a finer grid around the winning region, or use random search, which finds good regions with fewer evaluations when only one of the two parameters actually matters.
+
+**Good and bad.**
+
+- **Where kernel SVMs win:** the small-$n$, high-$d$ regime (a few hundred samples, thousands of features, as in some biological assays), where trees struggle and the margin-maximisation prior is a real advantage.
+- **The honest caveat.** Before running any of this, ask whether an SVM is the right model. On tabular data of moderate size, gradient-boosted trees (XGBoost, LightGBM, CatBoost) typically beat a tuned kernel SVM while needing far less preprocessing — no scaling required, categorical features handled natively, missing values handled natively, and training that is near-linear in $n$ rather than quadratic. Saying this unprompted is usually a stronger signal than any amount of grid-search detail.
 
 **Follow-up:** *What if you cannot tell which kernel matches the structure?* Use multiple kernel learning, which learns a convex combination $\sum_m \beta_m K_m$ of candidate kernels jointly with the classifier, letting the data weight them. In practice it is rarely worth the complexity for a small kernel set — cross-validating over the individual kernels usually gets you the same answer more cheaply — but it is the principled response, and it is genuinely useful when your kernels encode different *data sources* (one for text, one for images, one for a graph) that must be combined.
 
@@ -1781,42 +1825,26 @@ See `35_kernel_functions/interview_qa.md` for even more detailed answers!
 
 ### Q38: Explain TF-IDF. How does it work?
 
-**Answer:**
+> **In 30 seconds.** "TF-IDF weights a term by how often it appears in this document times how rare it is across the collection. The rarity part is a log, and that matters — without it a word appearing once in a million documents would get a million times the weight. The nice side effect: a word in every document gets log of one, which is zero, so stopwords fall out automatically with no stoplist."
 
-**TF-IDF** measures how important a word is to a document in a collection.
+**The short version.**
 
-**Components:**
+- **TF:** $\text{TF}(t,d) = \text{count}(t,d) / |d|$ — how often the word appears in this document.
+- **IDF:** $\text{IDF}(t,D) = \log(N / |\{d : t \in d\}|)$ — how rare the word is across documents. Common words → low IDF; rare words → high IDF.
+- **TF-IDF** = TF × IDF: high when a word is frequent *here* and rare *elsewhere*, so it identifies characteristic words per document.
+- **Example:** "algorithm" in a Python tutorial gets high TF and high IDF → high TF-IDF. "the" gets high TF but near-zero IDF → low TF-IDF.
+- **L2-normalise the vectors** afterwards, then compare with cosine similarity.
+- **Uses:** text classification features, search-engine ranking, information retrieval.
 
-**Term Frequency (TF):**
-- TF(t, d) = count(t, d) / |d|
-- How often word appears in document
-- Higher TF = more important to document
+**Why it works.**
 
-**Inverse Document Frequency (IDF):**
-- IDF(t, D) = log(N / |{d : t ∈ d}|)
-- How rare word is across documents
-- Common words (appear in many docs) → low IDF
-- Rare words (appear in few docs) → high IDF
+**Where the log in IDF comes from.** The logarithm is not cosmetic. Raw inverse document frequency $N/df_t$ is a ratio that grows without bound: a word appearing in 1 document out of a million would get 1,000,000 times the weight of a word appearing in every document, which is far too aggressive — it would let a single typo dominate a document's representation. Taking the log compresses this into a difference of magnitudes, so a word appearing in 1% of documents gets roughly twice the weight of one appearing in 10%, not ten times. There is also an information-theoretic reading: $\log(N/df_t) = -\log P(t \in d)$ is exactly the *surprisal* of seeing the term in a randomly chosen document, so IDF is measuring how informative the term's presence is, in the sense of Q23.
 
-**TF-IDF:**
-- TF-IDF(t, d) = TF(t, d) × IDF(t, D)
-- High TF-IDF: Word appears often in this document (high TF) but rarely in others (high IDF)
-- Identifies characteristic words for each document
+**Why L2 normalisation is applied afterwards.** Without it, a long document has larger counts and therefore a longer vector, so it would score higher against any query purely because of length. Normalising each document vector to unit length means cosine similarity — the dot product of two normalised vectors — measures only the *angle*, that is, the relative composition of terms. This is why cosine similarity, not Euclidean distance, is the standard metric for TF-IDF vectors.
 
-**Example:**
-- "algorithm" in Python tutorial: High TF (appears often) + High IDF (rare word) → High TF-IDF
-- "the" in any document: High TF but Low IDF (common word) → Lower TF-IDF
+**The math, and what it buys you.**
 
-**Use Cases:**
-- Text classification (feature extraction)
-- Search engines (ranking)
-- Information retrieval
-
-**Where the log in IDF comes from, and a worked calculation.**
-
-The logarithm is not cosmetic. Raw inverse document frequency $N/df_t$ is a ratio that grows without bound: a word appearing in 1 document out of a million would get 1,000,000 times the weight of a word appearing in every document, which is far too aggressive — it would let a single typo dominate a document's representation. Taking the log compresses this into a difference of magnitudes, so a word appearing in 1% of documents gets roughly twice the weight of one appearing in 10%, not ten times. There is also an information-theoretic reading: $\log(N/df_t) = -\log P(t \in d)$ is exactly the *surprisal* of seeing the term in a randomly chosen document, so IDF is measuring how informative the term's presence is, in the sense of Q23.
-
-Compute it on a small corpus of $N = 1000$ documents, for a document of 100 words:
+Compute it on a small corpus of $N = 1000$ documents, for a document of 100 words, and the design of the metric becomes visible in one table:
 
 | term | count in doc | TF | $df$ | $\log(N/df)$ | TF-IDF |
 |---|---|---|---|---|---|
@@ -1828,7 +1856,10 @@ Note what happened to "the": appearing in every document gives $\log(1) = 0$, wh
 
 **The smoothing you will see in real implementations.** A term in the vocabulary but absent from the corpus would give division by zero, so scikit-learn uses $\text{idf}(t) = \log\frac{1+N}{1+df_t} + 1$. The trailing $+1$ matters: it stops a term appearing in every document from being zeroed out completely, on the grounds that it may still be worth a little. There are also variants for TF — sublinear scaling $1 + \log(\text{count})$ is common, on the reasoning that a word appearing 20 times is not 20 times more relevant than one appearing once. BM25, the standard ranking function in search engines, extends the same idea with a saturating TF term and explicit document-length normalisation, and it consistently beats plain TF-IDF for retrieval.
 
-**Why L2 normalisation is applied afterwards.** Without it, a long document has larger counts and therefore a longer vector, so it would score higher against any query purely because of length. Normalising each document vector to unit length means cosine similarity — the dot product of two normalised vectors — measures only the *angle*, that is, the relative composition of terms. This is why cosine similarity, not Euclidean distance, is the standard metric for TF-IDF vectors.
+**Good and bad.**
+
+- **Good:** exact on rare terms, fast, no training or GPU, fully interpretable — you can point at which terms produced a score.
+- **Bad:** no notion of synonymy or paraphrase; bag-of-words, so word order is lost; vocabulary-sized sparse vectors.
 
 **Follow-up:** *Why would you still use TF-IDF now that embeddings exist?* Because it is exact on rare terms, and that is the failure mode of dense retrieval. Embedding models compress meaning into a few hundred dimensions, which works well for paraphrase and topical similarity but blurs exact tokens — a product code, an error string, a surname, a rare acronym. TF-IDF and BM25 match those exactly by construction. It is also fast, needs no training or GPU, and is fully interpretable: you can point at which terms produced a score. Modern retrieval systems therefore run *hybrid* search, combining BM25 and dense scores (often via reciprocal rank fusion), because the two fail on complementary queries.
 
@@ -1840,18 +1871,15 @@ Note what happened to "the": appearing in every document gives $\log(1) = 0$, wh
 
 ### Q39: What are n-grams? Explain n-gram language models.
 
-**Answer:**
+> **In 30 seconds.** "An n-gram is a contiguous run of n words, and an n-gram language model factorises sentence probability with a Markov assumption — truncate the history to the last n-1 words and estimate each conditional by counting. The trouble is the counting doesn't scale: with a 50,000-word vocabulary there are $10^{14}$ possible trigrams, so almost all are zero, and one zero kills the whole sentence probability."
 
-**N-grams** are contiguous sequences of n items (words) from text.
+**The short version.**
 
-**Types:**
-- **Unigram (1-gram)**: Single words ["machine", "learning"]
-- **Bigram (2-gram)**: Pairs ["machine learning", "learning is"]
-- **Trigram (3-gram)**: Triplets ["machine learning is"]
+- **Unigram:** single words. **Bigram:** pairs. **Trigram:** triplets.
+- **Bigram model:** $P(w_1,\ldots,w_n) \approx P(w_1)P(w_2|w_1)\cdots P(w_n|w_{n-1})$, with $P(w_i|w_{i-1}) = \text{count}(w_{i-1}, w_i)/\text{count}(w_{i-1})$.
+- **Higher n** = more context, better predictions — but exponentially more parameters and worse sparsity.
+- **Uses:** language modelling, text generation, spell checking — and BLEU/ROUGE are built on them.
 
-**N-gram Language Model:**
-
-**Bigram Model:**
 ```
 P(w₁, w₂, ..., wₙ) ≈ P(w₁) × P(w₂|w₁) × P(w₃|w₂) × ... × P(wₙ|wₙ₋₁)
 
@@ -1859,33 +1887,26 @@ Where:
 P(wᵢ|wᵢ₋₁) = count(wᵢ₋₁, wᵢ) / count(wᵢ₋₁)
 ```
 
-**Why N-grams:**
-- **Unigram**: Simple but ignores word order
-- **Bigram**: Captures local dependencies
-- **Higher n**: More context but needs more data
+**Why it works.**
 
-**Trade-offs:**
-- Higher n: More context, better predictions
-- But: Needs more data (exponential growth), sparse data problem
-
-**Use Cases:**
-- Language modeling (predict next word)
-- Text generation
-- Spell checking
-
-**The Markov assumption is what is actually being assumed.**
-
-The exact chain rule for a sentence is $P(w_1, \dots, w_n) = \prod_t P(w_t \mid w_1, \dots, w_{t-1})$ — every word conditioned on the entire history, with no approximation. That is unestimable, because almost every long history occurs at most once in any corpus. An n-gram model makes the $(n-1)$-order **Markov assumption**: that the history can be truncated,
+**The Markov assumption is what is actually being assumed.** The exact chain rule for a sentence is $P(w_1, \dots, w_n) = \prod_t P(w_t \mid w_1, \dots, w_{t-1})$ — every word conditioned on the entire history, with no approximation. That is unestimable, because almost every long history occurs at most once in any corpus. An n-gram model makes the $(n-1)$-order **Markov assumption**: that the history can be truncated,
 
 $$P(w_t \mid w_1, \dots, w_{t-1}) \approx P(w_t \mid w_{t-n+1}, \dots, w_{t-1})$$
 
 so a bigram model claims one word of context is enough. The approximate sign in the formula above is doing all the work, and everything that is wrong with n-gram models follows from it: "The man who was standing by the door that I mentioned earlier ___" needs a subject-verb agreement decision that is 12 words away, and no fixed $n$ you can estimate will reach it.
 
+**How this connects to what replaced it.** A neural language model attacks exactly this problem by representing each word as a dense vector, so "dog" and "cat" occupy nearby points and evidence about one informs the other — counts cannot share statistical strength between words, embeddings can. A transformer goes further and drops the fixed window entirely: self-attention conditions on the whole context, so the Markov assumption disappears rather than being loosened. Seeing n-gram models as "the chain rule plus a truncation you cannot afford" makes it obvious what each successor removed.
+
+**The math, and what it buys you.**
+
 **Why you cannot just raise $n$ — the sparsity arithmetic.** With a vocabulary of $V = 50{,}000$, the parameter count is $V^n$: 2.5 billion bigrams, $1.25 \times 10^{14}$ trigrams, $6\times10^{18}$ 4-grams. A corpus of a billion tokens contains at most a billion distinct 4-grams, so the overwhelming majority of the table is zero — not "rare", but never observed. And each zero is fatal under the product formula, since one zero factor sends the entire sentence probability to zero. This is the sparsity wall, and it is why smoothing (Q40) is not a refinement but a requirement, and why practical n-gram models topped out around $n = 5$ with heavy smoothing.
 
 **A worked count.** Corpus: "the cat sat", "the cat ran", "the dog sat". Then $c(\text{the}) = 3$, $c(\text{the cat}) = 2$, $c(\text{the dog}) = 1$, so $P(\text{cat} \mid \text{the}) = 2/3$ and $P(\text{dog} \mid \text{the}) = 1/3$. Also $c(\text{cat}) = 2$, $c(\text{cat sat}) = 1$, giving $P(\text{sat} \mid \text{cat}) = 1/2$. The probability of "the cat sat" under the bigram model is $P(\text{the}) \times \frac{2}{3} \times \frac{1}{2}$. Notice that "the dog ran" — a perfectly good sentence — gets probability zero, because that bigram was never observed. These MLE estimates are just normalised counts, which is what makes n-gram models trivially fast to train and impossible to generalise.
 
-**How this connects to what replaced it.** A neural language model attacks exactly this problem by representing each word as a dense vector, so "dog" and "cat" occupy nearby points and evidence about one informs the other — counts cannot share statistical strength between words, embeddings can. A transformer goes further and drops the fixed window entirely: self-attention conditions on the whole context, so the Markov assumption disappears rather than being loosened. Seeing n-gram models as "the chain rule plus a truncation you cannot afford" makes it obvious what each successor removed.
+**Good and bad.**
+
+- **Good:** trivially fast to train (just counting), no GPU, exactly interpretable, and still the mechanism inside BLEU and ROUGE.
+- **Bad:** the sparsity wall above; no sharing of statistical strength between similar words; and a hard ceiling on context length that makes long-range agreement unreachable.
 
 **Follow-up:** *Are n-grams still used?* Yes, in places where their weaknesses do not matter. They are extremely fast, need no GPU, and are exactly interpretable, so they still appear in production spell-checking and autocomplete, in the statistical components of some machine-translation and speech systems, in KenLM for shallow fusion during ASR decoding, and pervasively as *features* — character n-grams remain a strong, cheap baseline for language identification and authorship attribution. They are also the mechanism inside BLEU and ROUGE (Q42, Q43), so understanding them is not optional even in an all-neural pipeline.
 
@@ -1897,17 +1918,16 @@ so a bigram model claims one word of context is enough. The approximate sign in 
 
 ### Q40: What is Laplace smoothing? Why is it needed?
 
-**Answer:**
+> **In 30 seconds.** "Smoothing exists because one unseen n-gram gives probability zero, and since you're multiplying probabilities that zeroes out the whole sentence. Add-k pretends you saw every possible continuation k extra times — numerator gets k, denominator gets k times the vocabulary size, so it still sums to one. The problem is that at realistic vocabulary sizes add-one shoves nearly all your mass onto words you've never seen, which wrecks the estimate."
 
-**Laplace Smoothing (Add-k):**
-Handles zero probability problem in n-gram models.
+**The short version.**
 
-**Problem:**
-- Unseen n-grams have P = 0
-- Product of probabilities becomes 0
-- Model can't handle unseen text
+- **Problem:** unseen n-grams have $P = 0$; the product of probabilities becomes 0; the model cannot handle unseen text.
+- **Solution:** $P(w_i|w_{i-1}) = \dfrac{\text{count}(w_{i-1}, w_i) + k}{\text{count}(w_{i-1}) + kV}$, with $k$ the smoothing parameter (often 1) and $V$ the vocabulary size.
+- **Effect:** seen n-grams get slightly lower probability, unseen ones get non-zero probability — mass is redistributed from seen to unseen.
+- **Example:** trained on "the cat", "the dog"; test "the bird". Without smoothing $P(\text{bird}|\text{the}) = 0$; with smoothing $= 1/5 = 0.2$.
+- **Add-one is usually too much.** Use $k < 1$, or a better method (backoff, interpolation, Good-Turing, Kneser-Ney).
 
-**Solution:**
 ```
 P(wᵢ|wᵢ₋₁) = (count(wᵢ₋₁, wᵢ) + k) / (count(wᵢ₋₁) + k*V)
 
@@ -1916,32 +1936,19 @@ Where:
 - V: Vocabulary size
 ```
 
-**Effect:**
-- **Seen n-grams**: Slightly lower probability
-- **Unseen n-grams**: Non-zero probability (fixed!)
-- **Redistributes**: Probability from seen to unseen
+**Why it works.**
 
-**Example:**
-Training: "the cat", "the dog"
-Test: "the bird" (unseen)
+Add-$k$ smoothing pretends you saw every possible continuation $k$ extra times. The numerator gains $k$, and the denominator gains $kV$ because there are $V$ possible next words each receiving $k$ phantom counts — that is what keeps the distribution summing to one, and it is the part people forget.
 
-- Without smoothing: P(bird|the) = 0 (problem!)
-- With smoothing: P(bird|the) = 1/5 = 0.2 (fixed!)
-
-**Why needed:**
-- Prevents zeros
-- Allows generalization to unseen text
-- Essential for language models
-
-**Reading the formula as redistribution, with the example completed.**
-
-Add-$k$ smoothing pretends you saw every possible continuation $k$ extra times. The numerator gains $k$, and the denominator gains $kV$ because there are $V$ possible next words each receiving $k$ phantom counts — that is what keeps the distribution summing to one, and it is the part people forget. The example above assumes a vocabulary of $V = 3$ ("cat", "dog", "bird") with $c(\text{the}) = 2$, giving $P(\text{bird} \mid \text{the}) = (0+1)/(2+3) = 1/5$. Worth completing the picture: the seen continuations drop from $1/2$ each to $(1+1)/(2+3) = 2/5$. So the three probabilities are $2/5, 2/5, 1/5$, summing to 1 — the unseen event was funded by taking mass from the observed ones.
-
-**Why add-one is usually too much.** The mass moved to unseen events is $kV/(c + kV)$, and $V$ is large. With a realistic $V = 50{,}000$ and a context seen 10 times, add-one gives the observed continuations $(c+1)/(10 + 50{,}000)$ — the denominator is 5,000 times the actual count, so a continuation observed 5 times out of 10 goes from probability 0.5 to about 0.00012. Essentially *all* the probability mass has been handed to word types never seen in this context. That is not a small correction; it is a destruction of the estimate. Hence $k < 1$ (add-$\alpha$ or Lidstone smoothing, with $\alpha$ around 0.01-0.1 tuned on held-out data), and hence the fact that better methods exist.
+**The Bayesian reading.** Add-$k$ is exactly the posterior mean under a symmetric Dirichlet prior with concentration $k$ over the multinomial — add-one is a uniform prior, Laplace's original "rule of succession". This is worth saying because it reframes the hyperparameter: $k$ is a *pseudocount*, your prior strength in units of observations, so choosing $k=1$ against a real count of 10 is asserting a prior worth $V$ observations against 10 real ones. Stated that way, its excessiveness is obvious.
 
 **What better methods do differently.** The deeper flaw in add-$k$ is that it treats all unseen continuations as *equally* likely, which is obviously wrong: after "the", an unseen "aardvark" and an unseen "problem" should not get the same probability. The fixes all bring in information from lower-order models. *Backoff* falls back to the $(n-1)$-gram estimate when the $n$-gram count is zero. *Interpolation* always mixes orders, $\lambda_1 P(w_t \mid w_{t-2}, w_{t-1}) + \lambda_2 P(w_t \mid w_{t-1}) + \lambda_3 P(w_t)$, with the $\lambda$s tuned on held-out data. *Good-Turing* estimates the total mass of unseen events from the count of things seen exactly once, which is an elegant and surprisingly accurate trick. *Kneser-Ney*, the best of the classical methods, subtracts a fixed discount from every observed count and — its key insight — backs off not to how *frequent* a word is but to how many distinct contexts it appears in. That is why it correctly gives "Francisco" a low backoff probability despite it being common: it almost only ever follows "San", so it is a poor guess in a novel context.
 
-**The Bayesian reading.** Add-$k$ is exactly the posterior mean under a symmetric Dirichlet prior with concentration $k$ over the multinomial — add-one is a uniform prior, Laplace's original "rule of succession". This is worth saying because it reframes the hyperparameter: $k$ is a *pseudocount*, your prior strength in units of observations, so choosing $k=1$ against a real count of 10 is asserting a prior worth $V$ observations against 10 real ones. Stated that way, its excessiveness is obvious.
+**The math, and what it buys you.**
+
+**Completing the toy example shows the redistribution explicitly.** The example above assumes a vocabulary of $V = 3$ ("cat", "dog", "bird") with $c(\text{the}) = 2$, giving $P(\text{bird} \mid \text{the}) = (0+1)/(2+3) = 1/5$. Worth completing the picture: the seen continuations drop from $1/2$ each to $(1+1)/(2+3) = 2/5$. So the three probabilities are $2/5, 2/5, 1/5$, summing to 1 — the unseen event was funded by taking mass from the observed ones.
+
+**Why add-one is usually too much — the number that settles it.** The mass moved to unseen events is $kV/(c + kV)$, and $V$ is large. With a realistic $V = 50{,}000$ and a context seen 10 times, add-one gives the observed continuations $(c+1)/(10 + 50{,}000)$ — the denominator is 5,000 times the actual count, so a continuation observed 5 times out of 10 goes from probability 0.5 to about 0.00012. Essentially *all* the probability mass has been handed to word types never seen in this context. That is not a small correction; it is a destruction of the estimate. Hence $k < 1$ (add-$\alpha$ or Lidstone smoothing, with $\alpha$ around 0.01-0.1 tuned on held-out data), and hence the fact that better methods exist.
 
 **Follow-up:** *Do modern neural language models need smoothing?* Not in this form, because a softmax over the vocabulary assigns strictly positive probability to every token by construction — $e^{z}$ is never zero — so zero probabilities cannot occur and there is nothing to fix. The analogous concern is overconfidence, and the analogous tool is *label smoothing*: train against a target of $1-\epsilon$ for the correct token and $\epsilon/(V-1)$ spread over the rest, which prevents the logits from growing without bound and improves calibration. Same instinct — do not let a model assert certainty — implemented on the target side rather than the count side.
 
@@ -1953,46 +1960,39 @@ Add-$k$ smoothing pretends you saw every possible continuation $k$ extra times. 
 
 ### Q41: Explain the Bayesian interpretation of L1/L2 regularization.
 
-**Answer:**
+> **In 30 seconds.** "If you do MAP estimation instead of maximum likelihood, you're minimising negative log-likelihood plus negative log-prior — and that second term is exactly your regulariser. A Gaussian prior gives a sum of squares, so that's L2; a Laplace prior gives a sum of absolute values, so that's L1. The regularisation strength is the inverse of the prior's width, and L1's sparsity falls out of the kink at zero."
 
-**L2 Regularization = Gaussian Prior:**
-- **Frequentist**: Loss = MSE + λ||w||²
-- **Bayesian**: Prior w ~ N(0, 1/λ)
-- **Interpretation**: Parameters normally distributed around 0
-- **Effect**: Shrinks all parameters toward 0 (smooth, no sparsity)
+**The short version.**
 
-**L1 Regularization = Laplace Prior:**
-- **Frequentist**: Loss = MSE + λ||w||₁
-- **Bayesian**: Prior w ~ Laplace(0, 1/λ)
-- **Interpretation**: Parameters Laplace distributed (sharp peak at 0)
-- **Effect**: Shrinks parameters to exactly 0 (sparse, feature selection)
+| | L2 (Ridge) | L1 (Lasso) |
+|---|---|---|
+| **Frequentist** | Loss = MSE + $\lambda\lVert w\rVert^2$ | Loss = MSE + $\lambda\lVert w\rVert_1$ |
+| **Bayesian** | Prior $w \sim \mathcal{N}(0, 1/\lambda)$ | Prior $w \sim \text{Laplace}(0, 1/\lambda)$ |
+| **Prior shape** | Smooth bell curve | Sharp peak (kink) at 0, fatter tails |
+| **Belief encoded** | All coefficients smallish, none exactly zero | Most coefficients ~0, a few genuinely large |
+| **Effect** | Shrinks all parameters toward 0, no sparsity | Shrinks parameters to exactly 0 — feature selection |
+| **Use when** | Preventing overfitting, all features relevant | Feature selection, many irrelevant features |
 
-**Key Differences:**
-- **L2 (Gaussian)**: Smooth bell curve, no sparsity
-- **L1 (Laplace)**: Sharp peak at 0, creates sparsity
+**Why it matters:** it tells you which regulariser to pick, explains *why* L1 creates sparsity, and gives $\lambda$ a meaning — it is the inverse prior variance.
 
-**Why it matters:**
-- Helps choose right regularization
-- Understand why L1 creates sparsity
-- Interpret regularization strength (λ = prior variance)
-
-**Use:**
-- **L2**: Prevent overfitting, all features relevant
-- **L1**: Feature selection, many irrelevant features
-
-**The derivation, which takes four lines and makes the correspondence exact.**
-
-Maximum a posteriori (MAP) estimation maximises the posterior $P(w \mid D) \propto P(D \mid w) P(w)$. Take the negative log to turn it into a minimisation:
-
-$$\hat{w}_{\text{MAP}} = \arg\min_w \big[-\log P(D \mid w) - \log P(w)\big]$$
-
-The first term is the ordinary loss — for Gaussian noise it is the sum of squared errors. The second term is the penalty, and it is entirely determined by the prior. Substitute a zero-mean Gaussian prior $P(w_j) \propto \exp(-w_j^2 / 2\tau^2)$ and $-\log P(w) = \frac{1}{2\tau^2}\sum_j w_j^2 + \text{const}$ — that is L2, with $\lambda = 1/(2\tau^2)$. Substitute a Laplace prior $P(w_j) \propto \exp(-|w_j|/b)$ and $-\log P(w) = \frac{1}{b}\sum_j |w_j| + \text{const}$ — that is L1, with $\lambda = 1/b$. So the correspondence is not an analogy; the regulariser *is* the negative log prior, and the regularisation strength *is* the inverse prior width.
-
-That relation, $\lambda \propto 1/\tau^2$, is the useful takeaway: a strong penalty is a narrow, confident prior that the weights are near zero; a weak penalty is a wide, vague one. Setting $\lambda \to 0$ is a flat prior, which recovers maximum likelihood — regularisation and priors are the same knob.
+**Why it works.**
 
 **Why the shapes produce different behaviour, in prior terms.** Both densities peak at zero, but the Laplace density has a *kink* there — it is not differentiable at 0, and it is much more sharply peaked, with correspondingly fatter tails. Compare the two at equal variance: the Laplace prior puts more mass very near zero *and* more mass far out, and less in the middle range. That is precisely the belief "most coefficients are essentially zero, but a few are genuinely large", which is a sparsity prior. The Gaussian's smooth quadratic peak says "all coefficients are smallish and none are exactly zero", so its MAP solution has no reason to land on an axis. The kink at zero is what makes the MAP estimate stick there, which is the same fact as the constant-gradient argument in Q20, seen from the probabilistic side.
 
-**One caveat that shows depth.** The MAP estimate under a Laplace prior is sparse, but the *posterior mean* under the same prior is not — the posterior assigns zero probability to any weight being exactly zero, since it is a continuous distribution. So "L1 gives sparsity" is a property of the MAP point estimate specifically, not of Bayesian inference with a Laplace prior. Genuinely Bayesian sparsity requires a spike-and-slab prior (a point mass at zero mixed with a broad distribution) or a continuous approximation to it such as the horseshoe. This distinction between MAP and full posterior is a good thing to be able to draw.
+**The math, and what it buys you.**
+
+The derivation takes four lines and makes the correspondence exact rather than analogical. Maximum a posteriori (MAP) estimation maximises the posterior $P(w \mid D) \propto P(D \mid w) P(w)$. Take the negative log to turn it into a minimisation:
+
+$$\hat{w}_{\text{MAP}} = \arg\min_w \big[-\log P(D \mid w) - \log P(w)\big]$$
+
+The first term is the ordinary loss — for Gaussian noise it is the sum of squared errors. The second term is the penalty, and it is entirely determined by the prior. Substitute a zero-mean Gaussian prior $P(w_j) \propto \exp(-w_j^2 / 2\tau^2)$ and $-\log P(w) = \frac{1}{2\tau^2}\sum_j w_j^2 + \text{const}$ — that is L2, with $\lambda = 1/(2\tau^2)$. Substitute a Laplace prior $P(w_j) \propto \exp(-|w_j|/b)$ and $-\log P(w) = \frac{1}{b}\sum_j |w_j| + \text{const}$ — that is L1, with $\lambda = 1/b$. So the regulariser *is* the negative log prior, and the regularisation strength *is* the inverse prior width.
+
+That relation, $\lambda \propto 1/\tau^2$, is the useful takeaway: a strong penalty is a narrow, confident prior that the weights are near zero; a weak penalty is a wide, vague one. Setting $\lambda \to 0$ is a flat prior, which recovers maximum likelihood — regularisation and priors are the same knob.
+
+**Good and bad.**
+
+- **What the framing buys you:** it turns $\lambda$ from an arbitrary dial into a statement of belief, and it tells you what a new penalty term would mean before you try it.
+- **One caveat that shows depth.** The MAP estimate under a Laplace prior is sparse, but the *posterior mean* under the same prior is not — the posterior assigns zero probability to any weight being exactly zero, since it is a continuous distribution. So "L1 gives sparsity" is a property of the MAP point estimate specifically, not of Bayesian inference with a Laplace prior. Genuinely Bayesian sparsity requires a spike-and-slab prior (a point mass at zero mixed with a broad distribution) or a continuous approximation to it such as the horseshoe.
 
 **Follow-up:** *What is the Bayesian view of early stopping and dropout?* Early stopping is an implicit regulariser: starting from small initialisation and halting before convergence keeps the weights near the origin, which for a linear model can be shown to be approximately equivalent to L2 with a $\lambda$ that decreases as training continues. Dropout has a stronger version of the correspondence — Gal and Ghahramani showed that a network trained with dropout is performing approximate variational inference in a deep Gaussian process, which is exactly why keeping dropout on at test time (Q21's follow-up) gives a usable posterior sample. The general pattern is that most regularisers can be read as priors, and reading them that way tells you what belief you are actually encoding.
 
@@ -2008,23 +2008,15 @@ See `36_nlp_basics/regularization_priors.md` for comprehensive explanation!
 
 ### Q42: Explain BLEU score. How is it calculated?
 
-**Answer:**
+> **In 30 seconds.** "BLEU is n-gram precision from one to four, combined with a geometric mean, times a brevity penalty. Two details matter: clipping caps how much credit a repeated word earns at its count in the reference, so 'the the the the' can't score perfectly; and the geometric mean means if any order has zero matches the whole score is zero — which is why sentence-level BLEU is usually zero and you're meant to compute it over a corpus."
 
-**BLEU** (Bilingual Evaluation Understudy) measures quality of machine translation or text generation.
+**The short version.**
 
-**Components:**
+- **N-gram precision** for $n = 1..4$: $p_n$ = matching n-grams / total n-grams in the candidate, **clipped** at the reference count.
+- **Brevity penalty:** $BP = 1$ if the candidate is longer than the reference, else $\exp(1 - \text{ref}/\text{cand})$.
+- **Formula:** $\text{BLEU} = BP \cdot \exp\left(\sum_n w_n \log p_n\right)$, with $w_n$ usually $[0.25, 0.25, 0.25, 0.25]$.
+- **Range** 0 to 1: 1.0 perfect, 0.5-0.7 good, below 0.3 poor.
 
-**1. N-gram Precision:**
-- Precision for n=1,2,3,4 (unigram, bigram, trigram, 4-gram)
-- p_n = (matching n-grams) / (total n-grams in candidate)
-- Clipped: Count capped at reference count
-
-**2. Brevity Penalty (BP):**
-- Penalizes short translations
-- BP = 1 if candidate > reference length
-- BP = exp(1 - ref_len/cand_len) otherwise
-
-**3. BLEU Formula:**
 ```
 BLEU = BP * exp(Σ w_n * log(p_n))
 
@@ -2032,26 +2024,19 @@ Where:
 - w_n: Weights (usually [0.25, 0.25, 0.25, 0.25])
 - p_n: n-gram precisions
 ```
+- **Limitations:** no notion of meaning, poor with synonyms, and precision inherently favours brevity (BP is only an approximate correction).
 
-**Range:** 0 to 1 (higher is better)
+**Why it works.**
 
-**Interpretation:**
-- 1.0: Perfect match
-- 0.5-0.7: Good translation
-- <0.3: Poor translation
+**Clipping is the mechanism worth explaining.** Without it, a candidate of just *"the the the the"* would score $p_1 = 4/4 = 1.0$ against a reference containing "the" twice — perfect precision from pure repetition. Clipping caps the credit at how many times the word actually appears in the reference, so that candidate scores $2/4 = 0.5$. This is what stops the metric from being trivially gamed by repeating high-frequency words.
 
-**Limitations:**
-- Doesn't consider meaning (only n-gram overlap)
-- Doesn't handle synonyms well
-- Favors shorter translations (even with BP)
+**Why BLEU uses precision rather than recall.** Recall is ill-defined with multiple valid references — a translation cannot be expected to contain all n-grams of all references. Precision plus a brevity penalty is the workaround: precision stops you adding junk, and BP stops you from gaming precision by saying almost nothing. So the note that BLEU "favours shorter translations even with BP" is best stated as: precision alone rewards brevity, and BP is the correction, which is approximately but not perfectly calibrated.
 
-**Walking a full calculation, because BLEU is where people's understanding stops at the formula.**
+**The math, and what it buys you.**
 
-Reference: *"the cat is on the mat"*. Candidate: *"the cat the cat on the mat"* (7 tokens).
+Walking a full calculation is where the metric stops being a formula. Reference: *"the cat is on the mat"*. Candidate: *"the cat the cat on the mat"* (7 tokens).
 
 *Unigram precision with clipping.* Candidate unigram counts: the$\times$3, cat$\times$2, on$\times$1, mat$\times$1. Reference counts: the$\times$2, cat$\times$1, is$\times$1, on$\times$1, mat$\times$1. Clipping caps each candidate count at the reference count, so "the" contributes $\min(3,2)=2$ and "cat" contributes $\min(2,1)=1$, plus 1 each for "on" and "mat". Total matched $=5$, out of 7 candidate unigrams, so $p_1 = 5/7 = 0.714$.
-
-*Clipping is the mechanism worth explaining.* Without it, a candidate of just *"the the the the"* would score $p_1 = 4/4 = 1.0$ against this reference — perfect precision from pure repetition. Clipping caps the credit at how many times the word actually appears in the reference, so that candidate scores $2/4 = 0.5$. This is what stops the metric from being trivially gamed by repeating high-frequency words.
 
 *Bigram precision.* Candidate bigrams: "the cat", "cat the", "the cat", "cat on", "on the", "the mat" (6 total). Reference bigrams: "the cat", "cat is", "is on", "on the", "the mat". Matches with clipping: "the cat" appears twice in the candidate but once in the reference, so it contributes 1; "on the" contributes 1; "the mat" contributes 1. So $p_2 = 3/6 = 0.5$. Note how the higher-order precisions are what actually penalise the scrambled word order — unigram precision barely noticed.
 
@@ -2059,7 +2044,10 @@ Reference: *"the cat is on the mat"*. Candidate: *"the cat the cat on the mat"* 
 
 *Combining.* BLEU uses the *geometric* mean of the $p_n$, and that choice matters: a geometric mean is zero if any single term is zero. So a candidate with no matching 4-grams scores exactly zero regardless of how good its unigram precision is. This is why BLEU on a single short sentence is often 0 and why the metric is designed to be computed at the *corpus* level, aggregating the numerators and denominators over all sentences before dividing. Sentence-level BLEU needs smoothing (adding a small count to zero n-gram matches) to be usable at all.
 
-**Why BLEU uses precision rather than recall.** Recall is ill-defined with multiple valid references — a translation cannot be expected to contain all n-grams of all references. Precision plus a brevity penalty is the workaround: precision stops you adding junk, and BP stops you from gaming precision by saying almost nothing. So the answer's note that BLEU "favours shorter translations even with BP" is best stated as: precision alone rewards brevity, and BP is the correction, which is approximately but not perfectly calibrated.
+**Good and bad.**
+
+- **Good:** cheap, deterministic, language-agnostic, and universally understood, which is why it persists as a baseline.
+- **Bad:** surface n-grams only, so no credit for synonyms or paraphrase; zero-valued on short outputs; and not comparable across papers unless tokenisation, casing and reference count match.
 
 **Follow-up:** *What are the practical gotchas when reporting BLEU?* That BLEU numbers are not comparable across papers unless the tokenisation, casing, and number of references match — a difference in tokenisation alone can move the score by several points. This is exactly why SacreBLEU exists: it takes detokenised text and applies a fixed internal tokenisation, and it emits a version signature so a score can be reproduced. On modern systems, learned metrics such as COMET and BLEURT correlate substantially better with human judgement because they compare meaning via pretrained representations rather than surface n-grams, and chrF (character n-gram F-score) is a better lexical metric for morphologically rich languages. BLEU persists mainly as a cheap, deterministic, universally understood baseline.
 
@@ -2071,41 +2059,25 @@ Reference: *"the cat is on the mat"*. Candidate: *"the cat the cat on the mat"* 
 
 ### Q43: Explain ROUGE score. What are ROUGE-1, ROUGE-2, ROUGE-L?
 
-**Answer:**
+> **In 30 seconds.** "ROUGE measures overlap between a generated summary and a reference: ROUGE-1 is unigrams, ROUGE-2 bigrams, and ROUGE-L uses the longest common subsequence, so it rewards keeping the right order without demanding adjacency. It's recall-oriented because summarisation is about coverage, where BLEU is precision-oriented because translation is about correctness. The big weakness is that it's pure surface overlap, so it punishes good paraphrasing."
 
-**ROUGE** (Recall-Oriented Understudy for Gisting Evaluation) measures overlap between generated and reference text.
+**The short version.**
 
-**ROUGE-1 (Unigram):**
-- Measures word overlap
-- ROUGE-1 = (overlapping words) / (words in reference)
-- Focus: Content words
+| | What it measures | Formula | Focus |
+|---|---|---|---|
+| **ROUGE-1** | Unigram overlap | overlapping words / words in reference | Content coverage |
+| **ROUGE-2** | Bigram overlap | overlapping bigrams / bigrams in reference | Word order and phrases |
+| **ROUGE-L** | Longest common subsequence (need not be contiguous) | LCS(cand, ref) / length(ref) | Sentence structure and order |
 
-**ROUGE-2 (Bigram):**
-- Measures bigram overlap
-- ROUGE-2 = (overlapping bigrams) / (bigrams in reference)
-- Focus: Word order and phrases
+- **Returns** precision, recall and F1.
+- **Uses:** the primary metric for summarisation; secondary for general text generation.
+- **Versus BLEU:** BLEU is precision-oriented (translation); ROUGE is recall-oriented (summarisation); ROUGE-L is the better choice for order-sensitive tasks.
 
-**ROUGE-L (Longest Common Subsequence):**
-- Measures LCS overlap
-- ROUGE-L = LCS(candidate, reference) / length(reference)
-- Focus: Sentence structure and order
-- LCS: Longest sequence appearing in both (not necessarily contiguous)
+**Why it works.**
 
-**Returns:** Precision, Recall, F1
+**Why recall-oriented, and what it costs.** In summarisation the question is "did the summary cover the important content of the source", which is a recall question; in translation the question is "is what you produced correct", which is precision. Hence the split with BLEU. But pure recall is trivially gamed by producing a long summary, which is why every modern report uses the F1 variants and why summarisation evaluations must control for length — a system that writes longer summaries will show higher ROUGE recall while being no better.
 
-**Use Cases:**
-- **Summarization**: Primary metric
-- **Text generation**: Secondary metric
-- **ROUGE-1**: Content coverage
-- **ROUGE-2**: Phrase matching
-- **ROUGE-L**: Structure similarity
-
-**Comparison to BLEU:**
-- **BLEU**: Precision-oriented (translation)
-- **ROUGE**: Recall-oriented (summarization)
-- **ROUGE-L**: Better for order-sensitive tasks
-
-**A worked example, and the LCS detail that ROUGE-L turns on.**
+**The math, and what it buys you.**
 
 Reference: *"the cat sat on the mat"*. Candidate: *"the cat was on the mat"*.
 
@@ -2115,9 +2087,10 @@ Reference: *"the cat sat on the mat"*. Candidate: *"the cat was on the mat"*.
 
 *ROUGE-L.* The longest common subsequence is "the cat on the mat", length 5 — subsequences need not be contiguous, which is the whole point: ROUGE-L rewards preserved *order* without demanding adjacency, so an inserted or substituted word costs you that word but not the surrounding structure. Recall $=5/6$, precision $=5/6$, and the reported figure is the F-measure. A detail worth knowing: ROUGE-L as originally defined uses an F-measure weighted by $\beta$ strongly favouring recall, and there are two variants — sentence-level LCS, and ROUGE-Lsum, which computes LCS per sentence and aggregates. Summarisation papers usually report ROUGE-Lsum, and the two differ enough that mixing them up invalidates a comparison.
 
-**Why recall-oriented, and what it costs.** In summarisation the question is "did the summary cover the important content of the source", which is a recall question; in translation the question is "is what you produced correct", which is precision. Hence the split with BLEU. But pure recall is trivially gamed by producing a long summary, which is why every modern report uses the F1 variants and why summarisation evaluations must control for length — a system that writes longer summaries will show higher ROUGE recall while being no better.
+**Good and bad.**
 
-**The limitation that matters most.** ROUGE counts surface n-gram overlap, so it cannot see paraphrase. *"The film was excellent"* and *"the movie was superb"* share almost no unigrams and would score near zero against each other despite being the same statement. That is a serious problem now that abstractive summarisers genuinely paraphrase — ROUGE systematically undervalues good abstractive output and overvalues extractive output that copies phrases verbatim. Two consequences follow: a purely extractive baseline (say, "take the first three sentences", the notorious Lead-3 baseline on news) is hard to beat on ROUGE while being obviously worse to read, and reported ROUGE gains often do not survive human evaluation.
+- **Good:** cheap, standard, comparable with a decade of prior work, and ROUGE-L captures ordering without demanding exact phrase matches.
+- **Bad — the limitation that matters most.** ROUGE counts surface n-gram overlap, so it cannot see paraphrase. *"The film was excellent"* and *"the movie was superb"* share almost no unigrams and would score near zero against each other despite being the same statement. That is a serious problem now that abstractive summarisers genuinely paraphrase — ROUGE systematically undervalues good abstractive output and overvalues extractive output that copies phrases verbatim. Two consequences follow: a purely extractive baseline (say, "take the first three sentences", the notorious Lead-3 baseline on news) is hard to beat on ROUGE while being obviously worse to read, and reported ROUGE gains often do not survive human evaluation.
 
 **Follow-up:** *What would you use instead?* BERTScore matches tokens via contextual embeddings and cosine similarity, so paraphrase is credited; it correlates far better with human judgement while staying reference-based. For faithfulness specifically — whether the summary states anything the source does not — n-gram overlap is the wrong tool entirely, and the standard approaches are entailment-based (does the source entail each summary sentence) or QA-based (generate questions from the summary and check the source answers them the same way). Increasingly the practical choice is LLM-as-judge with a rubric, which correlates well but introduces its own biases toward length and toward the judge model's own style. The honest answer in an interview is that you report ROUGE for comparability with prior work and something else for the decision you are actually making.
 
@@ -2129,59 +2102,37 @@ Reference: *"the cat sat on the mat"*. Candidate: *"the cat was on the mat"*.
 
 ### Q44: How do you handle large database schemas in NL2Code?
 
-**Answer:**
+> **In 30 seconds.** "With a big schema the hard part isn't writing SQL, it's working out which four tables out of a thousand the question is about — schema linking is where most of the errors live. So it's a retrieval problem first: verbalise each table into a description, index it, retrieve with hybrid lexical plus embedding search, then expand along foreign keys. Tune that stage for recall, not precision, because an extra table is cheap and a missing one is fatal."
 
-**Problem:** Large schemas (thousands of tables/columns) don't fit in context window.
+**The short version.**
 
-**Solutions:**
+**Problem:** large schemas (thousands of tables and columns) do not fit in the context window.
 
-**1. Schema Pruning:**
-- **Relevance scoring**: Score tables/columns by relevance to query
-  - TF-IDF similarity
-  - Embedding similarity (BERT)
-  - Keyword matching
-- **Top-K selection**: Select top-K most relevant elements
-- **Hierarchical**: Prune at table level, then column level
+1. **Schema pruning.** Score tables/columns for relevance (TF-IDF, embedding similarity, keyword matching), take top-K, and prune hierarchically — table level first, then column level.
+2. **Schema encoding.** Hierarchical encoding, graph neural networks over the schema graph, or encoding the schema separately and combining later.
+3. **Two-stage approach.** Stage 1: schema selection. Stage 2: code generation given the selected schema.
+4. **Retrieval-augmented.** Retrieve the relevant schema, add it to the context dynamically, and iterate to refine the selection.
 
-**2. Schema Encoding:**
-- **Hierarchical encoding**: Encode at different levels
-- **Graph neural networks**: Model schema as graph
-- **Separate encoding**: Encode schema separately, combine later
-
-**3. Two-Stage Approach:**
-- **Stage 1**: Schema selection (which tables/columns needed)
-- **Stage 2**: Code generation (given selected schema)
-
-**4. Retrieval-Augmented:**
-- **Retrieve relevant schema**: Use retrieval to find relevant parts
-- **Dynamic context**: Add retrieved schema to context
-- **Iterative**: Refine selection based on generation
-
-**Standard Procedure:**
 ```
 Query → Schema Pruning → Schema Encoding → Code Generation → Code
 ```
 
-**Example:**
-- Query: "Find customers who bought products in 2023"
-- Pruned schema: customers, orders, products tables + relevant columns
-- Generated SQL: SELECT with JOINs on relevant tables
+**Example:** query "Find customers who bought products in 2023" → pruned schema of customers, orders, products plus relevant columns → SQL with the right JOINs.
 
-**Best Practices:**
-- Index schemas for fast retrieval
-- Add schema descriptions
-- Handle schema versioning
-- Validate generated code
+**Best practices:** index schemas for fast retrieval, add schema descriptions, handle schema versioning, validate generated code.
 
-**Why this is a retrieval problem before it is a generation problem.**
+**Why it works.**
 
-The framing that makes the answer coherent: with a thousand tables, the model's difficulty is not writing SQL, it is *deciding which four tables the question is about*. Published error analyses on cross-domain text-to-SQL consistently find schema linking — connecting phrases in the question to the right columns and tables — is the dominant error source, ahead of SQL syntax or join logic. So most of the engineering effort belongs in the selection stage, and the accuracy ceiling of the whole system is set by the recall of that stage: if pruning drops a needed table, no amount of generation quality recovers it. That asymmetry dictates the tuning target — **optimise the pruning stage for recall, not precision**, and let the generator discard the extras. Retrieving 30 candidate tables of which 4 are needed is fine; retrieving 5 of which one needed table is missing is fatal.
+**Why this is a retrieval problem before it is a generation problem.** With a thousand tables, the model's difficulty is not writing SQL, it is *deciding which four tables the question is about*. Published error analyses on cross-domain text-to-SQL consistently find schema linking — connecting phrases in the question to the right columns and tables — is the dominant error source, ahead of SQL syntax or join logic. So most of the engineering effort belongs in the selection stage, and the accuracy ceiling of the whole system is set by the recall of that stage: if pruning drops a needed table, no amount of generation quality recovers it. That asymmetry dictates the tuning target — **optimise the pruning stage for recall, not precision**, and let the generator discard the extras. Retrieving 30 candidate tables of which 4 are needed is fine; retrieving 5 of which one needed table is missing is fatal.
 
 **What "relevance scoring" actually has to handle.** Naive embedding similarity between the question and a column name fails on the cases that matter, because schema names are rarely natural language: `cust_dob`, `t_ord_hdr`, `flg_actv`. Three things help concretely. First, *verbalise the schema* — turn each table into a sentence ("Table orders: one row per customer order, with columns order_id, customer_id, order_date, total_amount") using column comments and any data dictionary, and embed that rather than the raw identifier. Second, *include sample values*, because a question mentioning "California" links to a column only if you know that column contains state names; indexing distinct values of low-cardinality string columns is one of the highest-leverage additions available. Third, *combine lexical and semantic retrieval*, since exact matches on identifier fragments are precisely what dense embeddings blur.
 
 **Foreign keys change the retrieval problem.** Tables are not independent documents — selecting `orders` and `products` without the `order_items` join table produces SQL that cannot be written. So after scoring, expand the selected set along foreign-key edges to include any table on a join path between selected tables. This is graph closure, not ranking, and it is a common omission: the join table often has no lexical or semantic overlap with the question at all and will never be retrieved on its own merits.
 
-**Making the two-stage approach robust.** The failure mode of a hard two-stage pipeline is that stage-1 errors are unrecoverable. Two mitigations: keep a generous candidate set as described above, and add a *validation-and-repair loop* — run `EXPLAIN` or execute the generated query against the database, and feed any error back to the model with the message and possibly extra schema. A large share of errors are mechanically detectable (unknown column, ambiguous reference, type mismatch) and a single repair round fixes many of them. Execution-guided decoding, where you filter candidate queries by whether they run and return a non-empty result, is the stronger version of the same idea.
+**Good and bad.**
+
+- **The two-stage pipeline — good:** it keeps the generation prompt small and cheap, and it gives you a separately measurable stage to fix.
+- **Bad, and the mitigations.** The failure mode of a hard two-stage pipeline is that stage-1 errors are unrecoverable. Two mitigations: keep a generous candidate set as described above, and add a *validation-and-repair loop* — run `EXPLAIN` or execute the generated query against the database, and feed any error back to the model with the message and possibly extra schema. A large share of errors are mechanically detectable (unknown column, ambiguous reference, type mismatch) and a single repair round fixes many of them. Execution-guided decoding, where you filter candidate queries by whether they run and return a non-empty result, is the stronger version of the same idea.
 
 **Follow-up:** *How do you evaluate an NL2SQL system?* Not by string match against a reference query — there are many correct SQL statements for one question, differing in join order, aliasing, or subquery versus CTE. The standard metric is *execution accuracy*: run both the predicted and reference query against a real database and compare result sets. For that to be meaningful the test data must exercise the distinctions you care about, since an underpopulated table can make a wrong query return the same rows as a right one — which is what test-suite accuracy addresses, by running against several databases chosen to distinguish semantically different queries. Alongside that, track schema-linking recall separately, because it tells you which stage to fix.
 
@@ -2193,51 +2144,35 @@ The framing that makes the answer coherent: with a thousand tables, the model's 
 
 ### Q45: What are the standard procedures for different NLP tasks?
 
-**Answer:**
+> **In 30 seconds.** "They're all the same three steps — represent the text, predict some structure, score it against a reference — and what's changed over a decade is only how much of that is learned rather than engineered. So the real question is which tool fits: prompt a general model when you have no labels and need it working now; fine-tune a small encoder when the task is fixed and high-volume. And whatever it is, build a dumb baseline first."
 
-**1. Text Classification:**
-- Preprocess → Feature extraction (TF-IDF/embeddings) → Model → Evaluate
-- Metrics: Accuracy, F1-score
+**The short version.**
 
-**2. NER:**
-- BIO tagging → Embeddings → Sequence labeling (CRF/BiLSTM) → Extract entities
-- Metrics: F1 per entity type
+| Task | Pipeline | Metrics |
+|---|---|---|
+| **Text classification** | Preprocess → features (TF-IDF/embeddings) → model → evaluate | Accuracy, F1 |
+| **NER** | BIO tagging → embeddings → sequence labelling (CRF/BiLSTM) → extract | F1 per entity type (span-level) |
+| **Question answering** | Encode question + context → attention → extract answer span | EM, F1 |
+| **Machine translation** | Parallel corpus → tokenisation → seq2seq/transformer → beam search | BLEU, METEOR |
+| **Summarisation** | Extractive: rank and select sentences. Abstractive: encode → generate | ROUGE-1/2/L |
+| **NL2Code** | Query → schema pruning → schema encoding → code generation | CodeBLEU, execution accuracy |
 
-**3. Question Answering:**
-- Encode question+context → Attention → Extract answer span
-- Metrics: EM, F1
-
-**4. Machine Translation:**
-- Parallel corpus → Tokenization → Seq2Seq/Transformer → Beam search
-- Metrics: BLEU, METEOR
-
-**5. Summarization:**
-- **Extractive**: Sentence ranking → Select top sentences
-- **Abstractive**: Encode → Generate summary
-- Metrics: ROUGE-1/2/L
-
-**6. NL2Code:**
-- Query → Schema pruning → Schema encoding → Code generation
-- Metrics: CodeBLEU, Execution accuracy
-
-**General Pipeline:**
 ```
 Text → Preprocessing → Feature Extraction → Model → Output → Evaluation
 ```
 
-**Key Points:**
-- Start with simple baselines
-- Use pre-trained models when possible
-- Evaluate with task-specific metrics
-- Handle domain-specific challenges
+**Key points:** start with simple baselines; use pre-trained models where possible; evaluate with task-specific metrics; handle domain-specific challenges.
 
-**The unifying observation.** Every pipeline in the list above is the same three moves — represent the text, predict a structure, score against a reference — and what changed over the last decade is only *how much of it is learned*. The classical era engineered the representation (TF-IDF, hand-built features) and used a small task-specific model. The pretrain-then-finetune era learned the representation once and attached a small task head. The current era often replaces the whole middle with a prompt. Being able to say which era a given approach belongs to, and when to pick each, is more useful than the list itself.
+**Why it works.**
+
+**The unifying observation.** Every pipeline in the table above is the same three moves — represent the text, predict a structure, score against a reference — and what changed over the last decade is only *how much of it is learned*. The classical era engineered the representation (TF-IDF, hand-built features) and used a small task-specific model. The pretrain-then-finetune era learned the representation once and attached a small task head. The current era often replaces the whole middle with a prompt. Being able to say which era a given approach belongs to, and when to pick each, is more useful than the list itself.
 
 **When to pick which, concretely.** *Prompt a general model* when you have no labelled data, when the task is fluid or one-off, or when you need it working this week; expect the highest per-item cost and latency. *Fine-tune a small encoder* (a BERT-family model, 100M-400M parameters) when the task is fixed and high-volume: with a few thousand labels it will typically match or beat a large prompted model on a narrow classification or tagging task, at a thousandth the inference cost and single-digit milliseconds of latency. *Fine-tune a generative model with LoRA* when the output is free-form but the style or format is specific. The economics matter more than the accuracy in most production decisions, and interviewers notice when a candidate raises them unprompted.
 
-**Two things the list omits that dominate real projects.** First, *the label set is the hard part*. For NER the difficulty is almost never the model — it is deciding whether a product name inside a company name is one entity or two, and getting annotators to apply that consistently; inter-annotator agreement below about 0.8 Cohen's kappa means the ceiling on your model is already set by the noise. Second, *evaluation design outranks model choice*. A random train-test split leaks when documents come from the same source or share near-duplicates, which is endemic in scraped corpora, and it produces the classic result of a model that scores 0.95 offline and fails on deployment. Splitting by document, by time, or by source is the fix, and choosing the split is a modelling decision, not a bookkeeping one.
+**Good and bad.**
 
-**Metric selection, since the list gives metrics without caveats.** Accuracy is misleading under class imbalance — 99% accuracy on a 1%-positive problem is achieved by predicting "no" — so use per-class F1, and be explicit about macro (unweighted class average, which surfaces poor performance on rare classes) versus micro (which is dominated by the frequent ones). NER F1 should be computed on whole spans, not tokens, because getting three of four tokens of an entity right is not three-quarters correct. And for any generation task, remember Q42 and Q43: the automatic metric is a proxy, and if the decision matters, a small human evaluation on a couple of hundred examples will tell you more than a decimal point of ROUGE.
+- **Two things the list omits that dominate real projects.** First, *the label set is the hard part*. For NER the difficulty is almost never the model — it is deciding whether a product name inside a company name is one entity or two, and getting annotators to apply that consistently; inter-annotator agreement below about 0.8 Cohen's kappa means the ceiling on your model is already set by the noise. Second, *evaluation design outranks model choice*. A random train-test split leaks when documents come from the same source or share near-duplicates, which is endemic in scraped corpora, and it produces the classic result of a model that scores 0.95 offline and fails on deployment. Splitting by document, by time, or by source is the fix, and choosing the split is a modelling decision, not a bookkeeping one.
+- **Metric selection, since the table gives metrics without caveats.** Accuracy is misleading under class imbalance — 99% accuracy on a 1%-positive problem is achieved by predicting "no" — so use per-class F1, and be explicit about macro (unweighted class average, which surfaces poor performance on rare classes) versus micro (which is dominated by the frequent ones). NER F1 should be computed on whole spans, not tokens, because getting three of four tokens of an entity right is not three-quarters correct. And for any generation task, remember Q42 and Q43: the automatic metric is a proxy, and if the decision matters, a small human evaluation on a couple of hundred examples will tell you more than a decimal point of ROUGE.
 
 **Follow-up:** *What is the first thing you do on a new NLP task?* Build the dumbest possible end-to-end baseline and get it evaluated — majority class, keyword rules, or TF-IDF with logistic regression — before touching a transformer. It takes under an hour and it does three things: it establishes the score anyone must beat, it forces the evaluation harness to exist early, and it frequently exposes that the task is nearly solvable by a keyword, or that the labels are too noisy to learn from at all. Both discoveries are much cheaper to make on day one than after a week of fine-tuning.
 
@@ -2255,25 +2190,24 @@ See `36_nlp_basics/nlp_tasks_and_solutions.md` for detailed procedures!
 
 ### Q46: Derive MLE for a coin flip (Bernoulli distribution).
 
-**Answer:**
+> **In 30 seconds.** "I write down the probability of exactly the data I saw as a function of theta, take the log because it turns the product into a sum without moving the maximum, differentiate, set to zero — and it collapses to theta equals k over n, the observed fraction of heads. I'd also check the second derivative is negative, and flag that three heads out of three gives theta equals one, which is where a prior starts earning its keep."
 
-**Setup:** n flips, k heads, model P(heads) = θ
+**The short version.**
 
-**Likelihood:** L(θ) = θᵏ × (1-θ)ⁿ⁻ᵏ
+- **Setup:** $n$ flips, $k$ heads, $P(\text{heads}) = \theta$.
+- **Likelihood:** $L(\theta) = \theta^k(1-\theta)^{n-k}$.
+- **Log-likelihood:** $k\log\theta + (n-k)\log(1-\theta)$.
+- **Derivative:** $k/\theta - (n-k)/(1-\theta)$; set to zero → $\theta = k/n$.
+- **Result:** $\hat\theta_{\text{MLE}} = k/n$ — simply the observed proportion of heads.
+- **Watch the edge cases:** $k=0$ or $k=n$ puts the maximum on the boundary, and the derivative argument does not apply there.
 
-**Log-likelihood:** log L(θ) = k log θ + (n-k) log(1-θ)
+**Why it works.**
 
-**Derivative:** d/dθ [log L(θ)] = k/θ - (n-k)/(1-θ)
+The phrase *maximum likelihood* names the recipe exactly: write down the probability of the data you actually saw as a function of the unknown parameter, then pick the parameter value that makes that number as large as possible. Nothing else is going on.
 
-**Set to zero:** k/θ = (n-k)/(1-θ) → θ = k/n
+**The math, and what it buys you.**
 
-**Result:** θ̂_MLE = k/n (observed proportion)
-
-**Intuition:** MLE is simply the proportion of heads observed!
-
-**Full walkthrough, one step at a time.**
-
-The phrase *maximum likelihood* names the recipe exactly: write down the probability of the data you actually saw as a function of the unknown parameter, then pick the parameter value that makes that number as large as possible. Nothing else is going on. Here is every step with a word on why the move is allowed.
+Here is every step with a word on why the move is allowed.
 
 **Step 0 — the model.** Each flip is a Bernoulli random variable: it is $1$ (heads) with probability $\theta$ and $0$ (tails) with probability $1-\theta$. *Bernoulli* just means "a single yes/no trial with a fixed success probability." We assume the flips are i.i.d. — *independent and identically distributed*, meaning no flip influences another and every flip uses the same $\theta$. That assumption is what lets us multiply the per-flip probabilities in the next step.
 
@@ -2301,9 +2235,12 @@ $$\ell''(\theta) = -\frac{k}{\theta^{2}} - \frac{n-k}{(1-\theta)^{2}} < 0$$
 
 for every $\theta$ in $(0,1)$ whenever $0<k<n$, so $\ell$ is strictly concave and the stationary point is the unique global maximum. This step is the one candidates skip and interviewers notice.
 
-**Edge cases.** If $k=0$ the log-likelihood is $n\log(1-\theta)$, which increases as $\theta$ falls, so the maximum sits at the boundary $\hat\theta=0$; symmetrically $k=n$ gives $\hat\theta=1$. The derivative-equals-zero argument does not apply at a boundary. This is exactly the pathology that a prior fixes — see Q51.
-
 **Worked numbers.** Ten flips, three heads: $\hat\theta = 3/10 = 0.3$. Three flips, three heads: $\hat\theta = 1.0$, i.e. the model now claims the coin *never* lands tails. That confident nonsense from three data points is the standard motivation for MAP.
+
+**Good and bad.**
+
+- **Good:** a closed form, no hyperparameters, and it is the intuitive answer — the observed proportion.
+- **Bad — the edge cases.** If $k=0$ the log-likelihood is $n\log(1-\theta)$, which increases as $\theta$ falls, so the maximum sits at the boundary $\hat\theta=0$; symmetrically $k=n$ gives $\hat\theta=1$. The derivative-equals-zero argument does not apply at a boundary. This is exactly the pathology that a prior fixes — see Q51.
 
 **Follow-up:** *What is the variance of this estimator?* Since $k \sim \text{Binomial}(n,\theta)$ has variance $n\theta(1-\theta)$, the estimator $\hat\theta=k/n$ has variance $\theta(1-\theta)/n$ — it shrinks like $1/n$, and it is largest at $\theta=0.5$, which is the intuitive statement that a fair coin is the hardest one to pin down.
 
@@ -2315,25 +2252,25 @@ for every $\theta$ in $(0,1)$ whenever $0<k<n$, so $\ell$ is strictly concave an
 
 ### Q47: Derive MLE for linear regression.
 
-**Answer:**
+> **In 30 seconds.** "Assume Gaussian noise with constant variance, and the log-likelihood is just minus the sum of squared residuals over two sigma squared, plus constants that don't move the argmax. So maximising likelihood is literally minimising squared error — least squares isn't a stylistic choice, it falls out of the Gaussian assumption. Differentiate, set to zero, and you get the normal equation, valid as long as X has full column rank."
 
-**Setup:** y = Xw + ε, where ε ~ N(0, σ²)
+**The short version.**
 
-**Likelihood:** L(w) ∝ exp(-||y - Xw||²/(2σ²))
+- **Setup:** $y = Xw + \varepsilon$, $\varepsilon \sim \mathcal{N}(0, \sigma^2)$.
+- **Likelihood:** $L(w) \propto \exp(-\lVert y - Xw\rVert^2/(2\sigma^2))$.
+- **Log-likelihood:** $-\lVert y - Xw\rVert^2/(2\sigma^2) + \text{const}$.
+- **So:** $\arg\max_w \log L(w) = \arg\min_w \lVert y - Xw\rVert^2$.
+- **Derivative:** $-2X^\top(y - Xw) = 0$ — the normal equation.
+- **Result:** $\hat w_{\text{MLE}} = (X^\top X)^{-1}X^\top y$ — ordinary least squares.
+- **Key insight:** MLE for linear regression with Gaussian noise *is* OLS.
 
-**Log-likelihood:** log L(w) = -||y - Xw||²/(2σ²) + constant
+**Why it works.**
 
-**Maximize:** argmax_w log L(w) = argmin_w ||y - Xw||²
+**What the model actually claims.** Writing $y = Xw + \varepsilon$ with $\varepsilon \sim \mathcal{N}(0,\sigma^2 I)$ says three separate things: the mean of $y$ given $x$ is linear in $w$; the noise around that mean is Gaussian; and the noise is *homoscedastic and uncorrelated* — same variance $\sigma^2$ at every point, and no correlation between rows. That last part is what makes the joint density a product over rows.
 
-**Derivative:** ∂/∂w [||y - Xw||²] = -2Xᵀ(y - Xw) = 0
+Geometrically, the normal equation says the residual vector is orthogonal to every column of $X$: the fitted values are the orthogonal projection of $y$ onto the column space of $X$. That is the picture worth carrying into the interview.
 
-**Result:** ŵ_MLE = (XᵀX)⁻¹Xᵀy (Ordinary Least Squares!)
-
-**Key Insight:** MLE for linear regression with Gaussian noise = OLS!
-
-**Full walkthrough, one step at a time.**
-
-**Step 0 — what the model actually claims.** Writing $y = Xw + \varepsilon$ with $\varepsilon \sim \mathcal{N}(0,\sigma^2 I)$ says three separate things: the mean of $y$ given $x$ is linear in $w$; the noise around that mean is Gaussian; and the noise is *homoscedastic and uncorrelated* — same variance $\sigma^2$ at every point, and no correlation between rows. That last part is what makes the joint density a product over rows.
+**The math, and what it buys you.**
 
 **Step 1 — the likelihood.** The density of one observation is the Gaussian density evaluated at the residual:
 
@@ -2363,13 +2300,16 @@ using $y^\top X w = w^\top X^\top y$ because a scalar equals its own transpose.
 
 $$\nabla_w \lVert y - Xw\rVert^{2} = -2X^{\top}y + 2X^{\top}Xw = -2X^{\top}(y - Xw).$$
 
-**Step 5 — set to zero.** $X^{\top}(y-Xw)=0$ is the *normal equation*: the residual vector is orthogonal to every column of $X$. Geometrically the fitted values are the orthogonal projection of $y$ onto the column space of $X$, which is the picture worth carrying into the interview. Solving,
+**Step 5 — set to zero.** $X^{\top}(y-Xw)=0$ is the *normal equation*. Solving,
 
 $$X^{\top}Xw = X^{\top}y \;\Longrightarrow\; \hat w_{\text{MLE}} = (X^{\top}X)^{-1}X^{\top}y.$$
 
-**Step 6 — when is this valid, and is it a minimum?** The inverse exists only if $X^{\top}X$ is invertible, i.e. $X$ has full column rank — no exactly collinear features and at least as many rows as columns. The Hessian is $2X^{\top}X$, which is positive semi-definite always and positive definite exactly under that full-rank condition, so the stationary point is the unique global minimum. When rank is deficient there are infinitely many optima, and the standard fixes are the pseudo-inverse or a ridge penalty (Q49).
-
 **A note on $\sigma^2$.** It dropped out of the $w$ solution but it is still a parameter. Maximizing $\ell$ over $\sigma^2$ gives $\hat\sigma^{2} = \lVert y - X\hat w\rVert^{2}/n$ — the mean squared residual. That is the *biased* variance estimate; the familiar $n-p$ denominator comes from an unbiasedness correction, not from MLE. Interviewers like this detail because it shows you know MLE is not automatically unbiased.
+
+**Good and bad.**
+
+- **Good:** an exact closed form, a clean geometric reading, and a principled link from a noise assumption to a loss function — which is what lets you invent a loss for a new problem.
+- **Bad — when is this valid?** The inverse exists only if $X^{\top}X$ is invertible, i.e. $X$ has full column rank — no exactly collinear features and at least as many rows as columns. The Hessian is $2X^{\top}X$, which is positive semi-definite always and positive definite exactly under that full-rank condition, so the stationary point is the unique global minimum. When rank is deficient there are infinitely many optima, and the standard fixes are the pseudo-inverse or a ridge penalty (Q49).
 
 > **Why the interviewer asks this.** They want to see that you can connect a probabilistic assumption to a loss function, because that link is what lets you invent a loss for a new problem instead of guessing.
 
@@ -2379,37 +2319,40 @@ $$X^{\top}Xw = X^{\top}y \;\Longrightarrow\; \hat w_{\text{MLE}} = (X^{\top}X)^{
 
 ### Q48: Explain the connection between MLE and MAP.
 
-**Answer:**
+> **In 30 seconds.** "Start from Bayes' rule and take logs: the log-posterior is the log-likelihood plus the log-prior, minus the evidence, which is constant in theta so it drops. So MAP is just MLE with an extra term — and that extra term is your regulariser. A Gaussian prior gives L2, which is ridge; a Laplace prior gives L1, which is lasso. And because the likelihood grows with n while the prior stays fixed, priors are leverage on small data and rounding error on large data."
 
-**MLE:** θ̂_MLE = argmax_θ log P(D|θ)
+**The short version.**
 
-**MAP:** θ̂_MAP = argmax_θ [log P(D|θ) + log P(θ)] = MLE + log(prior)
+| | MLE | MAP |
+|---|---|---|
+| **Objective** | $\arg\max_\theta \log P(D\mid\theta)$ | $\arg\max_\theta [\log P(D\mid\theta) + \log P(\theta)]$ |
+| **Uses a prior?** | No | Yes — the log-prior is the extra term |
+| **Equivalent to** | Unregularised fit | Regularised fit: L2 = Gaussian prior, L1 = Laplace prior |
+| **Small data** | Can be wildly overconfident (3 heads from 3 flips → $\theta = 1$) | Pulled toward the prior mean |
+| **Large data** | — | $\approx$ MLE; the prior washes out |
 
-**Relationship:** MAP = MLE + Prior
+- **Relationship:** MAP = MLE + prior.
+- **When they coincide:** a uniform prior, or a large enough dataset.
+- **When they differ:** small datasets, or a strong prior.
 
-**When same:**
-- Uniform prior → MAP = MLE
-- Large dataset → MAP ≈ MLE
+**Why it works.**
 
-**When different:**
-- Small dataset → Prior has more influence
-- Strong prior → MAP pulled toward prior mean
-
-**Regularization:**
-- L2 (Ridge) = MAP with Gaussian prior
-- L1 (Lasso) = MAP with Laplace prior
-
-**Where the prior comes from: Bayes' rule in one line.**
-
-The bridge between the two estimators is Bayes' rule, $P(\theta \mid D) = P(D\mid\theta)P(\theta)/P(D)$. Take logs of both sides:
+**Where the prior comes from: Bayes' rule in one line.** The bridge between the two estimators is Bayes' rule, $P(\theta \mid D) = P(D\mid\theta)P(\theta)/P(D)$. Take logs of both sides:
 
 $$\log P(\theta\mid D) = \underbrace{\log P(D\mid\theta)}_{\text{log-likelihood}} + \underbrace{\log P(\theta)}_{\text{log-prior}} - \underbrace{\log P(D)}_{\text{constant in }\theta}.$$
 
 The evidence term $\log P(D)$ does not depend on $\theta$, so it cannot move the argmax and we discard it. What is left is exactly "MLE plus a log-prior," which is why MAP looks like a regularized MLE. *MAP* stands for maximum a posteriori: the mode — the highest point — of the posterior distribution.
 
+**The math, and what it buys you.**
+
 **Why regularizers are log-priors, concretely.** A zero-mean Gaussian prior $w \sim \mathcal{N}(0, \tau^{2}I)$ has log-density $-\lVert w\rVert^{2}/(2\tau^{2}) + \text{const}$. Subtracting that from the negative log-likelihood is an L2 penalty — ridge. A Laplace prior $p(w_j) \propto \exp(-|w_j|/b)$ has log-density $-|w_j|/b$, giving an L1 penalty — lasso. The Laplace density is sharply peaked at zero with heavier tails than a Gaussian, which is the probabilistic reason lasso pushes coefficients exactly to zero while ridge only shrinks them: the L1 penalty has a non-zero-width kink at the origin, so zero is a genuine optimum for a whole range of data, whereas the Gaussian's smooth parabola has zero gradient at the origin and never pins a coefficient there.
 
 **Why "large dataset makes them agree" is more than a slogan.** The log-likelihood is a sum of $n$ terms and therefore grows linearly in $n$; the log-prior is a single fixed term that does not grow at all. So the prior's share of the objective falls like $1/n$. Under mild regularity conditions this is the Bernstein–von Mises phenomenon: the posterior concentrates on the true parameter and becomes asymptotically Gaussian regardless of which (positive, smooth) prior you started from. The practical reading is that priors are leverage on small data and rounding error on large data.
+
+**Good and bad.**
+
+- **MLE — good:** no prior to justify, closed forms in the standard cases. **Bad:** overconfident on tiny samples and undefined at boundaries.
+- **MAP — good:** regularisation with a principled interpretation; stabilises small-data estimates. **Bad:** it is only half-Bayesian (see the follow-up) and its answer depends on your choice of prior.
 
 **Follow-up:** *Is MAP a Bayesian method?* Only half-heartedly. It uses a prior, which is Bayesian, but it reports a single point — the posterior mode — and throws away the uncertainty, which is not. It is also not invariant under reparameterization: the mode of a density changes if you transform the parameter (because the Jacobian reshapes the density), whereas the posterior *mean* and full posterior transform sensibly. Fully Bayesian inference integrates over the posterior rather than maximizing it.
 
@@ -2418,8 +2361,27 @@ The evidence term $\log P(D)$ does not depend on $\theta$, so it cannot move the
 > **Saying it out loud.** Start from Bayes' rule and take logs: the log-posterior is the log-likelihood plus the log-prior, minus the evidence, which is constant in theta so it drops. So MAP is just MLE with an extra term, and that extra term is your regularizer. A Gaussian prior gives you the L2 penalty — that's ridge — and a Laplace prior gives you L1, which is lasso. And because the likelihood term grows with n while the prior stays fixed, the prior matters a lot on small data and washes out on big data.
 
 ---
-
 ### Q49: Derive MAP for linear regression with Gaussian prior (Ridge).
+
+> **In 30 seconds.** "Put a zero-mean Gaussian prior on the weights and the MAP estimate *is* ridge regression — the prior term turns into the L2 penalty, and lambda falls out as the noise variance divided by the prior variance. So ridge isn't an arbitrary hack: it's what Bayes tells you to do when you believe the weights are small. The closed form is $(X^\top X + \lambda I)^{-1}X^\top y$, and that $\lambda I$ is also why ridge is numerically safe on collinear data."
+
+**The short version.**
+
+| | OLS / MLE | Ridge / MAP |
+|---|---|---|
+| Objective | $\lVert y - Xw\rVert^2$ | $\lVert y - Xw\rVert^2 + \lambda\lVert w\rVert^2$ |
+| Assumption on $w$ | none (flat prior) | $w \sim \mathcal{N}(0,\tau^2 I)$ |
+| Solution | $(X^\top X)^{-1}X^\top y$ | $(X^\top X + \lambda I)^{-1}X^\top y$ |
+| Invertible when $p > n$? | No | Yes — always |
+| $\lambda$ means | — | $\sigma^2/\tau^2$, noise over prior |
+
+**Why it works.**
+
+The likelihood pulls $w$ toward whatever fits the data; the prior pulls it toward zero. MAP is just the tug-of-war between the two, and $\lambda$ is the rope length. Noisy data (large $\sigma^2$) means the likelihood is less trustworthy, so the prior wins more; a confident prior (small $\tau^2$) means the same thing from the other side. Both push $\lambda$ up and shrink the weights harder — which is the sentence that makes ridge stop feeling arbitrary.
+
+**The math, and what it buys you.**
+
+Here is the whole derivation, one step at a time. The payoff at the end of Step 2 is that the Bayesian objective and the ridge objective are literally the same expression.
 
 **Answer:**
 
@@ -2429,7 +2391,7 @@ The evidence term $\log P(D)$ does not depend on $\theta$, so it cannot move the
 
 **Derivative:** ∂/∂w [log P(w|D)] = -1/σ² × Xᵀ(y - Xw) - 1/σ²_prior × w = 0
 
-**Result:** ŵ_MAP = (XᵀX + λI)⁻¹Xᵀy where λ = σ²/σ²_prior
+**Result:** ŵ_MAP = (XᵀX + λI)⁻¹Xᵀy where λ = σ²/σ²_prior
 
 **Key Insight:** MAP with Gaussian prior = Ridge regression (L2 regularization)!
 
@@ -2461,6 +2423,12 @@ $$-X^{\top}y + X^{\top}Xw + \lambda w = 0 \;\Longrightarrow\; (X^{\top}X + \lamb
 
 **What ridge does in the singular-value basis.** If $X = U\Sigma V^{\top}$ is the singular value decomposition, then OLS divides each component by $s_j$ while ridge divides by $s_j + \lambda/s_j$ — equivalently it multiplies the OLS coefficient in direction $j$ by the shrinkage factor $s_j^{2}/(s_j^{2}+\lambda)$. Directions with large singular values (well-determined by the data) are barely touched; directions with tiny singular values (where the data says almost nothing) are crushed toward zero. That is *exactly* the behaviour you would want a prior to have, and seeing it stated this way is usually what separates a good answer from a great one.
 
+**Good and bad.**
+
+*Ridge is good for:* collinear or wide ($p > n$) designs, noisy data, anywhere you want a stable well-conditioned solve. It has a closed form and a single interpretable knob.
+
+*Ridge is bad at:* selecting features — it shrinks everything but zeroes nothing (that is L1/lasso, which is a Laplace prior). It is not scale invariant, so unstandardized features get penalized inconsistently, and it gives you a point estimate only, not the full posterior uncertainty.
+
 **Follow-up:** *Should the intercept be penalized?* No. Penalizing it makes the fit depend on where you happen to have put the origin of $y$, so in practice you centre the response and the features and leave the intercept out of the penalty. Features should also be standardized first, since an L2 penalty is not scale invariant — measuring a feature in metres versus kilometres changes how hard it gets shrunk.
 
 > **Why the interviewer asks this.** It tests whether you can carry a derivation through with a second term added, and whether you understand $\lambda$ as a signal-to-prior ratio rather than a hyperparameter with no meaning.
@@ -2470,6 +2438,22 @@ $$-X^{\top}y + X^{\top}Xw + \lambda w = 0 \;\Longrightarrow\; (X^{\top}X + \lamb
 ---
 
 ### Q50: Why do we use log-likelihood instead of likelihood?
+
+> **In 30 seconds.** "Three reasons, and the first one is the killer: likelihoods are products of thousands of numbers below one, so they underflow to exactly zero in floating point and take every gradient with them. Log turns that product into a sum that's a perfectly ordinary number. It also turns products into sums so gradients decompose per data point, and it's free — log is monotonic, so the maximizer doesn't move."
+
+**The short version.**
+
+- **Numerical stability** — products of small probabilities underflow; sums of logs don't.
+- **Mathematical convenience** — products become sums, so derivatives decompose per data point.
+- **Monotonicity** — maximizing $\log L(\theta)$ maximizes $L(\theta)$; the argmax is identical.
+- **Additivity** — log-likelihoods from independent data or independent models just add.
+- **Concavity** — many likelihood surfaces are non-concave but their logs are concave.
+
+**Why it works.**
+
+A likelihood over $n$ i.i.d. points is a product of $n$ numbers in $(0,1)$, which shrinks geometrically — it is a number with an exponent that grows linearly in $n$. Floating point stores a bounded exponent, so past a few hundred terms you get zero, and zero is an information-free number: every gradient computed from it is zero and the run is dead. The log undoes the geometric shrinkage exactly, turning "exponent grows linearly" into "value grows linearly," which is a range computers handle comfortably. Everything else — sums instead of products, concavity, additivity — is a bonus that falls out of the same transformation.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -2508,6 +2492,26 @@ Every exponent is now $\le 0$, so every term is in $(0,1]$ and at least one equa
 ---
 
 ### Q51: What's the difference between MLE and MAP in practice?
+
+> **In 30 seconds.** "MLE is the pure-data answer; MAP nudges it toward a prior. The difference only matters when data is scarce — flip a coin three times and get three heads and MLE says tails is literally impossible, which will blow up anything downstream that takes a log. With a Beta(3,3) prior, MAP says 0.71. By a hundred flips the two agree to within a percent, because the likelihood grows with n and the prior doesn't."
+
+**The short version.**
+
+| | MLE | MAP |
+|---|---|---|
+| Philosophy | Frequentist | Bayesian |
+| Prior | none (or uniform) | informative |
+| Estimator | $\hat\theta = k/n$ | $\hat\theta = \dfrac{k+\alpha-1}{n+\alpha+\beta-2}$ (Beta prior) |
+| Best when | large $n$, no prior knowledge | small $n$, prior knowledge, need regularization |
+| Failure mode | extreme estimates on tiny samples | a bad prior biases you forever |
+| Cost | — | essentially identical compute |
+| As $n \to \infty$ | — | converges to MLE |
+
+**Why it works.**
+
+The log-posterior is log-likelihood plus log-prior. The likelihood term grows with $n$; the prior term does not. So the prior acts like a fixed number of imaginary data points you saw before the experiment started — with four real observations those imaginary points dominate, and with ten thousand they are noise. That single sentence explains every practical difference: MAP is regularization, and regularization only matters when you are data-poor.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -2554,7 +2558,13 @@ Read the three rows in order and you have the whole lesson. In row one the prior
 
 *(Verified numerically: with $\alpha=\beta=3$, $(3+2)/(10+4)=0.357$ and $(3+2)/(3+4)=0.714$.)*
 
-**One more practical difference worth naming.** MLE has an asymptotic guarantee — under regularity conditions it is consistent and asymptotically efficient, meaning it attains the lowest possible variance for large $n$. MAP trades a little bias for a large variance reduction on small $n$. That is the bias–variance tradeoff appearing in an estimation-theory costume, and saying it that way tends to land well.
+**Good and bad.**
+
+*MLE:* consistent and asymptotically efficient — under regularity conditions it attains the lowest possible variance for large $n$, and it needs no modelling choices. But it is unstable on small samples and happily assigns probability zero to unseen events.
+
+*MAP:* trades a little bias for a large variance reduction on small $n$, gives natural regularization, and never returns a degenerate estimate. But it requires you to pick a prior, and a wrong one biases every estimate you ever produce.
+
+**One more practical difference worth naming.** That trade is the bias–variance tradeoff appearing in an estimation-theory costume, and saying it that way tends to land well.
 
 **Follow-up:** *How do you choose $\alpha$ and $\beta$ in practice?* Either from domain knowledge expressed as pseudo-counts ("I'd be surprised by a click-through rate outside 1–5%, so pick a Beta with that bulk"), or empirically by fitting the prior to the pooled distribution across many similar items — that is empirical Bayes, and it is how per-item conversion rates get shrunk toward the population rate in production ranking systems.
 
@@ -2572,6 +2582,24 @@ See `37_mle_map_estimation/interview_qa.md` for more detailed answers!
 ## Multimodal Models and Embeddings
 
 ### Q52: Explain CLIP. How does it work?
+
+> **In 30 seconds.** "CLIP trains two encoders — one for images, one for text — so that matching pairs land close together in a shared space. You take a batch of image-caption pairs, build an N-by-N similarity matrix, and do cross-entropy across rows and columns: the diagonal is the true pairs, everything else is a negative. The payoff is zero-shot classification — turn class names into sentences, embed them, pick the nearest — so you can change your label set at inference time without retraining."
+
+**The short version.**
+
+- **Two towers**: a ViT or ResNet image encoder and a Transformer text encoder, projected into one shared space.
+- **Contrastive objective**: maximize similarity of the $N$ true pairs, minimize the $N^2 - N$ mismatched ones.
+- **Scale**: 400M web image-text pairs, batch size ~32K.
+- **Zero-shot**: classification recast as retrieval against embedded prompt sentences.
+- **Result**: matches supervised baselines on many tasks and is markedly more robust to distribution shift.
+
+**Why it works.**
+
+The trick is replacing labels with comparisons. The model is never told "this is a cat" — only "this image goes with this caption and not with those other 32,767 captions." That is a much harder and much richer task, because getting it right requires representing whatever the caption happens to mention. And because the supervision is natural language, the label space is infinite and open: at test time you write new sentences instead of retraining a head.
+
+The analogy: it is a matching exercise, not a multiple-choice test. Two shuffled columns, images on the left and captions on the right, and the model learns to draw the lines.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -2613,7 +2641,11 @@ Now form the $N \times N$ matrix $S_{ij} = (I_i \cdot T_j)/\tau$, where $\tau$ i
 
 **Why zero-shot transfer works at all.** Classification is recast as retrieval. You never train a classifier head; you write one sentence per class ("a photo of a {label}"), encode those sentences once, and label an image by nearest caption. The class set is therefore just a list of strings you can change at inference time. *Prompt ensembling* — averaging the embeddings of several templates per class — reliably adds a point or two, because it averages out the quirks of any single phrasing.
 
-**What CLIP is bad at, which is the follow-up you should expect.** It is weak at counting, at spatial relations ("the cup left of the laptop"), and at binding attributes to the right object ("a red cube and a blue sphere" versus the swap) — a well-documented bag-of-words tendency, because a contrastive objective over web captions rarely needs compositional structure to pick the right caption. It also inherits web-scale social biases, and its zero-shot accuracy is sensitive to prompt wording. Contrastive image-text pretraining remains the backbone of most vision-language systems as of 2026, though production systems now typically add a generative captioning or matching objective on top rather than using the contrastive loss alone — *this is a fast-moving area; check the current state of the art before quoting specifics.*
+**Good and bad.**
+
+*Good at:* open-vocabulary classification and retrieval, robustness to distribution shift, cheap supervision (captions, not taxonomies), and serving as a frozen backbone for downstream vision-language systems.
+
+*Bad at:* counting, spatial relations ("the cup left of the laptop"), and binding attributes to the right object ("a red cube and a blue sphere" versus the swap) — a well-documented bag-of-words tendency, because a contrastive objective over web captions rarely needs compositional structure to pick the right caption. It also inherits web-scale social biases, and its zero-shot accuracy is sensitive to prompt wording. Contrastive image-text pretraining remains the backbone of most vision-language systems as of 2026, though production systems now typically add a generative captioning or matching objective on top rather than using the contrastive loss alone — *this is a fast-moving area; check the current state of the art before quoting specifics.*
 
 **Follow-up:** *Why not just train a supervised classifier on 400M images?* Because you would first need 400M consistent labels from a fixed taxonomy, which does not exist and would not transfer. Natural-language supervision is both cheaper to collect and richer — the caption "a chest X-ray showing pneumonia" carries structure that the integer class ID 37 does not.
 
@@ -2624,6 +2656,24 @@ Now form the $N \times N$ matrix $S_{ij} = (I_i \cdot T_j)/\tau$, where $\tau$ i
 ---
 
 ### Q53: How do you train Word2Vec?
+
+> **In 30 seconds.** "Skip-gram slides a window over the corpus and, for each centre word, tries to predict the words around it. A softmax over a million-word vocabulary per pair is far too expensive, so you reframe it as a binary question with negative sampling: is this centre-context pair real, or did I make it up? Push the dot product up for the real pair, down for five to twenty random fakes. Each update then costs almost nothing, and you get dense embeddings where king minus man plus woman lands near queen."
+
+**The short version.**
+
+- **Data**: (centre, context) pairs from a sliding window of 5–10 words over billions of tokens.
+- **Model**: two embedding tables — input (centre) and output (context), $V \times d$ with $d$ of 100–300.
+- **Loss**: negative sampling — one binary logistic regression per true pair plus $k$ = 5–20 fakes.
+- **Tricks that matter**: subsample frequent words; draw negatives from $f(w)^{3/4}$; randomize window size.
+- **Output**: keep the input table, discard the output table. Hours to days of training.
+
+**Why it works.**
+
+The objective is a prediction game whose *answer* nobody cares about — you never use the model to predict context words. What you want is the side effect: to predict the neighbours of a word well, the embedding has to encode the company that word keeps, and words that keep the same company end up in the same place. That is the distributional hypothesis turned into a loss function.
+
+The reason negative sampling is not a cheap approximation but a genuine reformulation: instead of asking a 1M-way question ("which word is the context?"), you ask a handful of yes/no questions ("is this pair real?"). Same signal, a thousandth of the cost.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -2679,6 +2729,12 @@ Reading it in words: push the dot product of the true pair up (first term), push
 
 **Why the analogy trick works, mechanically.** "King − Man + Woman ≈ Queen" is not magic. The objective drives $v_c \cdot u_o$ toward roughly the pointwise mutual information between the two words, so differences of vectors encode ratios of co-occurrence probabilities. The vector "king minus man" isolates whatever co-occurrence pattern distinguishes royalty-with-male-context from male-context, and adding "woman" re-applies it. Worth mentioning the caveats too: the standard evaluation excludes the three input words from the nearest-neighbour search, and if you do not exclude them the answer is frequently just "king" again. That detail signals you have actually run the code.
 
+**Good and bad.**
+
+*Good:* extremely cheap to train, sparse updates, embeddings that capture strong semantic and syntactic regularities, and a vocabulary-sized table you can ship anywhere.
+
+*Bad:* one vector per word, so no polysemy ("bank" gets one point between the river and the money); no subword information, so out-of-vocabulary words have no vector at all (fastText fixes this); and it learns social biases straight out of the corpus.
+
 **Follow-up:** *Skip-gram or CBOW?* CBOW predicts the centre word from the averaged context, is several times faster, and is better on frequent words. Skip-gram predicts each context word from the centre, sees each rare word many times as an anchor, and is better on small corpora and rare words. Skip-gram with negative sampling is the usual default.
 
 > **Saying it out loud.** Skip-gram slides a window over the corpus and, for each centre word, tries to predict the words around it. The catch is that a softmax over a million-word vocabulary per training pair is way too expensive, so instead you use negative sampling — reframe it as a binary question: is this centre-context pair real, or did I make it up? You push the dot product up for the real pair and down for maybe five to twenty random fake ones, and now each update costs almost nothing. There are a couple of tricks that matter in practice: subsampling frequent words like "the," and drawing negatives from the frequency distribution raised to the three-quarters power so rare words show up a bit more.
@@ -2686,6 +2742,25 @@ Reading it in words: push the dot product of the true pair up (first term), push
 ---
 
 ### Q54: How does GloVe differ from Word2Vec?
+
+> **In 30 seconds.** "Word2vec is local — it slides a window and learns from individual context pairs. GloVe first builds the whole co-occurrence matrix, then fits vectors so the dot product plus two biases matches the log co-occurrence count. The motivating idea is that *ratios* of co-occurrence probabilities carry the meaning. In practice they perform about the same — and there's a nice result showing skip-gram is implicitly factorizing a shifted PMI matrix, so they're closer relatives than they look."
+
+**The short version.**
+
+| | Word2Vec | GloVe |
+|---|---|---|
+| Statistics used | local, window-based | global co-occurrence matrix |
+| Objective | predict context (or centre) | weighted least squares on $\log X_{ij}$ |
+| Optimizer | streaming SGD | fits the pre-aggregated matrix |
+| Memory | tiny, streams the corpus | must hold the co-occurrence matrix |
+| Key claim | distributional prediction | preserves co-occurrence *ratios* |
+| Performance | — | often similar; GloVe sometimes better |
+
+**Why it works.**
+
+Both methods are trying to make the dot product of two word vectors reflect how often those words appear together, relative to how often you would expect by chance. Word2vec gets there implicitly, one pair at a time; GloVe writes the target down explicitly and does least squares on it. Think of it as sampling the corpus versus tabulating it — the same underlying statistics, reached by two different routes.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -2735,6 +2810,15 @@ Three details in there each solve a specific problem. The sum runs only over non
 
 **The honest modern verdict.** The word2vec/GloVe distinction matters much less than either camp claimed: Levy and Goldberg showed skip-gram with negative sampling is implicitly factorizing a shifted PMI matrix, so both methods are matrix factorizations of co-occurrence statistics with different weightings and different optimizers. Tuned carefully, they land within noise of each other on most benchmarks. Both are also *static* embeddings — one vector per word type, so "bank" gets a single vector blending the river and the money sense — which is the limitation that contextual models removed in 2018 and the reason neither is a first choice for new work today.
 
+**Good and bad.**
+
+*GloVe:* uses global statistics directly, trains fast per epoch on the aggregated matrix, and has a derivation you can defend. But building the matrix is a memory-hungry full corpus pass, and it is still a static embedding.
+
+*Word2Vec:* streams with almost no memory, parallelizes trivially, and handles very large corpora comfortably. But it only ever sees local windows, and it is also static.
+
+*Both:* one vector per word type, no subword information, corpus biases baked in — the limitations that contextual models removed in 2018.
+
+
 **Follow-up:** *Which trains faster?* GloVe's per-epoch cost is low because it works over the pre-aggregated co-occurrence matrix, but building that matrix is a full corpus pass with substantial memory. Word2vec streams the corpus with almost no memory and parallelizes trivially via asynchronous SGD. On a very large corpus word2vec is usually the more practical choice.
 
 > **Why the interviewer asks this.** They want to hear "global versus local statistics," but the answer that stands out explains that both are ultimately factorizing the same co-occurrence information.
@@ -2744,6 +2828,27 @@ Three details in there each solve a specific problem. The sum runs only over non
 ---
 
 ### Q55: Explain the evolution of NLP embeddings.
+
+> **In 30 seconds.** "The thread running through all of it is the distributional hypothesis — you know a word by the company it keeps — and each generation is a better way to compress that co-occurrence information. TF-IDF stores it raw and sparse, word2vec and GloVe squash it into a few hundred dense dimensions, and ELMo and BERT made it contextual so 'bank' gets a different vector in a river sentence than a finance one. The one thing I'd push back on is calling the old stuff obsolete — BM25 is a TF-IDF descendant and it's still in production everywhere."
+
+**The short version.**
+
+| Era | Method | Representation | What it added |
+|---|---|---|---|
+| 1970s | TF-IDF | sparse, $\lvert V\rvert$-dim | statistical term weighting |
+| 1980s–90s | N-grams | count-based | local sequence modelling |
+| 2013 | Word2Vec | dense, static | semantics from local windows |
+| 2014 | GloVe | dense, static | global co-occurrence statistics |
+| 2018+ | ELMo / BERT / GPT | dense, contextual | one vector *per occurrence* |
+| 2020+ | LLMs, CLIP | contextual, multimodal | instruction tuning, RLHF, images |
+
+The four axes of movement: sparse → dense, local → global → contextual, fixed → context-dependent, single modality → multimodal.
+
+**Why it works.**
+
+Each step removes an assumption the previous one was forced to make. Sparse vectors assume every word is unrelated to every other; dense vectors drop that. Static vectors assume a word means one thing everywhere; contextual vectors drop that. Multimodal models drop the assumption that meaning lives only in text. Nothing here is a different idea — it is the same idea with fewer constraints each time.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -2808,6 +2913,23 @@ The one sentence that ties these six stages together is the *distributional hypo
 ---
 
 ### Q56: How do you evaluate multimodal models?
+
+> **In 30 seconds.** "Three buckets: retrieval quality — Recall@1/5/10 in both directions plus median rank, because a model can be lopsided; downstream transfer — zero-shot classification and VQA; and robustness and fairness. The thing I'd raise unprompted is contamination: these models train on web-scale image-text data and the benchmarks are on the web too, so 'zero-shot' means zero-shot on the task *format*, not necessarily on the data."
+
+**The short version.**
+
+- **Zero-shot classification** — prompt per class, nearest match, accuracy.
+- **Image-text retrieval** — R@1/5/10 both directions, median rank.
+- **VQA** — accuracy broken out by question type, since reasoning types differ wildly.
+- **Robustness** — distribution shift, adversarial and natural variation.
+- **Bias and fairness** — performance gaps across gender, race, culture.
+- **Few-shot transfer** — how quickly it adapts from a handful of examples.
+
+**Why it works.**
+
+No single number describes a multimodal model, because it has two front doors. Retrieval metrics test whether the shared space is well-organized; classification tests whether it transfers; robustness tests whether the organization survives inputs unlike the training distribution. Reporting only one is like judging a bilingual speaker on their vocabulary in one language.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -2875,6 +2997,23 @@ See `38_multimodal_and_embeddings/` for detailed explanations!
 ## RAG (Retrieval-Augmented Generation)
 
 ### Q57: Design a RAG system. What are the key components?
+
+> **In 30 seconds.** "I'd split it into two loops that run on totally different clocks. Offline: parse, chunk, embed, store vectors with metadata. Online, per query: embed the query with the *same* model, run ANN plus BM25, fuse, re-rank the top fifty with a cross-encoder down to five, stuff those into the prompt with source markers, generate. The two retrieval stages exist because a bi-encoder is cheap and precomputable but imprecise, and a cross-encoder is accurate but costs a forward pass per candidate — cheap for recall, expensive for precision."
+
+**The short version.**
+
+| Loop | Runs | Steps | Clock |
+|---|---|---|---|
+| **Offline (indexing)** | on ingest / schedule | load → clean → chunk → embed → store with metadata | minutes to hours |
+| **Online (serving)** | per query | rewrite → embed → retrieve (dense + sparse) → fuse → re-rank → assemble → generate → cite | a few hundred ms to seconds |
+
+The nine components in order: ingestion, chunking, embedding, query processing, retrieval, re-ranking, context assembly, generation, post-processing.
+
+**Why it works.**
+
+RAG is a system-design problem wearing an ML costume. The core insight is a funnel: start with millions of candidates and cheap scoring, end with five candidates and expensive scoring. Each stage is allowed to be sloppier than the next because the next one cleans up after it — recall first, precision last. Get that ordering wrong (expensive model early) and the system is unaffordable; skip the last stage and it is inaccurate.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -2945,6 +3084,13 @@ The component list above is the *what*; here is the *when*, which is what a desi
 
 **Cost, and where it actually goes.** Embedding a corpus is a one-time cost and is cheap: at roughly \$0.02 per million tokens for a small commercial embedding model as of August 2026, a 100-million-token corpus costs about \$2 to embed once. Generation is the recurring cost and is orders of magnitude larger, because you pay per query and every retrieved chunk is input tokens you are billed for. Vector storage is the third line item and is easy to underestimate: one million chunks at 1536 dimensions in float32 is about 6 GB of raw vectors before index overhead, which is why dimension reduction, product quantization, or Matryoshka truncation to 256–512 dimensions is standard at scale. *All prices here are time-sensitive — verify current rates before using them in a real design document.*
 
+**Good and bad.**
+
+*What RAG buys you:* fresh knowledge without retraining, citations and auditability, per-document access control, and far cheaper updates than fine-tuning.
+
+*What it costs you:* a whole extra distributed system to operate (index freshness, deletes, compaction), latency added before the first token, retrieval failures that surface as confident wrong answers, and a hard dependency on chunking and embedding choices that are painful to change after you have indexed a corpus.
+
+
 **Follow-up:** *How do you handle document updates and deletions?* Key chunks by a stable `(document_id, chunk_index)` and store a content hash. On re-ingest, re-embed only chunks whose hash changed, and delete by `document_id` prefix. Also check that your vector store supports real deletes rather than tombstones only — some index types (HNSW in particular) mark deleted entries and need periodic compaction, and a system that never compacts slowly fills with ghosts.
 
 > **Why the interviewer asks this.** It is a system-design question wearing an ML costume; they are watching for whether you separate offline indexing from online serving and whether you think about staleness, cost, and failure modes rather than reciting a pipeline diagram.
@@ -2954,6 +3100,25 @@ The component list above is the *what*; here is the *when*, which is what a desi
 ---
 
 ### Q58: How do you improve RAG retrieval accuracy?
+
+> **In 30 seconds.** "First thing I'd do is figure out which failure I have. Build a small labelled set and check whether the right chunk is in the top hundred. If it isn't, that's a *recall* problem and re-ranking can't save you — you fix chunking, add hybrid search, or generate query paraphrases. If it is in the top hundred but not the top five, that's a *ranking* problem and a cross-encoder fixes it in an afternoon. Diagnose before you stack techniques."
+
+**The short version.**
+
+| Symptom | Diagnosis | Fix |
+|---|---|---|
+| Right chunk not in top 100 | recall failure | chunking, hybrid search, query expansion, multi-query |
+| In top 100, not in top 5 | ranking failure | cross-encoder re-ranker, learning-to-rank |
+| Right chunk retrieved, bad answer | context failure | small-to-big retrieval, better prompt assembly |
+| Right chunk not in corpus at all | ingestion bug | fix the pipeline, not the retriever |
+
+The full menu: better chunking, better embeddings, hybrid search, re-ranking, query expansion, metadata filtering, multi-stage retrieval.
+
+**Why it works.**
+
+Retrieval is a funnel and each stage can only make things worse, never better, for anything the previous stage dropped. A re-ranker is a proofreader: it can reorder the shortlist beautifully but it cannot summon a document that never made the shortlist. That asymmetry is why the recall-versus-ranking diagnostic comes first and everything else second.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -3025,6 +3190,22 @@ The list above is a menu; an interviewer wants a method. The method is: measure 
 
 ### Q59: How do you handle context window limits in RAG?
 
+> **In 30 seconds.** "Stop treating it as a fitting problem and treat it as a selection problem — you want the fewest chunks that contain the answer, not the most chunks that fit. Re-rank, take three to five, dedupe, and reserve budget for the system prompt and the answer itself. One near-free trick: put the strongest chunk first and the second-strongest last, because models attend better to the beginning and end than the middle. And I'd push back on just using a million-token window — accuracy often *drops* when you add mediocre chunks."
+
+**The short version.**
+
+- **Priority selection** — sort by relevance, take top-K, apply a score floor.
+- **Summarize or compress overflow** — prefer extractive compression over abstractive rewriting.
+- **Merge and dedupe** — overlapping chunks waste budget on repeated sentences.
+- **Dynamic / iterative retrieval** — fetch more only if the first pass is insufficient.
+- **Long-context models** — available, but not a free pass; see below.
+
+**Why it works.**
+
+Every chunk you add is both evidence and noise. The model has to find the answer *and* ignore everything else, and it is imperfect at the second job, so past a certain point each extra chunk costs more in distraction than it adds in coverage. Think of it as briefing a colleague before a meeting: three sharp pages beat a fifty-page binder, even though the binder technically contains more.
+
+**The math, and what it buys you.**
+
 **Answer:**
 
 **1. Priority-Based Selection:**
@@ -3078,6 +3259,24 @@ There is also the blunt economic point: input tokens are billed, and attention c
 ---
 
 ### Q60: How do you prevent hallucination in RAG?
+
+> **In 30 seconds.** "I'd separate three different bugs, because they have different fixes. If the right chunk was never retrieved, the model falls back on pretraining memory — that's a retrieval bug. If the chunk was there and the model still misstated it, that's unfaithfulness, and prompting, forced citations and post-hoc checking are the tools. And if the answer just isn't in the corpus, 'I don't know' has to be an explicitly allowed output — models abstain far more when abstention is named as a valid answer."
+
+**The short version.**
+
+| Failure | What happened | Fix lives in |
+|---|---|---|
+| Retrieval failure | right chunk never retrieved; model used parametric memory | retrieval (Q58) |
+| Unfaithful generation | chunk was present, answer misstates it | prompting, citations, verification |
+| Unanswerable answered | corpus lacks the answer; model invents one | explicit sanctioned abstention |
+
+Defence layers: grounded prompt, per-sentence citations, claim-level entailment check, retrieval-based confidence, extractive fallback, flag-and-escalate.
+
+**Why it works.**
+
+The model is always doing the same thing — producing the most plausible continuation. Grounding does not change that; it changes what "plausible" is conditioned on. Every technique here is either putting the right evidence in front of it, or making unsupported text easy to detect afterwards. Citations are the load-bearing trick precisely because they are checkable: an invented claim with a source marker is a lie you can catch mechanically.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -3138,6 +3337,23 @@ If the answer is not in the context, say 'I don't know'."
 
 ### Q61: How do you evaluate a RAG system?
 
+> **In 30 seconds.** "Evaluate the two halves separately so a bad number tells you where to look. Retrieval: recall@K and NDCG against queries with the right chunk labelled. Generation: skip BLEU and ROUGE — n-gram overlap punishes correct paraphrases and rewards fluent hallucinations that reuse the reference's words — and use the faithfulness / answer-relevance / context-precision / context-recall breakdown instead. Context recall low means fix retrieval; context recall fine but faithfulness low means fix the prompt."
+
+**The short version.**
+
+| Stage | Metrics | A bad score means |
+|---|---|---|
+| Retrieval | Precision@K, Recall@K, MRR, MAP, NDCG@K | chunking, embeddings, hybrid search |
+| Generation | faithfulness, answer relevance (not BLEU/ROUGE) | prompt, model, grounding |
+| Diagnostic | context precision, context recall | which of the two above to fix |
+| End to end | correctness, completeness, citation quality | the whole pipeline |
+
+**Why it works.**
+
+An end-to-end score tells you the system is broken; it never tells you which part. Splitting the metrics along the pipeline seam turns evaluation into a bisection search. Context recall is the single most useful number here because it is measured *after* retrieval and *before* generation — it cleanly assigns blame.
+
+**The math, and what it buys you.**
+
 **Answer:**
 
 **Retrieval Metrics:**
@@ -3194,6 +3410,29 @@ The last two are diagnostic gold: low context recall means fix retrieval, high c
 
 ### Q62: What are common RAG challenges and solutions?
 
+> **In 30 seconds.** "The textbook list is chunking, embedding quality, retrieval accuracy, context limits, hallucination, scale and cost. The ones that actually bite in production are different: access control, which has to filter *during* retrieval not after; staleness, because the index is a cache that needs change detection and real deletes; and conflicting sources, where an old policy and its replacement are both retrievable and equally plausible. And the most common cause of a disappointing RAG system is bad ingestion — mangled PDFs and flattened tables — not the model."
+
+**The short version.**
+
+| Challenge | Solution |
+|---|---|
+| Chunking strategy | semantic / hierarchical chunking, overlap |
+| Embedding quality | domain fine-tuning, hybrid embeddings |
+| Retrieval accuracy | multi-stage retrieval, re-ranking, hybrid search |
+| Context window limits | priority selection, compression, long-context models |
+| Hallucination | grounded prompts, citations, claim validation |
+| Scalability | ANN search, sharding, caching |
+| Cost | fewer retrieved tokens, caching, model routing |
+| *Access control* | pre-filtered ANN search, permissions in metadata |
+| *Staleness* | content hashes, incremental re-embed, real deletes |
+| *Conflicting sources* | effective dates and versions, recency in ranking |
+
+**Why it works.**
+
+Almost every item above is the same lesson in a different costume: a RAG system is a cache of your knowledge, and caches fail in cache-shaped ways — stale entries, missing invalidation, permissions computed at the wrong layer, and cost that scales with how much you copy around. Debugging one is much closer to debugging a search stack than to debugging a model.
+
+**The math, and what it buys you.**
+
 **Answer:**
 
 **1. Chunking Strategy:**
@@ -3245,6 +3484,31 @@ See `39_rag_retrieval_augmented_generation/` for detailed implementations!
 ---
 
 ### Q63: Explain different chunking strategies. When to use each?
+
+> **In 30 seconds.** "It comes down to one tradeoff: small chunks retrieve well but answer badly, and big chunks answer well but retrieve badly — small gives you a sharp embedding, big averages into mush. My default is recursive splitting that respects structure first, around 500 tokens with 10–15% overlap. But the real fix is to decouple the two: index small units for precision, then hand the model the surrounding parent section so it has enough to actually answer."
+
+**The short version.**
+
+| Strategy | Split on | Use when | Main weakness |
+|---|---|---|---|
+| Fixed-size | character count | prototyping, uniform text | breaks sentences |
+| Sentence-based | sentence boundaries | narrative text, common default | splitter errors |
+| Paragraph-based | paragraph breaks | structured, long-form docs | variable sizes |
+| Semantic | embedding-similarity drop | topic-shifting docs, accuracy-critical | slow, costly, often no win |
+| Recursive | structure, descending | general purpose (LangChain default) | more complex |
+| Sliding window | fixed size + stride | code, sequential data | redundancy, many chunks |
+| Token-based | token count | LLM budgeting, cost control | tokenizer-specific |
+| Hierarchical | doc → section → para | complex/academic docs | storage, complexity |
+| Content-aware | per content type | mixed text/code/tables | needs type detection |
+| Metadata-enriched | any + rich metadata | citations, filtering | more storage |
+
+Defaults worth memorizing: start sentence-based or recursive; 256–1024 tokens, 512 typical; 10–20% overlap; upgrade to semantic only if measurement says so.
+
+**Why it works.**
+
+Chunking is deciding what the unit of meaning is. An embedding is an average, so a chunk covering one idea produces a vector that points somewhere specific, while a chunk covering six ideas produces a vector that points at their centroid — a place none of the six actually live. That is the entire reason chunk size dominates retrieval quality, and the reason structural boundaries (headers, paragraphs, function definitions) beat arbitrary ones: someone already decided where one idea stopped.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -3348,6 +3612,22 @@ See `39_rag_retrieval_augmented_generation/chunking_strategies.md` for complete 
 
 ### Q64: Derive linear regression from first principles. Explain intuitively.
 
+> **In 30 seconds.** "Define the error at each point as actual minus predicted, square it, sum, and set both partial derivatives to zero. The intercept equation immediately says the line passes through the mean of x and the mean of y. Substitute that back and the slope comes out as covariance over variance — 'how much do x and y move together, normalized by how much x moves on its own.' Geometrically you're projecting y onto the column space of X."
+
+**The short version.**
+
+- **Model**: $y = wx + b$; error per point is $y_i - (wx_i + b)$.
+- **Loss**: sum of squared errors — positive, differentiable, and the MLE under Gaussian noise.
+- **Solve**: set $\partial J/\partial b = 0$ and $\partial J/\partial w = 0$.
+- **Answer**: $b = \bar y - w\bar x$, and $w = \operatorname{Cov}(x,y)/\operatorname{Var}(x)$.
+- **Matrix form**: $w = (X^\top X)^{-1}X^\top y$, the normal equation.
+
+**Why it works.**
+
+Two pictures, and they agree. Algebraically you are asking "what slope makes the residuals uncorrelated with x?" — and covariance over variance is exactly the answer to that. Geometrically, $y$ is a point in $n$-dimensional space and the fitted values live in the low-dimensional plane spanned by the columns of $X$; the closest point in a plane to an outside point is its perpendicular projection, so the residual must be orthogonal to every feature. "Drop a perpendicular" and "set the derivative to zero" are the same instruction in two languages.
+
+**The math, and what it buys you.**
+
 **Answer:**
 
 **Goal:** Find line y = wx + b that best fits data
@@ -3433,6 +3713,22 @@ $$w = \frac{\sum_i (x_i - \bar x)(y_i - \bar y)}{\sum_i (x_i - \bar x)^{2}} = \f
 ---
 
 ### Q65: Derive logistic regression. Why sigmoid function?
+
+> **In 30 seconds.** "I start from the constraint that I need an output between zero and one. A linear model can output anything, so instead of modelling the probability I model the *log-odds*, which does range over all the reals. Solve that for p and the sigmoid falls out — it isn't an arbitrary choice, it's the inverse of the logit. Then the Bernoulli likelihood gives cross-entropy, and the sigmoid derivative cancels the log-loss denominator exactly, leaving the gradient as just prediction minus target times x."
+
+**The short version.**
+
+- **Link**: model $\log\frac{p}{1-p} = wx+b$; invert to get $p = \sigma(wx+b)$.
+- **Sigmoid**: bounded in $(0,1)$, smooth, $\sigma(0)=0.5$, saturates at both ends.
+- **Loss**: negative log-likelihood of a Bernoulli = cross-entropy, and it is convex.
+- **Gradient**: $\sum(\sigma(wx+b)-y)\,x$ — literally "error times input."
+- **Boundary**: $p=0.5$ exactly when $wx+b=0$, so the decision boundary is linear.
+
+**Why it works.**
+
+The problem with putting a line straight onto a probability is that lines are unbounded and probabilities are not. The fix is to change what you are modelling rather than what model you use: odds live in $(0,\infty)$, and log-odds live in $(-\infty,\infty)$ — the same range a linear function produces. So you model the log-odds linearly and transform back. The sigmoid is not a design choice, it is the algebra of undoing that transform.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -3526,6 +3822,24 @@ and summing over the dataset reproduces the answer above. In matrix form, $\nabl
 
 ### Q66: Why can't we use linear regression for classification?
 
+> **In 30 seconds.** "Two real problems. The output isn't a probability — it can be negative or above one, so you can't threshold it meaningfully. And more importantly, squared error keeps pushing on points that are already correct: a class-zero point predicted at minus three is right, but it still contributes a residual of nine, so the model rotates the boundary to reduce it and misclassifies points near the boundary. One thing I'd correct in the usual answer: least squares with a linear output is still convex, so 'local minima' isn't the issue — the loss is just shaped wrong for the task."
+
+**The short version.**
+
+| | Linear regression | Logistic regression |
+|---|---|---|
+| Output range | $(-\infty,+\infty)$ | $[0,1]$ |
+| Probabilistic meaning | none | calibrated $P(y=1\mid x)$ |
+| Loss | MSE — penalizes confident-correct points | cross-entropy — ignores them |
+| Threshold at 0.5 | arbitrary | principled ($wx+b=0$) |
+| Imbalanced classes | degrades badly | handles with class weights |
+
+**Why it works (and where it doesn't).**
+
+The deep issue is that regression is trying to hit a target value, while classification only needs to get on the right side of a line. Squared error cannot tell those apart, so it treats "very confidently correct" as an error to be fixed. It is like grading a multiple-choice test by how close the pencil mark is to the centre of the correct bubble.
+
+**The math, and what it buys you.**
+
 **Answer:**
 
 **Problems:**
@@ -3577,6 +3891,28 @@ The list above is right, but points 3 and 4 assert without explaining, and a fol
 ---
 
 ### Q67: Explain the relationship between linear and logistic regression.
+
+> **In 30 seconds.** "Both are generalized linear models — same linear predictor $wx+b$, different assumption about the response and a different link. Linear assumes Gaussian noise with an identity link; logistic assumes Bernoulli with a logit link, so the linear predictor *is* the log-odds and you sigmoid it to get a probability. That's also why both gradients come out as prediction minus target times x — a general property of canonical links, not a coincidence."
+
+**The short version.**
+
+| | Linear regression | Logistic regression |
+|---|---|---|
+| Output | continuous, $(-\infty,\infty)$ | probability, $[0,1]$ |
+| Model | $y = wx+b$ | $P(y{=}1\mid x) = \sigma(wx+b)$ |
+| Response distribution | Gaussian | Bernoulli |
+| Link | identity | logit |
+| Loss | MSE | cross-entropy (neg. log-likelihood) |
+| Solution | closed form or GD | iterative only |
+| Coefficient means | change in $y$ per unit $x$ | change in log-odds; $e^{w_j}$ is an odds ratio |
+
+Shared: the same linear predictor, the same weights-and-bias parameterization, and the same "prediction minus target times input" gradient.
+
+**Why it works.**
+
+They are the same machine with a different dial on the front. The linear part does all the learning; the link function just translates the unbounded number it produces into whatever range the target actually lives in. Change the dial and you get Poisson regression for counts, or gamma regression for durations — same code, same optimizer, different link.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -3646,6 +3982,25 @@ See `01_classical_ml/linear_regression_derivation.md` and `01_classical_ml/logis
 
 ### Q68: Explain BM25. How does it differ from TF-IDF?
 
+> **In 30 seconds.** "BM25 is TF-IDF with two fixes. Term frequency *saturates* instead of growing linearly — one to two occurrences helps a lot, twenty to a hundred barely helps, and the whole factor is capped, so no amount of keyword stuffing lets one term run away with the score. And it normalizes by document length relative to the collection average, so three mentions in a short page counts for more than three in a long one. Defaults of $k_1 \approx 1.2$ and $b \approx 0.75$ are remarkably robust."
+
+**The short version.**
+
+| | TF-IDF | BM25 |
+|---|---|---|
+| Term frequency | linear — 20 occurrences scores 20× | saturating, capped at $k_1+1$ |
+| Document length | usually ignored or crude | explicit normalization via $b$ |
+| IDF form | $\log(N/\text{df})$ | $\log\frac{N-\text{df}+0.5}{\text{df}+0.5}$ (probabilistic) |
+| Tunable knobs | none | $k_1$ (saturation), $b$ (length) |
+| Keyword stuffing | vulnerable | bounded, resistant |
+| Where used | teaching, simple baselines | Elasticsearch, Lucene, production |
+
+**Why it works.**
+
+Both are asking "is this document about this term?" The difference is that BM25 encodes two pieces of common sense TF-IDF lacks. The first: the tenth mention of a word tells you far less than the second did — evidence has diminishing returns. The second: a long document mentions everything, so a mention in a short focused page is stronger evidence of aboutness. Each is one term in the formula, and each has a knob.
+
+**The math, and what it buys you.**
+
 **Answer:**
 
 **BM25** (Best Matching 25) is industry-standard sparse retrieval, improving upon TF-IDF.
@@ -3707,6 +4062,25 @@ Two things are visible. Going from 1 to 2 occurrences buys 0.375; going from 20 
 
 ### Q69: Explain hybrid search in RAG. How do you combine sparse and dense?
 
+> **In 30 seconds.** "Hybrid means running BM25 and dense retrieval in parallel and merging the two lists. It works because they fail on *different* queries — BM25 whiffs on paraphrase, where the user says 'can't sign in' and the doc says 'authentication failure'; dense whiffs on rare exact strings like error codes and part numbers. Uncorrelated failures are exactly when ensembling pays. For merging I'd default to Reciprocal Rank Fusion over a weighted score sum, because BM25 scores are unbounded and query-dependent while cosine similarities sit in a narrow band."
+
+**The short version.**
+
+| | Sparse (BM25) | Dense (embeddings) |
+|---|---|---|
+| Matches on | exact terms | meaning |
+| Strong at | IDs, codes, names, rare strings | paraphrase, synonyms, intent |
+| Fails on | vocabulary mismatch | rare exact tokens, OOV terms |
+| Training needed | none | yes (and domain adaptation) |
+
+Combining: retrieve top-K from each, then either weighted sum after normalization ($\alpha = 0.7$ keyword-heavy, $0.5$ balanced, $0.3$ semantic) or — better — Reciprocal Rank Fusion, which needs no normalization at all.
+
+**Why it works.**
+
+An ensemble only helps when its members are wrong about different things. Two dense retrievers make the same mistakes; a dense retriever and a keyword retriever do not. That is the whole argument. The analogy: one reader who understands what you meant, and one who remembers exactly what you wrote — you want both in the room, and you trust the answer they agree on.
+
+**The math, and what it buys you.**
+
 **Answer:**
 
 **Hybrid Search** combines BM25 (sparse) + Dense (embeddings).
@@ -3753,6 +4127,24 @@ Because only ranks enter, no normalization is needed and the two systems' incomp
 ---
 
 ### Q70: When to use BM25 vs Dense vs Hybrid?
+
+> **In 30 seconds.** "I'd pick based on what the queries look like. Exact tokens that matter — error codes, part numbers, API names — BM25, because embeddings blur those and BM25 nails them. People describing what they want in their own words — dense, because that's the paraphrase gap. Real users — hybrid, because real logs contain both in the same session. And I'd start with BM25 on day one regardless: it needs no training, and its failures tell you precisely what the dense side would have to fix."
+
+**The short version.**
+
+| | BM25 | Dense | Hybrid |
+|---|---|---|---|
+| Best for | exact tokens, IDs, citations | paraphrase, intent, cross-lingual | mixed real-world traffic |
+| Training | none | embedding model + domain tuning | both |
+| Interpretable | yes | no | partly |
+| Infra cost | inverted index only | vector index + GPU | two indexes + fusion |
+| Verdict | start here | add when semantics matter | production default |
+
+**Why it works.**
+
+The choice is a mapping from query characteristics to method, not a preference ordering. And one under-appreciated point: adding a cross-encoder re-ranker to plain BM25 often beats dense retrieval with no re-ranker — so if you only have budget for one addition, buy the re-ranker before the second retriever.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -3807,6 +4199,25 @@ See `39_rag_retrieval_augmented_generation/retrieval_methods.md` for detailed ex
 
 ### Q71: What's the standard procedure for text classification?
 
+> **In 30 seconds.** "Before touching a model I'd pin down two things: single-label or multi-label, because that changes the output layer and the metrics, and what a mistake costs, because that sets the threshold. Then the usual pipeline — split first so nothing leaks, establish a dumb TF-IDF baseline so you know what 'good' means, then fine-tune a pretrained encoder, which wins even at a thousand labelled examples. For imbalance, move the threshold before doing anything clever."
+
+**The short version.**
+
+| Phase | What happens |
+|---|---|
+| 1. Data | collect labels, handle imbalance, split train/val/test *first* |
+| 2. Features | TF-IDF (small), embeddings (medium), pretrained encoder (large) |
+| 3. Model | <10K: TF-IDF + SVM · 10K–100K: neural or XGBoost · >100K: fine-tuned BERT |
+| 4. Training | Adam, dropout, early stopping; BERT at lr 2e-5 for 3–5 epochs |
+| 5. Evaluation | F1 (macro and micro), precision/recall, confusion matrix |
+| 6. Deployment | API, monitoring, drift detection, A/B test |
+
+**Why it works.**
+
+The whole procedure is a ladder of baselines: each rung is cheap enough to build in a day and tells you whether the next rung is worth climbing. Skipping to the top means you have a number with nothing to compare it to, and no way to tell whether the model is learning the task or a shortcut in your data.
+
+**The math, and what it buys you.**
+
 **Answer:**
 
 **Phase 1: Data Preparation**
@@ -3856,6 +4267,23 @@ Before any of the six phases, spend a sentence on the two questions that determi
 ---
 
 ### Q72: How do you solve NER? What's the standard approach?
+
+> **In 30 seconds.** "NER is sequence labelling — tag every token with BIO tags like B-PER, I-PER, O — and the key point is that the labels aren't independent. I-PER can't follow O, so you either add a CRF layer that learns transition scores and decodes with Viterbi, or with a strong pretrained encoder use plain token classification and repair invalid transitions afterwards. The detail that trips people up is subword alignment. And evaluate with entity-level F1 — token accuracy is useless when ninety percent of tokens are O."
+
+**The short version.**
+
+- **Format**: BIO tags per token — `B-PER I-PER O B-LOC` for "Barack Obama visited Paris."
+- **Features**: word + character/subword embeddings, surrounding context.
+- **Model ladder**: CRF → BiLSTM-CRF → fine-tuned encoder (token classification, lr 3e-5).
+- **Pitfall**: label the first subword of each word, mask the rest with $-100$.
+- **Metric**: entity-level F1, exact span *and* type match; report per type.
+- **Hard cases**: OOV (character embeddings), nested entities (span-based), ambiguity (more context).
+
+**Why it works.**
+
+The insight that separates NER from ordinary classification is that you are predicting a *structure*, not $n$ independent labels. "I-PER" is a claim about the token before it as much as about itself. Every technique here — the B/I distinction, the CRF transition matrix, Viterbi decoding, entity-level scoring — exists to take that dependence seriously.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -3911,6 +4339,25 @@ Worth knowing the modern nuance: with a strong pretrained encoder, the CRF layer
 ---
 
 ### Q73: What's the standard procedure for question answering?
+
+> **In 30 seconds.** "For extractive QA you feed `[CLS] question [SEP] context [SEP]` through an encoder and put two tiny heads on top: one vector scoring each token as a possible answer *start*, one as a possible *end*. Train with cross-entropy against the true indices. At inference you don't take the best start and best end separately — you take the top twenty of each, form valid pairs, and pick the highest product. Unanswerable questions point the span at `[CLS]`; long passages use overlapping sliding windows."
+
+**The short version.**
+
+| Phase | What happens |
+|---|---|
+| Data | SQuAD-style context + question → answer span (start/end indices) |
+| Model | encoder + two vectors $s,e$; logits are $s^\top h_i$ and $e^\top h_i$ |
+| Training | start loss + end loss, lr 3e-5, batch 16–32, 2–3 epochs |
+| Long contexts | sliding window with overlap, or paragraph ranking first |
+| Evaluation | EM (strict) and F1 (token overlap); the gap between them is informative |
+| Production | retrieval for open-domain, re-ranking, ensembling |
+
+**Why it works.**
+
+Extractive QA turns "what is the answer?" into "where is the answer?" — a question with only $n^2$ possible responses instead of infinitely many. That constraint is the whole value proposition: the model cannot hallucinate, because it can only point. You trade expressiveness for a grounding guarantee, and for anything a human has to audit, that trade is usually right.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -3969,6 +4416,26 @@ At inference you want the best *span*, not the best start and the best end indep
 
 ### Q74: How do you build a machine translation system?
 
+> **In 30 seconds.** "Parallel data, subword tokenization, an encoder-decoder Transformer, and beam search decoding. The part I'd emphasize is tokenization — word-level vocabularies drown in unknowns for morphologically rich languages, character-level makes sequences far too long, so BPE or SentencePiece keeps frequent words whole and splits rare ones into reusable pieces, usually with a shared source-target vocabulary so names and numbers copy across for free. And I'd report sacreBLEU for comparability but lean on a learned metric like COMET."
+
+**The short version.**
+
+| Phase | Choice |
+|---|---|
+| Data | parallel corpus, millions of pairs, domain-matched |
+| Preprocessing | sentence segmentation, BPE / SentencePiece, shared vocab |
+| Model | encoder-decoder Transformer, multi-head attention |
+| Training | lr 1e-4 with warmup; pretrain then fine-tune |
+| Decoding | beam search, width 4–5, length penalty $\alpha \approx 0.6$ |
+| Evaluation | sacreBLEU, METEOR, COMET, human |
+| Low-resource | multilingual transfer + back-translation |
+
+**Why it works.**
+
+Translation is the cleanest sequence-to-sequence problem: the encoder builds a meaning representation free of the source language's surface form, and the decoder re-renders it in the target language's surface form. Everything hard about the task sits at the two ends — how you break text into units the model can generalize over (tokenization), and how you search the space of outputs (decoding). The middle, the Transformer, is the part you mostly get off the shelf.
+
+**The math, and what it buys you.**
+
 **Answer:**
 
 **Phase 1: Data**
@@ -4025,6 +4492,27 @@ For translation specifically, a *shared* source-target vocabulary is standard, b
 
 ### Q75: What's the standard approach for text summarization?
 
+> **In 30 seconds.** "Two families. Extractive picks sentences out of the source — TextRank builds a sentence-similarity graph and runs PageRank on it — and the nice property is that it physically *cannot* hallucinate, because every word came from the source. Abstractive generates new text; it reads much better and compresses across sentences, but it can invent facts. So the choice is really a risk decision, not a technique decision. And I'd report ROUGE for continuity but not trust it — it's blind to factuality."
+
+**The short version.**
+
+| | Extractive | Abstractive |
+|---|---|---|
+| Method | score and select sentences (TextRank, BERT scoring) | fine-tuned BART/T5 or an LLM |
+| Output | verbatim source sentences | new text |
+| Hallucination | structurally impossible | possible and common |
+| Fluency | choppy, disjoint | natural, compressed |
+| Length control | exact (pick $k$ sentences) | approximate |
+| Training data | none needed for TextRank | parallel summaries |
+
+Evaluation: ROUGE-1/2/L as the convention, plus a factual-consistency check and human judgement. Challenges: long documents, factual consistency, repetition.
+
+**Why it works.**
+
+Summarization is compression with a fidelity constraint, and the two families make opposite bets about which half matters. Extractive protects fidelity absolutely and accepts poor compression; abstractive maximizes compression and puts fidelity at risk. Once you frame it that way, the choice follows from what a wrong summary would cost in your domain.
+
+**The math, and what it buys you.**
+
 **Answer:**
 
 **Two Types:**
@@ -4075,6 +4563,27 @@ See `36_nlp_basics/nlp_problems_detailed.md` for complete procedures for all NLP
 ## Foundation Models: Evolution from BERT to GPT-4
 
 ### Q76: How did we evolve from BERT to modern foundation models like GPT-4?
+
+> **In 30 seconds.** "The single move that mattered was reframing every task as next-token prediction. BERT was bidirectional and great at understanding, but you needed a new head and a fine-tuning run per task. GPT-2 showed that if you write the task into the input as text, one model does translation, summarization and QA with no task-specific training. Once that holds, scale is the lever, because improving one objective improves everything at once. Everything after — few-shot prompting, RLHF, multimodality, inference-time reasoning — refines that one move."
+
+**The short version.**
+
+| Phase | Model | What it added |
+|---|---|---|
+| 2018 | BERT | bidirectional encoder, pretrain + fine-tune per task |
+| 2019 | GPT-2 | decoder-only generation, zero-shot task framing |
+| 2020 | GPT-3 | 175B params, in-context few-shot learning, scaling laws |
+| 2022 | InstructGPT | RLHF, instruction following, alignment |
+| 2022 | ChatGPT | conversational multi-turn interface |
+| 2023 | GPT-4 | multimodal, better reasoning, 8K → 128K context |
+
+Five paradigm shifts: task-specific → general; fine-tuning → prompting; understanding → generation; supervised → self-supervised; capability → alignment.
+
+**Why it works.**
+
+A decoder gets a supervised target at *every* position; BERT's masked LM only supervises the 15% it masked. So per token of data, the decoder extracts several times more signal — and generation subsumes understanding, since you can classify by generating a label, while the reverse does not hold. What was lost is real too: causal attention sees only left context, which is why encoder models are still the right tool for embeddings, retrieval and re-ranking. "BERT was superseded" is a headline; "BERT moved to a different part of the stack" is accurate.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -4143,6 +4652,22 @@ Second, the timeline stops at GPT-4 in 2023. Since then the field has moved thro
 ---
 
 ### Q77: What are scaling laws? How do they explain the success of large models?
+
+> **In 30 seconds.** "Scaling laws say test loss falls as a power law in model size, data and compute — straight lines on a log-log plot over many orders of magnitude. The exponent is small, about 0.076 for parameters, so ten times the model buys roughly a sixteen percent loss reduction: it works, but it's expensive per unit. The important refinement is Chinchilla — grow parameters and data together, roughly twenty tokens per parameter — by which standard GPT-3 was badly undertrained. The practical value is fitting the curve on cheap small runs and extrapolating."
+
+**The short version.**
+
+- **Form**: $L(N) \approx (N_c/N)^{\alpha_N}$ — *loss goes down*, as a power law, not performance up.
+- **Exponents**: $\alpha_N \approx 0.076$ (params), $\alpha_D \approx 0.095$ (data), $\alpha_C \approx 0.050$ (compute).
+- **Chinchilla rule**: compute-optimal is about **20 tokens per parameter**.
+- **Predictability**: fit on small runs, extrapolate to forecast a run you haven't paid for.
+- **Limits**: loss cannot fall below the irreducible entropy of text; high-quality data is finite.
+
+**Why it works.**
+
+Nobody has a complete theory. The leading intuitions are that language itself has power-law structure (Zipf) and that bigger models resolve finer-grained sub-distributions of the data. The honest position is that this is a robust *empirical* regularity, not a derived law — which is exactly why the interesting question is where it bends, not how far it extends.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -4213,6 +4738,25 @@ Note the further practical twist: compute-*optimal* is about training cost only.
 ---
 
 ### Q78: What is in-context learning? How does it differ from fine-tuning?
+
+> **In 30 seconds.** "In-context learning is putting examples in the prompt and having the model adapt with no weight updates at all — same frozen model for every task. Fine-tuning changes the weights. The mechanism is more interesting than it looks: replacing the labels in your few-shot examples with *random* ones barely hurts, which means the examples mostly convey format and label space, not the mapping. So it's closer to locating a capability the model already has than to learning one. And you re-pay for those tokens on every single call."
+
+**The short version.**
+
+| Aspect | In-context learning | Fine-tuning | LoRA (the middle ground) |
+|---|---|---|---|
+| Weight updates | none | all parameters | <1% of parameters |
+| Data needed | a handful in the prompt | labelled dataset | labelled dataset |
+| Models per task | one shared | one each | one base + small adapters |
+| Switching tasks | edit the prompt | retrain | swap an adapter |
+| Per-query cost | pays for demos every call | cheap | cheap |
+| Peak quality | good | best | near-best |
+
+**Why it works.**
+
+The best current mechanistic evidence is *induction heads*: pairs of attention heads that spot a repeated pattern earlier in the context and copy whatever followed it last time. They appear abruptly during training, and their appearance coincides with a visible jump in in-context learning ability. That is pattern completion, not gradient descent — which is exactly why format matters more than label correctness.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -4296,6 +4840,24 @@ Ordering matters — the same examples in a different order can move accuracy by
 ---
 
 ### Q79: Explain RLHF (Reinforcement Learning from Human Feedback). Why is it important?
+
+> **In 30 seconds.** "Three stages. Supervised fine-tuning on human demonstrations so the model follows instructions at all. Then a reward model: show humans two responses, ask which is better, train a model to predict that — because people are much better at *comparing* two answers than at writing the perfect one. Then RL against that reward with a KL penalty keeping the policy near where it started. That KL term is the crucial bit; without it the model finds text that scores enormously well and is garbage to a human."
+
+**The short version.**
+
+| Stage | Input | Output |
+|---|---|---|
+| 1. SFT | human-written prompt/response demos | a model that follows instructions |
+| 2. Reward modelling | pairwise "which is better?" comparisons | a scalar scorer $r_\theta(x,y)$ |
+| 3. RL (PPO) or DPO | prompts + reward (or preference pairs) | an aligned policy |
+
+Why it matters: alignment (behaviour ≠ capability), instruction following, refusal of harmful requests, and a usable product. Challenges: expensive human feedback, subjective preferences, reward hacking.
+
+**Why it works.**
+
+The core insight is about the *labelling economy*. Supervised fine-tuning needs someone to author an ideal answer, which is slow, expensive, and often impossible when many answers are equally good. Comparisons are cheap, fast, and far more consistent between annotators. RLHF exists to convert that cheap comparison signal into a differentiable training signal — which is precisely what the reward model is for.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -4391,6 +4953,22 @@ Also worth naming: *Constitutional AI / RLAIF*, where the preference labels come
 
 ### Q80: What are emergent abilities? Give examples.
 
+> **In 30 seconds.** "The standard story is that some abilities don't exist below a certain scale and then appear — chain-of-thought is the cleanest example, since asking a small model to think step by step doesn't help and can hurt, while asking a big one helps a lot. But I'd raise the counterargument myself: a lot of these jumps are metric artefacts. Score with exact match on a five-token answer and per-token accuracy rising smoothly from 70% to 95% turns into 17% to 77% — which looks like a cliff. Switch to a continuous metric and the curve is smooth."
+
+**The short version.**
+
+- **Claim**: capabilities absent in small models appear abruptly at scale, without being trained for.
+- **Standard examples**: arithmetic, code generation, few-shot learning, multi-step reasoning, instruction following.
+- **Best-documented example**: chain-of-thought prompting, which helps only above a scale threshold.
+- **Counterargument**: discontinuous metrics manufacture discontinuous-looking curves.
+- **What survives**: for a fixed metric you care about, the usable/unusable threshold is real and not currently predictable from the loss curve.
+
+**Why it works.**
+
+The mirage argument is worth internalizing because it generalizes: any metric that multiplies per-step probabilities converts smooth improvement into an apparent cliff. It is the same shape as a relay team — if each runner independently improves slightly, the probability that *all* of them succeed improves nonlinearly. The model changed smoothly; the yardstick did not.
+
+**The math, and what it buys you.**
+
 **Answer:**
 
 **Emergent Abilities:**
@@ -4459,6 +5037,26 @@ There are secondary artefacts too: small test sets make near-zero scores indisti
 ---
 
 ### Q81: How do modern foundation models differ from BERT?
+
+> **In 30 seconds.** "BERT is an encoder with bidirectional attention trained by masking tokens, built for understanding and unable to generate. Modern foundation models are decoders with causal attention trained on next-token prediction, so they generate and understanding comes free through prompting — three orders of magnitude more scale, plus RLHF. But I'd push back on 'BERT was replaced': it moved. Every dense retriever and re-ranker in a RAG stack is an encoder. The field split — encoders for representation, decoders for generation."
+
+**The short version.**
+
+| Aspect | BERT | Modern foundation models |
+|---|---|---|
+| Architecture | encoder-only | decoder-only (causal) |
+| Direction | bidirectional | unidirectional |
+| Objective | masked LM (+ NSP) | next-token prediction, then RLHF |
+| Scale | 110M–340M params, ~3B tokens | 175B+ params, trillions of tokens |
+| Usage | fine-tune per task | prompt / in-context learning |
+| Primary strength | understanding, representation | generation, generality |
+| Still best for | embeddings, re-ranking, NER, high-volume classification | open-ended tasks, reasoning, agents |
+
+**Why it works.**
+
+The causal mask is the whole difference. It costs you information — a token cannot see its own future — which is exactly why encoders remain better at squeezing a whole passage into one vector. And it buys you a training target at every position plus an inference-time generation loop, which is exactly why decoders scaled further. Neither is strictly better; they trade the same quantity in opposite directions.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -4574,6 +5172,25 @@ See `38_multimodal_and_embeddings/foundation_models_evolution.md` for complete e
 
 ### Q82: How do you integrate triplet data (knowledge graphs) into foundation models?
 
+> **In 30 seconds.** "The real question is where you want the knowledge to *live*. You can bake triples into the weights by verbalizing them into sentences and training on them — no retrieval at inference, but updating one fact means retraining and nothing stops the model hallucinating around it. Or you keep the graph external and retrieve the relevant subgraph at query time, which is RAG with a graph instead of a text index. That's my default: facts update instantly, provenance is free, no training run."
+
+**The short version.**
+
+| Approach | Knowledge lives in | Update cost | Provenance |
+|---|---|---|---|
+| Direct encoding (verbalize triples, train) | weights | retrain | none |
+| KG embeddings (TransE/TransR) aligned to LM | weights | retrain | none |
+| Structured prompting (retrieve subgraph) | the graph | instant write | full |
+| Multi-task learning (LM + triple prediction) | weights | retrain | none |
+
+Pipeline: collect (Wikidata, Freebase) → clean and dedupe → convert triples to text or subgraphs → integrate. Rough guidance if training: mix around 20% triple-derived text with natural text, and treat that as an upper bound to tune.
+
+**Why it works.**
+
+A knowledge graph and a language model store knowledge with opposite properties: exact, discrete and cheap to edit versus fuzzy, distributed and expensive to edit. Integration is a bridge between the two, and every design choice here is really an answer to "which of those properties do I need for this fact?" Facts that change — prices, org charts, policies — belong in the graph. Facts that are stable and pervasive can go in the weights.
+
+**The math, and what it buys you.**
+
 **Answer:**
 
 **Triplet Data:**
@@ -4636,6 +5253,25 @@ A *knowledge graph* is a set of facts stored as (subject, relation, object) trip
 ---
 
 ### Q83: How do you integrate past conversation history into LLMs?
+
+> **In 30 seconds.** "Even with a million-token window this doesn't go away — you pay for every input token on every turn, models recall things buried mid-context unreliably, and a window lasts one session while users expect you to remember them next month. So I'd build tiers: last few turns verbatim, older turns embedded and retrieved by relevance, a rolling summary for the arc, and a structured user profile of durable facts injected into every session."
+
+**The short version.**
+
+| Tier | Holds | Retrieved how | Lifetime |
+|---|---|---|---|
+| Working memory | last 10–20 turns | always in context | current session |
+| Episodic memory | older topic segments | vector search + recency | months |
+| Rolling summary | compressed narrative | always in context | current session |
+| Semantic / profile | durable extracted facts | always injected | indefinite |
+
+Pipeline: collect logs → strip PII → segment into turns and sessions → extract entities, intent, sentiment → integrate as context or user embedding.
+
+**Why it works.**
+
+Human memory is tiered for the same reason: you remember the last sentence verbatim, last week's conversation as gist, and your friend's dietary restrictions forever. Each tier trades fidelity for durability, and no single mechanism can do both. A chat system that keeps everything verbatim is paying full price for information it only needs the gist of.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -4702,6 +5338,22 @@ The stated "2K–32K tokens" context limit is out of date: by 2026 windows of 20
 ---
 
 ### Q84: What is a world model? How do you build one for LLMs?
+
+> **In 30 seconds.** "A world model is a learned simulator: give it a state and an action, it predicts the next state and the reward, so an agent can plan by rolling it forward in imagination instead of acting in the real world. The interesting question is whether LLMs already have one — probes find internal representations of things like board state that were never explicitly supervised, but they fail on counterfactual variants like arithmetic in a different base. The deep obstacle is that you can't identify causation from passive observation; you need intervention."
+
+**The short version.**
+
+- **State representation** — entities, properties, relations, time; symbolic, embedding, or graph.
+- **Transition model** — predicts next state from state + action; deterministic, stochastic, or learned.
+- **Observation model** — maps hidden state to what you can actually see (partial observability).
+- **Reward model** — defines what counts as good; task-specific, shaped, or learned.
+- **Planning** — model-based RL, tree search, model-predictive control.
+
+**Why it works.**
+
+The point of a world model is that imagination is cheaper than experience. An agent with a good simulator can try ten thousand plans overnight; an agent without one has to try them in the world, where mistakes cost time, money, or a robot. That is the entire value proposition, and it also explains the failure mode: a simulator that is subtly wrong lets you plan confidently into a wall.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -4773,6 +5425,27 @@ The defensible position is that LLMs learn something like a world model *of text
 ---
 
 ### Q85: What are the future directions of LLMs? What's the path to AGI?
+
+> **In 30 seconds.** "I'd be honest that nobody knows, and talk about what's actually blocking things. Four bottlenecks: data, since high-quality human text is finite and mostly used; inference cost, because capability is increasingly bought at inference time and that scales with every user; continual learning, which is genuinely unsolved — fine-tuning causes catastrophic forgetting, so the industry routes around it with retrieval; and reliability compounding, where a 95%-per-step agent finishes a twenty-step task about a third of the time. That last one is exactly why agents demo well and deploy badly."
+
+**The short version.**
+
+| Aspiration | Concrete bottleneck today |
+|---|---|
+| General intelligence | evaluation — benchmarks saturate and leak |
+| World understanding, causality | no intervention in passive training data |
+| Continual learning | catastrophic forgetting, unsolved |
+| Embodied intelligence | interaction data is expensive to collect |
+| Long-horizon planning | per-step reliability compounds badly |
+| Efficient scaling | inference cost now dominates training cost |
+
+Research areas named in the standard answer: scaling and sparse models, multimodality, reasoning, planning, memory — plus a six-module AGI architecture (perception, world model, memory, reasoning, action, learning).
+
+**Why it works — and why to hold it loosely.**
+
+That six-module diagram closely resembles classical cognitive architectures like SOAR and ACT-R from decades ago. The lesson from that history is that drawing the boxes was never the hard part: each box turned out to be an open research problem and the interfaces between them were harder still. Meanwhile the recent trend has run the other way — end-to-end learned systems repeatedly beating hand-designed modular ones. That is the Bitter Lesson, and it is the main reason to be sceptical of any neat block diagram.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -4878,6 +5551,29 @@ See `38_multimodal_and_embeddings/multimodal_integration_and_world_models.md` fo
 ## GPT Implementation, Training, and Decoding
 
 ### Q86: Implement a complete GPT model from scratch. What are all the components?
+
+> **In 30 seconds.** "Bottom up: token IDs through an embedding table, plus positional information — because attention is permutation-equivariant, so without it 'dog bites man' and 'man bites dog' are the same input. Then the core block: project to Q, K, V, split across heads, score every token against every other, divide by the square root of the head dimension, mask out the future, softmax, multiply by V. Then a position-wise feed-forward. The mental model is that attention moves information *between* positions and the MLP processes each position *alone*."
+
+**The short version.**
+
+| # | Component | Shape / detail |
+|---|---|---|
+| 1 | Token embedding | (vocab, $d$) lookup → $(B,T,d)$ |
+| 2 | Positional encoding | learned (max_len, $d$), or rotary in modern models |
+| 3 | Multi-head attention | $h$ heads, $O(n^2 d)$, causal mask |
+| 4 | Feed-forward | $d \to 4d \to d$, GELU/SwiGLU, position-wise |
+| 5 | Transformer block | attention + FFN, each in a pre-norm residual |
+| 6 | Stack of $L$ blocks | 12–96 layers |
+| 7 | Final layer norm | stabilizes the output of the residual stream |
+| 8 | Output projection | $d \to$ vocab logits, usually weight-tied to the embedding |
+
+**See `04_transformers/gpt_complete.py` for complete implementation!**
+
+**Why it works.**
+
+Two mechanisms alternating. Attention is the *communication* step: each token asks a question (its query), every token advertises what it has (its key), and the answer is a weighted blend of what they hold (their values). The feed-forward is the *computation* step: each position thinks privately about what it just heard. Residual connections make the stack a shared bus that every layer reads from and writes to, rather than a chain where information must survive intact through 96 transformations — which is the reason very deep Transformers train at all.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -5012,6 +5708,25 @@ class GPT(nn.Module):
 
 ### Q87: How is GPT trained? Explain the training process in detail.
 
+> **In 30 seconds.** "The objective is just next-token prediction, but the mechanical bit worth stating is that you don't run the model once per token. You take a chunk, feed all but the last token as input and all but the first as targets, and one forward pass gives a prediction at *every* position — the causal mask is what makes that legitimate. Loss is cross-entropy averaged over positions; exponentiate it and you get perplexity. Practically: AdamW with $\beta_2 \approx 0.95$, gradient clipping at norm 1, warmup then cosine decay."
+
+**The short version.**
+
+| Stage | What matters |
+|---|---|
+| Data | large corpora, BPE/SentencePiece, packed into a token stream (not padded) |
+| Forward | embeddings + positions → blocks → logits at every position |
+| Loss | cross-entropy on shifted targets; $\ln(\text{vocab})$ is the step-one sanity check |
+| Backward | backprop, clip global norm at 1.0, AdamW |
+| Schedule | lr 3e-4 to 1e-4, linear warmup then cosine decay to ~10% of peak |
+| Scale | trillions of tokens, batch measured in *tokens*, not sequences |
+
+**Why it works.**
+
+Next-token prediction is self-supervised, which means the labels are free — every token in every document is a training example, and there is no annotation bottleneck. And the causal mask lets you harvest all $T$ of those examples from one forward pass, so the objective is not only label-free but compute-efficient. That combination is the reason this particular objective, and not a cleverer one, is what scaled.
+
+**The math, and what it buys you.**
+
 **Answer:**
 
 **Training Objective:**
@@ -5081,6 +5796,25 @@ The five phases above are correct; here is the mechanical detail that turns them
 ---
 
 ### Q88: How does GPT decode/generate text? Explain the decoding process.
+
+> **In 30 seconds.** "Generation is autoregressive — one token at a time, each conditioned on everything before. The implementation detail that matters most is the KV cache: naively you'd re-run the model over the whole sequence for every new token, which is quadratic, but the causal mask means earlier tokens' keys and values never change, so you cache them. That splits serving into prefill, which is compute-bound, and decode, which is memory-bandwidth-bound. For sampling I'd default to nucleus over top-k, because a fixed k ignores the shape of the distribution."
+
+**The short version.**
+
+| Sampler | Rule | Best for |
+|---|---|---|
+| Greedy | always take the argmax | translation, extraction, anything you'll parse |
+| Temperature | divide logits by $T$ before softmax | the global diversity dial |
+| Top-k | sample from the $k$ highest | simple truncation, ignores distribution shape |
+| Top-p (nucleus) | smallest set with cumulative mass $\ge p$ | open-ended text — adapts to confidence |
+
+Loop: tokenize the prompt → forward pass → logits for the next token → temperature → truncate → sample → append → repeat until EOS, a stop sequence, or max length. Causal masking (upper-triangular $-\infty$) is what keeps each step honest.
+
+**Why it works.**
+
+The model never outputs text; it outputs a probability distribution over the vocabulary, and decoding is entirely about how you collapse that distribution into one choice. Taking the argmax every time yields fluent, dead prose because the most probable continuation is by construction the least surprising one. Sampling restores surprise — and truncation exists because the aggregated tail of a 50,000-token vocabulary holds real probability mass made of individually terrible tokens, and once you draw one the model must continue from its own mistake.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -5189,6 +5923,24 @@ Note the `cumsum - probs > top_p` rather than `cumsum > top_p`: it keeps the tok
 
 ### Q89: What is the complexity of attention? Explain O(n²d) and different attention types.
 
+> **In 30 seconds.** "Attention itself is $O(n^2 d)$ — an $n\times n$ score matrix, each entry a $d$-dimensional dot product. But the projections are $O(nd^2)$, and which dominates depends on whether $n$ is bigger than $d$; the crossover is right at $n = d$. That's why the quadratic term only became urgent once contexts got long. The other thing I'd say is that attention is memory-bandwidth-bound, not compute-bound — which is exactly what FlashAttention fixes."
+
+**The short version.**
+
+| Variant | Time | Space | Notes |
+|---|---|---|---|
+| Standard attention | $O(n^2 d)$ | $O(n^2)$ | plus $O(nd^2)$ for projections |
+| Multi-head | $O(n^2 d)$ | $O(n^2)$ | same total, parallel across heads |
+| Linear attention | $O(nd^2)$ | $O(d^2)$ | reassociates $(QK^\top)V \to Q(K^\top V)$; changes the model |
+| Sparse attention | $O(n\sqrt n\,d)$ or $O(n\log n\,d)$ | sub-quadratic | local window + global tokens |
+| FlashAttention | $O(n^2 d)$ | $O(n)$ | *exact*, tiled, much faster in wall-clock |
+
+**Why it works.**
+
+The $n^2$ comes from the fact that attention compares every token to every other token — it is an all-pairs operation, and all-pairs is quadratic by definition. Every cheaper variant buys its speedup by refusing to compute some of those pairs (sparse), or by refusing to form the matrix at all (linear, via reassociation). FlashAttention is the odd one out and the reason it won: it computes exactly the same pairs, and simply never writes the matrix down.
+
+**The math, and what it buys you.**
+
 **Answer:**
 
 **Standard Self-Attention: O(n²d)**
@@ -5276,6 +6028,22 @@ See `05_attention_mechanisms/attention_complexity.md` for complexity analysis!
 
 ### Q90: What is prompt tuning? How does it work?
 
+> **In 30 seconds.** "Prompt tuning freezes the whole model and learns a handful of fake token embeddings glued onto the front of every input. They're not real words — just vectors in embedding space that gradient descent found useful for the task. You train maybe fifteen thousand numbers instead of a hundred and twenty million, so each task is a tiny file you swap in. The catch is that it only really matches full fine-tuning once the base model is big, roughly ten billion parameters and up."
+
+**The short version.**
+
+- **What's trainable**: $p \times d_{model}$ soft-prompt embeddings — nothing else.
+- **Typical size**: 20–100 virtual tokens; $20 \times 768 = 15{,}360$ floats, about 0.01% of the model.
+- **Mechanism**: prepend $P$ to the input embeddings, forward through the frozen model, backprop into $P$ only.
+- **Learning rate**: 0.1–0.5, roughly a thousand times higher than full fine-tuning.
+- **Cost**: the prompt occupies real context-window positions at every forward pass.
+
+**Why it works.**
+
+Writing a good prompt by hand is searching a discrete space of words for something that steers the model. Prompt tuning does the same search in the *continuous* space the words live in — so it can land between words, on vectors no string maps to. Gradient descent is much better at that search than you are, which is the entire pitch.
+
+**The math, and what it buys you.**
+
 **Answer:**
 
 **Prompt Tuning:**
@@ -5332,6 +6100,25 @@ The original result (Lester et al., 2021) is that prompt tuning only *closes the
 ---
 
 ### Q91: What is prefix tuning? How does it differ from prompt tuning?
+
+> **In 30 seconds.** "Prompt tuning only touches the input embeddings, so the deeper layers have to be steered indirectly. Prefix tuning pushes learned vectors into the *keys and values at every layer*, so it can nudge the computation all the way up the stack. You pay about $2L$ times more parameters — twenty-four times for a twelve-layer model — and get much closer to full fine-tuning on hard tasks. The neat asymmetry: the prefix is attended *to*, but it never attends to anything itself."
+
+**The short version.**
+
+| | Prompt tuning | Prefix tuning |
+|---|---|---|
+| Where | input embedding layer only | every transformer layer |
+| What | prompt embeddings | prefix keys *and* values |
+| Params | $p \times d_{model}$ | $L \times p \times 2d_{model}$ |
+| Example (12L, 20 tok, 768d) | 15,360 | 368,640 |
+| Expressiveness | good on simple tasks | often matches full fine-tuning |
+| Training stability | straightforward | needs an MLP reparameterization |
+
+**Why it works.**
+
+Prompt tuning writes a note at the top of the page and hopes the whole document is read in that light. Prefix tuning slips a note into every chapter. Because a Transformer's layers compute progressively more abstract features, being able to intervene at layer 9 as well as layer 0 gives you control the input alone cannot reach — which is exactly why the extra $2L$ factor buys real quality rather than just more parameters.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -5394,6 +6181,25 @@ Training the prefix matrices directly is unstable; the loss is very sensitive to
 ---
 
 ### Q92: Compare prompt tuning, prefix tuning, LoRA, and full fine-tuning.
+
+> **In 30 seconds.** "All four do the same job — adapt a pretrained model to a task — but they trade off differently. Full fine-tuning is best and most expensive. LoRA gets within noise of it for about a tenth of a percent of the parameters, and crucially it *merges back into the weights*, so inference costs nothing extra. Prefix tuning is close behind; prompt tuning is cheapest and works best on very large models. I'd default to LoRA and only move off it for a specific reason."
+
+**The short version.**
+
+| Method | Trainable | Example (GPT-2, 125M) | Quality | Extra inference cost |
+|---|---|---|---|---|
+| Full fine-tuning | 100% | 125M | best | none, but a full model per task |
+| LoRA | 0.1–1% | 125K–1.25M | near-best | **zero** — merges into $W$ |
+| Prefix tuning | ~0.3% | ~368K | very good | longer sequence, every token |
+| Prompt tuning | ~0.01% | ~15K | good at scale | longer sequence, every token |
+
+Ladder: start with prompt tuning if you need maximum efficiency, move to prefix tuning for harder tasks, use LoRA for the best balance, and full fine-tune only when you must.
+
+**Why it works.**
+
+The unifying idea is that adapting a pretrained model does not require moving all of it — the task-specific change is low-dimensional, so a small number of well-placed parameters can express it. Where the methods differ is *where* they place those parameters: in the input (prompt), in the attention memory at every layer (prefix), or additively inside the weight matrices themselves (LoRA). Only the last one lives in the same space as the original weights, which is why only LoRA can be folded away at inference.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -5463,6 +6269,23 @@ LoRA's update is $W + \frac{\alpha}{r}BA$, a plain additive change to a weight m
 
 ### Q93: How do you initialize prompt/prefix embeddings?
 
+> **In 30 seconds.** "A soft prompt lives in the same space as real token embeddings, so initializing it with pure Gaussian noise hands the frozen model vectors that look like nothing it has ever seen. Copying the embeddings of actual vocabulary tokens — ideally words related to the task, like the label words for a classification problem — starts you somewhere the model already understands. It matters a lot on small models and much less on huge ones."
+
+**The short version.**
+
+| Strategy | How | When |
+|---|---|---|
+| Random | $P \sim \mathcal{N}(0, 0.02^2)$ | baseline; fine on very large models |
+| Vocabulary-based | copy embeddings of frequent real tokens | default for prompt tuning |
+| Task-specific | copy embeddings of label/verbalizer words | classification with natural label words |
+| Reparameterization | learn small, project up with an MLP | default for prefix tuning (stability) |
+
+**Why it works.**
+
+The frozen model's embedding table occupies a specific, anisotropic region of the space — a particular typical norm and direction structure. Random vectors land outside it, so the model treats them as out-of-distribution noise and gradients stay weak until they drift back in. Starting from real embeddings starts you on the manifold. It is the difference between joining a conversation in a language everyone speaks and shouting a made-up one until people work out what you mean.
+
+**The math, and what it buys you.**
+
 **Answer:**
 
 **Initialization Strategies:**
@@ -5522,6 +6345,22 @@ For a sentiment task with labels "positive" and "negative", initializing some pr
 
 ### Q94: What is the optimal prompt/prefix length?
 
+> **In 30 seconds.** "Prompt length is the capacity dial — same idea as rank in LoRA. You get most of the benefit by about twenty tokens and it flattens after that, so people land between twenty and fifty. The reason not to crank it to a hundred is that every prompt token is a real position in the sequence: it costs context window and attention compute on every forward pass. I'd sweep a few values on validation and take the smallest one within noise of the best."
+
+**The short version.**
+
+- **Prompt tuning**: 20–100 tokens, commonly 20–50.
+- **Prefix tuning**: 10–50 tokens, commonly 10–20 — each token carries $2L$ times more parameters.
+- **Longer for**: complex tasks, large datasets, large models.
+- **Shorter for**: simple tasks, small datasets, tight context budgets.
+- **Curve**: steep to ~20 tokens, then a plateau.
+
+**Why it works.**
+
+The soft prompt is the *only* thing that can encode the task — the rest of the model is frozen. So its length is literally the model's task capacity, and the curve behaves like every capacity curve: fast gains while the parameterization is the bottleneck, then a plateau once something else is. The cost side is what makes the plateau decisive, because unlike LoRA rank, prompt length is charged against your context window forever.
+
+**The math, and what it buys you.**
+
 **Answer:**
 
 **Typical Ranges:**
@@ -5573,6 +6412,23 @@ Sweep $p \in \{1, 5, 20, 50, 100\}$ on a validation set, plot score against $p$,
 ---
 
 ### Q95: Implement prompt tuning from scratch. Show the key code.
+
+> **In 30 seconds.** "The whole implementation is about fifteen lines. Freeze every backbone parameter, create one trainable tensor shaped prompt-length by hidden-size, embed the input normally, and concatenate the prompt in front along the sequence dimension. Then feed it in as `inputs_embeds` instead of `input_ids`, because these vectors don't correspond to any real token. The two bugs everyone hits are forgetting to slice the prompt positions off the logits before computing loss, and forgetting to pad the attention mask."
+
+**The short version.**
+
+- Set `requires_grad = False` on all backbone parameters.
+- One `nn.Parameter` of shape `(prompt_length, d_model)`, init scale 0.02.
+- `wte(input_ids)` → `(B, S, D)`; expand the prompt to `(B, P, D)`; `cat` on `dim=1`.
+- Pass as `inputs_embeds`, not `input_ids`.
+- Optimizer sees only the prompt tensor, at `lr=0.3`.
+- **Slice `logits[:, P:, :]` before the loss.** Left-pad the attention mask by `P`.
+
+**Why it works.**
+
+The frozen model has no idea it is being steered. From its point of view it received a sequence of embeddings and processed them normally — the first twenty just happen to be vectors that no tokenizer would ever produce. Gradients flow back through the whole frozen stack and land only on those twenty vectors, so training is a search for the twenty embeddings that make the untouched model behave the way you want.
+
+**The math, and what it buys you.**
 
 **Answer:**
 
@@ -5668,6 +6524,22 @@ See `25_adapters_lora/prompt_prefix_qa.md` for comprehensive Q&A!
 
 ### Q96: What are diffusion models? How do they work?
 
+> **In 30 seconds.** "A diffusion model learns to undo noise. You take real data and gradually corrupt it with Gaussian noise until it's pure static — and that direction is *fixed*, no learning involved. Then you train a network to look at a noisy sample plus the timestep and guess what noise was added. To generate, start from static and denoise step by step. The clever bit is that you can jump straight to any noise level in closed form, so training one example is one forward pass, not a thousand."
+
+**The short version.**
+
+- **Forward process** (fixed, no learning): $q(x_t \mid x_{t-1}) = \mathcal{N}(x_t; \sqrt{1-\beta_t}\,x_{t-1}, \beta_t I)$ — add noise until it is static.
+- **Reverse process** (learned): $p_\theta(x_{t-1}\mid x_t)$ — a network removes a little noise at a time.
+- **Training target**: predict the noise, $\mathcal{L} = \mathbb{E}\big[\lVert \epsilon - \epsilon_\theta(x_t,t)\rVert^2\big]$.
+- **Generation**: sample $x_T \sim \mathcal{N}(0,I)$ and iterate $x_T \to x_{T-1} \to \dots \to x_0$.
+- **Why it's learnable**: many easy steps instead of one impossibly hard one.
+
+**Why it works.**
+
+Generating a photograph in one shot means sampling from a distribution nobody can write down. Diffusion replaces that with a thousand tiny problems — "this image is slightly noisy, clean it up a bit" — each of which is nearly a local, well-behaved regression. It is the difference between sculpting a statue from a block and being handed something 99% finished and asked to remove one chip. Do that a thousand times and you have carved the statue.
+
+**The math, and what it buys you.**
+
 **Answer:**
 
 **Diffusion Models:**
@@ -5726,13 +6598,25 @@ Predicting $\epsilon$ rather than $x_0$ makes the target have unit variance at e
 
 ### Q97: How do you train a diffusion model?
 
-**Answer:**
+> **In 30 seconds.** "Training a diffusion model is plain regression, not anything exotic. For each example you pick a random timestep, sample noise, jump straight to the noisy version in one closed-form step, and ask the network to predict the noise you just added — mean squared error, done. Nothing loops over the thousand diffusion steps during training; that only happens at sampling time."
 
-**Training Algorithm:**
+**The short version.**
+
+- Precompute the variance schedule $\beta_t$ and its cumulative products $\alpha_t$, $\bar{\alpha}_t$ once, up front.
+- Per example: draw $x_0$, draw $t \sim \text{Uniform}(1..T)$, draw $\epsilon \sim \mathcal{N}(0, I)$.
+- Build $x_t$ in one shot from the closed form — no iteration over timesteps.
+- Loss is $\|\epsilon - \epsilon_\theta(x_t, t)\|^2$. That's it.
+- Cosine schedule over linear; EMA weights for sampling; feed $t$ into *every* block.
+
+**Why it works.**
+
+Steps (a) through (d) below are just "make one training example." You draw a clean sample $x_0$, draw a *random* timestep $t$ uniformly from $1..T$ — this is important, each example in a batch gets a different noise level, so the batch covers the whole schedule — draw fresh noise $\epsilon$, and form $x_t$ with the closed-form jump from the previous question. Steps (e) through (g) are an ordinary regression: the network sees $(x_t, t)$ and must output $\epsilon$, and you take an MSE gradient step. Nothing here iterates over $T$; the loop body is $O(1)$ in the number of diffusion steps.
+
+**The math, and what it buys you.**
 
 **1. Setup:**
 - Define variance schedule β_t (linear or cosine)
-- Precompute α_t, ᾱ_t for efficiency
+- Precompute α_t, ᾱ_t for efficiency
 
 **2. Training Loop:**
 ```
@@ -5746,23 +6630,23 @@ For each batch:
   g. Update: θ ← θ - α∇_θ L
 ```
 
-**Best Practices:**
-- Learning rate: 1e-4 to 1e-3
-- Use learning rate scheduling (cosine annealing)
-- Gradient clipping (norm = 1.0)
-- Monitor loss and generate samples during training
-
 **Variance Schedule:**
 - Linear: β_t = (β_max - β_min) * (t/T) + β_min
-- Cosine: ᾱ_t = cos²(π/2 * (t/T)) (often better)
+- Cosine: ᾱ_t = cos²(π/2 * (t/T)) (often better)
 
-**Reading the Training Loop Line by Line:**
-
-Steps (a) through (d) are just "make one training example." You draw a clean sample $x_0$, draw a *random* timestep $t$ uniformly from $1..T$ — this is important, each example in a batch gets a different noise level, so the batch covers the whole schedule — draw fresh noise $\epsilon$, and form $x_t$ with the closed-form jump from the previous question. Steps (e) through (g) are an ordinary regression: the network sees $(x_t, t)$ and must output $\epsilon$, and you take an MSE gradient step. Nothing here iterates over $T$; the loop body is $O(1)$ in the number of diffusion steps.
+The payoff of the closed form in step (d) is that training cost is independent of $T$ — you can train a 1000-step model as cheaply as a 50-step one, because you never simulate the chain.
 
 **Why the Cosine Schedule Usually Wins:**
 
 The linear schedule destroys information too early: $\bar{\alpha}_t$ drops fast, so a large fraction of the $T$ timesteps are spent on samples that are already essentially pure noise and carry no learning signal. Nichol and Dhariwal's cosine schedule keeps $\bar{\alpha}_t$ near 1 for longer and decays smoothly near the end, spending more of the budget on the noise levels where the model actually has something to learn. The practical effect is better sample quality at the same $T$, especially at low resolution.
+
+**Good and bad.**
+
+*What makes training go well:*
+- Learning rate: 1e-4 to 1e-3
+- Use learning rate scheduling (cosine annealing)
+- Gradient clipping (norm = 1.0)
+- Monitor loss and generate samples during training
 
 **Two Practical Details the Answer Omits:**
 
@@ -5776,20 +6660,21 @@ Use an exponential moving average of the weights for sampling — EMA with decay
 
 ### Q98: What are discrete diffusion models? How do they work for NLP?
 
-**Answer:**
+> **In 30 seconds.** "You can't add Gaussian noise to a word, so discrete diffusion replaces 'add noise' with 'randomly substitute tokens.' The version that works replaces them with a `[MASK]` that can never change back, so after enough steps the whole sequence is masked — which makes discrete diffusion essentially BERT-style masked prediction with a randomized, annealed mask ratio, run repeatedly at generation time."
 
-**The Challenge:**
-- Standard diffusion works on continuous data (images)
-- Text is discrete (tokens), need adaptation
+**The short version.**
 
-**Discrete Forward Process:**
+| | Continuous diffusion (images) | Discrete diffusion (text) |
+|---|---|---|
+| Corruption | Add Gaussian noise | Random token substitution via matrix $Q_t$ |
+| Forward step | Gaussian transition kernel | `q(x_t \| x_{t-1}) = Categorical(x_t; Q_t x_{t-1})` |
+| Reverse step | Predict the noise $\epsilon$ | Predict the original token: `p_θ(x_{t-1} \| x_t) = Categorical(x_{t-1}; p_θ(x_t, t))` |
+| End state at $t=T$ | Pure noise | All `[MASK]` (absorbing) or uniform random tokens |
 
-Instead of Gaussian noise, use transition matrix:
-```
-q(x_t | x_{t-1}) = Categorical(x_t; Q_t x_{t-1})
-```
+Two corruption schemes:
 
-**Common Approaches:**
+- **Absorbing state:** each token jumps to `[MASK]` with probability $\beta_t$; `[MASK]` never leaves. This is the one that works.
+- **Uniform transition:** tokens can become any other token uniformly.
 
 **1. Absorbing State:**
 - Have special [MASK] token
@@ -5799,29 +6684,45 @@ q(x_t | x_{t-1}) = Categorical(x_t; Q_t x_{t-1})
 **2. Uniform Transition:**
 - Tokens can transition to any other token uniformly
 
-**Discrete Reverse Process:**
+**The Challenge:**
+- Standard diffusion works on continuous data (images)
+- Text is discrete (tokens), need adaptation
+
+**Why it works.**
+
+Instead of Gaussian noise, use transition matrix:
+```
+q(x_t | x_{t-1}) = Categorical(x_t; Q_t x_{t-1})
+```
 
 Learn to predict original token:
 ```
 p_θ(x_{t-1} | x_t) = Categorical(x_{t-1}; p_θ(x_t, t))
 ```
 
-**Advantages for NLP:**
-- Non-autoregressive (can generate in parallel)
-- Better for editing tasks (text inpainting)
-- More flexible control
-
-**What the Transition Matrix Means:**
-
 For continuous data, "add noise" means adding a Gaussian. For tokens there is no meaningful way to add $0.3$ to the word "cat," so corruption has to be a *random substitution*. Represent a token as a one-hot vector $x \in \{0,1\}^{|V|}$; then $Q_t$ is a $|V| \times |V|$ column-stochastic matrix and $Q_t x$ is the distribution over what the token becomes at step $t$. The absorbing-state variant sets $Q_t$ so that a token stays put with probability $1-\beta_t$ and jumps to `[MASK]` with probability $\beta_t$; `[MASK]` never leaves, which is why it is called absorbing.
+
+**Why Uniform Transitions Are Worse in Practice:**
+
+With uniform corruption, a token can become any other token, so at inference the model cannot tell which positions are corrupted — it must decide both *what* is wrong and *how* to fix it. The absorbing variant marks corruption explicitly with `[MASK]`, which is a much easier learning problem and is what most working discrete-diffusion text models use.
+
+**The math, and what it buys you.**
 
 **Worked Example:**
 
 Take a 10-token sentence and a schedule where the cumulative mask probability reaches 1 at $t=T$. At $t$ with $\bar{\beta}_t = 0.3$, about 3 of the 10 tokens are `[MASK]` and the model must fill them in given the other 7. At $\bar{\beta}_t = 0.9$, 9 tokens are masked and the task is nearly unconditional generation. Absorbing-state discrete diffusion is therefore *BERT-style masked prediction with a randomized, annealed mask ratio* — that framing is the single most useful sentence to have ready, and it makes the connection to modern masked diffusion language models obvious.
 
-**Why Uniform Transitions Are Worse in Practice:**
+**Good and bad.**
 
-With uniform corruption, a token can become any other token, so at inference the model cannot tell which positions are corrupted — it must decide both *what* is wrong and *how* to fix it. The absorbing variant marks corruption explicitly with `[MASK]`, which is a much easier learning problem and is what most working discrete-diffusion text models use.
+*Advantages for NLP:*
+- Non-autoregressive (can generate in parallel)
+- Better for editing tasks (text inpainting)
+- More flexible control
+
+*The costs:*
+- Text is discrete, so the whole continuous-diffusion toolbox has to be rebuilt
+- Uniform-transition variants are much harder to learn than absorbing ones
+- Quality depends directly on the step count you are willing to pay for
 
 **Follow-up:** *How does generation actually decide which tokens to unmask?* Typically confidence-based: the model predicts a distribution for every masked position, and at each reverse step you commit the $k$ positions where it is most confident and re-mask the rest. That is why these models can trade quality for latency by changing the number of steps — fewer steps means committing more tokens per step.
 
@@ -5833,7 +6734,19 @@ With uniform corruption, a token can become any other token, so at inference the
 
 ### Q99: What are use cases of diffusion models in NLP?
 
-**Answer:**
+> **In 30 seconds.** "For images, diffusion won outright. For text it's a narrower story: the genuine advantage is that diffusion conditions on both sides of a gap at once, so infilling, constrained rewriting, and parallel decoding are native operations rather than special cases. It is not replacing GPT for open-ended generation."
+
+**The short version.**
+
+| Use case | Status |
+|---|---|
+| Text-to-image (Stable Diffusion, DALL-E 2/3) | Dominant — this is where diffusion won |
+| Text inpainting / editing the middle of a document | Genuine structural advantage |
+| Non-autoregressive parallel generation | Shipped, sold on latency; still a minority |
+| Controllable generation (length, style, hard constraints) | Real edge over autoregressive |
+| Open-ended text generation | Autoregressive still wins |
+
+The full list as usually given:
 
 **1. Non-Autoregressive Text Generation:**
 - Generate all tokens in parallel
@@ -5865,15 +6778,19 @@ With uniform corruption, a token can become any other token, so at inference the
 - Stable Diffusion: Open-source text-to-image
 - Research: Non-autoregressive text generation
 
-> **Correction to the list above.** DALL-E 1 (2021) was *not* a diffusion model — it was an autoregressive transformer over discrete VQ-VAE image tokens. Diffusion entered the DALL-E line with DALL-E 2 (unCLIP, 2022) and continued in DALL-E 3. Stable Diffusion is correctly described: it is a latent diffusion model, meaning the diffusion runs in a compressed VAE latent space (roughly $64 \times 64$ for a $512 \times 512$ image) rather than pixel space, which is a 48x reduction in the number of dimensions being denoised and is the reason it runs on consumer hardware.
-
-**Where the Text Cases Actually Stand (as of 2026 — this is the fastest-moving item in this section):**
-
-Diffusion-style *masked* language models have moved from research curiosity to shipped products in the last two years, marketed on latency: because they decode many tokens per network call instead of one, they can post very high tokens-per-second on the same hardware. They remain a minority of deployed text generation, and autoregressive decoding still dominates for open-ended quality and for anything needing a long, coherent chain of reasoning. Treat any specific ranking here as having a short shelf life.
+**Why it works.**
 
 **The Structural Reason Diffusion Fits Editing:**
 
 An autoregressive model conditions only on the left. To rewrite the middle of a document it must either regenerate everything downstream or be trained with a special infilling objective. A diffusion model conditions on *everything unmasked*, in both directions, at every step — so "fill this hole given the surrounding text" is not a special case, it is the native operation. That is why the honest use cases for text diffusion are infilling, constrained rewriting, and parallel decoding, rather than "replacing GPT."
+
+> **Correction to the list above.** DALL-E 1 (2021) was *not* a diffusion model — it was an autoregressive transformer over discrete VQ-VAE image tokens. Diffusion entered the DALL-E line with DALL-E 2 (unCLIP, 2022) and continued in DALL-E 3. Stable Diffusion is correctly described: it is a latent diffusion model, meaning the diffusion runs in a compressed VAE latent space (roughly $64 \times 64$ for a $512 \times 512$ image) rather than pixel space, which is a 48x reduction in the number of dimensions being denoised and is the reason it runs on consumer hardware.
+
+**Good and bad.**
+
+**Where the Text Cases Actually Stand (as of 2026 — this is the fastest-moving item in this section):**
+
+Diffusion-style *masked* language models have moved from research curiosity to shipped products in the last two years, marketed on latency: because they decode many tokens per network call instead of one, they can post very high tokens-per-second on the same hardware. They remain a minority of deployed text generation, and autoregressive decoding still dominates for open-ended quality and for anything needing a long, coherent chain of reasoning. Treat any specific ranking here as having a short shelf life.
 
 > **Saying it out loud.** For images, diffusion won outright — Stable Diffusion and the later DALL-E models are all diffusion, though the original DALL-E actually wasn't. For text it's a narrower story. The genuine advantage is that diffusion conditions on both sides at once, so filling in a gap or rewriting the middle of a paragraph is the natural operation rather than a special case. And because it decodes many tokens per pass, it can be very fast. But autoregressive models still own general-purpose text generation.
 
@@ -5881,7 +6798,22 @@ An autoregressive model conditions only on the left. To rewrite the middle of a 
 
 ### Q100: How do you evaluate diffusion models?
 
-**Answer:**
+> **In 30 seconds.** "For images the workhorse is FID — compare Inception feature statistics between real and generated sets, lower is better, and hold the sample count fixed at fifty thousand or the numbers aren't comparable. For text it's messier, because a diffusion model has no exact likelihood, only a bound, so its 'perplexity' isn't apples-to-apples with GPT's. Whatever you report, report the denoising step count with it."
+
+**The short version.**
+
+| Domain | Metric | Direction | Watch out for |
+|---|---|---|---|
+| Images | FID | Lower better | Biased by sample count; convention is 50k |
+| Images | IS (Inception Score) | Higher better | Bounded by #classes, not "1-10" |
+| Images | Reconstruction error | Lower better | Only tests denoising, not generation |
+| Text | Perplexity | Lower better | Diffusion gives only an ELBO *upper bound* |
+| Text | BLEU | Higher better (0-1) | Needs references |
+| Text | Distinct-n / Self-BLEU | Higher distinct = more diverse | Diversity only, not quality |
+| Either | Denoising accuracy per timestep | Higher better | Diffusion-specific diagnostic |
+| Either | Human eval / visual inspection | — | Expensive but decisive |
+
+The same list, spelled out:
 
 **For Images:**
 
@@ -5923,7 +6855,13 @@ An autoregressive model conditions only on the left. To rewrite the middle of a 
 - Visual inspection (for images)
 - Human evaluation (for text)
 
+**Why it works.**
+
+FID works because Inception features encode perceptual content, so two sets of images that look alike have similar feature statistics even when no two individual images match. IS works differently: it rewards samples the classifier labels confidently (quality) while the marginal over samples stays spread out (diversity).
+
 > **Correction on Inception Score range.** IS is not "typically 1-10." It is bounded below by 1 and above by the number of classes in the classifier — 1000 for ImageNet-trained Inception. Real ImageNet generative models score in the tens to low hundreds; real ImageNet data itself scores around 233. A "1-10" band would describe only a badly broken model.
+
+**The math, and what it buys you.**
 
 **How FID Is Actually Computed:**
 
@@ -5931,9 +6869,11 @@ Push $N$ real images and $N$ generated images through an Inception-v3 network an
 
 $$\text{FID} = \|\mu_r - \mu_g\|^2 + \operatorname{Tr}\!\left(\Sigma_r + \Sigma_g - 2(\Sigma_r\Sigma_g)^{1/2}\right)$$
 
-Two things follow that interviewers probe. FID is *biased by sample count* — it decreases as $N$ grows, so numbers computed with 10k samples are not comparable to numbers computed with 50k, and 50k is the convention. And because it compares a single Gaussian fit, it is insensitive to some failure modes and sensitive to image preprocessing (resizing, JPEG) in ways that make cross-paper comparison unreliable unless the exact pipeline matches.
+The first term catches a mean shift (generated images systematically differ in content), the second catches a covariance mismatch (wrong diversity or wrong correlations). Two things follow that interviewers probe. FID is *biased by sample count* — it decreases as $N$ grows, so numbers computed with 10k samples are not comparable to numbers computed with 50k, and 50k is the convention. And because it compares a single Gaussian fit, it is insensitive to some failure modes and sensitive to image preprocessing (resizing, JPEG) in ways that make cross-paper comparison unreliable unless the exact pipeline matches.
 
-**Why Perplexity Is Awkward for Diffusion Text:**
+**Good and bad.**
+
+*Why Perplexity Is Awkward for Diffusion Text:*
 
 A diffusion language model does not factorize the sequence probability left to right, so it has no exact per-token likelihood. What you can compute is a variational bound on the negative log-likelihood — the ELBO — and exponentiate that, which gives an *upper bound* on perplexity, not perplexity itself. Comparing that number against an autoregressive model's exact perplexity is comparing a bound to a value, and it stacks the deck against the diffusion model. Say this if asked; it is a common gotcha.
 
@@ -5945,7 +6885,18 @@ A diffusion language model does not factorize the sequence probability left to r
 
 ### Q101: Compare diffusion models with autoregressive models (GPT) for text generation.
 
-**Answer:**
+> **In 30 seconds.** "Autoregressive decoding costs one forward pass per token; diffusion costs one pass per denoising step over the whole sequence. So diffusion is faster exactly when the step count is below the output length — five hundred tokens in thirty steps is a real win, a twenty-token answer is a loss. The price is that tokens within a step are predicted independently, so you get locally-fine, globally-inconsistent phrases."
+
+**The short version.**
+
+| | Autoregressive (GPT) | Diffusion |
+|---|---|---|
+| Generation order | Left-to-right, t₁ → t₂ → t₃ → ... | All positions in parallel, iteratively refined |
+| Cost for $n$ tokens | $n$ passes (cheap each, KV cache) | $S$ passes over full length |
+| Conditioning | All previous tokens | Everything currently unmasked, both directions |
+| Failure mode | Slow for long outputs | Conditional-independence errors within a step |
+| Best at | Long sequences, open-ended quality, speed on short outputs | Infilling, hard constraints, parallel decoding |
+| Maturity | Established, dominant | Promising, narrower |
 
 **Generation Process:**
 
@@ -5988,17 +6939,23 @@ A diffusion language model does not factorize the sequence probability left to r
 - Diffusion better for images
 - Discrete diffusion promising for text
 
-**Putting Real Numbers on "Faster":**
-
-The comparison is not steps versus steps, it is *network evaluations* versus tokens. Generating $n$ tokens autoregressively costs $n$ forward passes, each over a growing sequence but cheap per pass thanks to the KV cache. A diffusion model generating the same $n$ tokens costs $S$ forward passes over the *full* length, where $S$ is the number of denoising steps. So diffusion wins exactly when $S < n$, and by roughly the factor $n/S$. For $n = 512$ tokens and $S = 32$ steps that is a 16x advantage in passes — real, and it is why the parallel-decoding pitch is credible. For a short 20-token answer with $S = 32$, diffusion is *slower*. The crossover is the whole story.
-
-**The Cost Diffusion Pays:**
-
-Within one denoising step, all positions are predicted independently given the current state. If "New" and "York" are both masked and each is individually likely, the model can commit "New" and "Delhi" in the same step, because nothing coordinates them. Autoregressive decoding never has this problem — every token is conditioned on all previous tokens. This is the same conditional-independence failure that plagued non-autoregressive machine translation, and it is why practical diffusion decoders commit only a few high-confidence tokens per step, which pushes $S$ back up toward $n$ and eats the speed advantage.
+**Why it works.**
 
 **One Real Asymmetry in Controllability:**
 
 Constraints like "this sequence must contain these five words" or "leave characters 40 through 80 untouched" are trivial for diffusion — clamp those positions and never unmask them. For an autoregressive model the same constraint requires beam search with lookahead heuristics or a specially trained infilling objective. If the interviewer pushes on "why would anyone use text diffusion," this is the strongest honest answer.
+
+**The math, and what it buys you.**
+
+**Putting Real Numbers on "Faster":**
+
+The comparison is not steps versus steps, it is *network evaluations* versus tokens. Generating $n$ tokens autoregressively costs $n$ forward passes, each over a growing sequence but cheap per pass thanks to the KV cache. A diffusion model generating the same $n$ tokens costs $S$ forward passes over the *full* length, where $S$ is the number of denoising steps. So diffusion wins exactly when $S < n$, and by roughly the factor $n/S$. For $n = 512$ tokens and $S = 32$ steps that is a 16x advantage in passes — real, and it is why the parallel-decoding pitch is credible. For a short 20-token answer with $S = 32$, diffusion is *slower*. The crossover is the whole story.
+
+**Good and bad.**
+
+**The Cost Diffusion Pays:**
+
+Within one denoising step, all positions are predicted independently given the current state. If "New" and "York" are both masked and each is individually likely, the model can commit "New" and "Delhi" in the same step, because nothing coordinates them. Autoregressive decoding never has this problem — every token is conditioned on all previous tokens. This is the same conditional-independence failure that plagued non-autoregressive machine translation, and it is why practical diffusion decoders commit only a few high-confidence tokens per step, which pushes $S$ back up toward $n$ and eats the speed advantage.
 
 **Follow-up:** *Can you combine them?* Yes, and this is where the field is going: block-wise or semi-autoregressive schemes decode a chunk of tokens by diffusion, condition on it, and move to the next chunk. You get intra-block parallelism with inter-block causal conditioning, and you can keep a KV cache across blocks.
 
@@ -6021,12 +6978,31 @@ See `40_diffusion_models/diffusion_qa.md` for comprehensive Q&A!
 
 ### Q102: What is perplexity? How is it computed?
 
-**Answer:**
+> **In 30 seconds.** "Perplexity is just the exponential of your average cross-entropy loss — the same number your training loop already prints, on a different scale. Read it as 'how many equally-likely options was the model effectively choosing between.' Lower is better, and one is the floor."
+
+**The short version.**
+
+- Definition: exponentiated average negative log-likelihood over the tokens you scored.
+- Interpretation: perplexity $k$ = as uncertain as a uniform choice among $k$ options.
+- $\text{PPL} = \exp(\text{cross-entropy loss in nats})$ — a loss of $2.5$ is a perplexity of $12.2$.
+- It is a *geometric* mean of token probabilities, so one confidently-wrong token hurts disproportionately.
+- Lower perplexity = model is more confident = better predictions.
 
 **Perplexity:**
 - Metric that measures how well a probability model predicts a sample
 - Defined as exponentiated average negative log-likelihood
 - Lower perplexity = better model
+
+**Intuitive Understanding:**
+- Perplexity = k means model is as uncertain as uniform choice among k options
+- If PP = 10, model thinks there are 10 equally likely next tokens
+- Lower perplexity = model is more confident = better predictions
+
+**Why it works.**
+
+Perplexity is the inverse geometric mean of the per-token probabilities, $\left(\prod_i P(w_i)\right)^{-1/N}$. If you had to bet on the next token and the model's distribution were flat over $k$ candidates, you'd be right about one time in $k$ — perplexity reports that effective $k$. This is why it is the natural unit for "how surprised was the model."
+
+**The math, and what it buys you.**
 
 **Mathematical Definition:**
 
@@ -6038,11 +7014,6 @@ Where:
 - W = (w₁, w₂, ..., wₙ) is a sequence of tokens
 - P(w_i | context) is probability assigned by model
 - N is number of tokens
-
-**Intuitive Understanding:**
-- Perplexity = k means model is as uncertain as uniform choice among k options
-- If PP = 10, model thinks there are 10 equally likely next tokens
-- Lower perplexity = model is more confident = better predictions
 
 **Computation:**
 
@@ -6080,6 +7051,12 @@ Because it is a geometric mean, one catastrophic token is not averaged away. If 
 
 The snippet `probs[range(batch), range(seq_len), true_tokens]` is schematic rather than runnable — with two parallel `range` objects NumPy-style advanced indexing would require them to broadcast, and in practice you use `gather` along the vocabulary axis, as the fuller code in Q105 does. The idea is right: for each position, pick out the probability the model assigned to the token that actually occurred.
 
+**Good and bad.**
+
+*Good:* free (you already compute the loss), no references or annotators needed, punishes confident mistakes hard, which is exactly what you want from a training signal.
+
+*Bad:* the same geometric-mean sensitivity makes it a fragile evaluation metric — a single pathological token can move the number by double digits.
+
 **Follow-up:** *Is perplexity computed on the loss you already have?* Yes — if you train with mean cross-entropy in nats, perplexity is `exp(loss)` and nothing else needs computing. A training loss of $2.5$ is a perplexity of $12.2$.
 
 > **Saying it out loud.** Perplexity is just the exponential of your average cross-entropy loss, so it's the same number your training loop already prints, on a different scale. The interpretation is "how many equally-likely options was the model effectively choosing between." Because it's built from a mean of log probabilities, it's really a geometric mean of the token probabilities — which means one token the model was confidently wrong about can wreck the score for a whole sequence.
@@ -6088,7 +7065,17 @@ The snippet `probs[range(batch), range(seq_len), true_tokens]` is schematic rath
 
 ### Q103: What does perplexity mean? How do you interpret it?
 
-**Answer:**
+> **In 30 seconds.** "Perplexity of ten means the model was about as uncertain as choosing uniformly among ten options; lower is better and one is the floor. The thing worth flagging is that a perplexity number without its tokenizer and test set attached is not information — a bigger vocabulary means fewer, more informative tokens and a higher-looking per-token number."
+
+**The short version.**
+
+| Perplexity | What it means |
+|---|---|
+| 1 | Perfectly certain — assigns probability 1 to every observed token. Unrealistic. |
+| 10 | As uncertain as a uniform choice among 10 tokens. Reasonable for a good LM. |
+| 100 | Very uncertain — poor model or a genuinely hard task. |
+| $\approx$ few hundred | Roughly where a frequency-only unigram model sits on English. |
+| $= \lvert V \rvert$ | Uniform random guessing. Worst case, and rarely observed. |
 
 **Interpretation:**
 
@@ -6135,11 +7122,19 @@ The snippet `probs[range(batch), range(seq_len), true_tokens]` is schematic rath
 - Entropy measures uncertainty in bits
 - Perplexity measures uncertainty in "effective vocabulary size"
 
+**Why it works.**
+
 **The Comparability Trap:**
 
 The quoted numbers — GPT-2 small around 37 on WikiText-103, the larger variants in the high teens to low twenties — are only meaningful because everyone evaluates them the same way. Perplexity is *per token*, and different models use different tokenizers. A model with a large vocabulary spends fewer tokens on the same text, so each token carries more information and its per-token perplexity is higher, even if it models the text better. Comparing a byte-level model's perplexity to a 50k-BPE model's perplexity is meaningless.
 
-The fix is to renormalize to a fixed unit. If your model needs $N_{tok}$ tokens to cover $N_{word}$ words, word-level perplexity is
+**The Ceiling Is Not the Vocabulary Size:**
+
+The claim that a random model scores perplexity equal to vocabulary size is right only for a *uniform* random model. A unigram model that just knows token frequencies already scores far below $|V|$ — on English text, something in the hundreds against a 50k vocabulary. So "as bad as random" in practice means a few hundred, not 50,000, and a model at perplexity 500 is not at chance, it is worse than a bigram counter.
+
+**The math, and what it buys you.**
+
+The fix for the comparability trap is to renormalize to a fixed unit. If your model needs $N_{tok}$ tokens to cover $N_{word}$ words, word-level perplexity is
 
 $$\text{PPL}_{word} = \exp\!\left(\frac{N_{tok}}{N_{word}} \cdot \log \text{PPL}_{tok}\right)$$
 
@@ -6148,10 +7143,6 @@ Bits per byte does the same thing with bytes as the denominator, and is the stan
 **Worked Number:**
 
 Suppose a BPE model reports token perplexity $12$ over 1.3 tokens per word. Then $\log 12 = 2.485$ nats per token, $\times 1.3 = 3.23$ nats per word, so word perplexity is $e^{3.23} \approx 25.3$ — more than double the token number. Two models can be reported at "perplexity 12" and differ by a wide margin once you put them on the same unit.
-
-**The Ceiling Is Not the Vocabulary Size:**
-
-The claim that a random model scores perplexity equal to vocabulary size is right only for a *uniform* random model. A unigram model that just knows token frequencies already scores far below $|V|$ — on English text, something in the hundreds against a 50k vocabulary. So "as bad as random" in practice means a few hundred, not 50,000, and a model at perplexity 500 is not at chance, it is worse than a bigram counter.
 
 **Follow-up:** *Can perplexity go below 1?* No. Perplexity is $\exp$ of a non-negative quantity (average NLL), so its floor is exactly 1, reached only when the model assigns probability 1 to every observed token.
 
@@ -6163,9 +7154,17 @@ The claim that a random model scores perplexity equal to vocabulary size is righ
 
 ### Q104: How is perplexity related to entropy and cross-entropy?
 
-**Answer:**
+> **In 30 seconds.** "They're the same thing in different units. Entropy counts your uncertainty in bits; perplexity exponentiates that into an effective number of choices — 3.32 bits and 10 options are the same statement. You compute cross-entropy rather than entropy because you never have the true distribution, and cross-entropy always exceeds it by exactly the KL divergence between the language and your model."
 
-**Connection to Entropy:**
+**The short version.**
+
+| Quantity | Formula | Unit |
+|---|---|---|
+| Entropy | `H(X) = -Σ P(x) * log P(x)` | bits (log₂) or nats (ln) |
+| Cross-entropy | `H(P, Q) = -Σ P(x) * log Q(x)` | same |
+| LM loss | `H = -(1/N) * Σ log P(w_i \| context)` | nats, as frameworks report it |
+| Perplexity | `PP = 2^H` (bits) or `exp(H)` (nats) | "effective vocabulary size" |
+| Bits per token | `BPT = log₂(PP) = H` in bits | bits |
 
 **Entropy:**
 ```
@@ -6177,13 +7176,6 @@ H(X) = -Σ P(x) * log P(x)
 PP = 2^H(X)  (for base-2 log)
 PP = exp(H(X))  (for natural log)
 ```
-
-**Intuition:**
-- Entropy: uncertainty in bits
-- Perplexity: uncertainty in "effective vocabulary size"
-- If entropy = log₂(10) ≈ 3.32 bits, perplexity = 2^3.32 ≈ 10
-
-**Connection to Cross-Entropy:**
 
 **Cross-Entropy:**
 ```
@@ -6216,6 +7208,8 @@ PP = exp(H)
 - Lower BPT = lower perplexity = better model
 - More interpretable for some applications
 
+**Why it works.**
+
 **Where the Exponential Comes From:**
 
 The connection is not a coincidence, it is a definition unwound. Entropy $H$ in bits is the average number of yes/no questions needed to identify the outcome. If you need $H$ bits, you are distinguishing among $2^H$ equally likely possibilities. Perplexity is defined as that count: $\text{PPL} = 2^{H}$ in bits, $e^{H}$ in nats. So perplexity and entropy are the same quantity in different units — "3.32 bits of uncertainty" and "effectively 10 choices" are the same sentence.
@@ -6223,6 +7217,13 @@ The connection is not a coincidence, it is a definition unwound. Entropy $H$ in 
 **Why It Is Cross-Entropy and Not Entropy:**
 
 The true distribution $P$ over language is unknown, so you cannot compute $H(P)$. What you can compute is $H(P, Q) = -\mathbb{E}_{x \sim P}[\log Q(x)]$, estimated by averaging $-\log Q$ over held-out samples that are drawn from $P$. And because $H(P,Q) = H(P) + D_{KL}(P \| Q) \ge H(P)$, model perplexity is always an upper bound on the true entropy of the language, with the gap being exactly the KL divergence between the language and your model. Driving perplexity down is literally driving $D_{KL}(P \| Q)$ down, since $H(P)$ is a constant you cannot touch. That sentence is the best single answer to "why do we minimize cross-entropy."
+
+**The math, and what it buys you.**
+
+**Intuition:**
+- Entropy: uncertainty in bits
+- Perplexity: uncertainty in "effective vocabulary size"
+- If entropy = log₂(10) ≈ 3.32 bits, perplexity = 2^3.32 ≈ 10
 
 **Unit Conversion, Concretely:**
 
@@ -6236,7 +7237,17 @@ Frameworks report loss in nats (natural log). $\text{PPL} = e^{\text{loss}}$; bi
 
 ### Q105: How do you compute perplexity for a language model? Show the code.
 
-**Answer:**
+> **In 30 seconds.** "Log-softmax the logits, gather the log-probability of the token that actually occurred at each position, average, negate, exponentiate. Three things trip everyone up: shift by one so position i predicts token i+1, mask out padding, and accumulate total loss and total tokens across the dataset and exponentiate once at the end — never average per-batch perplexities."
+
+**The short version.**
+
+- `log_softmax` over the vocab axis.
+- `gather` the target token's log-prob at each position.
+- Shift: `logits[:, :-1, :]` against `labels[:, 1:]`.
+- Mask padding out of both the numerator and the token count.
+- Sum NLL and tokens over the whole dataset, then `exp` once.
+
+**The math, and what it buys you.**
 
 **Step-by-Step Algorithm:**
 
@@ -6326,18 +7337,6 @@ def language_model_perplexity(model, dataloader, device='cpu'):
 
 **See `03_evaluation_metrics/perplexity_code.py` for complete implementation!**
 
-**Why `gather` and Not Fancy Indexing:**
-
-`log_probs` has shape `(batch, seq_len, vocab)` and `targets` has shape `(batch, seq_len)`. `targets.unsqueeze(-1)` makes it `(batch, seq_len, 1)`, and `gather(dim=-1, index=...)` picks, at every `(batch, position)` slot, the single vocabulary entry named by the target. The result is `(batch, seq_len, 1)`, and `squeeze(-1)` drops back to `(batch, seq_len)`. This is the vectorized version of "for each position, look up the log-probability of the token that actually occurred," and it does it without materializing anything vocabulary-sized beyond the log-softmax itself.
-
-**Why the Shift by One:**
-
-`shift_logits = logits[:, :-1, :]` and `shift_labels = labels[:, 1:]` implement next-token prediction. Position $i$ of the logits predicts token $i+1$, so the last logit has no target and the first label has no predictor. Forgetting this shift is the single most common perplexity bug and it produces a suspiciously low number, because the model appears to be predicting the token it was just shown.
-
-**A Real Bug in the Aggregation Function:**
-
-The `language_model_perplexity` loop calls `perplexity_from_logits` without passing a mask, so padding tokens are counted as real tokens. If your batches are padded, every pad position contributes its (usually very confident, because pad is easy) log-probability to the average and the reported perplexity is biased low. The `batch_tokens = shift_labels.numel()` line has the same problem: it counts padded slots. The fix is to build a mask from the label tensor (`shift_labels != pad_id`), pass it in, and accumulate `mask.sum()` rather than `numel()`. Round-tripping through `np.log(pp)` to recover the NLL is mathematically harmless but pointlessly lossy — returning the summed NLL and the token count directly is cleaner.
-
 **Runnable Check (executed):**
 
 ```python
@@ -6361,6 +7360,22 @@ print(float(torch.exp(nll)))      # 4.7568  -> matches 2**2.25 from Q97
 print(2 ** 2.25)                  # 4.7568
 ```
 
+**Why it works.**
+
+**Why `gather` and Not Fancy Indexing:**
+
+`log_probs` has shape `(batch, seq_len, vocab)` and `targets` has shape `(batch, seq_len)`. `targets.unsqueeze(-1)` makes it `(batch, seq_len, 1)`, and `gather(dim=-1, index=...)` picks, at every `(batch, position)` slot, the single vocabulary entry named by the target. The result is `(batch, seq_len, 1)`, and `squeeze(-1)` drops back to `(batch, seq_len)`. This is the vectorized version of "for each position, look up the log-probability of the token that actually occurred," and it does it without materializing anything vocabulary-sized beyond the log-softmax itself.
+
+**Why the Shift by One:**
+
+`shift_logits = logits[:, :-1, :]` and `shift_labels = labels[:, 1:]` implement next-token prediction. Position $i$ of the logits predicts token $i+1$, so the last logit has no target and the first label has no predictor. Forgetting this shift is the single most common perplexity bug and it produces a suspiciously low number, because the model appears to be predicting the token it was just shown.
+
+**Good and bad.**
+
+**A Real Bug in the Aggregation Function:**
+
+The `language_model_perplexity` loop calls `perplexity_from_logits` without passing a mask, so padding tokens are counted as real tokens. If your batches are padded, every pad position contributes its (usually very confident, because pad is easy) log-probability to the average and the reported perplexity is biased low. The `batch_tokens = shift_labels.numel()` line has the same problem: it counts padded slots. The fix is to build a mask from the label tensor (`shift_labels != pad_id`), pass it in, and accumulate `mask.sum()` rather than `numel()`. Round-tripping through `np.log(pp)` to recover the NLL is mathematically harmless but pointlessly lossy — returning the summed NLL and the token count directly is cleaner.
+
 **The Long-Document Subtlety:**
 
 If a document is longer than the context window you must chunk it, and naive non-overlapping chunks penalize the model unfairly: the first token of every chunk is predicted with no context at all. The standard fix is a strided sliding window — advance by, say, 512 tokens through a 1024-token window and score only the newly revealed 512 — which roughly halves compute cost relative to a stride of 1 while giving every scored token real context. Reported perplexities move by several points depending on the stride, so it must be stated alongside the number.
@@ -6375,7 +7390,17 @@ If a document is longer than the context window you must chunk it, and naive non
 
 ### Q106: What are the limitations of perplexity? When should you use other metrics?
 
-**Answer:**
+> **In 30 seconds.** "Perplexity measures how well a model assigns probability to text that already exists, which is not the same as how good the text it generates is — human text isn't maximally likely, so maximizing likelihood at decode time gives you robotic output. It also isn't comparable across tokenizers or test sets, and an RLHF'd chat model usually has worse perplexity than its base model while being far more useful."
+
+**The short version.**
+
+| Use perplexity for | Reach for something else when |
+|---|---|
+| Pretraining loss curves, checkpoint comparison | You care about factuality → task accuracy, grounded QA |
+| Tokenizer and data-mixture ablations | You care about instruction following → pairwise preference |
+| Scaling-law fits | You care about repetition → distinct-$n$, repetition rate |
+| Quantization damage | You care about confidence → expected calibration error |
+| Same architecture, same tokenizer, same test set | You are evaluating an aligned/RLHF model at all |
 
 **Limitations:**
 
@@ -6407,6 +7432,24 @@ If a document is longer than the context window you must chunk it, and naive non
 - May not reflect task-specific quality
 - Need task-specific metrics
 
+**Why it works — and where it breaks.**
+
+**The Sharpest Version of "Doesn't Correlate with Quality":**
+
+Perplexity measures how well a model assigns probability to *text that already exists*. Generation quality depends on what the model produces when it is sampling from itself, which is a different distribution — the model's own outputs are not drawn from the test set. These come apart concretely: greedy decoding from a low-perplexity model produces repetitive, degenerate text, while nucleus sampling from the same model produces much better text and *higher* measured perplexity on its own outputs. Holtzman et al. made exactly this point — human text has moderate, variable per-token likelihood, and text optimized to be maximally likely does not look human.
+
+Perplexity is also blind to everything the loss does not see. An RLHF-tuned chat model typically has *worse* perplexity on raw web text than its base model, and is dramatically more useful. If you are evaluating an aligned model, perplexity is close to the wrong instrument.
+
+**Good and bad.**
+
+**When It Is Genuinely the Right Metric:**
+
+Pretraining loss curves, tokenizer and data-mixture ablations, scaling-law fits, quantization damage, and any comparison of two checkpoints of the same architecture on the same tokenizer and same test set. In all of these you are asking "did the model's density estimate improve," which is exactly what perplexity answers, and it has the enormous practical virtue of needing no references, no annotators, and no decoding.
+
+**What to Reach for Instead, by Failure Mode:**
+
+If you care about factuality, perplexity cannot help — use task accuracy or a grounded QA benchmark. If you care about instruction following, use pairwise human or model-judged preferences. If you care about repetition and degeneration, use distinct-$n$ and repetition rate. If you care about calibration, use expected calibration error, not perplexity, since a model can have good average likelihood and badly miscalibrated confidence.
+
 **When to Use Other Metrics:**
 
 **1. Text Generation:**
@@ -6436,20 +7479,6 @@ If a document is longer than the context window you must chunk it, and naive non
 - Don't rely only on perplexity
 - Consider context and task requirements
 
-**The Sharpest Version of "Doesn't Correlate with Quality":**
-
-Perplexity measures how well a model assigns probability to *text that already exists*. Generation quality depends on what the model produces when it is sampling from itself, which is a different distribution — the model's own outputs are not drawn from the test set. These come apart concretely: greedy decoding from a low-perplexity model produces repetitive, degenerate text, while nucleus sampling from the same model produces much better text and *higher* measured perplexity on its own outputs. Holtzman et al. made exactly this point — human text has moderate, variable per-token likelihood, and text optimized to be maximally likely does not look human.
-
-Perplexity is also blind to everything the loss does not see. An RLHF-tuned chat model typically has *worse* perplexity on raw web text than its base model, and is dramatically more useful. If you are evaluating an aligned model, perplexity is close to the wrong instrument.
-
-**When It Is Genuinely the Right Metric:**
-
-Pretraining loss curves, tokenizer and data-mixture ablations, scaling-law fits, quantization damage, and any comparison of two checkpoints of the same architecture on the same tokenizer and same test set. In all of these you are asking "did the model's density estimate improve," which is exactly what perplexity answers, and it has the enormous practical virtue of needing no references, no annotators, and no decoding.
-
-**What to Reach for Instead, by Failure Mode:**
-
-If you care about factuality, perplexity cannot help — use task accuracy or a grounded QA benchmark. If you care about instruction following, use pairwise human or model-judged preferences. If you care about repetition and degeneration, use distinct-$n$ and repetition rate. If you care about calibration, use expected calibration error, not perplexity, since a model can have good average likelihood and badly miscalibrated confidence.
-
 **Follow-up:** *A team reports their new model has 20% lower perplexity. What do you ask?* Same tokenizer? Same test set, and was it decontaminated against the training data? Same evaluation stride and context length? Same handling of padding and end-of-document tokens? Any one of those can produce a 20% swing with no modelling improvement at all.
 
 > **Why the interviewer asks this.** Perplexity is the metric people quote most and interrogate least, so it is an efficient probe for whether a candidate evaluates critically or just reports.
@@ -6465,22 +7494,24 @@ See `33_information_theory/information_theory.py` for entropy implementation!
 ---
 
 ## Causal Attention
-
 ### Q107: Explain causal attention. What does the code `np.tril(np.ones((seq_len, seq_len)))` do?
 
-**Answer:**
+> **In 30 seconds.** "`np.tril` takes the lower triangle of an all-ones matrix, so row i has ones in columns zero through i and zeros after. Read a row as 'which positions may I look at' — position two sees zero, one, and itself, nothing beyond. You add negative infinity wherever the mask is zero, then softmax, so future positions get exactly zero weight."
+
+**The short version.**
+
+- `np.ones((seq_len, seq_len))` → all-ones matrix.
+- `np.tril()` → zeroes everything strictly above the diagonal.
+- Row $i$ = the allowed attention set for query position $i$.
+- Applied as an additive $-\infty$ before softmax, not a multiply after.
+- Beware the convention: some libraries hand you the inverted *block* mask.
 
 **Causal Attention:**
 - Masks future positions to enforce autoregressive property
 - Each position can only attend to itself and previous positions
 - Critical for GPT-style models (autoregressive generation)
 
-**The Code:**
-```python
-mask = np.tril(np.ones((seq_len, seq_len)))
-```
-
-**Step-by-Step:**
+**Why it works.**
 
 **1. `np.ones((seq_len, seq_len))`:**
 - Creates matrix of all 1s
@@ -6516,15 +7547,16 @@ mask = np.tril(np.ones((seq_len, seq_len)))
 - Upper triangular = wrong (would allow future, block past)
 - This enforces causal constraint for autoregressive generation
 
-**See `05_attention_mechanisms/causal_attention_detailed.md` for complete explanation!**
-
 **Why It Is a Mask and Not Just "Don't Compute Those":**
 
 You could imagine skipping the upper-triangular entries entirely, and fused kernels like FlashAttention do exactly that. But in a plain implementation the scores are produced by one dense matmul `Q @ K.T`, which computes all $n^2$ entries whether you want them or not. The mask is applied afterwards as an additive $-\infty$ so that the softmax — which normalizes across each row — assigns those entries zero weight. The mask is a correctness device, not an efficiency device; the efficiency version requires a kernel that never materializes the blocked tiles.
 
-**The Convention Trap:**
+**The math, and what it buys you.**
 
-Note that `np.tril` produces a *keep* mask: 1 means allowed. PyTorch's `torch.triu(torch.ones(n, n), diagonal=1)` produces the complementary *block* mask: 1 means forbidden. Both appear constantly and they are inverses of each other, so `masked_fill(mask == 0, -inf)` and `masked_fill(mask == 1, -inf)` are both correct code depending on which convention produced the mask. Getting this backwards gives you a model that can see only the future, which trains to a suspiciously low loss and generates nonsense.
+**The Code:**
+```python
+mask = np.tril(np.ones((seq_len, seq_len)))
+```
 
 **Runnable Version (executed):**
 
@@ -6548,11 +7580,19 @@ print(np.round(w, 3))
 print(w.sum(axis=1))  # [1. 1. 1. 1.]
 ```
 
-Note that the deliberately large 9.9 scores in the upper triangle have zero influence: masking happens before the exponential, so the forbidden entries cannot leak in no matter how large they are.
+Note that the deliberately large 9.9 scores in the upper triangle have zero influence: masking happens before the exponential, so the forbidden entries cannot leak in no matter how large they are. That is the payoff of doing it additively — correctness is unconditional on the score magnitudes.
+
+**Good and bad.**
+
+**The Convention Trap:**
+
+Note that `np.tril` produces a *keep* mask: 1 means allowed. PyTorch's `torch.triu(torch.ones(n, n), diagonal=1)` produces the complementary *block* mask: 1 means forbidden. Both appear constantly and they are inverses of each other, so `masked_fill(mask == 0, -inf)` and `masked_fill(mask == 1, -inf)` are both correct code depending on which convention produced the mask. Getting this backwards gives you a model that can see only the future, which trains to a suspiciously low loss and generates nonsense.
 
 **One Numerical Gotcha:**
 
 Use a large negative finite number (or `-torch.inf` with care) rather than computing `exp` of a genuine `-inf` inside an unstable softmax. If an entire row is masked — which happens with padded sequences where a query position has no valid keys — `softmax` over all $-\infty$ produces `NaN`, and the `NaN` then propagates through the whole batch. This is a real production bug, not a theoretical one.
+
+**See `05_attention_mechanisms/causal_attention_detailed.md` for complete explanation!**
 
 **Follow-up:** *Why is the mask usually a registered buffer, not a parameter?* Because it is fixed, has no gradient, and depends only on the maximum sequence length. Registering it as a buffer means it moves to the GPU with `.to(device)` and is built once rather than reallocated every forward pass.
 
@@ -6562,17 +7602,31 @@ Use a large negative finite number (or `-torch.inf` with care) rather than compu
 
 ### Q108: Why do we need causal attention? What happens without it?
 
-**Answer:**
+> **In 30 seconds.** "Without the mask, every position can see the token that comes after it, and the cheapest way to predict the next token is to copy it. Training loss falls through the floor, the model learns nothing, and at inference the future isn't there so it produces garbage. The mask is what makes training match inference — and it's also what lets one forward pass give you a training signal at every position at once."
 
-**Why We Need It:**
+**The short version.**
+
+| | With causal mask | Without |
+|---|---|---|
+| Training | Position $i$ sees $0..i$ | Position $i$ sees everything, including $i+1$ |
+| Inference | Position $i$ sees $0..i$ — identical | Future doesn't exist; model is out of distribution |
+| Training loss | Tracks the entropy of language | Collapses toward $10^{-3}$ — implausibly low |
+| Generation | Coherent | Incoherent |
+| Diagnosis | — | Low loss + garbage output = missing mask |
+
+**Why it works.**
+
+**Concretely, What "Learning to Cheat" Looks Like:**
+
+Without the mask, the fastest way to reduce loss at position $i$ is to attend to position $i+1$ and copy it, because position $i+1$'s embedding *is* the answer. It is like an exam where the answer key is printed on the back of the question sheet — a single attention head learns to flip the page in a handful of steps. Training loss collapses toward zero — you will see per-token loss in the $10^{-3}$ range, far below the entropy of language, which is the tell. Then at generation time position $i+1$ does not exist, the head attends to padding or to the last real token, and the output is incoherent. The symptom pair — implausibly low training loss, garbage generation — is the classic signature of a missing causal mask, and interviewers ask it as a debugging question.
+
+**Why We Need It (the standard framing):**
 
 **Autoregressive Constraint:**
 - In autoregressive generation, tokens are generated left-to-right
 - When generating token at position i, only tokens 0...i-1 exist
 - Future tokens (i+1, i+2, ...) don't exist yet
 - Model should only use information from past and current tokens
-
-**What Happens Without Causal Mask:**
 
 **During Training:**
 - Model sees full sequence: [token_0, token_1, ..., token_n]
@@ -6600,13 +7654,13 @@ Use a large negative finite number (or `-torch.inf` with care) rather than compu
 - With mask: Position 1 cannot see position 2 (future) during training
 - This matches inference where position 2 doesn't exist yet
 
-**Concretely, What "Learning to Cheat" Looks Like:**
-
-Without the mask, the fastest way to reduce loss at position $i$ is to attend to position $i+1$ and copy it, because position $i+1$'s embedding *is* the answer. A single attention head can learn this in a handful of steps. Training loss collapses toward zero — you will see per-token loss in the $10^{-3}$ range, far below the entropy of language, which is the tell. Then at generation time position $i+1$ does not exist, the head attends to padding or to the last real token, and the output is incoherent. The symptom pair — implausibly low training loss, garbage generation — is the classic signature of a missing causal mask, and interviewers ask it as a debugging question.
+**The math, and what it buys you.**
 
 **Why Not Just Train One Position at a Time?**
 
 You could avoid the mask by feeding the model prefix $x_{1:i}$ and training only on $x_{i+1}$, for each $i$ separately. That is correct but costs $n$ forward passes per sequence. The causal mask is what lets a single forward pass over a length-$n$ sequence produce $n$ training signals simultaneously — every position predicts its successor, all in parallel. Teacher forcing plus causal masking is the reason transformer pretraining is affordable at all; it is an $n$-fold efficiency win, not just a correctness patch.
+
+**Good and bad.**
 
 **Where You Deliberately Don't Want It:**
 
@@ -6622,9 +7676,9 @@ BERT-style encoders use bidirectional attention on purpose, because they are not
 
 ### Q109: How does the causal mask work mathematically?
 
-**Answer:**
+> **In 30 seconds.** "You add a matrix to the raw scores where allowed positions get zero and future positions get negative infinity, then softmax. The negative infinities exponentiate to zero, so they drop out of the denominator too, and each row normalizes over exactly the positions it's allowed to see. Doing it multiplicatively after the softmax would be wrong."
 
-**Mathematical Formulation:**
+**The short version.**
 
 **Standard Attention:**
 ```
@@ -6671,6 +7725,16 @@ attention_weights = softmax(masked_scores)
 - Future positions always have 0 weight
 - Past/current positions have non-zero weights
 
+**Why it works.**
+
+**Why Additive $-\infty$ Rather Than Multiplicative Zeroing:**
+
+You could multiply the post-softmax weights by the 0/1 mask instead, but then the rows no longer sum to 1 and you would have to renormalize — and worse, the softmax denominator would still have included the future terms, so the surviving weights would be wrong before renormalization. Adding $-\infty$ *before* the softmax removes those terms from the denominator itself, so the normalization is exactly over the allowed set. Formally, for row $i$:
+
+$$\alpha_{ij} = \frac{\exp(s_{ij})}{\sum_{k \le i} \exp(s_{ik})} \quad \text{for } j \le i, \qquad \alpha_{ij} = 0 \text{ for } j > i$$
+
+**The math, and what it buys you.**
+
 **Example for seq_len=4:**
 
 **Mask Matrix:**
@@ -6696,12 +7760,6 @@ weights = [[1.0, 0.0, 0.0, 0.0],   ← Position 0: 100% to itself
            [0.2, 0.3, 0.5, 0.0],   ← Position 2: distributed, 0% to future
            [0.1, 0.2, 0.3, 0.4]]   ← Position 3: distributed across all
 ```
-
-**Why Additive $-\infty$ Rather Than Multiplicative Zeroing:**
-
-You could multiply the post-softmax weights by the 0/1 mask instead, but then the rows no longer sum to 1 and you would have to renormalize — and worse, the softmax denominator would still have included the future terms, so the surviving weights would be wrong before renormalization. Adding $-\infty$ *before* the softmax removes those terms from the denominator itself, so the normalization is exactly over the allowed set. Formally, for row $i$:
-
-$$\alpha_{ij} = \frac{\exp(s_{ij})}{\sum_{k \le i} \exp(s_{ik})} \quad \text{for } j \le i, \qquad \alpha_{ij} = 0 \text{ for } j > i$$
 
 **Verifying the Worked Example (executed):**
 
@@ -6742,7 +7800,23 @@ See `05_attention_mechanisms/causal_attention_code.py` for visualization!
 
 ### Q110: What is Group Query Attention (GQA)? How does it differ from Multi-Head Attention?
 
-**Answer:**
+> **In 30 seconds.** "In normal multi-head attention every head has its own keys and values, so the KV cache scales with head count. GQA keeps all the query heads separate but has groups of them share one set of keys and values — Llama-2-70B has sixty-four query heads and eight KV groups, so the cache is eight times smaller. Quality barely moves, because the head-specific information mostly lives in the queries."
+
+**The short version.**
+
+| | MHA | GQA |
+|---|---|---|
+| Q projections | one per head | one per head (unchanged) |
+| K, V projections | one per head | one per *group* |
+| KV cache | num_heads × seq_len × (d_k + d_v) | num_groups × seq_len × (d_k + d_v) |
+| Parameters | 3 × num_heads × d_model² | num_heads × d_model² + 2 × num_groups × d_model² |
+| Quality | best | very close to best |
+| Use | training, research | production inference — the default |
+
+**Example: 32 heads, 8 groups**
+- MHA: 32 × seq_len × (d_k + d_v) KV cache
+- GQA: 8 × seq_len × (d_k + d_v) KV cache
+- Reduction: 4× in KV cache memory
 
 **Group Query Attention (GQA):**
 - Groups heads and shares K, V within each group
@@ -6762,21 +7836,21 @@ See `05_attention_mechanisms/causal_attention_code.py` for visualization!
 - KV Cache: num_groups × seq_len × (d_k + d_v)
 - Parameters: num_heads × d_model² + 2 × num_groups × d_model²
 
-**Example: 32 heads, 8 groups**
-- MHA: 32 × seq_len × (d_k + d_v) KV cache
-- GQA: 8 × seq_len × (d_k + d_v) KV cache
-- Reduction: 4× in KV cache memory
-
 **Why It Works:**
 - Queries need to be different (capture different aspects)
 - Keys and values can be shared within groups
 - Maintains most of MHA's expressiveness
 - Significant memory reduction
 
-**When to Use:**
-- Production inference (recommended)
-- Need efficiency but maintain quality
-- Best balance between MHA and MQA
+**Why it works.**
+
+Queries encode "what am I looking for"; keys and values encode "what's in the library." You can give sixty-four researchers their own question list while they all consult one shared card catalogue — the questions are what differ, not the catalogue.
+
+**Why It Doesn't Hurt Quality Much:**
+
+The GQA paper's argument is empirical: they take a trained MHA checkpoint, mean-pool the key and value projections within each group to initialize the smaller matrices, and "uptrain" for about 5% of the original pretraining compute. The recovered model sits very close to MHA quality and far above MQA. The intuition is that queries carry the head-specific "what am I looking for," while keys and values are closer to a shared content representation, so heads can share a lookup table without collapsing into each other.
+
+**The math, and what it buys you.**
 
 **Exact Shapes, One Layer:**
 
@@ -6799,9 +7873,16 @@ KV cache bytes per token $= 2 \times n_{layers} \times n_{kv} \times d_{head} \t
 
 The MHA row is the point: 32 concurrent 4k-token sequences would need 320 GiB of KV cache alone — more than four H100s, before the 140 GiB of weights. GQA brings that to 40 GiB and makes the deployment possible. This table is the single most useful thing to be able to reconstruct in an interview, because it turns "GQA saves memory" into "GQA is the difference between serving 4 requests and serving 32."
 
-**Why It Doesn't Hurt Quality Much:**
+**Good and bad.**
 
-The GQA paper's argument is empirical: they take a trained MHA checkpoint, mean-pool the key and value projections within each group to initialize the smaller matrices, and "uptrain" for about 5% of the original pretraining compute. The recovered model sits very close to MHA quality and far above MQA. The intuition is that queries carry the head-specific "what am I looking for," while keys and values are closer to a shared content representation, so heads can share a lookup table without collapsing into each other.
+*Good:* 4-8x smaller cache, negligible quality cost, free at training time, and it is a one-parameter dial you can tune to your memory budget.
+
+*Bad:* still more cache than MQA; requires a `repeat_interleave` in the attention path; and if you inherit an MHA checkpoint you must uptrain to convert it.
+
+**When to Use:**
+- Production inference (recommended)
+- Need efficiency but maintain quality
+- Best balance between MHA and MQA
 
 **Follow-up:** *What is GQA with $n_{kv} = n_h$, and with $n_{kv} = 1$?* Exactly MHA and exactly MQA respectively — GQA is the one-parameter family that interpolates between them, which is why it superseded both as the default.
 
@@ -6813,7 +7894,17 @@ The GQA paper's argument is empirical: they take a trained MHA checkpoint, mean-
 
 ### Q111: What is Multi-Query Attention (MQA)? How does it reduce memory?
 
-**Answer:**
+> **In 30 seconds.** "MQA takes sharing to the limit — all heads share a single set of keys and values, so the cache shrinks by the head count, thirty-two times for a thirty-two-head model. The reason that matters isn't capacity, it's bandwidth: generating each token means reading the whole cache from memory, and decoding is bandwidth-bound. The cost is that heads can no longer specialize what they retrieve against."
+
+**The short version.**
+
+| | MHA | MQA |
+|---|---|---|
+| Per head | `Q_1, K_1, V_1` … `Q_h, K_h, V_h` | `Q_1, K_shared, V_shared` … `Q_h, K_shared, V_shared` |
+| KV cache | num_heads × seq_len × (d_k + d_v) | 1 × seq_len × (d_k + d_v) |
+| Cache reduction | — | num_heads× (e.g. 32× for 32 heads) |
+| Parameters | 3 × num_heads × d_model² | num_heads × d_model² + 2 × d_model² |
+| Quality | best | good, slight loss — worst on long-context recall |
 
 **Multi-Query Attention (MQA):**
 - Shares K and V across ALL heads
@@ -6838,6 +7929,11 @@ Head 2: Q_2, K_shared, V_shared
 Head h: Q_h, K_shared, V_shared
 ```
 
+**Example: 32 heads, seq_len=2048, d_k=128**
+- MHA KV Cache: 32 × 2048 × 256 = 16.8M values
+- MQA KV Cache: 1 × 2048 × 256 = 0.5M values
+- Reduction: 32× (16.8M → 0.5M)
+
 **Memory Reduction:**
 
 **KV Cache:**
@@ -6850,34 +7946,37 @@ Head h: Q_h, K_shared, V_shared
 - MQA: num_heads × d_model² + 2 × d_model²
 - Reduction: From 3×num_heads to (num_heads + 2)
 
-**Example: 32 heads, seq_len=2048, d_k=128**
-- MHA KV Cache: 32 × 2048 × 256 = 16.8M values
-- MQA KV Cache: 1 × 2048 × 256 = 0.5M values
-- Reduction: 32× (16.8M → 0.5M)
-
 **Why It Works:**
+**Why it works.**
+
 - Queries represent "what am I looking for?" (different per head)
 - Keys represent "what information do I have?" (can be shared)
 - Values represent "what is the information?" (can be shared)
 - Same information, different queries → similar quality
+
+**Why Memory Bandwidth, Not Capacity, Is the Real Win:**
+
+Autoregressive decoding is memory-bandwidth-bound, not compute-bound. At each generated token you must *read the entire KV cache* to compute attention, and the arithmetic per byte read is tiny. So decoding time is roughly (bytes of cache) / (HBM bandwidth). Cutting the cache 32x cuts the bytes you stream per token by 32x, which is why MQA's original motivation (Shazeer, 2019) was decoding *speed*, not fitting in memory. Candidates who say "MQA saves memory" get half credit; the full answer is that it removes the dominant term in decoder latency.
+
+**The math, and what it buys you.**
+
+**Checking the Arithmetic in the Example:**
+
+$32 \times 2048 \times 256 = 16{,}777{,}216$ values, and $1 \times 2048 \times 256 = 524{,}288$ — so 16.8M and 0.52M are right, and the ratio is exactly 32, the head count. Two caveats about how these numbers are presented, worth stating so you are not caught out: this counts *one layer* and *one sequence*, and the $256$ is $d_k + d_v = 128 + 128$, i.e. keys and values together. Multiply by the layer count and the batch size for the real figure, and by 2 bytes for fp16. For a 32-layer model that 16.8M becomes $16.8\text{M} \times 32 \times 2 = 1.07$ GB per sequence under MHA and 34 MB under MQA.
+
+**Good and bad.**
+
+*Good:* maximum cache reduction, directly a decode-latency win, cheapest possible serving.
+
+**Where the Quality Loss Comes From:**
+
+With one shared key/value set, all heads compute their scores against the same content representation and differ only in how they project the query. Heads lose the ability to specialize their *retrieval basis* — you get 32 different questions asked of one index rather than 32 different indexes. The measured effect is a small but consistent perplexity increase and, more visibly, degradation on long-context retrieval tasks. GQA exists precisely because the drop from 32 KV heads to 1 is not smooth: most of the quality is recovered by going back up to 8.
 
 **Trade-offs:**
 - Maximum memory reduction
 - Slight quality loss compared to MHA
 - Still achieves good quality
 - Used when maximum efficiency needed
-
-**Checking the Arithmetic in the Example:**
-
-$32 \times 2048 \times 256 = 16{,}777{,}216$ values, and $1 \times 2048 \times 256 = 524{,}288$ — so 16.8M and 0.52M are right, and the ratio is exactly 32, the head count. Two caveats about how these numbers are presented, worth stating so you are not caught out: this counts *one layer* and *one sequence*, and the $256$ is $d_k + d_v = 128 + 128$, i.e. keys and values together. Multiply by the layer count and the batch size for the real figure, and by 2 bytes for fp16. For a 32-layer model that 16.8M becomes $16.8\text{M} \times 32 \times 2 = 1.07$ GB per sequence under MHA and 34 MB under MQA.
-
-**Why Memory Bandwidth, Not Capacity, Is the Real Win:**
-
-Autoregressive decoding is memory-bandwidth-bound, not compute-bound. At each generated token you must *read the entire KV cache* to compute attention, and the arithmetic per byte read is tiny. So decoding time is roughly (bytes of cache) / (HBM bandwidth). Cutting the cache 32x cuts the bytes you stream per token by 32x, which is why MQA's original motivation (Shazeer, 2019) was decoding *speed*, not fitting in memory. Candidates who say "MQA saves memory" get half credit; the full answer is that it removes the dominant term in decoder latency.
-
-**Where the Quality Loss Comes From:**
-
-With one shared key/value set, all heads compute their scores against the same content representation and differ only in how they project the query. Heads lose the ability to specialize their *retrieval basis* — you get 32 different questions asked of one index rather than 32 different indexes. The measured effect is a small but consistent perplexity increase and, more visibly, degradation on long-context retrieval tasks. GQA exists precisely because the drop from 32 KV heads to 1 is not smooth: most of the quality is recovered by going back up to 8.
 
 **Follow-up:** *What replaced MQA at the frontier?* GQA for most open-weights models, and for the very largest context windows, multi-head latent attention (MLA, introduced in DeepSeek-V2) — which compresses K and V into a shared low-rank latent that is cached instead, reaching MQA-like cache sizes with quality closer to full MHA. If you are asked "what's newer than GQA," MLA is the answer to name.
 
@@ -6889,13 +7988,38 @@ With one shared key/value set, all heads compute their scores against the same c
 
 ### Q112: What is Paged Attention? How does it improve memory efficiency?
 
-**Answer:**
+> **In 30 seconds.** "Paged attention borrows virtual memory from operating systems. Instead of reserving one contiguous KV slab per request sized for the worst case, you chop the cache into fixed blocks of about sixteen tokens and hand them out on demand through a per-sequence page table. Waste drops to at most one partial block per sequence — and because it's a page table, two sequences can share physical blocks."
+
+**The short version.**
+
+| | Contiguous KV cache | Paged KV cache |
+|---|---|---|
+| Allocation | One slab per sequence, sized for max length | Fixed blocks (e.g. 16 tokens) on demand |
+| Waste | Internal + reservation + external fragmentation; 60-80% measured | < 1 block per sequence; under ~4% typical |
+| Utilization | ~70% | 95%+ |
+| Sharing | Impossible | Copy-on-write blocks across beams and prefixes |
+| Cost | Plain `Q @ K.T` | Custom kernel gathering K/V through a block table |
 
 **Paged Attention:**
 - Memory-efficient KV cache management
 - Manages cache in non-contiguous pages (blocks)
 - Similar to virtual memory in operating systems
 - Core innovation behind vLLM
+
+**Paged Attention Solution:**
+
+**1. Page Structure:**
+- Divide KV cache into fixed-size pages (blocks)
+- Each page stores K, V for block_size tokens (e.g., 16 tokens)
+- Pages can be non-contiguous in memory
+
+**2. Memory Management:**
+- Maintain pool of free pages
+- Allocate pages on-demand
+- Return pages to pool when sequence finishes
+- Pages can be reused immediately
+
+**Why it works.**
 
 **The Problem: Memory Fragmentation**
 
@@ -6912,24 +8036,19 @@ Sequence 2: [16 tokens, still generating]
 New sequence needs 20 tokens → Cannot use the 12 freed tokens (fragmented)
 ```
 
-**Paged Attention Solution:**
+**Naming the Two Kinds of Waste:**
 
-**1. Page Structure:**
-- Divide KV cache into fixed-size pages (blocks)
-- Each page stores K, V for block_size tokens (e.g., 16 tokens)
-- Pages can be non-contiguous in memory
+Classical KV-cache allocators reserve a contiguous buffer sized to the *maximum* possible sequence length, because you cannot know in advance how long a generation will be. That produces three separate losses. Internal fragmentation is the unused tail of a reserved buffer — reserve 2048 slots, generate 200 tokens, waste 1848. Reservation waste is space held for tokens that will be generated later but is idle now. External fragmentation is free memory that exists but is not contiguous enough to satisfy a new request. The vLLM paper measured that existing systems wasted 60-80% of KV memory to these three combined; PagedAttention's own waste is bounded by *at most one block per sequence*, which at block size 16 and typical sequence lengths is under 4%.
 
-**2. Memory Management:**
-- Maintain pool of free pages
-- Allocate pages on-demand
-- Return pages to pool when sequence finishes
-- Pages can be reused immediately
+**The Part the Answer Above Leaves Out — Sharing:**
 
-**3. Benefits:**
-- No memory fragmentation
-- Efficient memory reuse
-- Can handle variable-length sequences
-- Better GPU memory utilization (95%+ vs ~70%)
+Because the mapping from logical token positions to physical blocks goes through a per-sequence block table, two sequences can *point at the same physical block*. That enables two things the contiguous design cannot do at all. Parallel sampling and beam search: $k$ candidates from one prompt share the prompt's blocks with a reference count, and copy-on-write only the block being appended to, so $k$ beams cost roughly one prompt's memory instead of $k$. And prefix caching: a long shared system prompt is stored once and reused across every request in the fleet. In practice the sharing wins are as large as the fragmentation wins, and mentioning them is what distinguishes a real answer from a paraphrase of the abstract.
+
+**The math, and what it buys you.**
+
+**Worked Example with the Block Size:**
+
+With `block_size = 16`, a 25-token sequence occupies $\lceil 25/16 \rceil = 2$ blocks holding 32 slots, so 7 slots are idle — 21.9% waste for this short sequence, and it shrinks as the sequence grows: a 1000-token sequence uses 63 blocks (1008 slots) and wastes 8 slots, 0.8%. The bound is always "less than one block," which is why the *average* is small even though a short sequence can look bad. Smaller blocks reduce waste but add block-table lookup overhead and hurt kernel efficiency; 16 is the usual compromise.
 
 **Example:**
 - block_size = 16 tokens
@@ -6942,23 +8061,19 @@ New sequence needs 20 tokens → Cannot use the 12 freed tokens (fragmented)
 - Paged: ~95%+ utilization
 - Enables serving more sequences with same memory
 
-**See `05_attention_mechanisms/advanced_attention_mechanisms.md` for complete details!**
+**Good and bad.**
 
-**Naming the Two Kinds of Waste:**
-
-Classical KV-cache allocators reserve a contiguous buffer sized to the *maximum* possible sequence length, because you cannot know in advance how long a generation will be. That produces three separate losses. Internal fragmentation is the unused tail of a reserved buffer — reserve 2048 slots, generate 200 tokens, waste 1848. Reservation waste is space held for tokens that will be generated later but is idle now. External fragmentation is free memory that exists but is not contiguous enough to satisfy a new request. The vLLM paper measured that existing systems wasted 60-80% of KV memory to these three combined; PagedAttention's own waste is bounded by *at most one block per sequence*, which at block size 16 and typical sequence lengths is under 4%.
-
-**Worked Example with the Block Size:**
-
-With `block_size = 16`, a 25-token sequence occupies $\lceil 25/16 \rceil = 2$ blocks holding 32 slots, so 7 slots are idle — 21.9% waste for this short sequence, and it shrinks as the sequence grows: a 1000-token sequence uses 63 blocks (1008 slots) and wastes 8 slots, 0.8%. The bound is always "less than one block," which is why the *average* is small even though a short sequence can look bad. Smaller blocks reduce waste but add block-table lookup overhead and hurt kernel efficiency; 16 is the usual compromise.
-
-**The Part the Answer Above Leaves Out — Sharing:**
-
-Because the mapping from logical token positions to physical blocks goes through a per-sequence block table, two sequences can *point at the same physical block*. That enables two things the contiguous design cannot do at all. Parallel sampling and beam search: $k$ candidates from one prompt share the prompt's blocks with a reference count, and copy-on-write only the block being appended to, so $k$ beams cost roughly one prompt's memory instead of $k$. And prefix caching: a long shared system prompt is stored once and reused across every request in the fleet. In practice the sharing wins are as large as the fragmentation wins, and mentioning them is what distinguishes a real answer from a paraphrase of the abstract.
+**3. Benefits:**
+- No memory fragmentation
+- Efficient memory reuse
+- Can handle variable-length sequences
+- Better GPU memory utilization (95%+ vs ~70%)
 
 **What It Costs:**
 
 Attention can no longer be one contiguous `Q @ K.T`; the kernel must gather K and V through the block table, which is why PagedAttention is a custom CUDA kernel rather than a memory-allocator change. There is a small per-token indirection cost, repaid many times over by the higher batch size the saved memory allows — vLLM reported 2-4x throughput over the then-current systems at the same latency.
+
+**See `05_attention_mechanisms/advanced_attention_mechanisms.md` for complete details!**
 
 > **Note on currency (2026).** Paged KV cache is now standard across serving stacks rather than a vLLM-specific feature, and it is routinely combined with prefix caching, chunked prefill, continuous batching, and KV quantization. Specific throughput multipliers from the 2023 paper are baselines against 2023 systems — quote them as historical, not as current speedups.
 
@@ -6972,7 +8087,9 @@ Attention can no longer be one contiguous `Q @ K.T`; the kernel must gather K an
 
 ### Q113: Compare MHA, GQA, and MQA. When should you use each?
 
-**Answer:**
+> **In 30 seconds.** "All three keep separate query heads; the only thing that changes is how many distinct key-value sets you cache — one per head, exactly one, or something in between. For a thirty-two-head model that's a one-times, thirty-two-times, or four-times reduction in cache, and since cache size sets how many requests you can batch, it's really a throughput dial. Default to grouped-query with eight groups."
+
+**The short version.**
 
 **Comparison Table:**
 
@@ -6985,6 +8102,18 @@ Attention can no longer be one contiguous `Q @ K.T`; the kernel must gather K an
 | **Quality** | Best | Very Good | Good |
 | **Memory** | Highest | Medium | Lowest |
 | **Use Case** | Training, research | Production (recommended) | Maximum efficiency |
+
+**The Decision Rule in One Line:**
+
+Use GQA with $n_{kv}$ between 4 and 8 unless you have a specific reason not to. MHA only if you are training something small where the cache never binds, or replicating a paper. MQA only when the cache is still the binding constraint after GQA — extreme context lengths or extreme batch sizes — and you have measured that the long-context recall loss is acceptable for your task.
+
+**Why it works.**
+
+**How to Read the Table:**
+
+Every row is per layer, per sequence. The "Q Projections" row is identical across all three because none of these schemes touches the query side — that is the defining property of the family. The cache rows differ only in the multiplier, $n_h$ versus $n_{kv}$ versus 1, so the whole comparison collapses to a single number: how many distinct key/value head sets do you keep. The parameter savings are real but secondary; on a 70B model, shrinking $W_K$ and $W_V$ from $8192 \times 8192$ to $8192 \times 1024$ saves about $2 \times 80 \times (8192 \times 7168) \approx 9.4$B parameters, meaningful but not the reason anyone adopts GQA.
+
+**The math, and what it buys you.**
 
 **Example: 32 heads, 8 groups, seq_len=2048**
 
@@ -7002,6 +8131,18 @@ Attention can no longer be one contiguous `Q @ K.T`; the kernel must gather K an
 - KV Cache: 1 × 2048 × 256 = 0.5M values (32× reduction)
 - Quality: Good (slight loss)
 - Use: Maximum efficiency needed
+
+**Rebuilding the Example from First Principles:**
+
+Take 32 heads, $d_k = d_v = 128$, `seq_len = 2048`, 32 layers, fp16, batch of 1:
+
+- MHA: $32 \times 2048 \times 256 = 16.8$M values per layer $\to \times 32$ layers $\times 2$ bytes $= 1.07$ GB
+- GQA-8: $8 \times 2048 \times 256 = 4.19$M per layer $\to 268$ MB
+- MQA: $1 \times 2048 \times 256 = 0.52$M per layer $\to 34$ MB
+
+On an 80 GB accelerator holding a 14 GB fp16 7B model, you have roughly 66 GB for cache: about 61 concurrent sequences under MHA, 246 under GQA-8, and 1900 under MQA. Throughput on a serving system is close to linear in concurrency until you saturate compute, so this is directly a throughput table.
+
+**Good and bad.**
 
 **When to Use:**
 
@@ -7025,24 +8166,6 @@ Attention can no longer be one contiguous `Q @ K.T`; the kernel must gather K an
 - Production serving (vLLM)
 - When: Need efficient memory management
 
-**How to Read the Table:**
-
-Every row is per layer, per sequence. The "Q Projections" row is identical across all three because none of these schemes touches the query side — that is the defining property of the family. The cache rows differ only in the multiplier, $n_h$ versus $n_{kv}$ versus 1, so the whole comparison collapses to a single number: how many distinct key/value head sets do you keep. The parameter savings are real but secondary; on a 70B model, shrinking $W_K$ and $W_V$ from $8192 \times 8192$ to $8192 \times 1024$ saves about $2 \times 80 \times (8192 \times 7168) \approx 9.4$B parameters, meaningful but not the reason anyone adopts GQA.
-
-**Rebuilding the Example from First Principles:**
-
-Take 32 heads, $d_k = d_v = 128$, `seq_len = 2048`, 32 layers, fp16, batch of 1:
-
-- MHA: $32 \times 2048 \times 256 = 16.8$M values per layer $\to \times 32$ layers $\times 2$ bytes $= 1.07$ GB
-- GQA-8: $8 \times 2048 \times 256 = 4.19$M per layer $\to 268$ MB
-- MQA: $1 \times 2048 \times 256 = 0.52$M per layer $\to 34$ MB
-
-On an 80 GB accelerator holding a 14 GB fp16 7B model, you have roughly 66 GB for cache: about 61 concurrent sequences under MHA, 246 under GQA-8, and 1900 under MQA. Throughput on a serving system is close to linear in concurrency until you saturate compute, so this is directly a throughput table.
-
-**The Decision Rule in One Line:**
-
-Use GQA with $n_{kv}$ between 4 and 8 unless you have a specific reason not to. MHA only if you are training something small where the cache never binds, or replicating a paper. MQA only when the cache is still the binding constraint after GQA — extreme context lengths or extreme batch sizes — and you have measured that the long-context recall loss is acceptable for your task.
-
 **One Correction Worth Making to "MHA: Training":**
 
 The table's suggestion that MHA is for training is a bit misleading. GQA is used *during pretraining* in every modern model that ships with it — Llama 2/3, Mistral, Qwen, Gemma — not bolted on afterwards. The uptraining procedure from the GQA paper is for converting existing MHA checkpoints; if you are training from scratch today you choose GQA at the start.
@@ -7062,7 +8185,15 @@ See `05_attention_mechanisms/advanced_attention_code.py` for complete code!
 
 ### Q114: What is Mixture of Experts? How does it work?
 
-**Answer:**
+> **In 30 seconds.** "A mixture-of-experts layer replaces one feed-forward block with several copies, plus a tiny linear router that scores each of them for every token. You keep the top one or two, run only those, and combine their outputs weighted by the router's scores. So the model holds a lot of parameters but only touches a slice per token — and routing is per token and per layer, not per sentence."
+
+**The short version.**
+
+- **Multiple experts:** 8-128 feed-forward networks, independent, same architecture.
+- **Router:** takes the token's hidden state, outputs expert scores, selects top-$k$.
+- **Sparse activation:** only $k$ experts run per token (typically $k$=1 or 2); most stay inactive.
+- **Weighted combination:** outputs of the selected experts, weighted by router scores.
+- **Efficiency:** total params = num_experts × params_per_expert; active = $k$ × params_per_expert. 8 experts, $k$=2 → 4× reduction in computation.
 
 **Mixture of Experts (MoE):**
 - Architecture with multiple expert networks
@@ -7096,9 +8227,13 @@ See `05_attention_mechanisms/advanced_attention_code.py` for complete code!
 - Active parameters: k × params_per_expert
 - Example: 8 experts, k=2 → 4× reduction in computation
 
+**Why it works.**
+
 **What Is and Is Not Replaced:**
 
 An important detail the summary skips: in a modern LLM the experts replace *the feed-forward block only*. Attention, layer norms and embeddings stay dense and shared. This matters because the FFN is roughly two thirds of a transformer's parameters, so replicating it 8x does not make the model 8x bigger. It also explains why MoE is applied where it is: the FFN is a per-token, position-independent function, so routing each token to a different copy is coherent, whereas routing tokens to different attention blocks would break the mixing that attention exists to do.
+
+**The math, and what it buys you.**
 
 **The Router, Concretely:**
 
@@ -7112,6 +8247,12 @@ Two things to notice. Routing is per *token*, not per sequence — the tokens of
 
 $d_{model} = 4096$, $d_{ff} = 14336$, SwiGLU (three matrices: gate, up, down), 32 layers, 8 experts, top-2. Per expert per layer: $3 \times 4096 \times 14336 \approx 176$M parameters. All 8 experts, all 32 layers: $176\text{M} \times 8 \times 32 \approx 45.1$B. Add GQA attention ($\approx 1.3$B) and embeddings ($\approx 0.26$B) and you land at roughly 46.7B total. Active per token: $176\text{M} \times 2 \times 32 \approx 11.3$B of FFN plus the shared 1.3B attention $\approx 12.9$B.
 
+**Good and bad.**
+
+*Good:* huge parameter count at small per-token compute; the router costs essentially nothing; enables trillion-parameter models.
+
+*Bad:* memory scales with all experts, not the active ones; routing is non-differentiable so training is delicate; load imbalance is a standing failure mode (see Q116).
+
 **Follow-up:** *Why top-2 rather than top-1?* With $k=1$ the gate weight is always 1 after renormalization, so the router gets almost no useful gradient and training is unstable — Switch Transformer needed extra tricks to make $k=1$ work. With $k=2$ the two weights compete, giving a real gradient signal, at double the FFN compute. Most production models use $k=2$; some very sparse designs use $k=8$ out of 256 fine-grained experts.
 
 > **Why the interviewer asks this.** Nearly every frontier model shipped since 2024 is sparse, so MoE has moved from exotic to table stakes.
@@ -7122,7 +8263,17 @@ $d_{model} = 4096$, $d_{ff} = 14336$, SwiGLU (three matrices: gate, up, down), 3
 
 ### Q115: How does MoE reduce computation? Compare with dense models.
 
-**Answer:**
+> **In 30 seconds.** "The saving is in compute per token, not memory. Mixtral holds about forty-seven billion parameters but only runs about thirteen billion for any given token — the compute cost of a small model with the memory footprint of a large one. And the real speedup is well under the four-times you'd predict, because attention is unchanged and the all-to-all between experts isn't free."
+
+**The short version.**
+
+| | Dense model | MoE model |
+|---|---|---|
+| Parameters used per input | all | $k$ of $E$ experts |
+| Compute per token | O(d_model²) | O($k$ × d_model²) |
+| Memory | = active params | = *total* params |
+| 7B example | 7B params, all active | 8 experts × 7B stored, 2 × 7B active |
+| Binding constraint | compute | VRAM |
 
 **Dense Model:**
 - All parameters used for every input
@@ -7139,11 +8290,6 @@ $d_{model} = 4096$, $d_{ff} = 14336$, SwiGLU (three matrices: gate, up, down), 3
 - k=2 → 2 × 7B = 14B active per token
 - Computation: Only 14B parameters (not 56B!)
 
-**Reduction:**
-- Computation: (num_experts / k)× reduction
-- 8 experts, k=2 → 4× reduction
-- But total parameters: 8× more
-
 **Trade-off:**
 - More parameters (memory)
 - Less computation (speed)
@@ -7151,17 +8297,28 @@ $d_{model} = 4096$, $d_{ff} = 14336$, SwiGLU (three matrices: gate, up, down), 3
 
 > **Correction to the Mixtral numbers above.** Mixtral-8x7B is **not** $8 \times 7\text{B} = 56$B total with 14B active. The name is misleading: only the feed-forward blocks are replicated, while attention, embeddings and norms are shared across experts. The published figures are **46.7B total parameters and about 12.9B active per token**. The arithmetic in the previous question reconstructs both. Getting this right matters in an interview because the "8x7 = 56" mistake is exactly what someone who has only read the model name would say.
 
+**Why it works.**
+
 **Where the Savings Actually Land:**
 
 Per token, FLOPs scale with $k$ (experts used), while memory scales with $E$ (experts stored). For Mixtral: FLOPs are those of a ~12.9B dense model, memory is that of a ~46.7B dense model. So the honest framing is that MoE buys you the *quality* of a large model at the *compute* of a small one, and you pay in VRAM. On an 80 GB accelerator, Mixtral at fp16 needs 93 GB and does not fit on one card — the compute saving is real but you needed two GPUs to get it.
 
-**Why the Compute Saving Is Less Than the Ratio Suggests:**
+**The math, and what it buys you.**
 
-The naive claim is $E/k = 4\times$ compute reduction versus a dense model with the same total parameters. Three things erode it. Attention is unchanged and is a large share of FLOPs at long context, so total speedup is well under the FFN-only ratio. Sparse dispatch means each expert receives a scattered subset of tokens, so you pay a gather/scatter and get worse matmul shapes than one big dense GEMM. And at scale experts live on different devices, so every MoE layer contains two all-to-all collectives (dispatch and combine) whose cost is network-bound and does not shrink with $k$. Real end-to-end MoE speedups at matched quality are meaningful but nowhere near $E/k$.
+**Reduction:**
+- Computation: (num_experts / k)× reduction
+- 8 experts, k=2 → 4× reduction
+- But total parameters: 8× more
 
 **The Scaling-Law Framing:**
 
 The useful way to state the trade is: at a fixed training FLOP budget, a sparse model reaches a lower loss than a dense one, because it has more parameters to store knowledge in while activating the same number per token. That is why the frontier went sparse. The cost is that inference memory, not inference compute, becomes the binding constraint — which is precisely the constraint that MoE-specific serving work (expert offloading, expert-parallel routing, expert caching) exists to attack.
+
+**Good and bad.**
+
+**Why the Compute Saving Is Less Than the Ratio Suggests:**
+
+The naive claim is $E/k = 4\times$ compute reduction versus a dense model with the same total parameters. Three things erode it. Attention is unchanged and is a large share of FLOPs at long context, so total speedup is well under the FFN-only ratio. Sparse dispatch means each expert receives a scattered subset of tokens, so you pay a gather/scatter and get worse matmul shapes than one big dense GEMM. And at scale experts live on different devices, so every MoE layer contains two all-to-all collectives (dispatch and combine) whose cost is network-bound and does not shrink with $k$. Real end-to-end MoE speedups at matched quality are meaningful but nowhere near $E/k$.
 
 **Follow-up:** *Is Mixtral as good as a dense 46.7B model?* No — roughly, a sparse model behaves like a dense model of size near the geometric mean of its total and active parameters. Mixtral benchmarks around or above a dense 13B and competitively with much larger dense models on many tasks, but it is not a 47B dense model with 13B's compute for free.
 
@@ -7171,20 +8328,23 @@ The useful way to state the trade is: at a fixed training FLOP budget, a sparse 
 
 ### Q116: What is load balancing in MoE? Why is it important?
 
-**Answer:**
+> **In 30 seconds.** "Left alone, routers collapse — an expert that gets a few more tokens early trains faster, gets scored higher, and takes even more, until most experts are dead weight. So you add an auxiliary loss pushing routing probabilities toward uniform, weighted by how overloaded each expert already is. It matters more than it sounds: experts have fixed capacity, and tokens routed to a full expert are silently dropped."
+
+**The short version.**
+
+- **The failure:** router keeps picking the same experts; the rest are never used. Expert collapse.
+- **The classic fix:** an auxiliary loss penalizing uneven usage, $\alpha \approx 0.01$.
+- **The hidden cost of imbalance:** overflow tokens are *dropped*, skipping the FFN entirely.
+- **The systems cost:** under expert parallelism, step time is set by the busiest device.
+- **Current practice:** router z-loss for stability; auxiliary-loss-free bias-nudging (DeepSeek-V3).
+
+**Why it works.**
 
 **Load Balancing Problem:**
 - Without balancing, router might always select same experts
 - Some experts never used (waste)
 - Others overloaded (bottleneck)
 - Expert collapse: Only few experts ever used
-
-**Solution: Load Balancing Loss**
-```
-L_balance = (1/num_experts) * sum(load_i)²
-```
-
-Where load_i is fraction of tokens routed to expert i.
 
 **Goal:**
 - Minimize variance of expert usage
@@ -7197,6 +8357,19 @@ Where load_i is fraction of tokens routed to expert i.
 - Better parameter utilization
 - Prevents expert collapse
 
+**Why Imbalance Is a Systems Problem, Not Just a Quality Problem:**
+
+Each expert is given a fixed *capacity* — `capacity = capacity_factor × tokens_per_batch / E` — because the dispatch buffers must be statically shaped for the all-to-all collective. Tokens routed to an expert that is already full are **dropped**: they skip the FFN entirely and pass through on the residual connection only. So imbalance does not just underuse parameters; it silently deletes computation for real tokens. A capacity factor of 1.25 is common, which means you are provisioning 25% headroom and still dropping tokens whenever routing is skewed. And under expert parallelism the step time is set by the *slowest* expert's device, so a 2x-overloaded expert doubles your step time no matter how idle the other seven GPUs are.
+
+**The math, and what it buys you.**
+
+**Solution: Load Balancing Loss**
+```
+L_balance = (1/num_experts) * sum(load_i)²
+```
+
+Where load_i is fraction of tokens routed to expert i.
+
 > **Correction to the loss formula above.** As written, $L = \frac{1}{E}\sum_i \text{load}_i^2$ cannot train the router: $\text{load}_i$ is a *count* of tokens routed to expert $i$, produced by a `top-k` operation, and counts have no gradient. The Switch Transformer formulation fixes this by pairing the count with the router's soft probability:
 
 $$L_{aux} = \alpha \cdot E \sum_{i=1}^{E} f_i \cdot P_i$$
@@ -7207,9 +8380,7 @@ where $f_i$ is the fraction of tokens dispatched to expert $i$ (non-differentiab
 
 With $E = 8$ and perfect balance, $f_i = P_i = 1/8$, so $L_{aux} = 8 \times 8 \times \frac{1}{64} = 1.0$. Now suppose one expert takes half the tokens and the router agrees ($f_1 = P_1 = 0.5$) while the other seven split the rest evenly ($f_i = P_i = 1/14 \approx 0.0714$): $L_{aux} = 8 \times (0.25 + 7 \times 0.0051) = 8 \times 0.2857 = 2.29$. Balanced gives 1.0, collapsed gives 2.29, and the maximum, total collapse onto one expert, is $E = 8$. So the auxiliary loss ranges over $[1, E]$ and you can read the number directly as "how many times worse than balanced am I."
 
-**Why Imbalance Is a Systems Problem, Not Just a Quality Problem:**
-
-Each expert is given a fixed *capacity* — `capacity = capacity_factor × tokens_per_batch / E` — because the dispatch buffers must be statically shaped for the all-to-all collective. Tokens routed to an expert that is already full are **dropped**: they skip the FFN entirely and pass through on the residual connection only. So imbalance does not just underuse parameters; it silently deletes computation for real tokens. A capacity factor of 1.25 is common, which means you are provisioning 25% headroom and still dropping tokens whenever routing is skewed. And under expert parallelism the step time is set by the *slowest* expert's device, so a 2x-overloaded expert doubles your step time no matter how idle the other seven GPUs are.
+**Good and bad.**
 
 **Two Refinements Worth Naming (current practice, 2026):**
 
@@ -7230,10 +8401,19 @@ See `41_mixture_of_experts/moe_qa.md` for comprehensive Q&A!
 ---
 
 ## State Space Models (SSM)
-
 ### Q117: What are State Space Models? How do they work?
 
-**Answer:**
+> **In 30 seconds.** "A state space model keeps a fixed-size hidden state and updates it linearly at each step — new state is A times old state plus B times the input, output reads off through C. Because that update is linear and time-invariant, you can unroll it into a convolution and train the whole sequence in parallel, then switch to the recurrent form for generation, where it's constant time and constant memory per token."
+
+**The short version.**
+
+| | Transformer attention | State space model |
+|---|---|---|
+| Per-step cost | $O(n)$ (attends to all previous) | $O(1)$ |
+| Total sequence cost | $O(n^2)$ | $O(n)$ |
+| Generation memory | KV cache grows with $n$ | Fixed $N$-dim state |
+| Training form | Parallel by construction | Convolution (FFT), $O(n\log n)$ |
+| Memory of the past | Exact, random access | Lossy fixed-size compression |
 
 **State Space Models (SSMs):**
 - Sequence models using hidden state
@@ -7248,7 +8428,7 @@ See `41_mixture_of_experts/moe_qa.md` for comprehensive Q&A!
 - State captures information from all previous inputs
 - Updated at each step
 
-**2. State Evolution:**
+**2. **State Evolution:**
 ```
 h[k+1] = A_d h[k] + B_d u[k]  # State update
 y[k] = C_d h[k] + D_d u[k]    # Output
@@ -7264,13 +8444,7 @@ y[k] = C_d h[k] + D_d u[k]    # Output
 - Don't need to attend to all previous tokens
 - More efficient than attention
 
-**Where the Discrete Equations Come From:**
-
-The equations above are the *discretized* form. The underlying object is a continuous linear ODE borrowed from control theory:
-
-$$h'(t) = A\,h(t) + B\,u(t), \qquad y(t) = C\,h(t) + D\,u(t)$$
-
-To run it on a token sequence you discretize with a step size $\Delta$, usually zero-order hold, which gives $\bar{A} = \exp(\Delta A)$ and $\bar{B} = (\Delta A)^{-1}(\exp(\Delta A) - I)\,\Delta B$. Those bars are why the discrete recurrence uses $A_d, B_d$. The reason to care is that $\Delta$ becomes a learnable parameter with a real interpretation — it is the model's timescale, controlling how fast the state forgets. A large $\Delta$ means "pay attention to the current input"; a small $\Delta$ means "ignore this input and hold the state."
+**Why it works.**
 
 **The Two Modes — This Is the Whole Trick:**
 
@@ -7280,13 +8454,31 @@ $$\bar{K} = \left(C\bar{B},\ C\bar{A}\bar{B},\ C\bar{A}^2\bar{B},\ \dots,\ C\bar
 
 So the same parameters give you two computational forms: a *recurrent* mode, $O(1)$ time and $O(1)$ memory per step, ideal for autoregressive generation; and a *convolutional* mode, computable by FFT in $O(n \log n)$ and fully parallel over the sequence, ideal for training. You train with the convolution and generate with the recurrence. Without that duality an SSM would be as slow to train as an RNN, and nobody would use it.
 
-**The Fixed-Size State Is the Point and the Limitation:**
-
-A transformer's KV cache grows with sequence length — at step $t$ it holds $t$ key/value pairs. An SSM's state is a fixed $N$-dimensional vector (typically $N = 16$ per channel) regardless of whether you have seen 100 tokens or 100,000. Constant memory during generation is the headline benefit. The flip side is that everything the model remembers must be compressed into those $N$ numbers, so exact recall of an arbitrary earlier token is impossible in a way it simply is not for attention.
-
 **Why $A$ Cannot Be Random:**
 
 Naively initializing $A$ randomly produces a model that fails badly — the state either explodes or forgets within a few steps. S4's contribution was to initialize $A$ with a HiPPO matrix, derived so that the state maintains an optimal polynomial-basis approximation of the *entire input history*. The structure of $A$ is doing the memory work, and this is the single most common gap in a candidate's answer: they describe the recurrence and omit that a generic linear recurrence does not work.
+
+**The math, and what it buys you.**
+
+**Where the Discrete Equations Come From:**
+
+The equations above are the *discretized* form. The underlying object is a continuous linear ODE borrowed from control theory:
+
+$$h'(t) = A\,h(t) + B\,u(t), \qquad y(t) = C\,h(t) + D\,u(t)$$
+
+To run it on a token sequence you discretize with a step size $\Delta$, usually zero-order hold, which gives $\bar{A} = \exp(\Delta A)$ and $\bar{B} = (\Delta A)^{-1}(\exp(\Delta A) - I)\,\Delta B$. Those bars are why the discrete recurrence uses $A_d, B_d$. The reason to care is that $\Delta$ becomes a learnable parameter with a real interpretation — it is the model's timescale, controlling how fast the state forgets. A large $\Delta$ means "pay attention to the current input"; a small $\Delta$ means "ignore this input and hold the state."
+
+**Good and bad.**
+
+*Good:*
+- Sequence models using hidden state, processed with linear recurrence
+- O(n) complexity (vs O(n²) for transformers)
+- Better for very long sequences
+- Each step: O(1) computation; total O(n) for a sequence of length n
+
+**The Fixed-Size State Is the Point and the Limitation:**
+
+A transformer's KV cache grows with sequence length — at step $t$ it holds $t$ key/value pairs. An SSM's state is a fixed $N$-dimensional vector (typically $N = 16$ per channel) regardless of whether you have seen 100 tokens or 100,000. Constant memory during generation is the headline benefit. The flip side is that everything the model remembers must be compressed into those $N$ numbers, so exact recall of an arbitrary earlier token is impossible in a way it simply is not for attention.
 
 **Follow-up:** *How is this different from an LSTM?* An LSTM's recurrence is nonlinear (gates applied to the hidden state), so it cannot be unrolled into a convolution or a parallel scan and must be trained strictly sequentially. SSMs deliberately keep the state update *linear* in $h$, which is what buys parallel training. Nonlinearity is reintroduced between layers instead of inside the recurrence.
 
@@ -7298,7 +8490,16 @@ Naively initializing $A$ randomly produces a model that fails badly — the stat
 
 ### Q118: What is Mamba? How does it differ from standard SSMs?
 
-**Answer:**
+> **In 30 seconds.** "A classical SSM applies the same fixed filter to every token, so it can't decide that one word is worth remembering and another isn't. Mamba makes the input matrix, the output matrix, and — most importantly — the step size depend on the current token, so the forget rate becomes content-aware. That's a gate, expressed in a way that keeps the recurrence linear."
+
+**The short version.**
+
+| | Standard SSM (S4) | Mamba (selective SSM) |
+|---|---|---|
+| $A, B, C, \Delta$ | fixed, time-invariant | $B$, $C$, **and $\Delta$** are functions of the input |
+| Content-based reasoning | impossible | this is the whole point |
+| Training form | convolution / FFT | parallel associative scan (no kernel exists) |
+| Diagnostic tasks | fails selective copying, induction heads | solves both |
 
 **Mamba:**
 - Selective State Space Model
@@ -7328,21 +8529,29 @@ y[k] = C[k] h[k]
 - C[k] controls what to extract
 - More expressive while maintaining O(n) complexity
 
+**Why it works.**
+
 **The Parameter the Summary Above Omits — and It Is the Important One:**
 
 Mamba makes $B$, $C$ **and $\Delta$** input-dependent. $\Delta$ is the discretization step, and since $\bar{A} = \exp(\Delta A)$, making $\Delta$ a function of the input makes the *forget rate itself* content-dependent. Large $\Delta_k$ for a token means "this matters — reset toward it"; small $\Delta_k$ means "filler, hold the state." That is the actual selection mechanism, and it is the direct analogue of an LSTM forget gate reintroduced in a form that still admits parallel training. Naming only $B$ and $C$ is a half answer.
-
-**What Selectivity Breaks:**
-
-The moment $B$, $C$, $\Delta$ depend on the input, the system stops being time-invariant — $\bar{A}_k$ differs at every position — and the convolutional form from the previous question *no longer exists*. There is no fixed kernel to FFT. This is the central engineering problem Mamba had to solve, and the solution is a hardware-aware **parallel scan** (an associative scan over the sequence, $O(n)$ work and $O(\log n)$ depth), plus kernel fusion that keeps the expanded state in SRAM and recomputes it in the backward pass rather than writing $(B, L, D, N)$-shaped intermediates to HBM. The paper's speed comes as much from that memory-movement design as from the architecture.
 
 **Why Selectivity Was Necessary:**
 
 A time-invariant SSM applies the same filter to every token, so it cannot do content-based reasoning — it cannot decide to remember *this* name and discard *that* adjective. The paper's diagnostic tasks make this concrete: selective copying (copy tokens while ignoring randomly interspersed noise) and induction heads (see "A B ... A", predict "B") are unsolvable for S4 and solved by Mamba, because both require the recurrence to condition on content.
 
+**The math, and what it buys you.**
+
 **Concrete Shapes:**
 
 For $d_{model} = 2048$ with the usual expansion factor 2, the inner dimension $D = 4096$ and the state size is $N = 16$ per channel, so the materialized state is $4096 \times 16 = 65{,}536$ values per layer per sequence — constant in sequence length. Compare that with a transformer layer's KV cache at 32k context: $2 \times 8 \times 128 \times 32768 \approx 67$M values under GQA, a factor of roughly 1000. That ratio is the entire commercial argument for SSMs.
+
+**Good and bad.**
+
+*Good:* input-dependent parameters make it far more expressive than a fixed SSM while staying $O(n)$; state stays constant-size; state of the art on long sequences.
+
+**What Selectivity Breaks:**
+
+The moment $B$, $C$, $\Delta$ depend on the input, the system stops being time-invariant — $\bar{A}_k$ differs at every position — and the convolutional form from the previous question *no longer exists*. There is no fixed kernel to FFT. This is the central engineering problem Mamba had to solve, and the solution is a hardware-aware **parallel scan** (an associative scan over the sequence, $O(n)$ work and $O(\log n)$ depth), plus kernel fusion that keeps the expanded state in SRAM and recomputes it in the backward pass rather than writing $(B, L, D, N)$-shaped intermediates to HBM. The paper's speed comes as much from that memory-movement design as from the architecture.
 
 > **Note on currency (2026).** Mamba-2 recast the selective SSM as "structured state space duality," showing the scan is equivalent to a form of masked linear attention and letting it reuse matmul-shaped kernels for a large speedup; a further iteration, Mamba-3, has since continued the line. Verify which generation a paper or job description means before quoting specifics.
 
@@ -7354,7 +8563,9 @@ For $d_{model} = 2048$ with the usual expansion factor 2, the inner dimension $D
 
 ### Q119: Compare SSMs (Mamba) with Transformers. When to use each?
 
-**Answer:**
+> **In 30 seconds.** "Transformers cost quadratic time and their KV cache grows with context, so per-token decoding slows down the longer you go. SSMs are linear with a fixed-size state, so decoding cost is flat forever. The catch is that a fixed state is a lossy summary, so they're noticeably worse at exact recall — which is why almost nobody ships a pure one; the winning pattern is hybrids."
+
+**The short version.**
 
 **Complexity:**
 
@@ -7381,15 +8592,19 @@ For $d_{model} = 2048$ with the usual expansion factor 2, the inner dimension $D
 - > 8K: SSMs faster
 - > 100K: SSMs much better
 
+> **Caution on the crossover numbers.** The "< 2K transformers faster, > 8K SSMs faster" thresholds in the answer above are indicative, not physical constants. They depend on hidden size, whether FlashAttention or a fused scan kernel is used, GPU memory bandwidth, batch size, and whether you are measuring training or decoding. Treat them as an order of magnitude and say so — an interviewer will respect "it depends on the kernel and the hardware, roughly a few thousand tokens" more than a confident wrong number.
+
+**Why it works.**
+
 **Reading the Complexity Table Properly:**
 
 The $O(n^2 d)$ for transformers is the attention term only; the feed-forward blocks are $O(n d^2)$ and dominate until $n \approx d$. For $d = 4096$, attention is not the largest cost until sequences exceed a few thousand tokens, which is why short-context transformers feel fine. At $n = 128\text{k}$ the picture inverts completely. So the honest statement is that attention's quadratic term is irrelevant at small $n$ and decisive at large $n$, and "SSMs are linear" only cashes out past that crossover.
 
-> **Caution on the crossover numbers.** The "< 2K transformers faster, > 8K SSMs faster" thresholds in the answer above are indicative, not physical constants. They depend on hidden size, whether FlashAttention or a fused scan kernel is used, GPU memory bandwidth, batch size, and whether you are measuring training or decoding. Treat them as an order of magnitude and say so — an interviewer will respect "it depends on the kernel and the hardware, roughly a few thousand tokens" more than a confident wrong number.
-
 **The Inference Asymmetry Is Bigger Than the Training One:**
 
 Per generated token, a transformer must read a KV cache that grows linearly with context, so decoding cost per token *increases* as the sequence lengthens. An SSM reads a fixed-size state, so its per-token cost is flat forever. That means the gap is not a constant factor, it widens without bound: at 1M tokens of context an SSM still decodes at its 100-token speed. For streaming or very-long-document workloads this, not training FLOPs, is the reason to care.
+
+**Good and bad.**
 
 **The Real Weakness, Stated Honestly:**
 
@@ -7413,9 +8628,23 @@ See `42_state_space_models/ssm_qa.md` for comprehensive Q&A!
 
 ### Q120: How does a decision tree decide where to split?
 
-**Answer:**
+> **In 30 seconds.** "At each node the tree tries every feature and every threshold, scores each candidate by how much it drops impurity — Gini or entropy — weighted by how many samples go to each side, takes the best, and recurses. Gini is the probability two random samples in the node disagree; entropy is the bits needed to encode the label. They almost always pick the same split."
+
+**The short version.**
+
+- Splits are axis-aligned: "feature $j$ is less than threshold $t$."
+- Training is greedy: enumerate, score by impurity drop, take the best, recurse.
+- Impurity is zero for a pure node, maximal for an even mixture.
+- The drop must be **weighted** by child sizes, or peeling off one pure sample looks brilliant.
+- Regression trees use variance (sum of squared errors) as the impurity; everything else is identical.
+
+**Why it works.**
 
 A decision tree is a model that repeatedly partitions the feature space with axis-aligned cuts of the form "feature $j$ is less than threshold $t$." Training is greedy: at every node the algorithm enumerates candidate splits, scores each one by how much it reduces an *impurity* measure, and takes the best. Impurity is a number that is zero when a node contains one class only and maximal when the classes are evenly mixed.
+
+Gini and entropy almost always pick the same split. Entropy is slightly more sensitive to changes near the pure end because $\log$ blows up there, so it has a mild preference for splits that carve off pure regions; Gini is cheaper because it avoids logarithms. In practice the choice is worth less than one hyperparameter tick of `max_depth`.
+
+**The math, and what it buys you.**
 
 The two standard impurity measures for classification. Let $p_k$ be the fraction of samples at a node belonging to class $k$.
 
@@ -7458,7 +8687,7 @@ B L [5, 2] R [0, 3] weighted gini 0.2857 gini gain 0.2143 weighted ent 0.6042 in
 
 Split B wins on both criteria, even though its left child is *less* pure than either of A's children, because it manufactures one perfectly pure node and pure nodes are terminal — no further work needed on those three samples.
 
-Gini and entropy almost always pick the same split. Entropy is slightly more sensitive to changes near the pure end because $\log$ blows up there, so it has a mild preference for splits that carve off pure regions; Gini is cheaper because it avoids logarithms. In practice the choice is worth less than one hyperparameter tick of `max_depth`. For regression trees the impurity is variance (equivalently, sum of squared errors), and the same weighted-drop formula applies.
+**Good and bad.**
 
 Two details that interviewers probe. First, the search over thresholds is done by sorting each feature and sweeping the split point, updating class counts incrementally, so scoring all $n-1$ thresholds for one feature costs $O(n)$ after an $O(n \log n)$ sort — not $O(n^2)$. Second, information gain is biased toward high-cardinality features: a customer-ID column splits every node perfectly and gains a full bit, while generalizing not at all. The classical fix is **gain ratio**, which divides information gain by the entropy of the split itself (the "split information"), penalizing splits with many small branches.
 
@@ -7472,15 +8701,30 @@ Two details that interviewers probe. First, the search over thresholds is done b
 
 ### Q121: Bagging vs boosting — what is actually different, and why does each reduce error?
 
-**Answer:**
+> **In 30 seconds.** "Both are ensemble methods that combine multiple models, but they attack different components of total error: Bagging reduces Variance by averaging independent models trained in parallel, while Boosting reduces Bias by sequentially training models where each new model fixes the errors of the previous ones."
 
-Both are ensembles, but they attack different halves of the bias-variance decomposition and they have opposite dependency structures.
+**Core Differences.**
 
-**Bagging** (bootstrap aggregating) trains $B$ models *independently*, each on a bootstrap resample — a sample of $n$ rows drawn with replacement from the $n$ training rows — and averages their predictions. Because the models are independent given the data, training is embarrassingly parallel. Each base model is deliberately low-bias and high-variance: a fully grown, unpruned tree. Averaging then knocks the variance down.
+| | Bagging | Boosting |
+|---|---|---|
+| **Primary goal** | Reduce **variance** | Reduce **bias** |
+| **Model dependency** | Independent — trained in parallel | Sequential — each model depends on the last |
+| **Base models** | Deep, low-bias, high-variance (unpruned trees) | Shallow, high-bias, low-variance (stumps, depth-3) |
+| **Aggregation** | Average / majority vote, equal weight | Weighted sum with a small learning rate |
 
-**Boosting** trains $M$ models *sequentially*, each one fit to the errors the current ensemble is still making, and adds them up with a small step size. Each base model is deliberately high-bias — a stump or depth-3 tree — and the sequence of corrections drives bias down. Training cannot be parallelized across rounds, because round $m$ needs the predictions of rounds $1 \ldots m-1$.
+**Why each reduces error.**
 
-**The variance decomposition — the heart of the answer.** Suppose you average $B$ predictors, each with variance $\sigma^2$, with pairwise correlation $\rho$ between any two of them. Variance of the average:
+**Bagging** (bootstrap aggregating) trains $B$ models *independently*, each on a bootstrap resample — a sample of $n$ rows drawn with replacement from the $n$ training rows — and averages their predictions. Because the models are independent given the data, training is embarrassingly parallel. Each base model is deliberately low-bias and high-variance: a fully grown, unpruned tree. Averaging then knocks the variance down. Think of it as polling fifty independent experts: each one's individual wild guesses cancel out, and what survives the averaging is the signal they agree on.
+
+**Boosting** trains $M$ models *sequentially*, each one fit to the errors the current ensemble is still making, and adds them up with a small step size. Each base model is deliberately high-bias — a stump or depth-3 tree — and the sequence of corrections drives bias down. It is a student who studies only the questions they got wrong: every round is spent on the part of the material the ensemble has not mastered. Training cannot be parallelized across rounds, because round $m$ needs the predictions of rounds $1 \ldots m-1$.
+
+**Why boosting reduces error, in contrast.** Boosting is doing stagewise gradient descent in function space (see Q122). Each round fits the residual, so the ensemble's *bias* shrinks monotonically on the training set. Variance is controlled indirectly, by the learning rate and by keeping the base learners weak. The consequence: boosting **can** overfit if you keep adding rounds, and the number of rounds is a genuine regularization hyperparameter that must be tuned with early stopping. This is the single sharpest practical difference to state — more trees never hurts a random forest, more rounds absolutely can hurt a boosted model.
+
+**The math, and what it buys you.**
+
+What the variance formula tells you is *where the ceiling is*: adding trees kills one term completely, but leaves a floor set entirely by how correlated the trees are — and that floor is the reason random forests randomize the features considered at every split.
+
+Suppose you average $B$ predictors, each with variance $\sigma^2$, with pairwise correlation $\rho$ between any two of them. Variance of the average:
 
 $$\operatorname{Var}\!\left(\frac{1}{B}\sum_{b=1}^{B} f_b(x)\right) = \frac{1}{B^2}\left[B\sigma^2 + B(B-1)\rho\sigma^2\right] = \rho\sigma^2 + \frac{1-\rho}{B}\sigma^2$$
 
@@ -7501,7 +8745,13 @@ An empirical simulation with 200,000 draws and $B = 50$ gives measured single-mo
 
 So the only way to get below the floor is to **reduce $\rho$**. That is precisely what a random forest adds on top of bagging: at every split, consider only a random subset of features (`max_features`, classically $\sqrt{d}$ for classification). This makes individual trees slightly worse — $\sigma^2$ goes up a little — in exchange for a large drop in $\rho$, and the product $\rho\sigma^2$ falls. Bagging alone leaves trees highly correlated because one dominant feature gets chosen at the root of nearly every tree.
 
-**Why boosting reduces error, in contrast.** Boosting is doing stagewise gradient descent in function space (see Q122). Each round fits the residual, so the ensemble's *bias* shrinks monotonically on the training set. Variance is controlled indirectly, by the learning rate and by keeping the base learners weak. The consequence: boosting **can** overfit if you keep adding rounds, and the number of rounds is a genuine regularization hyperparameter that must be tuned with early stopping. This is the single sharpest practical difference to state — more trees never hurts a random forest, more rounds absolutely can hurt a boosted model.
+**Good and bad.**
+
+*Bagging / random forest.* **Good:** robust to noisy labels; forgiving to tune; embarrassingly parallel; more trees never hurts, so you can't overshoot. **Bad:** cannot reduce bias, so a forest of weak learners stays weak; the $\rho\sigma^2$ floor caps how far averaging can take you; generally a step behind tuned boosting on clean tabular data.
+
+*Boosting.* **Good:** drives bias down monotonically; usually the best accuracy on tabular problems; the loss is swappable, so ranking and quantile objectives come free. **Bad:** sequential, so no cross-round parallelism; will chase label noise; learning rate, depth and round count interact, so tuning takes care; needs early stopping or it overfits.
+
+The full comparison, row by row:
 
 | | Bagging / random forest | Boosting |
 |---|---|---|
@@ -7520,16 +8770,11 @@ So the only way to get below the floor is to **reduce $\rho$**. That is precisel
 > **Saying it out loud.** "Bagging trains models independently on bootstrap samples and averages them — that kills variance. Boosting trains them sequentially, each one fitting the previous ensemble's residuals — that kills bias. The formula I keep in my head is that averaging $B$ correlated predictors gives you rho-sigma-squared plus one-minus-rho over B, times sigma squared. The second term goes to zero with more trees, but the first term is a floor set by how correlated the trees are. That's the whole reason random forests randomize the features at each split — you're buying a lower rho. And the practical difference: more trees never hurts a forest, but more boosting rounds definitely can, so you early-stop."
 
 ---
-
 ### Q122: How does gradient boosting work, step by step?
 
-**Answer:**
+> **In 30 seconds.** "Gradient boosting is gradient descent where the parameters are the predictions themselves. Start with a constant, compute the negative gradient of the loss at every training point, fit a small regression tree to those gradients, add it in with a small learning rate, repeat. For squared error the gradient literally *is* the residual — which is why people say it fits residuals, and why that phrasing is misleading in general."
 
-Gradient boosting is gradient descent, but the thing being descended is not a parameter vector — it is the function itself. That reframing is the whole idea and it is what the interviewer wants to hear.
-
-Ordinary gradient descent updates parameters: $\theta \leftarrow \theta - \eta \nabla_\theta L$. Gradient boosting updates the *predictions*: it treats the vector of model outputs $F(x_1), \ldots, F(x_n)$ as the free variables and takes a step in the direction $-\partial L / \partial F$. The catch is that a step in prediction-space only tells you how to move on the $n$ training points, and you need a function defined everywhere. So you fit a regression tree to the negative gradient and use that tree as your step direction. That's it.
-
-**The algorithm.**
+**The short version.**
 
 1. Initialize with the constant that minimizes the loss: $F_0(x) = \arg\min_c \sum_i L(y_i, c)$. For squared error that is the mean of $y$; for log loss it is the log-odds of the base rate.
 2. For $m = 1 \ldots M$:
@@ -7539,7 +8784,13 @@ Ordinary gradient descent updates parameters: $\theta \leftarrow \theta - \eta \
    d. Update: $F_m(x) = F_{m-1}(x) + \eta\, h_m(x)$, where $\eta$ is the learning rate, typically $0.01$ to $0.1$.
 3. Output $F_M$.
 
+**Why it works.**
+
+Ordinary gradient descent updates parameters: $\theta \leftarrow \theta - \eta \nabla_\theta L$. Gradient boosting updates the *predictions*: it treats the vector of model outputs $F(x_1), \ldots, F(x_n)$ as the free variables and takes a step in the direction $-\partial L / \partial F$. The catch is that a step in prediction-space only tells you how to move on the $n$ training points, and you need a function defined everywhere. So you fit a regression tree to the negative gradient and use that tree as your step direction. That's it. That reframing is the whole idea and it is what the interviewer wants to hear.
+
 For squared error $L = \tfrac{1}{2}(y - F)^2$, the negative gradient is exactly $y - F$ — the ordinary residual. That is why the textbook explanation "each tree fits the residuals" is right for regression and misleading in general. For log loss with $p = \sigma(F)$, the negative gradient is $y - p$, the residual in probability space. The gradient framing is what lets you swap in Huber loss, quantile loss, or a ranking objective without changing any other machinery.
+
+**The math, and what it buys you.**
 
 **Worked example, executed.** Six points, $x = 1 \ldots 6$, $y = [2, 3, 5, 9, 12, 14]$, depth-1 trees (stumps), learning rate $0.5$:
 
@@ -7561,6 +8812,12 @@ $$w_j^* = -\frac{\sum_{i \in I_j} g_i}{\sum_{i \in I_j} h_i + \lambda}, \qquad \
 
 That gain expression is the split criterion — it replaces Gini/entropy entirely. The $\gamma$ term means a split with positive but small gain is rejected outright, which is pre-pruning built into the objective rather than bolted on.
 
+**Good and bad.**
+
+*Good:* any differentiable loss plugs straight in; second-order variants give closed-form leaf values and split gains; shrinkage is a clean, single-knob regularizer.
+
+*Bad:* sequential, so it cannot parallelize across rounds; the learning rate and round count trade off against each other so you must early-stop; it will happily fit label noise given enough rounds.
+
 **Follow-up:** *Learning rate 0.01 with 5000 trees, or 0.1 with 500?* → Roughly the same fit, but the slower rate usually generalizes a little better and costs 10x the training and inference time. Pick based on your latency budget; tune rounds by early stopping on a validation set at whichever rate you chose.
 
 > **Why the interviewer asks this.** "Fits the residuals" is the memorized answer. "Gradient descent in function space, and residuals are just what the gradient happens to equal under squared error" is the understood answer, and it immediately predicts how to handle any other loss.
@@ -7571,9 +8828,22 @@ That gain expression is the split criterion — it replaces Gini/entropy entirel
 
 ### Q123: XGBoost vs LightGBM vs CatBoost — when does the choice actually matter?
 
-**Answer:**
+> **In 30 seconds.** "Tuned, all three land within noise of each other on accuracy, so pick on other grounds. LightGBM grows leaf-wise and is fastest on big wide data but overfits small data. CatBoost's ordered target statistics make it the right call when categorical cardinality is high. XGBoost is the safest, best-documented default. The real gains are in features, not in which of the three you pick."
+
+**Core differences.**
+
+| | XGBoost | LightGBM | CatBoost |
+|---|---|---|---|
+| Growth | level-wise (default) | leaf-wise | oblivious / symmetric |
+| Speed on large wide data | good | fastest | moderate |
+| Categoricals | native (hist mode), or encode yourself | native, category-set splits | ordered target statistics, best in class |
+| Small-data overfitting | most forgiving | least forgiving | forgiving |
+| Inference latency | good | good | fastest (oblivious trees) |
+| Default-out-of-the-box quality | needs tuning | needs tuning | strongest |
 
 Start with the honest headline: on most tabular problems, all three land within noise of each other once tuned, and the differences that matter in practice are training speed, categorical handling, and small-data robustness — not accuracy. An interviewer who has shipped models will respect that framing more than a claim that one is uniformly best.
+
+**Why it works.**
 
 The real differences are in three mechanisms.
 
@@ -7585,14 +8855,13 @@ The real differences are in three mechanisms.
 
 CatBoost's other distinctive choice is **oblivious trees**: every node at a given depth uses the same split condition, so the tree is a full binary decision table. This is a strong regularizer and makes inference extremely fast, because scoring is an index computation rather than a branchy traversal.
 
-| | XGBoost | LightGBM | CatBoost |
-|---|---|---|---|
-| Growth | level-wise (default) | leaf-wise | oblivious / symmetric |
-| Speed on large wide data | good | fastest | moderate |
-| Categoricals | native (hist mode), or encode yourself | native, category-set splits | ordered target statistics, best in class |
-| Small-data overfitting | most forgiving | least forgiving | forgiving |
-| Inference latency | good | good | fastest (oblivious trees) |
-| Default-out-of-the-box quality | needs tuning | needs tuning | strongest |
+**Good and bad.**
+
+*XGBoost.* **Good:** most battle-tested, widest deployment tooling, best documentation, most forgiving on small data. **Bad:** needs tuning to reach its best; historically weakest categorical story.
+
+*LightGBM.* **Good:** fastest training on large wide datasets thanks to GOSS and EFB; native category-set splits. **Bad:** leaf-wise growth overfits small data unless you pull `num_leaves` down and raise `min_data_in_leaf`.
+
+*CatBoost.* **Good:** best-in-class categorical handling with no target leakage; strongest out-of-the-box quality; fastest inference from oblivious trees. **Bad:** slower to train than LightGBM on wide numeric data; the symmetric-tree constraint can cost accuracy when the true structure is asymmetric.
 
 Practical decision rule: LightGBM when training time on a large dataset is the bottleneck; CatBoost when categorical cardinality is high or you want a strong baseline with minimal tuning; XGBoost when you want the most battle-tested, best-documented option with the widest deployment tooling and you have the budget to tune it. Do not spend a week choosing — spend it on features, which will move the metric more.
 
@@ -7606,9 +8875,21 @@ Practical decision rule: LightGBM when training time on a large dataset is the b
 
 ### Q124: Explain PCA and derive it. Why SVD rather than eigendecomposition of the covariance matrix?
 
-**Answer:**
+> **In 30 seconds.** "PCA finds orthogonal directions of maximum variance. Center the data, maximize w-transpose-C-w subject to unit norm, and the Lagrangian immediately gives C-w equals lambda-w — the components are eigenvectors of the covariance and the variance explained is the eigenvalue. You use SVD instead of eigendecomposing the covariance because forming X-transpose-X squares the condition number, destroying precision on exactly the small eigenvalues you care about."
+
+**The short version.**
+
+- Center (and usually standardize) the data first — this is not optional.
+- Components are the eigenvectors of the covariance $C$, ordered by eigenvalue.
+- The eigenvalue *is* the variance explained by that component.
+- The right singular vectors $V$ of the centered $X$ *are* those eigenvectors, with $\lambda_i = \sigma_i^2/(n-1)$.
+- Use SVD: better conditioning, cheaper when $d \gg n$, and truncatable.
+
+**Why it works.**
 
 Principal component analysis finds an orthogonal set of directions in feature space, ordered so that the first captures the most variance in the data, the second captures the most variance among directions orthogonal to the first, and so on. Projecting onto the top $k$ directions gives the best rank-$k$ linear approximation of the data in the least-squares sense.
+
+**The math, and what it buys you.**
 
 **Derivation.** Let $X \in \mathbb{R}^{n \times d}$ be the data matrix with the column means already subtracted — centering is not optional, and skipping it makes the first component point at the mean rather than at the direction of variation. The sample covariance is $C = \frac{1}{n-1}X^\top X$.
 
@@ -7637,6 +8918,8 @@ max |diff|: 1.24e-14
 
 Identical to machine precision, and each component matches up to sign (eigenvector sign is arbitrary — a fact that trips people up when comparing PCA runs).
 
+**Good and bad.**
+
 **Why SVD is the right implementation.** Three reasons, and the first is the one that earns the point.
 
 *Numerical conditioning.* Forming $X^\top X$ squares the condition number: $\kappa(X^\top X) = \kappa(X)^2$. Every digit of precision you had in $X$, you lose two of in $X^\top X$. On a small ill-conditioned example the measured numbers are $\kappa(X) = 1.15 \times 10^{8}$ and $\kappa(X^\top X) = 7.4 \times 10^{15}$ — a matrix that is merely awkward becomes numerically singular in double precision. SVD operates on $X$ directly and never forms the product, so it keeps the better conditioning. Small eigenvalues, which are exactly the ones that tell you the intrinsic dimensionality, are the first casualties of the squaring.
@@ -7645,7 +8928,7 @@ Identical to machine precision, and each component matches up to sign (eigenvect
 
 *Truncation.* Randomized and truncated SVD compute only the top $k$ singular triplets in roughly $O(ndk)$, which is what you actually want when $k = 50$ out of $d = 20000$.
 
-Two practical notes. Standardize (not just center) when features have different units, because PCA maximizes raw variance and a feature measured in millimetres will dominate the same feature measured in metres. And PCA is unsupervised — it optimizes variance, not label separability — so the discarded low-variance direction can be the only one carrying the signal. When the goal is class separation, LDA optimizes the right thing.
+Two practical notes on PCA's limitations. Standardize (not just center) when features have different units, because PCA maximizes raw variance and a feature measured in millimetres will dominate the same feature measured in metres. And PCA is unsupervised — it optimizes variance, not label separability — so the discarded low-variance direction can be the only one carrying the signal. When the goal is class separation, LDA optimizes the right thing.
 
 **Follow-up:** *How do you pick $k$?* → Cumulative explained variance ratio $\sum_{i\le k}\lambda_i / \sum_i \lambda_i$ against a threshold like 95%, the elbow of the scree plot, or — best when PCA feeds a supervised model — cross-validated downstream performance, treating $k$ as an ordinary hyperparameter.
 
@@ -7657,15 +8940,27 @@ Two practical notes. Standardize (not just center) when features have different 
 
 ### Q125: When do tree ensembles still beat deep learning?
 
-**Answer:**
+> **In 30 seconds.** "On tabular data, boosted trees usually still win, and it's about inductive bias. Neural nets have a smoothness prior and are rotationally invariant, but tabular columns have individual meaning and the targets often have hard thresholds — a tree gets a step function with one split, an MLP has to approximate it. I'd reach for deep learning when a column has actual unstructured content."
 
-On tabular data with heterogeneous columns, gradient-boosted trees remain the default and frequently the winner. This is not nostalgia; it follows from concrete properties of the data and the inductive biases of the two model families.
+**The short version.**
+
+| Trees win when | Deep learning wins when |
+|---|---|
+| Heterogeneous, non-smooth columns with hard thresholds | Free text, images, or event sequences in a column |
+| Thousands to hundreds of thousands of rows | Data large enough to learn representations |
+| Mixed types, missing values, no scaling pipeline | Multi-task or transfer learning across targets |
+| CPU-minute training, sub-ms CPU inference | Strong relational structure (graph networks) |
+| Regulators want stable SHAP values | Hybrid: neural encoder → embeddings → GBM |
+
+**Why it works.**
 
 **Heterogeneous, non-smooth features.** Neural networks have a smoothness prior — they build predictions from compositions of smooth functions, and they are biased toward solutions that vary gently over the input space. Tabular targets are often genuinely non-smooth: risk jumps at a credit-score threshold, price jumps at a category boundary. Trees represent a step function natively with one split; an MLP has to spend capacity approximating that step and will round its corners. This is the central argument in the 2022 Grinsztajn, Oyallon and Varoquaux benchmark study "Why do tree-based models still outperform deep learning on tabular data?", which also isolates two other causes: neural nets are hurt much more by uninformative features, and MLPs are rotationally invariant while real tabular data is not — the columns have individual meaning, and a model that treats an arbitrary rotation of the features as equivalent is throwing away that structure. Trees are the opposite: axis-aligned by construction.
 
 **Scale of data.** Deep learning's advantage comes from learning representations, which requires enough data to learn them. With a few thousand to a few hundred thousand rows — the size of most business datasets — boosted trees win comfortably. Neural nets need the sample counts that only images, text, and audio naturally provide.
 
 **Mixed types and missing values.** LightGBM and XGBoost route missing values down a learned default branch, treating missingness as information, with no imputation step. Trees are invariant to any monotone transform of a feature, so no scaling, no log transforms, no outlier clipping. A neural net needs all of that pipeline, and each stage is a chance to introduce leakage or a train/serve skew bug.
+
+**Good and bad.**
 
 **Operational reasons that matter more than people admit.** Boosted trees train in minutes on CPU, so you can iterate on features many times a day. They give you stable, cheap feature importances and SHAP values that regulators and product managers accept. Inference is sub-millisecond on CPU with no accelerator. And there is no learning-rate schedule, no warmup, no batch-size interaction, no divergence at 3 a.m.
 
@@ -7683,9 +8978,21 @@ It is worth flagging that this is an active area — transformer-style tabular a
 
 ### Q126: What is the curse of dimensionality, concretely?
 
-**Answer:**
+> **In 30 seconds.** "In a hundred-dimensional unit cube, 99.99999998% of the volume is within 0.1 of a face — there is no interior, so every prediction is an extrapolation. And drop a thousand random points in a thousand dimensions and the farthest is only about 12% farther than the nearest, so 'nearest neighbour' stops meaning anything. The reason ML works at all is that real data sits on a much lower-dimensional manifold."
+
+**The short version.**
+
+- Volume concentrates in the shell — high-dimensional data has no middle.
+- Distances stop discriminating — max/min distance ratio converges to 1.
+- Sample requirements explode — $10^d$ cells for a resolution-$0.1$ grid.
+- The inscribed ball vanishes — all the volume is in the $2^d$ corners.
+- The escape hatch: the manifold hypothesis. The curse is about *ambient* dimension.
+
+**Why it works.**
 
 The curse of dimensionality is the collection of ways that geometric intuition built in two or three dimensions becomes actively wrong in high dimensions. The abstract statement — "data becomes sparse" — is not convincing on its own. Numbers are.
+
+**The math, and what it buys you.**
 
 **1. Volume concentrates in the shell.** Take the unit hypercube $[0,1]^d$ and ask what fraction of its volume lies within $0.1$ of some face. The interior cube $[0.1, 0.9]^d$ has volume $0.8^d$, so the shell fraction is $1 - 0.8^d$:
 
@@ -7726,6 +9033,8 @@ d= 50 : 1.537e-28
 
 In 50 dimensions the inscribed ball is $10^{-28}$ of the cube it fits inside. All the volume is in the corners — of which there are $2^{50}$. This is why a Gaussian in high dimensions does not concentrate at its mode: its mass lives in a thin annulus at radius $\approx\sigma\sqrt{d}$, so the most likely single point is one almost no sample ever lands near.
 
+**Good and bad.**
+
 **Why anything works at all.** The redeeming fact is the manifold hypothesis: real data of nominal dimension $d$ typically lies on or near a manifold of much lower intrinsic dimension. A $224\times224\times3$ image lives in $\mathbb{R}^{150528}$, but natural images occupy a vanishingly thin sliver of that space. The curse applies to the ambient dimension; learning algorithms succeed by discovering the intrinsic one. That is exactly what PCA, autoencoders, and the hidden layers of any deep network are doing.
 
 **Practical consequences to state.** Prefer models with strong structural priors in high dimensions — linear models with $\ell_1$, or trees, which only ever look at one axis at a time. Distance-based methods need dimensionality reduction first. Regularization stops being optional. And be suspicious of an RBF-kernel SVM or a $k$-NN baseline on raw 1000-dimensional features; it is probably measuring noise.
@@ -7741,21 +9050,38 @@ In 50 dimensions the inscribed ball is $10^{-28}$ of the cube it fits inside. Al
 
 ### Q127: Walk me through precision, recall, F1, ROC-AUC and PR-AUC — and when each is the right choice.
 
-**Answer:**
+> **In 30 seconds.** "Precision is 'of what I flagged, how much was real'; recall is 'of what's real, how much did I catch.' Which one matters is a cost question, not a statistical one. ROC-AUC is the probability a random positive outranks a random negative — threshold-free and prevalence-invariant. PR-AUC is the one to trust when positives are rare, because its baseline is the base rate."
+
+**The short version.**
+
+| Metric | Question it answers | Threshold-free? | Prevalence-invariant? | Use when |
+|---|---|---|---|---|
+| Precision | Of what I flagged, what was real? | no — fixed threshold | no | False positives are costly |
+| Recall | Of what's real, what did I catch? | no — fixed threshold | no | False negatives are costly |
+| F1 | Harmonic balance of the two | no | no | You need one number and both sides matter |
+| ROC-AUC | Does a random positive outrank a random negative? | yes | **yes** | Balanced classes; comparing across base rates |
+| PR-AUC | How does precision hold up across recall? | yes | **no** | Positives are rare; you only care about the positive class |
+| Accuracy | Overall hit rate | no | no | Almost never on imbalanced data |
+
+**Why it works.**
 
 Everything starts from the confusion matrix. For a binary classifier at a fixed decision threshold, TP is a positive correctly called positive, FP a negative wrongly called positive, FN a positive missed, TN a negative correctly rejected.
-
-$$\text{Precision} = \frac{TP}{TP+FP} \qquad \text{Recall} = \frac{TP}{TP+FN} \qquad \text{FPR} = \frac{FP}{FP+TN}$$
 
 **Precision** answers "of the things I flagged, what fraction were real?" — it is the quality of your alerts, and its denominator is what you predicted. **Recall** (also sensitivity, or true positive rate) answers "of the real things, what fraction did I catch?" — its denominator is the ground truth. They trade off through the threshold: lower it and recall rises while precision falls.
 
 The choice between them is a business question, not a statistical one, and the way to answer it in an interview is to name the asymmetric cost. If a false negative means a missed cancer diagnosis and a false positive means one extra biopsy, you optimize recall. If a false positive means wrongly blocking a paying customer's transaction and a false negative means absorbing the fraud loss, you weigh precision against the actual dollar amounts. Say the costs out loud — that is the signal the interviewer is listening for.
 
-**F1** is the harmonic mean, $F_1 = 2PR/(P+R)$. The harmonic mean, not the arithmetic mean, because it punishes imbalance: precision $1.0$ and recall $0.0$ gives arithmetic mean $0.5$ but F1 exactly $0$. Use $F_\beta = (1+\beta^2)PR/(\beta^2 P + R)$ when you want to weight recall $\beta$ times as much as precision — $F_2$ favours recall, $F_{0.5}$ favours precision. F1's real weakness is that it hides which side you are failing on and it ignores true negatives entirely, so always show the underlying precision and recall too.
-
 **ROC-AUC** sweeps the threshold and plots TPR against FPR. Its value has a clean probabilistic meaning: it is the probability that a randomly chosen positive is scored above a randomly chosen negative. So it measures *ranking quality*, is threshold-independent, and is invariant to prevalence — the same model scored on a 50/50 sample and a 1-in-1000 sample gets the same ROC-AUC. Random guessing is 0.5.
 
-**PR-AUC** (average precision) sweeps the same thresholds and plots precision against recall. It is *not* prevalence-invariant: its baseline for a random model is the positive class rate. On a dataset with 0.48% positives, measured:
+**PR-AUC** (average precision) sweeps the same thresholds and plots precision against recall. It is *not* prevalence-invariant: its baseline for a random model is the positive class rate.
+
+**The math, and what it buys you.**
+
+$$\text{Precision} = \frac{TP}{TP+FP} \qquad \text{Recall} = \frac{TP}{TP+FN} \qquad \text{FPR} = \frac{FP}{FP+TN}$$
+
+**F1** is the harmonic mean, $F_1 = 2PR/(P+R)$. The harmonic mean, not the arithmetic mean, because it punishes imbalance: precision $1.0$ and recall $0.0$ gives arithmetic mean $0.5$ but F1 exactly $0$. Use $F_\beta = (1+\beta^2)PR/(\beta^2 P + R)$ when you want to weight recall $\beta$ times as much as precision — $F_2$ favours recall, $F_{0.5}$ favours precision. F1's real weakness is that it hides which side you are failing on and it ignores true negatives entirely, so always show the underlying precision and recall too.
+
+On a dataset with 0.48% positives, measured:
 
 ```
 positives: 961   prevalence: 0.004805
@@ -7764,6 +9090,8 @@ sep=2.5: ROC-AUC=0.9611  PR-AUC=0.3544   baseline PR-AUC=0.0048
 ```
 
 The second model is genuinely 12x better than random on PR-AUC and looks nearly perfect on ROC-AUC. The PR number is the one that tells you what the alert queue will feel like.
+
+**Good and bad.**
 
 Decision rule, stated compactly. Use ROC-AUC when the classes are roughly balanced and you care about overall ranking, or when you need a metric that is comparable across populations with different base rates. Use PR-AUC when positives are rare and you only care about performance on the positive class. Use precision/recall at a *specific operating point* whenever the system has a fixed capacity — "we can review 500 alerts a day, so report precision@500" is almost always the metric the business actually has.
 
@@ -7779,9 +9107,25 @@ One warning worth volunteering: accuracy on imbalanced data is worthless. With 1
 
 ### Q128: Why does ROC-AUC mislead on imbalanced data?
 
-**Answer:**
+> **In 30 seconds.** "It's the FPR denominator. FPR is false positives over *all* negatives, and when negatives outnumber positives a thousand to one, that denominator is huge — so a mountain of false positives still looks like a tiny FPR. Precision compares false positives against true positives, both small numbers of the same order, so it stays sensitive. Same model, and the PR curve is the one telling you the truth."
+
+**The short version.**
+
+| | ROC curve | PR curve |
+|---|---|---|
+| Denominator that absorbs FP | $FP+TN$ — enormous when negatives dominate | $TP+FP$ — small, same order as TP |
+| Sensitivity to added false positives | anaesthetized | full dynamic range |
+| Prevalence | invariant (here a bug) | moves with it (here a feature) |
+| Baseline for a random model | 0.5 always | the prevalence |
+| Right headline for a rare-event detector | no | yes |
+
+**Why it works.**
 
 Because of the denominator in the false positive rate. $\text{FPR} = FP/(FP+TN)$, and when negatives massively outnumber positives, $TN$ is enormous, so the denominator is essentially the total negative count and is nearly constant. That makes FPR insensitive: an alarming number of false positives produces a tiny, reassuring FPR.
+
+The formal reason: precision has $FP$ compared against $TP$, both of which are small numbers of the same order, so it stays sensitive to changes in $FP$. FPR compares $FP$ against $TN$, which is huge, so it is anaesthetized.
+
+**The math, and what it buys you.**
 
 **Real numbers.** A million negatives, a thousand positives — a 0.1% prevalence, which is realistic for fraud, ad clicks, or rare disease. Your model flags 10,000 cases and catches 900 of the 1,000 positives:
 
@@ -7794,9 +9138,11 @@ The ROC curve sees recall $0.90$ at FPR $0.0091$ — a point deep in the upper-l
 
 Now translate. Precision $0.09$ means that of every 100 alerts your analysts open, 91 are false alarms. Nine thousand one hundred wasted investigations to find nine hundred real cases. That is the number the operations team lives with, and ROC-AUC never showed it to you.
 
-The formal reason: precision has $FP$ compared against $TP$, both of which are small numbers of the same order, so it stays sensitive to changes in $FP$. FPR compares $FP$ against $TN$, which is huge, so it is anaesthetized. Concretely, adding 9,100 false positives moved FPR from 0 to 0.0091 — visually indistinguishable from the axis — while it moved precision from 1.0 to 0.09, which is the entire dynamic range of that metric.
+Concretely, adding 9,100 false positives moved FPR from 0 to 0.0091 — visually indistinguishable from the axis — while it moved precision from 1.0 to 0.09, which is the entire dynamic range of that metric.
 
 There is a second, subtler failure. ROC-AUC is prevalence-invariant, which is sometimes a feature and here is a bug. A model with ROC-AUC $0.96$ has the same ROC-AUC whether you evaluate it at 50% prevalence or 0.1%, but its precision at a fixed recall changes by orders of magnitude between those two worlds. If you validated on a rebalanced sample and deployed to the real base rate, ROC-AUC will report no problem at all while precision collapses. PR-AUC, because it moves with prevalence, would have warned you.
+
+**Good and bad.**
 
 What to do instead. Report PR-AUC (average precision) as the headline for rare-positive problems, always alongside the baseline, which equals the prevalence — quoting "PR-AUC 0.35" without saying the baseline is 0.005 is meaningless. Report precision and recall at the actual operating point. And if you have a capacity constraint, report precision@k for the k you can actually process.
 
@@ -7812,11 +9158,27 @@ A fair caveat, since a good interviewer may push here: ROC-AUC is not *wrong*, i
 
 ### Q129: What is calibration, and why doesn't accuracy imply it?
 
-**Answer:**
+> **In 30 seconds.** "Calibration means when the model says 0.7, it's right about 70% of the time. It's completely separate from accuracy — cube every probability and the ranking is identical, so AUC doesn't move at all, but the numbers are now badly wrong. It matters any time the probability feeds a decision, because expected-value thresholds are garbage if the probability is garbage, however good the ranking is."
+
+**The short version.**
+
+| | Discrimination | Calibration |
+|---|---|---|
+| What it asks | Do positives rank above negatives? | Do the numbers mean what they say? |
+| Measured by | accuracy, ROC-AUC, F1 | reliability diagram, ECE, Brier, log loss |
+| Survives a monotone transform of $p$? | yes, unchanged | no, destroyed |
+| Fixed by | a better model | a post-hoc mapping on held-out data |
+| Matters when | you only need a sort key | the probability feeds a decision |
 
 A model is **calibrated** when its predicted probabilities match observed frequencies: among all the cases where it says 0.7, about 70% should actually be positive. Formally, $P(y=1 \mid \hat{p} = p) = p$ for all $p$.
 
+**Why it works.**
+
 Calibration and discrimination are orthogonal properties, and this is the crux. **Discrimination** is whether the model ranks positives above negatives — that is what accuracy, ROC-AUC, and F1 measure. **Calibration** is whether the numbers mean anything as probabilities. A model can be perfect at one and terrible at the other.
+
+**Why you should care.** Any time a probability is an input to a downstream decision rather than just a sort key, calibration is the thing that matters. Expected-value calculations — "block if $p \times \text{loss} > \text{friction cost}$" — are wrong if $p$ is wrong, no matter how good the ranking is. Risk aggregation across a portfolio needs probabilities that sum correctly. Thresholds set on one population transfer to another only if the numbers are meaningful. And any human consuming "83% likely" is entitled to have that mean something.
+
+**The math, and what it buys you.**
 
 The clean demonstration: apply any strictly increasing transform to the predicted probabilities. The ranking is untouched, so every ranking metric is identical, but the numbers are now wrong. Measured on 100,000 samples where the true probability was known:
 
@@ -7837,9 +9199,9 @@ bin [0.9,1.0)  n= 3425  mean_pred=0.950  actual=0.984
 
 The model says 0.146 and the event happens 53% of the time. It is systematically, massively underconfident — and every accuracy-style metric would tell you the model is fine.
 
-**Why you should care.** Any time a probability is an input to a downstream decision rather than just a sort key, calibration is the thing that matters. Expected-value calculations — "block if $p \times \text{loss} > \text{friction cost}$" — are wrong if $p$ is wrong, no matter how good the ranking is. Risk aggregation across a portfolio needs probabilities that sum correctly. Thresholds set on one population transfer to another only if the numbers are meaningful. And any human consuming "83% likely" is entitled to have that mean something.
-
 **How to measure it.** The **reliability diagram** is the primary tool: bin predictions, plot mean predicted probability against observed frequency per bin, and compare to the diagonal. **Expected Calibration Error** is the weighted average absolute gap, $\text{ECE} = \sum_b \frac{n_b}{n}\left|\text{acc}_b - \text{conf}_b\right|$; it is a useful scalar but sensitive to binning choices, so quote the diagram too. The **Brier score** and **log loss** are *proper scoring rules*, meaning they are uniquely minimized by reporting your true beliefs — they capture calibration and discrimination together, which is why "Brier got worse but AUC didn't move" is a clean calibration diagnosis.
+
+**Good and bad.**
 
 **How to fix it.** Fit a post-hoc mapping on a held-out calibration set — never the training set, or you will just relearn the training fit. **Platt scaling** fits a one-dimensional logistic regression on the model's scores; it is parametric, works with a few hundred points, and assumes a sigmoid-shaped distortion. **Isotonic regression** fits any monotone step function; it is more flexible, needs thousands of points, and can overfit on small sets. For neural networks, **temperature scaling** — divide the logits by a single learned scalar $T$ before the softmax — is the standard, because it fixes miscalibration with exactly one parameter and provably cannot change the argmax, so accuracy is untouched.
 
@@ -7855,7 +9217,24 @@ The model says 0.146 and the event happens 53% of the time. It is systematically
 
 ### Q130: Name every form of data leakage you can think of, and how you would detect each.
 
-**Answer:**
+> **In 30 seconds.** "Leakage is anything in training that wouldn't be available at prediction time. The big families are target leakage — a column only populated after the outcome — preprocessing fitted before the split, temporal leakage from random-splitting time series, and group leakage where the same user appears on both sides. My standing rule: a suspiciously good score is a bug report, not a result."
+
+**The short version.**
+
+| # | Family | Fastest detection |
+|---|---|---|
+| 1 | Target leakage (post-outcome column) | As-of-time audit per column; implausible single-feature importance |
+| 2 | Preprocessing fitted before the split | Put it all in a `Pipeline`; score drops = you had leakage |
+| 3 | Temporal leakage | Time-split and compare to random-split; large gap is diagnostic |
+| 4 | Group leakage (same entity both sides) | Intersect entity IDs across folds — should be zero |
+| 5 | Duplicates and near-duplicates | Hash dedup, then MinHash / embedding similarity across the split |
+| 6 | Target-encoding leakage | Use out-of-fold or ordered encoding and compare |
+| 7 | Label-collection leakage | Interrogate how labels were produced, not just what they are |
+| 8 | Row-order / index artifact | Correlate the index with the target |
+| 9 | Hyperparameter / selection leakage | Undetectable after the fact — prevent with nested CV |
+| 10 | External joined table built with hindsight | Trace provenance and computation date of every join |
+
+**Why it works.**
 
 Data leakage is any situation where information unavailable at prediction time influences training. Its signature is a validation score that is too good and a production score that is much worse. It is the single most common cause of a model that works in the notebook and fails on deployment, and interviewers ask it because catching leakage is most of what separates a careful practitioner from a careless one.
 
@@ -7879,6 +9258,8 @@ Data leakage is any situation where information unavailable at prediction time i
 
 **10. Leakage through external data joined by key.** Joining an enriched table that was itself built with knowledge of the outcome period — a "customer lifetime value" column computed over all of history. *Detection:* trace the provenance of every joined table to its computation date.
 
+**Good and bad.**
+
 **The universal detection heuristics.** First, a suspiciously good score is a bug report, not a result — 0.99 AUC on a hard problem means you have leakage until proven otherwise. Second, ablate: drop the single most important feature and see whether performance collapses to plausible. Third, the as-of-time audit: for every feature, state the timestamp at which its value becomes known, and confirm it precedes the prediction time. Fourth, the ultimate test — build a temporally held-out set from a period after all your development data, and score it once.
 
 **Follow-up:** *You find leakage after the model shipped. What now?* → Quantify first: retrain without the leaky feature and measure the honest performance, since the deployed model may still be net-positive. Then decide whether to roll back or to keep it running while the fix is built, based on that honest number against the incumbent. And write the as-of-time check into the feature store so the class of bug cannot recur.
@@ -7891,7 +9272,20 @@ Data leakage is any situation where information unavailable at prediction time i
 
 ### Q131: How do you set up cross-validation when rows are grouped, or ordered in time?
 
-**Answer:**
+> **In 30 seconds.** "Plain k-fold assumes rows are exchangeable, and grouped or time-ordered data isn't. For groups I use GroupKFold and pick the grouping key by asking what the deployment population looks like. For time series it's forward chaining — train on the past, test on the future — and the detail people miss is the purge: if the label takes 30 days to materialize, leave a 30-day gap before the test block."
+
+**The short version.**
+
+| Structure | Scheme | The detail people miss |
+|---|---|---|
+| i.i.d. rows | plain `KFold` | — |
+| Grouped entities | `GroupKFold` / `StratifiedGroupKFold` | Pick the key by deployment population, not by convenience |
+| Time-ordered | `TimeSeriesSplit` forward chaining | Purge the label horizon; embargo after the test block |
+| Drifting relationship | rolling window instead of expanding | If rolling wins, you have measured concept drift |
+| Grouped **and** temporal | time-split globally, then hold out entity IDs | Don't group-split inside a time-random split |
+| Spatial | blocked spatial CV | Nearby pixels leak into each other |
+
+**Why it works.**
 
 The assumption behind ordinary $k$-fold cross-validation is that rows are exchangeable — independent and identically distributed, so any partition is as good as any other. Grouped data violates independence; time-ordered data violates both independence and the premise that the future is predictable from a randomly-chosen subset of the past. Applying plain $k$-fold to either produces an optimistic estimate, sometimes wildly so.
 
@@ -7900,6 +9294,8 @@ The assumption behind ordinary $k$-fold cross-validation is that rows are exchan
 The correct grouping key is the one that matches how the model will be used. If it will see brand-new users, group by user. If it will see new sessions from known users, random splitting within a user is actually the honest setup. Ask what the deployment population is, and let that pick the key — this is the part interviewers are testing.
 
 Two practical wrinkles. Group sizes are usually skewed, so folds end up unbalanced in row count; check that no fold is dominated by one whale. And when there are multiple candidate grouping keys — a patient belongs to a hospital, which belongs to a region — pick the coarsest level at which you need generalization; if the model will be deployed to a new hospital, group by hospital, not patient.
+
+**The math, and what it buys you.**
 
 **Time-ordered data.** Two rules. Never train on data that comes after your validation data. And respect the gap between when a feature is known and when the label is known.
 
@@ -7915,6 +9311,8 @@ Every test block is strictly after its training block, and the training set grow
 
 **The gap — the detail that distinguishes a good answer.** If your label takes 30 days to materialize (did the customer churn within 30 days?), then at the moment you would have trained the model you did not yet know the labels for the last 30 days of your training window. Training right up to the test boundary is leakage. Insert a **purge** of at least the label horizon between train and test, and if features use backward-looking windows, add an **embargo** after the test block too, so training rows just after the test period cannot see into it through their own rolling windows. This is `PurgedGroupTimeSeriesSplit` in the quantitative finance literature (López de Prado), and it is exactly the right machinery whenever labels have a lag.
 
+**Good and bad.**
+
 **Grouped and temporal at once**, which is the common real case — many users, each with events over time. Split by time globally so no fold sees the future, and if you also need generalization to unseen users, additionally hold out a set of user IDs. Do not group-split by user *within* a time-random split; that fixes one leak and leaves the other.
 
 **Other structure to watch for.** Spatial autocorrelation needs blocked spatial CV, not random points, or nearby training pixels leak into test pixels. Nested hierarchies need the outer level as the group. And any dataset with a "session" or "batch" column recorded by the collection process usually has a batch effect worth grouping on.
@@ -7926,10 +9324,22 @@ Every test block is strictly after its training block, and the training set grow
 > **Saying it out loud.** "Plain k-fold assumes rows are exchangeable, and grouped or time-ordered data isn't. For groups — same patient, same user, same document — I use GroupKFold, and I pick the grouping key by asking what the deployment population looks like: if we'll see brand-new users, group by user. For time series it's forward chaining, train on the past, test on the future, and the detail people miss is the purge — if the label takes 30 days to materialize, you have to leave a 30-day gap before the test block, otherwise you're training on labels you wouldn't have had."
 
 ---
-
 ### Q132: How do you handle class imbalance, and what does each fix cost you?
 
-**Answer:**
+> **In 30 seconds.** "First check whether imbalance is actually the problem — what hurts is having few positives in absolute terms, not the ratio. Usually the complaint is 'it predicts everything negative,' and that's just a threshold sitting at 0.5. And the thing everyone forgets: every resampling and reweighting fix silently destroys your probability calibration."
+
+**The short version.**
+
+| Fix | What it costs you |
+|---|---|
+| Change the metric and the threshold | Nothing. Do this first. Calibration preserved exactly. |
+| Class weights / cost-sensitive loss | Calibration breaks; label noise on the minority is amplified by the weight |
+| Random oversampling | Memorization of duplicated rows; longer training; calibration breaks |
+| Random undersampling | Throws away real data; higher variance — but fast, and good inside an ensemble |
+| SMOTE and variants | Interpolation assumption fails near boundaries and in high dimensions; bad with categoricals |
+| Get more positives | Time and money — and usually the highest return of anything on this list |
+
+**Why it works.**
 
 First, the answer an interviewer most wants to hear: check whether you have a problem at all. Imbalance is not intrinsically harmful. What harms you is *too few positive examples in absolute terms* and *an evaluation metric or loss that ignores the minority class*. A hundred thousand positives out of ten million is a 1% rate and a perfectly learnable problem. Two hundred positives out of twenty thousand is the same 1% and a genuinely hard problem — and the difficulty is the two hundred, not the ratio. So diagnose before you treat.
 
@@ -7946,6 +9356,8 @@ The interventions, and the cost of each.
 **SMOTE and variants.** Synthesize new minority points by interpolating between a minority point and one of its $k$ nearest minority neighbours. *Cost:* the interpolation assumes the region between two minority points is minority, which is false near a class boundary and false in high dimensions (see Q126 — "between" is not a well-behaved concept there). It performs badly with categorical features (SMOTE-NC patches this crudely) and it can generate points inside the majority region, actively creating label noise. Empirically SMOTE often fails to beat plain class weighting on tabular data, and it is worth saying so rather than reciting it as a best practice.
 
 **Get more positives.** Targeted labelling, active learning on high-uncertainty cases, or relaxing the positive definition to a related, more frequent proxy event. *Cost:* time and money — and it is usually the highest-return option by a wide margin.
+
+**The math, and what it buys you.**
 
 **The point that ties them together: every resampling and reweighting method breaks calibration.** They all change the effective class prior the model is trained under, so the output probabilities come out near the manipulated rate rather than the true one. Measured, on data with a 1.69% true positive rate:
 
@@ -7973,13 +9385,18 @@ Applying it recovered Brier $0.015645$ against the uncorrected $0.165720$ — ba
 
 ### Q133: What makes a good feature, and what is feature engineering doing that a deep model cannot?
 
-**Answer:**
+> **In 30 seconds.** "A good feature is predictive given what you already have, available at prediction time with the same value it'll have in production, stable, and cheap enough to serve. What feature engineering does that a deep model can't is inject information that isn't in the data at all, and aggregate across rows — the model only ever sees one row."
 
-A good feature has four properties, and it is worth naming all four because candidates usually name only the first.
+**The short version.**
 
-*Predictive* — it carries signal about the target, conditional on the features you already have. Marginal information is what counts; a feature with high univariate correlation that is a linear combination of two existing columns adds nothing. *Available at prediction time* — with the same value it will have in production, which is the leakage question from Q130. *Stable* — its distribution and its relationship to the target do not drift out from under you, and it is not going to be silently redefined by an upstream team. *Cheap enough* — computable inside the latency budget, from data that exists at serving time.
+- **Predictive** — carries *marginal* signal given the features you already have.
+- **Available at prediction time** — same value it will have in production (the Q130 question).
+- **Stable** — distribution and relationship to the target don't drift, and no upstream team silently redefines it.
+- **Cheap enough** — computable inside the latency budget from data that exists at serving time.
 
 The fourth one is where production systems actually die. A feature that requires a join against a table refreshed nightly cannot serve a real-time request. A feature computed differently in the training SQL than in the serving code is train/serve skew, and it is the reason feature stores exist.
+
+**Why it works.**
 
 **What feature engineering does that a deep model cannot.**
 
@@ -7990,6 +9407,8 @@ The fourth one is where production systems actually die. A feature that requires
 *It aggregates across rows the model never sees together.* Any model consumes one row at a time. "Number of transactions by this card in the last hour," "user's average session length over 30 days," "count of distinct merchants this week" are cross-row aggregates. Unless you build a sequence or graph model, these are structurally invisible to the architecture and are usually the strongest features in fraud, churn, and recommendation systems.
 
 *It regularizes by reducing dimensionality with knowledge.* Bucketing a continuous feature at a known clinical or regulatory threshold builds in a step that would otherwise cost data to learn.
+
+**Good and bad.**
 
 **Where feature engineering loses.** On unstructured data — pixels, raw audio, text — hand-crafted features (SIFT, HOG, MFCCs, n-gram counts) were comprehensively beaten by learned representations, and that is not coming back. The reason is that the useful features there are hierarchical compositions with no compact human description; a person can write down "debt over income" but cannot write down "the third-level texture detector that fires on fur." When the useful representation is inexpressible in words and you have enough data, learn it. When the useful representation is a fact you already know, type it in.
 
@@ -8006,9 +9425,34 @@ The fourth one is where production systems actually die. A feature that requires
 
 ### Q134: Batch norm vs layer norm — mechanism, and why transformers use layer norm.
 
-**Answer:**
+> **In 30 seconds.** "Same operation, different axis. BatchNorm normalizes each feature across the batch; LayerNorm normalizes each sample across its features. Everything else follows from that. Transformers use LayerNorm because sequences have different lengths and get padded, so batch statistics would depend on what else happened to be in the batch — LayerNorm only looks at one token's own hidden vector."
+
+**The short version.**
+
+| | BatchNorm | LayerNorm |
+|---|---|---|
+| Statistics over | each **feature**, across the batch | each **sample**, across the features |
+| Effect on a matrix | makes each *column* standard | makes each *row* standard |
+| Train vs test | different — needs running averages | identical, no mode switch |
+| Small batches | degrades badly (noisy estimates) | unaffected |
+| Couples examples? | yes | no |
+| Distributed training | needs SyncBN all-reduce per layer | free |
+| Variable sequence length / padding | statistics depend on batch composition | exactly invariant |
+| Inference cost | folds into the preceding conv — free | a real op |
 
 Both normalize activations to zero mean and unit variance and then apply a learned scale and shift, $y = \gamma\hat{x} + \beta$. The entire difference is **which axis the statistics are computed over**, and every downstream consequence follows from that one choice.
+
+**Why it works.**
+
+**Why transformers use layer norm — the sequence-length argument.** This is the specific reason and the one to lead with. A transformer batch has shape (batch, sequence length, model dimension), and sequences have *different lengths*, so they are padded. BatchNorm would compute per-feature statistics over the batch-and-time axes, which means the statistics depend on how much padding is in the batch and on how long the other sequences happen to be. Two identical sentences batched with different neighbours would normalize differently. That is unacceptable.
+
+LayerNorm normalizes over the model dimension only, so each token's normalization depends on that token's own $d_{\text{model}}$ activations and nothing else. It is exactly invariant to batch composition, sequence length, and padding. It also works identically during autoregressive generation, where the effective batch is one token at a time and BatchNorm would be meaningless.
+
+Additional reasons that reinforce the choice: transformers are trained with very large or very small effective batch sizes depending on the hardware and gradient accumulation, and LayerNorm is indifferent; and the activations at a given position vary enormously in scale, which per-token normalization handles naturally.
+
+**What normalization actually does.** The original "internal covariate shift" explanation has been substantially undermined — Santurkar et al. (2018) showed that injecting noise *after* BatchNorm, deliberately restoring covariate shift, still leaves the benefit intact. The better-supported account is that normalization smooths the loss landscape, bounding the gradient magnitudes and making the effective Lipschitz constant smaller, which permits larger learning rates and makes optimization less sensitive to initialization. Worth knowing, because a good interviewer may specifically probe whether you still believe the original story.
+
+**The math, and what it buys you.**
 
 For an activation tensor of shape (batch $N$, features $D$):
 
@@ -8035,6 +9479,8 @@ LayerNorm  -> row means    [0, 0, 0, 0]     row stds    [1, 1, 1, 1]
 
 BatchNorm makes each *column* standard; LayerNorm makes each *row* standard.
 
+**Good and bad.**
+
 **The consequences.** BatchNorm's statistics depend on the other examples in the batch, and that single fact creates all of its problems.
 
 *It behaves differently at train and test time.* During training it uses the batch statistics; at inference there is no batch, so it uses running averages accumulated during training. Train and inference are therefore computing different functions, and a mismatch between the running estimates and the deployment distribution is a classic silent-degradation bug. LayerNorm is identical at train and test — no running statistics, no mode switch.
@@ -8044,14 +9490,6 @@ BatchNorm makes each *column* standard; LayerNorm makes each *row* standard.
 *It couples examples in a batch.* Examples influence each other's predictions, which breaks the independence assumption that some algorithms need and interferes with contrastive learning, reinforcement learning, and any setting where you care about a per-example output being a function of that example alone.
 
 *It is awkward under distributed training.* Correct batch statistics across data-parallel workers require a synchronizing all-reduce every BatchNorm layer (SyncBN), which is a communication cost per layer.
-
-**Why transformers use layer norm — the sequence-length argument.** This is the specific reason and the one to lead with. A transformer batch has shape (batch, sequence length, model dimension), and sequences have *different lengths*, so they are padded. BatchNorm would compute per-feature statistics over the batch-and-time axes, which means the statistics depend on how much padding is in the batch and on how long the other sequences happen to be. Two identical sentences batched with different neighbours would normalize differently. That is unacceptable.
-
-LayerNorm normalizes over the model dimension only, so each token's normalization depends on that token's own $d_{\text{model}}$ activations and nothing else. It is exactly invariant to batch composition, sequence length, and padding. It also works identically during autoregressive generation, where the effective batch is one token at a time and BatchNorm would be meaningless.
-
-Additional reasons that reinforce the choice: transformers are trained with very large or very small effective batch sizes depending on the hardware and gradient accumulation, and LayerNorm is indifferent; and the activations at a given position vary enormously in scale, which per-token normalization handles naturally.
-
-**What normalization actually does.** The original "internal covariate shift" explanation has been substantially undermined — Santurkar et al. (2018) showed that injecting noise *after* BatchNorm, deliberately restoring covariate shift, still leaves the benefit intact. The better-supported account is that normalization smooths the loss landscape, bounding the gradient magnitudes and making the effective Lipschitz constant smaller, which permits larger learning rates and makes optimization less sensitive to initialization. Worth knowing, because a good interviewer may specifically probe whether you still believe the original story.
 
 **Pre-norm vs post-norm**, which is where this question usually goes next. The original transformer put LayerNorm *after* the residual add: $x + \text{Sublayer}(x)$, then normalize. Modern models normalize *before* the sublayer: $x + \text{Sublayer}(\text{LN}(x))$. Pre-norm leaves a clean, unnormalized identity path from input to output, so gradients flow to early layers without passing through any normalization, and deep models train stably without a warmup schedule. Post-norm sometimes reaches marginally better final quality but is notoriously fragile past a few dozen layers. Essentially every large model since roughly GPT-2 is pre-norm, and many now use **RMSNorm**, which drops the mean-subtraction and rescales by the root mean square only — $x/\sqrt{\frac{1}{D}\sum x_j^2} \cdot \gamma$ — because the re-centering turns out to contribute little and removing it saves compute.
 
@@ -8065,15 +9503,29 @@ Additional reasons that reinforce the choice: transformers are trained with very
 
 ### Q135: What causes vanishing and exploding gradients, and what actually fixes each?
 
-**Answer:**
+> **In 30 seconds.** "Both come from backprop multiplying Jacobians layer after layer, so anything not close to one becomes exponential in depth. But vanishing is a *structural* problem you fix by changing the architecture — ReLU, residuals, He init, normalization. Exploding is a *dynamics* problem you fix at runtime with gradient clipping and a lower learning rate. Clipping does nothing for vanishing; residuals don't stop an explosion."
 
-They come from the same mechanism — repeated multiplication during backpropagation — but they have genuinely different fixes, and conflating them is the mistake this question is designed to catch.
+**The short version.**
+
+| | Vanishing | Exploding |
+|---|---|---|
+| Nature | structural — signal cannot reach early layers | dynamics — the optimizer took too big a step |
+| Typical causes | saturating activations, too-small init, long recurrences | too-large init, spectral radius > 1, high LR, one bad batch |
+| Fixes | ReLU/GELU, residual connections, He/Xavier init, normalization, LSTM gating | gradient clipping by global norm, lower LR, warmup, fix the data |
+| Diagnosis | early-layer grad norms orders of magnitude below late layers | spike in global norm, then a loss spike or NaN |
+| Still a live problem in transformers? | largely solved by pre-norm residuals | very much alive at scale |
+
+**Why it works.**
 
 **The mechanism.** Backprop through $L$ layers multiplies Jacobians:
 
 $$\frac{\partial \mathcal{L}}{\partial h_0} = \frac{\partial \mathcal{L}}{\partial h_L}\prod_{\ell=1}^{L} \frac{\partial h_\ell}{\partial h_{\ell-1}}, \qquad \frac{\partial h_\ell}{\partial h_{\ell-1}} = W_\ell^\top \operatorname{diag}(\phi'(z_\ell))$$
 
-If the typical singular value of each factor is $s$, the gradient magnitude scales as $s^L$. Anything other than $s \approx 1$ is an exponential in depth. Measured, propagating a gradient back through 50 random layers of width 100 with weights scaled by a gain factor:
+If the typical singular value of each factor is $s$, the gradient magnitude scales as $s^L$. Anything other than $s \approx 1$ is an exponential in depth.
+
+**The math, and what it buys you.**
+
+Measured, propagating a gradient back through 50 random layers of width 100 with weights scaled by a gain factor:
 
 ```
 gain=0.5 : ||grad|| after 10 layers=7.487e-04, 30=7.887e-10, 50=5.402e-16
@@ -8084,6 +9536,8 @@ gain=2.0 : ||grad|| after 10 layers=7.621e+02, 30=5.530e+08, 50=3.822e+14
 A factor-of-two error in the initialization scale is the difference between a gradient of $10^{-16}$ and one of $10^{14}$. Nothing else in training is this sensitive.
 
 **Vanishing gradients — causes.** Saturating activations are the historical cause: $\sigma'(z) = \sigma(z)(1-\sigma(z))$ has a maximum of exactly $0.25$ at $z=0$, so even in the best case ten sigmoid layers multiply the gradient by at most $0.25^{10} = 9.5\times 10^{-7}$, and thirty layers by $8.7\times10^{-19}$. That is not an edge case, that is the *best* case. Tanh is better ($\tanh'(0)=1$) but still saturates. The second cause is initialization with weights too small. The third, in RNNs, is repeated multiplication by the same recurrent matrix over hundreds of timesteps, where the effective depth is the sequence length.
+
+**Good and bad.**
 
 **Vanishing gradients — fixes.** These are structural.
 
@@ -8123,9 +9577,26 @@ A factor-of-two error in the initialization scale is the difference between a gr
 
 ### Q136: Why do we need learning-rate warmup, specifically for Adam?
 
-**Answer:**
+> **In 30 seconds.** "It's about the second-moment estimate. Adam divides the gradient by the square root of a running average of squared gradients, and with beta-2 at 0.999 that average needs about a thousand steps to settle. At step one it's degenerate — the bias-corrected update is exactly plus-or-minus the full learning rate, whatever the gradient was. Warmup just keeps the learning rate small until that estimate is trustworthy."
 
-Warmup means starting at a learning rate near zero and ramping it linearly (or otherwise) to the target over the first few hundred to few thousand steps, before the main decay schedule begins. It is nearly universal in transformer training, and the reason is specific to how Adam estimates its second moment.
+**The short version.**
+
+- Warmup = ramp from ~0 to the target LR over the first few hundred to few thousand steps, then decay.
+- The reason is Adam's $\hat{v}_t$: an EMA with $\beta_2 = 0.999$ has a ~1000-step averaging window.
+- Bias correction fixes the *expectation*, not the *variance* — and the variance is the problem.
+- At step 1 the update is exactly $\pm\eta$ per parameter, direction set by one noisy gradient sample.
+- Two reinforcing, non-Adam reasons: bad conditioning at init, and large-batch training's large target LR.
+- Practical: linear warmup over 1-5% of steps (500-4,000), then cosine decay to ~10% of peak.
+
+**Why it works.**
+
+**The problem is that $\hat{v}_t$ is a terrible estimate early on.** It is an exponential moving average with $\beta_2 = 0.999$, which has an effective averaging window of about $1/(1-\beta_2) = 1000$ steps. At step 10 it has seen ten samples of $g^2$ and is being asked to report their long-run mean. The bias correction fixes the *expectation* but does nothing about the *variance*, and the variance is the whole issue: the update divides by $\sqrt{\hat{v}_t}$, so when $\hat{v}_t$ happens to come in small, the step is enormous.
+
+This is the argument formalized by RAdam (Liu et al., 2020): the variance of the adaptive learning rate is unbounded in the first few steps, and warmup acts as an implicit variance-reduction heuristic. RAdam instead rectifies the term analytically and turns off adaptivity until the variance estimate is trustworthy, which makes it work without warmup — a useful thing to be able to name.
+
+**Two reinforcing reasons that are not Adam-specific.** At initialization the parameters are random, so the loss surface is poorly conditioned and the gradients are large and uninformative; a big step early moves the model into a bad basin it may never leave. And large-batch training uses a large target learning rate to compensate for the reduced gradient noise, which makes the early-step overshoot correspondingly more destructive — warmup is essentially mandatory once batch size gets large, and its length typically scales with batch size.
+
+**The math, and what it buys you.**
 
 **The Adam update.** With $\beta_1 = 0.9$, $\beta_2 = 0.999$:
 
@@ -8133,8 +9604,6 @@ $$m_t = \beta_1 m_{t-1} + (1-\beta_1) g_t, \quad v_t = \beta_2 v_{t-1} + (1-\bet
 $$\hat{m}_t = \frac{m_t}{1-\beta_1^t}, \quad \hat{v}_t = \frac{v_t}{1-\beta_2^t}, \quad \theta_t = \theta_{t-1} - \eta \frac{\hat{m}_t}{\sqrt{\hat{v}_t}+\epsilon}$$
 
 The step size in each coordinate is $\eta \cdot \hat{m}_t/\sqrt{\hat{v}_t}$ — the gradient divided by its own root-mean-square. Adam is adaptive precisely because of that division.
-
-**The problem is that $\hat{v}_t$ is a terrible estimate early on.** It is an exponential moving average with $\beta_2 = 0.999$, which has an effective averaging window of about $1/(1-\beta_2) = 1000$ steps. At step 10 it has seen ten samples of $g^2$ and is being asked to report their long-run mean. The bias correction fixes the *expectation* but does nothing about the *variance*, and the variance is the whole issue: the update divides by $\sqrt{\hat{v}_t}$, so when $\hat{v}_t$ happens to come in small, the step is enormous.
 
 The pathological case is step 1. Then $m_1 = (1-\beta_1)g_1$ and $v_1 = (1-\beta_2)g_1^2$; after bias correction $\hat{m}_1 = g_1$ and $\hat{v}_1 = g_1^2$, so the update is exactly $\eta \cdot g_1/|g_1| = \pm\eta$. **Every parameter moves by the full learning rate, with only the sign of a single noisy gradient sample deciding the direction.** Simulating a pure-noise coordinate whose true gradient mean is zero, and measuring the magnitude of Adam's update over time:
 
@@ -8149,9 +9618,7 @@ step  1000: E|update|=0.1811  sd=0.1374  p99=0.5921
 
 The steady-state update magnitude for a pure-noise coordinate is about $0.18\eta$. At step 1 it is $1.0\eta$ — a **5.5x overshoot**, in a direction that is pure noise. By step 50 it has converged. That gap, over the first tens to hundreds of steps, is exactly what warmup exists to cover.
 
-This is the argument formalized by RAdam (Liu et al., 2020): the variance of the adaptive learning rate is unbounded in the first few steps, and warmup acts as an implicit variance-reduction heuristic. RAdam instead rectifies the term analytically and turns off adaptivity until the variance estimate is trustworthy, which makes it work without warmup — a useful thing to be able to name.
-
-**Two reinforcing reasons that are not Adam-specific.** At initialization the parameters are random, so the loss surface is poorly conditioned and the gradients are large and uninformative; a big step early moves the model into a bad basin it may never leave. And large-batch training uses a large target learning rate to compensate for the reduced gradient noise, which makes the early-step overshoot correspondingly more destructive — warmup is essentially mandatory once batch size gets large, and its length typically scales with batch size.
+**Good and bad.**
 
 **Practical parameters.** Linear warmup over roughly 1% to 5% of total steps, commonly 500 to 4,000 for a large model, then cosine decay to about 10% of peak. Transformers are the standard case; the original paper's $\sqrt{d_{\text{model}}}$-scaled schedule with 4,000 warmup steps was for post-norm, which is genuinely untrainable without it. Pre-norm architectures need warmup much less — that is one of the main reasons pre-norm won — but essentially everyone still uses it, because it is nearly free and removes a whole class of failure.
 
@@ -8165,7 +9632,22 @@ This is the argument formalized by RAdam (Liu et al., 2020): the variance of the
 
 ### Q137: What does a loss spike mean and what do you do about it?
 
-**Answer:**
+> **In 30 seconds.** "Usually it's a bad batch — corrupted text or a document of repeated tokens — producing a huge gradient and a step that damages the model. The way you tell it apart from plain gradient explosion is that the pre-clip gradient norm spikes a step or two before the loss does, which is why you log pre-clip and not post-clip. First move is to watch: a lot of spikes self-heal."
+
+**The short version.**
+
+| Cause | The tell |
+|---|---|
+| A bad batch (most common) | Tied to a specific step; doesn't reproduce with a different data order |
+| Gradient explosion | Pre-clip gradient norm spikes 1-2 steps before the loss |
+| LR too high for current curvature | Repeated spikes at regular intervals; one right after warmup ends |
+| fp16 numerical overflow | Loss scale being repeatedly halved; NaNs |
+| Adam state pathology (tiny stale $v$) | Long-idle parameter suddenly takes an enormous step |
+| Attention logit growth | Softmax drifting toward one-hot; fixed by QK-norm |
+
+The playbook, in order: **watch → roll back and skip → investigate the skipped batches → structural mitigations.**
+
+**Why it works.**
 
 A loss spike is a sudden jump in training loss — often by several nats, sometimes to NaN — after a period of stable descent. In small-scale training it is a curiosity. In large-model pretraining it is one of the main operational hazards, because a single unrecovered spike can waste days of accelerator time.
 
@@ -8182,6 +9664,8 @@ A loss spike is a sudden jump in training loss — often by several nats, someti
 *Adam state pathology.* If a parameter's gradient has been near zero for a long stretch, its $v$ accumulator decays toward zero; when a real gradient finally arrives, dividing by a tiny $\sqrt{v}$ produces an enormous step. This is a known contributor to spikes in large runs, and it is why some practitioners lower $\beta_2$ to $0.95$ for large-model training — the shorter window is more responsive and less prone to a stale, tiny $v$. The $\epsilon$ value matters here too.
 
 *Attention logit growth.* In large transformers, the pre-softmax logits can grow without bound during training, driving the softmax toward one-hot, gradients toward zero, and the numerics toward the edge. QK-normalization — applying a norm to the query and key vectors before the dot product — is the standard mitigation and is now common in large model training recipes.
+
+**Good and bad.**
 
 **What to do, in the order you should do it.**
 
@@ -8208,11 +9692,24 @@ A loss spike is a sudden jump in training loss — often by several nats, someti
 
 ### Q138: What does FlashAttention actually do?
 
-**Answer:**
+> **In 30 seconds.** "The thing people get wrong is calling it an approximation — it's exact, and it doesn't reduce FLOPs at all. What it reduces is memory traffic between HBM and on-chip SRAM. Standard attention writes the full n-by-n matrix to HBM and reads it back twice; FlashAttention tiles the computation so blocks fit in SRAM and never materializes that matrix."
+
+**The short version.**
+
+| Claim | True? |
+|---|---|
+| It's an approximation of attention | **No** — output is exact |
+| It reduces $O(n^2)$ compute | **No** — same FLOPs |
+| It reduces memory traffic HBM ↔ SRAM | **Yes** — this is the whole point |
+| It reduces memory *footprint* | Yes — $O(n^2) \to O(n)$ in sequence length |
+| It's an alternative to sparse/linear attention | No — those change the math; this changes the schedule |
+| It composes with GQA/MQA | Yes — orthogonal (they shrink the KV cache) |
 
 Start by killing the common wrong answer, because interviewers ask this question specifically to see whether you have it. **The wrong answer is "FlashAttention is an efficient approximation of attention that reduces the quadratic complexity."** It is not an approximation and it does not reduce FLOPs. FlashAttention computes *exactly* the same output as standard attention, bit-for-bit equivalent up to floating-point reassociation, and it performs the same $O(n^2 d)$ arithmetic. What it reduces is **memory traffic** — the number of reads and writes between the GPU's high-bandwidth memory (HBM) and its on-chip SRAM.
 
-**Why memory traffic is the bottleneck.** A modern GPU has roughly two orders of magnitude more arithmetic throughput than memory bandwidth. Attention is a *memory-bound* operation: the arithmetic per byte moved is low, so the matrix units sit idle waiting for data. Standard attention makes this worse than necessary by materializing intermediates in HBM:
+**Why it works.**
+
+**Why memory traffic is the bottleneck.** A modern GPU has roughly two orders of magnitude more arithmetic throughput than memory bandwidth. Attention is a *memory-bound* operation: the arithmetic per byte moved is low, so the matrix units sit idle waiting for data. It is a chef with an enormous kitchen and one narrow doorway to the pantry. Standard attention makes this worse than necessary by materializing intermediates in HBM:
 
 ```
 S = Q K^T          write n x n to HBM
@@ -8220,15 +9717,7 @@ P = softmax(S)     read n x n, write n x n
 O = P V            read n x n
 ```
 
-Three round trips of an $n\times n$ matrix per head. The size of that matrix is the problem:
-
-```
-seq=1024:   n^2 fp16 per head = 0.0021 GB;  x32 heads =    0.07 GB
-seq=8192:   n^2 fp16 per head = 0.1342 GB;  x32 heads =    4.29 GB
-seq=131072: n^2 fp16 per head = 34.36 GB;   x32 heads = 1099.51 GB
-```
-
-At 128K context the attention matrices alone would require a terabyte. That is why long context was impossible before this, and it is a memory problem, not a compute problem.
+Three round trips of an $n\times n$ matrix per head.
 
 **What FlashAttention does instead.** It tiles $Q$, $K$, and $V$ into blocks that fit in SRAM, and computes the output for a block of queries by streaming through blocks of keys and values, accumulating the result — never writing the $n \times n$ matrix anywhere. Two techniques make this possible.
 
@@ -8236,11 +9725,27 @@ At 128K context the attention matrices alone would require a terabyte. That is w
 
 *Recomputation instead of storage in the backward pass.* Rather than saving the $n\times n$ attention matrix for backprop, FlashAttention saves only the per-row softmax statistics $(m, \ell)$ — which are $O(n)$ — and recomputes the attention blocks on the fly. It spends *extra* FLOPs to avoid memory traffic, which is exactly backwards from ordinary optimization intuition and exactly right on this hardware.
 
-**The results.** Memory goes from $O(n^2)$ to $O(n)$ in sequence length. HBM accesses drop from $O(n^2 d)$ to roughly $O(n^2 d^2/M)$ where $M$ is the SRAM size — still quadratic in $n$, note, but divided by a large constant. The reported speedups are around 2-4x wall-clock for attention with substantially reduced memory. Crucially, **the output is exact**, so there is no accuracy trade-off to evaluate, no hyperparameter, and nothing to validate — you turn it on and the model is the same model. That is the property that made it universal, whereas approximate attention methods (Linformer, Performer, sparse patterns) required you to accept a quality cost and mostly did not stick.
+**The math, and what it buys you.**
+
+The size of the materialized matrix is the problem, and the numbers say why long context was impossible before this:
+
+```
+seq=1024:   n^2 fp16 per head = 0.0021 GB;  x32 heads =    0.07 GB
+seq=8192:   n^2 fp16 per head = 0.1342 GB;  x32 heads =    4.29 GB
+seq=131072: n^2 fp16 per head = 34.36 GB;   x32 heads = 1099.51 GB
+```
+
+At 128K context the attention matrices alone would require a terabyte. That is a memory problem, not a compute problem — which is precisely why the fix is a memory-schedule fix.
+
+**The results.** Memory goes from $O(n^2)$ to $O(n)$ in sequence length. HBM accesses drop from $O(n^2 d)$ to roughly $O(n^2 d^2/M)$ where $M$ is the SRAM size — still quadratic in $n$, note, but divided by a large constant. The reported speedups are around 2-4x wall-clock for attention with substantially reduced memory.
+
+**Good and bad.**
+
+*Good:* **the output is exact**, so there is no accuracy trade-off to evaluate, no hyperparameter, and nothing to validate — you turn it on and the model is the same model. That is the property that made it universal, whereas approximate attention methods (Linformer, Performer, sparse patterns) required you to accept a quality cost and mostly did not stick.
+
+*Bad / limits:* **What it is not.** It does not reduce the asymptotic $O(n^2)$ compute. It does not change the model, the weights, or the output. It is not an alternative to sparse or linear attention — those change the math; this changes the memory schedule. It is orthogonal to and composable with multi-query and grouped-query attention, which reduce the KV cache rather than the attention computation.
 
 The lineage: FlashAttention-2 improved the work partitioning across thread blocks and warps and cut non-matmul FLOPs; FlashAttention-3 targeted Hopper-generation hardware with asynchrony and FP8 support. **Time-sensitive:** the specific speedup multiples and the current version number date quickly and are hardware-specific — quote the mechanism, not a benchmark figure.
-
-**What it is not.** It does not reduce the asymptotic $O(n^2)$ compute. It does not change the model, the weights, or the output. It is not an alternative to sparse or linear attention — those change the math; this changes the memory schedule. It is orthogonal to and composable with multi-query and grouped-query attention, which reduce the KV cache rather than the attention computation.
 
 **Follow-up:** *If it does not reduce FLOPs, why is it faster?* → Because attention was never FLOP-limited. The matrix units were stalled waiting on HBM. Removing the stalls raises achieved utilization, so the same arithmetic finishes sooner. This is why the backward pass profitably recomputes: extra FLOPs are cheap, extra memory traffic is not.
 
@@ -8254,19 +9759,23 @@ Sources: [FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awar
 
 ### Q139: Explain speculative decoding, including why the output distribution is provably unchanged.
 
-**Answer:**
+> **In 30 seconds.** "Decoding is memory-bound — you read all the weights to produce one token — so a small draft model proposes about five tokens and the big model verifies all of them in one forward pass, which costs about the same as producing one. You accept each draft token with probability min(1, p/q), and on the first rejection you resample from the normalized positive part of p minus q. That's exactly lossless, because min(p,q) + max(0, p−q) = p."
 
-Autoregressive generation is memory-bound in exactly the way attention is. Producing one token requires reading every weight of the model from HBM, and the arithmetic done with those weights — a batch of one token — is trivial. The GPU is idle most of the time. If you could process several tokens per weight-read, you would get them almost for free.
+**The short version.**
 
-**The algorithm.** Keep two models: a small fast **draft** model $q$ and the large **target** model $p$ whose output distribution you must reproduce exactly.
-
-1. The draft model autoregressively generates $k$ candidate tokens $x_1 \ldots x_k$ (typically $k = 4$ to $8$). This is cheap because the draft is small.
-2. The target model runs **one forward pass over all $k$ candidates in parallel**, which costs about the same as generating one token, because that single pass is bounded by reading the weights, not by the arithmetic. This yields $p(\cdot \mid \text{prefix}, x_{<i})$ for every position $i$.
+1. The draft model $q$ autoregressively generates $k$ candidate tokens $x_1 \ldots x_k$ (typically $k = 4$ to $8$). This is cheap because the draft is small.
+2. The target model $p$ runs **one forward pass over all $k$ candidates in parallel**, which costs about the same as generating one token, because that single pass is bounded by reading the weights, not by the arithmetic. This yields $p(\cdot \mid \text{prefix}, x_{<i})$ for every position $i$.
 3. Walk left to right. Accept token $x_i$ with probability $\min\!\left(1, \frac{p(x_i)}{q(x_i)}\right)$.
 4. On the first rejection at position $i$, discard $x_i$ and everything after it, and sample a replacement from the **residual distribution** $p'(x) \propto \max(0,\; p(x) - q(x))$.
 5. If all $k$ are accepted, the target's own distribution at position $k+1$ gives you one extra free token.
 
 So each round produces between 1 and $k+1$ tokens for roughly the cost of one target forward pass.
+
+**Why it works.**
+
+Autoregressive generation is memory-bound in exactly the way attention is. Producing one token requires reading every weight of the model from HBM, and the arithmetic done with those weights — a batch of one token — is trivial. The GPU is idle most of the time. If you could process several tokens per weight-read, you would get them almost for free.
+
+**The math, and what it buys you.**
 
 **The correctness proof.** This is the part that separates a real answer from a sketch. Claim: the token emitted at each position is distributed exactly as $p$.
 
@@ -8304,6 +9813,8 @@ alpha=0.7 k=8: 3.199      alpha=0.8 k=8: 4.329      alpha=0.9 k=8: 6.126
 
 Note the diminishing returns in $k$: at $\alpha = 0.7$, going from $k=4$ to $k=8$ buys only $2.77 \to 3.20$ while doubling the draft cost. The optimal $k$ falls as $\alpha$ falls. Real end-to-end speedups are typically 2-3x, less than these numbers suggest because the draft model's own time and the verification overhead are not free.
 
+**Good and bad.**
+
 **When it works and when it does not.** It works when the draft agrees with the target often — which means on predictable text, code boilerplate, and formatting, and much less on genuinely hard reasoning tokens. It requires the draft to share the target's tokenizer. It hurts throughput under high batch load, because at large batch sizes the GPU is already compute-saturated and the wasted draft work is a real cost; speculative decoding is a *latency* optimization for low-batch serving, not a throughput one. That trade-off is the practical point worth volunteering.
 
 Variants worth naming: **Medusa** attaches extra prediction heads to the target model itself instead of using a separate draft; **EAGLE** drafts in feature space rather than token space for higher acceptance; **self-speculation** uses a subset of the target's own layers as the draft; and n-gram or prompt-lookup drafting simply copies from the prompt, which works remarkably well for summarization and code editing where output overlaps input.
@@ -8320,11 +9831,23 @@ Sources: [Fast Inference from Transformers via Speculative Decoding](https://ope
 
 ### Q140: How does knowledge distillation work, and when is it the right call?
 
-**Answer:**
+> **In 30 seconds.** "You train a small model to match a big model's output distribution instead of the hard labels. That works because the soft distribution carries what Hinton called dark knowledge — it says a seven looks a bit like a one and nothing like a cat, which one-hot labels throw away. For LLMs the version people actually run is sequence-level: have the teacher generate a corpus and fine-tune the student on it."
 
-Knowledge distillation trains a small **student** model to reproduce the behaviour of a large **teacher**, rather than training it from scratch on hard labels. The core insight, from Hinton, Vinyals and Dean (2015), is that the teacher's full probability distribution carries far more information than the correct answer alone.
+**The short version.**
+
+| Variant | What it matches | Where it's used |
+|---|---|---|
+| Response distillation | Output distributions | The classic Hinton setup |
+| Feature distillation | Intermediate hidden states (via a learned projection) | DistilBERT, TinyBERT |
+| Attention distillation | Attention maps | Transformer compression |
+| **Sequence-level distillation** | Teacher-generated text, plain cross-entropy | **Dominant for generative LLMs today** |
+| Self-distillation | Same architecture, teacher = student | Pure regularization effect |
+
+**Why it works.**
 
 **The mechanism.** A one-hot label tells the student "this is a 7." The teacher's distribution says "0.90 seven, 0.07 one, 0.02 nine, 0.001 cat" — which additionally encodes that sevens resemble ones, somewhat resemble nines, and are nothing like cats. Hinton called this the **dark knowledge**: a learned similarity structure over the output space that the hard label throws away. It also acts as a per-example difficulty signal, since an ambiguous example gets a high-entropy teacher distribution and is therefore softly weighted down.
+
+**The math, and what it buys you.**
 
 The problem is that a well-trained teacher's distribution is nearly one-hot, so the dark knowledge is buried in probabilities of $10^{-6}$ and contributes nothing to the gradient. The fix is **temperature**: divide the logits by $T > 1$ before the softmax,
 
@@ -8337,6 +9860,8 @@ $$\mathcal{L} = \alpha\, T^2 \cdot \mathrm{KL}\!\left(p_{\text{teacher}}^{(T)} \
 The $T^2$ factor is not decoration: softening the distribution scales the gradients of the KL term by roughly $1/T^2$, so multiplying by $T^2$ keeps the two loss terms comparably weighted as you tune $T$. Typical values are $T$ between 2 and 5 and $\alpha$ around 0.5 to 0.9. Forgetting the $T^2$ is a common bug that makes $T$ appear to have no effect.
 
 **Variants.** *Response distillation* matches output distributions, as above. *Feature distillation* additionally matches intermediate hidden states, usually through a learned projection to reconcile widths — this is what DistilBERT and TinyBERT do, and it transfers more signal than logits alone. *Attention distillation* matches attention maps. *Sequence-level distillation*, the dominant form for generative LLMs, simply has the teacher generate a large corpus of outputs and fine-tunes the student on them with ordinary cross-entropy — this is what "training on synthetic data from a bigger model" means, and it is by far the most commonly deployed variant today. *Self-distillation*, where student and teacher are the same architecture, still improves accuracy, which is a strong hint that the regularization effect matters independently of compression.
+
+**Good and bad.**
 
 **When it is the right call.** When you have a latency or cost budget that the large model cannot meet, and you have a large pool of unlabelled in-domain data — distillation needs inputs, not labels, so unlabelled data is enough and the teacher supplies the targets. When you need to specialize: a 7B student distilled from a frontier model on a *single* task routinely matches or beats the teacher on that task while being an order of magnitude cheaper, because it does not have to be good at everything. When you need on-device or edge deployment. And when you already have an expensive ensemble in production and want one model with most of its quality.
 
@@ -8351,18 +9876,31 @@ The $T^2$ factor is not decoration: softening the distribution scales the gradie
 > **Saying it out loud.** "You train a small model to match a big model's output distribution instead of the hard labels. The reason that works is the soft distribution carries what Hinton called dark knowledge — it tells you a seven looks a bit like a one and nothing like a cat, which one-hot labels throw away. You raise the softmax temperature to surface that structure and scale the loss by T-squared so the gradient magnitudes stay comparable. For LLMs the version people actually run is sequence-level: have the teacher generate a big corpus and fine-tune the student on it. It's the right call when you've got a latency budget and lots of unlabelled in-domain data — but I'd try quantization first, since it needs no training run at all."
 
 ---
-
 ### Q141: What is chain-of-thought, when does it help, and when does it hurt?
 
-**Answer:**
+> **In 30 seconds.** "A transformer does a fixed amount of computation per token, so if a problem needs more sequential steps than the model has layers, it can't do it in one pass. Generating intermediate tokens buys serial compute — each token gets its own forward pass and can attend to everything before it. So it helps wherever a human would want a scratchpad, and hurts on tasks that are holistic rather than deliberate."
+
+**The short version.**
+
+| Helps | Hurts |
+|---|---|
+| Multi-step arithmetic and word problems | Tasks where deliberation degrades humans too (verbal overshadowing) |
+| Symbolic manipulation and logic | Simple factual retrieval — adds latency and a chance to talk yourself out of it |
+| Multi-hop questions chaining retrieved facts | Latency- and cost-sensitive paths (output tokens dominate both) |
+| Planning and code generation | When it manufactures false confidence — the chain may not be the real reason |
+| Anything where a human wants a scratchpad | Small models: plausible-looking wrong reasoning, then commitment to it |
 
 Chain-of-thought (CoT) prompting is asking a model to produce intermediate reasoning steps before its final answer, instead of emitting the answer directly. In its original zero-shot form it is literally the phrase "Let's think step by step"; in the few-shot form you provide exemplars that show worked reasoning.
 
-**Why it works — the mechanical explanation, which is the one to give.** A transformer performs a fixed amount of computation per token: a fixed number of layers, each with a fixed width. If a problem requires more sequential computation than the depth of the network provides, the model cannot do it in one forward pass, full stop. Generating intermediate tokens is how a transformer buys additional serial compute — each generated token gets its own full forward pass, and it can attend to the tokens produced before it. Chain-of-thought converts a depth-limited problem into a length-unlimited one, effectively turning the model into a machine with a scratchpad. That framing also predicts the empirical finding that even semantically meaningless filler tokens can help slightly on some tasks, and it explains why CoT does essentially nothing on tasks that were already within a single forward pass.
+**Why it works.**
+
+**The mechanical explanation, which is the one to give.** A transformer performs a fixed amount of computation per token: a fixed number of layers, each with a fixed width. If a problem requires more sequential computation than the depth of the network provides, the model cannot do it in one forward pass, full stop. Generating intermediate tokens is how a transformer buys additional serial compute — each generated token gets its own full forward pass, and it can attend to the tokens produced before it. Chain-of-thought converts a depth-limited problem into a length-unlimited one, effectively turning the model into a machine with a scratchpad. That framing also predicts the empirical finding that even semantically meaningless filler tokens can help slightly on some tasks, and it explains why CoT does essentially nothing on tasks that were already within a single forward pass.
 
 A secondary effect: intermediate steps condition subsequent generation, so having written "the total is 47" makes the model far more likely to use 47 consistently downstream than if it had to hold it implicitly.
 
 **When it helps.** Multi-step arithmetic and word problems. Symbolic manipulation and logic. Multi-hop questions that require chaining retrieved facts. Planning and code generation, where laying out the structure first improves the output. Anything where a human would need a scratchpad is the reliable heuristic. The original result was also strongly *emergent with scale* — small models get little benefit or are actively harmed, because they generate plausible-looking reasoning that is wrong, and then commit to it.
+
+**Good and bad.**
 
 **When it hurts.** This is the more interesting half and where the good answers separate.
 
@@ -8390,9 +9928,19 @@ Sources: [Mind Your Step (by Step): Chain-of-Thought can Reduce Performance on T
 
 ### Q142: What is an agent, and how is it actually different from a chatbot with tools?
 
-**Answer:**
+> **In 30 seconds.** "The difference is who's driving the loop. With a chatbot that has tools, my application code controls the flow — model calls a tool, I execute it, hand back the result, done. With an agent, the model decides what to do next and when it's finished, so the number of steps isn't known up front. That buys flexibility and costs predictability, cost control, and testability."
 
-The distinction is **who controls the loop**, and that is the whole answer. Everything else follows.
+**Core differences.**
+
+| | Chatbot with tools | Agent |
+|---|---|---|
+| **Who controls the loop** | The application | The model |
+| **Number of steps** | Fixed or shallowly bounded | Unbounded a priori — the model decides when to stop |
+| **State across steps** | Returns to the user each turn | Accumulates; must be managed against the context window |
+| **Error recovery** | Your error-handling code | The model's job — it reads the error as an observation |
+| **Side effects** | One visible action per turn | Many actions the user never individually approved |
+
+**Why it works.**
 
 In a chatbot with tools — sometimes called single-turn function calling — the *application* controls the flow. The user asks something, the model may emit a tool call, the application executes it, feeds the result back, and the model produces a reply. The number of steps is fixed or shallowly bounded, the control flow is written in your code, and every turn returns to the user. It is a request-response system with a model in the middle.
 
@@ -8408,6 +9956,8 @@ That shift has four concrete consequences, and naming them is what makes the ans
 
 **Actions have consequences the user did not individually approve.** A chatbot with tools acts once, visibly. An agent may take fifty actions, some of them writing to systems, before returning. This is why permission models, allow-lists of side-effecting tools, and human-in-the-loop checkpoints on irreversible actions are architectural requirements rather than nice-to-haves.
 
+**Good and bad.**
+
 **The spectrum, and why a purist definition is wrong.** In practice these are not two categories but a continuum, and it is worth saying so: fixed prompt chain, then a router that picks one of $n$ paths, then a bounded loop with a step cap, then an open-ended loop, then multi-agent systems where one agent delegates to others. Each step up the ladder buys flexibility and costs predictability, cost control, and testability.
 
 **The genuinely important corollary: prefer the least agentic thing that solves the problem.** If your task is "extract fields from an invoice," that is a prompt, not an agent — an agent will cost 20x as much, take 30 seconds instead of 2, and fail in more interesting ways. Agents earn their overhead when the sequence of steps genuinely cannot be known in advance: debugging, open-ended research, and any task where step $n$ depends on what step $n-1$ discovered. Interviewers ask this question partly to see whether you reach for the most complex architecture by default.
@@ -8422,7 +9972,20 @@ That shift has four concrete consequences, and naming them is what makes the ans
 
 ### Q143: How do you stop an agent loop from running forever or costing unbounded money?
 
-**Answer:**
+> **In 30 seconds.** "Layered limits, all enforced in the harness and never in the prompt — a prompt is a request, a harness limit is a guarantee. Max steps, wall-clock deadline, token budget, and two dollar caps: one per run and one rolling per-hour on the account, because a per-run cap does nothing when a bug is spawning a thousand runs. Then loop detection, which in practice is more useful than the step cap."
+
+**The short version.**
+
+| Layer | Mechanism | Blind spot it doesn't cover |
+|---|---|---|
+| Hard limits | Max iterations, wall-clock deadline, token budget, tool-call counts | One enormous tool result blowing context and cost |
+| Cost limits | Per-run cap **and** rolling per-hour account cap; alert on spend *rate* | Slow, steady, useless progress |
+| Loop detection | Hash (tool, normalized args); cycle and no-progress checks | Varied but pointless actions |
+| Progress requirements | Stated goal, checked-off subgoals, escalate after $k$ idle steps | — |
+| Structural limits | Sub-agent recursion depth and spawn count; retries with terminal errors | — |
+| Graceful degradation | Return partial work with what was and wasn't completed | — |
+
+**Why it works.**
 
 An agent decides for itself when to stop, so "when to stop" is a property of your system, not of the model. Every production agent needs layered limits, and the right answer here is a list of independent mechanisms — because any single one can be defeated by a sufficiently confused model.
 
@@ -8435,6 +9998,8 @@ An agent decides for itself when to stop, so "when to stop" is a property of you
 **Progress requirements.** Require the agent to state a goal and check off subgoals; if no subgoal has been completed in $k$ steps, escalate. This turns "am I looping?" into a measurable condition rather than a heuristic.
 
 **Structural limits on the loop's shape.** Cap recursion depth for sub-agents, and cap the total number of sub-agents spawned across a run — an agent that can spawn agents is a fork bomb waiting for a bad prompt. Cap retries per tool with exponential backoff, and after the cap return a *terminal* error the model cannot retry, rather than the same transient error again.
+
+**Good and bad.**
 
 **Graceful degradation, which matters for user experience.** When a limit is hit, do not just error out. Return the partial work with an explicit statement of what was completed and what was not, so the user gets something and can decide whether to continue. An agent that burned \$4 and returns nothing is worse than one that burned \$4 and returns three of five findings.
 
@@ -8452,9 +10017,17 @@ An agent decides for itself when to stop, so "when to stop" is a property of you
 
 ### Q144: What is the single biggest practical failure mode of agents in production?
 
-**Answer:**
+> **In 30 seconds.** "Compounding error over a long horizon. If each step is 95% reliable — better than most tool setups get — then twenty steps is 0.95 to the twentieth, about 36%, and fifty steps is under 8%. That's why demos work and products don't. And it's worse than the arithmetic, because errors aren't independent: one wrong belief lands in the context and poisons everything after it."
 
-**Compounding error over a long horizon.** Every other failure mode is either a special case of it or much easier to fix.
+**The short version.**
+
+- **The failure:** compounding error over a long horizon. Every other agent failure is a special case or much easier to fix.
+- Errors are **absorbing**, not independent — a corrupted premise poisons all downstream reasoning.
+- **Recognizing failure** is the weak capability: models do things better than they notice they did the wrong thing.
+- **Context degrades** over many steps: signal-to-noise falls, the original instruction recedes.
+- **The fix is architectural, not a better model:** shorten the horizon, verify externally, make failure loud.
+
+**Why it works.**
 
 **The arithmetic that makes it vivid.** If each step of an agent succeeds independently with probability $p$, the probability of completing $n$ steps is $p^n$. At $p = 0.95$ — which is a genuinely good per-step reliability, better than most tool-calling setups achieve — the probability of a clean 20-step run is $0.95^{20} = 0.358$. At 50 steps, $0.95^{50} = 0.077$. A model that is right 95% of the time fails two out of three moderately long tasks.
 
@@ -8469,6 +10042,8 @@ This is why agent demos work and agent products do not. A demo is five steps: $0
 *Context degradation.* Over many steps the context fills with tool outputs, errors, and retries. The signal-to-noise ratio falls, the original instruction recedes, and the model starts attending to the clutter — drifting from the goal, re-doing completed work, or losing a constraint stated at the top. Compaction helps and also loses information, so it trades one failure for another.
 
 **The visible symptoms, all downstream of this.** Getting stuck in a repeated tool call. Confidently reporting success on a task that was not done — the worst one, because it is silent. Drifting from the original objective. Cost blowing up as the agent flails.
+
+**Good and bad.**
 
 **What actually mitigates it.** Not "a better model," though that helps; the fixes are architectural.
 
