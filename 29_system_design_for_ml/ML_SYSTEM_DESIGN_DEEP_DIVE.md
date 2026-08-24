@@ -7,7 +7,6 @@ This part gives you three things. First, a picture of what the interview round a
 The assumption behind this rewrite is that you are strong on the ML and thin on the production plumbing. That is the normal shape of a research background. The plumbing is not deep; it is just unfamiliar, and nobody ever sat you down and explained it. Section C does that.
 
 ---
-
 ## Section A. How to read this, and how the round works
 
 ### What the round actually is
@@ -253,190 +252,241 @@ That paragraph is essentially the skeleton of every worked design in Parts 2 and
 
 ### Requirements and assumptions
 
-**Assume, for the rest of this answer:** we optimize expected watch time per impression, with day-7 and day-28 retention as experiment guardrails. Roughly 2.5 billion monthly logged-in users (this is the publicly reported figure; I am treating it as approximately right rather than exact) and about one billion home-feed loads per day. Corpus of one billion servable videos. Budget: 150 ms end-to-end at p99 for the recommendation call. Output: a ranked list of 50, of which the client shows about 20 above the fold. New uploads should be reachable within roughly an hour. Policy filters are hard filters.
+I will design the logged-in home feed. I will optimize expected watch time per impression. However, watch time is only a proxy for satisfaction. Therefore, I will use day-7 and day-28 retention as guardrails.
+
+I will assume 2.5 billion monthly users, one billion feed requests per day, and one billion available videos. The service must return 50 ranked videos within 150 ms at p99. The client displays about 20 videos above the fold. New uploads must become reachable within one hour. Safety and policy rules are hard filters.
 
 ### Step 2 — Frame it as an ML problem
 
-Start by writing down the unit of prediction, because everything downstream is determined by it. The unit here is an **impression**: one (user, video, context) triple at one moment in time. Context means time of day, device, app surface, and network conditions. For each impression we want a number that lets us sort — and the number we choose is expected watch time if this video were shown to this user right now.
+The prediction unit is one `(user, video, context)` impression. Context includes the device, locale, time, network quality, and recent session activity.
 
-Now the label. YouTube does not have a "did the user want this" label; it has logs. The logs record that video $v$ was shown to user $u$ at position $k$ and that the user either did nothing, or clicked and watched for $t$ seconds. So the label has to be constructed. The natural construction is: a positive example is an impression that led to a watch of at least some minimum duration, and the *value* of that positive is the watch time. The classic published approach from YouTube's own 2016 paper is elegant and worth knowing by name: they train **weighted logistic regression** on the final layer, where positive impressions are weighted by their observed watch time and negatives get weight one. Under that weighting, the learned odds $\frac{p}{1-p}$ come out approximately equal to expected watch time — because the positives have been inflated in proportion to how long they were watched — so at serving time they simply exponentiate the logit, $e^{Wx+b}$, and use it directly as a watch-time estimate. This is a nice trick to be able to state: it lets a classification model produce a regression-like quantity.
-
-Three things are wrong with this label, and naming them is most of the points on this step.
-
-The first pathology is that the label is **implicit**, meaning it is inferred from behaviour rather than stated. A user who watches ten minutes of a video may have loved it or may have left the tab open. A user who watches ten seconds may have hated it or may have gotten exactly the answer they needed. Implicit labels are noisy in a way that is systematic rather than random, and no amount of data fixes systematic noise.
-
-The second is that the label is **only observed on what the system chose to show**. You have watch time for the videos that were recommended, and nothing at all for the billion that were not. This is the fundamental feedback loop of recommenders: today's model determines tomorrow's training data. If the model never shows cooking videos to a user, it will never learn that the user likes cooking videos, and the absence of evidence looks exactly like evidence of absence. This is why exploration is not a nice-to-have in this system, it is a data-collection requirement.
-
-The third is **position bias**: a video shown in the first slot gets clicked far more than the same video shown in the twentieth slot, purely because of where it sat. If you train naively on raw clicks, the model learns "things that appeared at the top get clicked" and, since those were the things the previous model liked, it learns to imitate the previous model. I will come back to how to correct this in Step 4, and Design 2 treats it in full because search is where it bites hardest.
-
-Having fixed the framing, note what it constrains. Because the target is expected watch time and not relevance, you need a ranker that outputs a *calibrated* real number, not just a good ordering. **Calibration** means that the number the model emits corresponds to reality: if the model says fifty seconds, the average realized watch time on such impressions should be about fifty seconds. Pure ranking quality does not require this, but combining multiple objectives does — you cannot take a weighted sum of a click probability and a watch-time estimate if neither is on a meaningful scale. This one framing decision has already forced a multi-task, calibrated ranker, and we have not drawn a box yet.
-
-### Step 3 — The data
-
-**Features about the user.** The strongest signal by far is watch history — the sequence of videos this person has watched, in order, with dwell times. Sequence matters: someone who just watched three videos about guitar pedals is in a different state than someone who watched them last March. So represent history two ways. Long-term interests become a dense vector summarizing months of behaviour, refreshed daily. Short-term intent becomes the last 20 to 50 watched video IDs, fed as a sequence into the model and refreshed within seconds of each action. Alongside these sit stable attributes — country, language, device class, account age — and request context.
-
-The word **embedding** is going to appear constantly, so pin it down here. An embedding is a fixed-length vector of numbers that stands in for a discrete thing. A video ID is just an arbitrary integer, and integers have no useful geometry — video 5 is not "between" videos 4 and 6. So we learn a vector for each video, say 256 floating-point numbers, such that videos watched in similar contexts end up with vectors close together. The mapping from ID to vector is stored in an **embedding table**: literally a big matrix with one row per ID, whose rows are learned parameters updated by gradient descent like any other weight. Once things are vectors, "similar" becomes a dot product, and dot products are something hardware is extremely good at.
-
-Embedding tables at this scale are the single biggest memory cost in the system. A billion video IDs at 256 dimensions in 32-bit floats is $10^9 \times 256 \times 4 = 1.02 \times 10^{12}$ bytes, roughly a terabyte, for one table. You control this two ways. **Hashing** maps IDs into a fixed number of buckets — say $2^{24}$ ≈ 16.8 million rows — via a hash function, so the table size stops depending on vocabulary size. The cost is collisions: two unrelated videos land on the same row and share a vector. In practice collisions are tolerable for tail items (which have little data anyway) and intolerable for head items, so a common design keeps an explicit table for the top few million IDs and hashes the rest. The second lever is simply cutting precision: 16-bit floats halve the table, and quantizing to 8-bit integers quarters it.
-
-**Features about the video.** Metadata is cheap and useful: channel, upload time, duration, language, topic taxonomy. Content features come from the media itself — a text encoder over title and description, a vision encoder over the thumbnail and sampled frames, an ASR transcript. These matter most for new videos, which have no behavioural data at all. Engagement priors — historical click-through rate, average watch-through fraction, like rate — are extremely predictive and extremely dangerous, for reasons in the leakage discussion below.
-
-**Cross features** are features that combine user and item rather than describing either alone. "How many videos from this channel has this user watched in the past 30 days" is a cross feature, as is "cosine similarity between the user's topic vector and this video's topic vector." They are the highest-value features in the ranker and, by construction, they cannot be precomputed per user or per video — there are $10^9 \times 10^9$ possible pairs. They must be computed at request time for the surviving candidates only, which is one of the main reasons the pipeline has two stages.
-
-**Freshness tiers.** Be explicit that different features update on different clocks, because interviewers probe this. Stable user attributes are computed in a nightly batch. Long-term interest vectors are recomputed daily. Short-term watch sequences must be within seconds, which means they come off a streaming pipeline rather than a batch job. Video engagement priors update every few minutes. Video content embeddings are computed once at upload and essentially never change.
-
-**Leakage, explained rather than named.** Leakage is when a feature available at training time encodes information that would not have been available at prediction time, so the model looks brilliant offline and collapses in production. Three specific traps here.
-
-The first is engagement priors computed over the wrong window. If your training row for an impression on Tuesday uses the video's lifetime average watch time — computed from a table built last week, which includes Tuesday's watches — then the feature already contains the answer. The model learns "videos with high average watch time get watched a lot," which is true and useless, because at serving time you only have the average up to *now*. The fix is **point-in-time correctness**: every feature value in a training row must be the value as of that row's timestamp. This is exactly what a feature store is for, and Part 1 covers feature stores properly; the one-line version is that it is a system storing feature values with their valid-from timestamps so training can reconstruct history and serving can read the latest.
-
-The second trap is post-click features. Number of comments the user left, whether they subscribed after watching, whether they hit like — all of these are consequences of the outcome you are predicting. They are trivially predictive and completely unusable.
-
-The third is the train/test split. Splitting impressions randomly means an impression from Wednesday can be in train while a different impression from Tuesday is in test, and the model has effectively seen the future. Always split by time: train on a window, validate on the days after it. And when you care about generalizing to new users, split by user as well, so the same user's rows do not appear on both sides.
-
-### Step 4 — The architecture
-
-Walk it as a story. A request arrives from a phone. It carries a user ID, a device, a locale, and a timestamp, and it needs 50 videos back in under 150 milliseconds.
-
-**First stop: the feature service.** This is a low-latency key-value store — Redis or an internal equivalent, described properly in Part 1 — holding precomputed user state keyed by user ID. One read returns the long-term interest vector, the demographic block, and the recent-watch sequence. Budget 5 ms. If this read fails, you do not fail the request; you fall back to a locale-level default profile and continue, which will produce a generic but non-empty feed.
-
-**Second stop: candidate generation.** This is the stage that reduces one billion to about one thousand, and it is the stage that must be cheap. The distinction between **candidate generation and ranking** is the backbone of the whole design: candidate generation optimizes *recall* — did the good videos survive into the shortlist — using a model cheap enough to run against the entire corpus. Ranking optimizes *precision at the top* — of the survivors, which order is best — using a model expensive enough that it could never be run on a billion items. Recall errors at stage one are unrecoverable: a video that does not make the shortlist has zero chance of being shown no matter how good the ranker is.
-
-The workhorse here is a **two-tower model**, and this is the term the reader must be able to say out loud. Picture two separate neural networks. The left tower takes everything about the user — history sequence, interests, context — and outputs a single 256-dimensional vector. The right tower takes everything about a video — content, metadata, priors — and outputs a 256-dimensional vector in the same space. The predicted affinity between a user and a video is just the dot product of the two vectors. The towers never see each other's inputs; they only meet at that final dot product. That restriction is the entire point. Because the video tower's output does not depend on the user, you can run it offline over all one billion videos and store the results. At request time you only run the user tower once, then find which of the billion stored vectors have the largest dot product with it — a pure geometry problem, no neural network involved. A model where user and item features are mixed together in early layers (a **cross-encoder**, which we will meet in Design 2) is more accurate and cannot be precomputed, so it is unusable at this stage.
-
-Training a two-tower model needs negatives, and this is where the jargon cluster lives. For an impression where the user watched video $v$, the positive pair is $(u, v)$. What are the negatives? The cheapest and most widely used answer is **in-batch negatives**: take a training batch of, say, 8192 (user, watched-video) pairs, and for each user treat the *other* 8191 videos in that batch as negatives. You get thousands of negatives essentially for free because those video vectors were already computed for their own rows. The loss you then apply is **sampled softmax**. The ideal loss would be a softmax over the entire billion-video corpus — "of all videos in existence, how much probability mass does the model put on the one actually watched" — which requires normalizing over a billion dot products and is computationally impossible. Sampled softmax approximates it by normalizing over the true positive plus a sample of negatives (here, the batch), with a correction term. Concretely, with a batch of pairs $(u_i, v_i)$ and scores $s(u,v)$ equal to the dot product, the loss is
+For each candidate, the ranker predicts:
 
 $$
-\mathcal{L} = -\frac{1}{B}\sum_{i=1}^{B} \log \frac{\exp\!\big(s(u_i, v_i)/\tau\big)}{\sum_{j=1}^{B} \exp\!\big(s(u_i, v_j)/\tau - \log q(v_j)\big)}
+P(\text{click}),\quad \mathbb{E}[\text{watch time}],\quad
+P(\text{like}),\quad P(\text{hide}).
 $$
 
-where $\tau$ is a temperature and $q(v_j)$ is the sampling probability of video $j$. That $-\log q(v_j)$ term is not decoration and interviewers ask about it. Because negatives are drawn from the batch, and batches are drawn from impression logs, popular videos appear as negatives far more often than rare ones. Without correction the model learns to systematically downweight popular items, which is the opposite of what you want. Subtracting $\log q$ — the **logQ correction**, estimable from a streaming frequency counter — removes that bias.
-
-In-batch negatives alone produce a model that is good at a job you do not need: separating a watched video from a random video. Random videos are in the wrong language, the wrong topic, the wrong everything, so the model can win by learning coarse features and stop improving. What you actually need is to separate a good video from a plausible-but-wrong one. That is **hard negative mining**: deliberately adding negatives that are difficult. Two sources are cheap and effective. Impressed-not-clicked items are genuine hard negatives — the previous model thought they were good and the user disagreed. And you can mine them from the model itself: periodically retrieve the top few hundred items for a user, remove anything they actually engaged with, and sample negatives from what remains. A practical recipe is to keep in-batch negatives as the bulk and mix in a modest fraction of hard negatives, because training on hard negatives alone destabilizes and can collapse the embedding space.
-
-Once trained, the video tower is run over the corpus offline and the resulting billion vectors are loaded into an **ANN index**. ANN stands for approximate nearest neighbour: given a query vector, return the vectors with the largest dot product, accepting that you might miss a few in exchange for being orders of magnitude faster than checking all one billion. Two structures matter.
-
-**HNSW** — Hierarchical Navigable Small World — builds a multi-layer graph over the vectors. Each vector is a node connected to a few dozen neighbours; upper layers are sparse and let you take long jumps across the space, lower layers are dense and let you refine. A search enters at the top, greedily walks toward the query, drops a layer, walks again. It is very fast and gives excellent recall, but it stores the full vectors plus the graph edges in RAM, so memory is the constraint. **IVF-PQ** — inverted file with product quantization — takes the other trade. IVF clusters the corpus into, say, 100,000 cells by k-means; at query time you only search the handful of cells nearest the query, ignoring the rest. PQ compresses each vector by chopping it into subvectors and replacing each with the ID of the nearest entry in a small learned codebook, turning a 1 KB vector into perhaps 64 bytes. Recall drops somewhat, memory drops enormously. The rule of thumb worth stating: HNSW when the index fits comfortably in RAM, IVF-PQ (or a hybrid where HNSW indexes the cluster centroids) at billion scale.
-
-Run the arithmetic out loud, because this is where the interviewer checks whether you actually think in numbers. One billion vectors at 256 dimensions in fp32 is about 1 TB. Cast to fp16 and it is 512 GB. HNSW with 32 neighbours per node adds $10^9 \times 32 \times 4 = 128$ GB of edges, so a full-fidelity HNSW index is ~640 GB — feasible only sharded across machines. With PQ at 64 bytes per vector the raw vectors are 64 GB, which fits on a single large host, and shards then exist for throughput rather than capacity. Either way you shard: partition the corpus across $N$ machines, query all of them in parallel, and merge the top-$k$ from each. Ten shards each returning their top 100 gives 1000 candidates from which you keep the global top 500.
-
-The two-tower retriever is not the only candidate source, and saying so scores well because it shows you understand that one model cannot cover every need. Run several in parallel and union the results. Subscriptions retrieval is a straight database query — recent uploads from channels this user subscribed to — and it exists because users are furious when subscribed content does not appear, regardless of what the model thinks. Trending retrieval pulls the top items per region and language from a counter refreshed every few minutes, covering breaking events the model has never seen. A collaborative-filtering source based on item-to-item co-watch statistics gives cheap, high-quality "people who watched this also watched" candidates and is robust when embeddings drift. A fresh-content source deliberately surfaces uploads from the last few hours to solve item cold start — new videos have no engagement priors, so if you do not force exposure they never accumulate any, and the system can never learn whether they were good. Union, deduplicate, and hand roughly 1000 to 1500 candidates to the ranker.
-
-**Third stop: feature hydration.** Now that the candidate set is small, fetch the expensive per-candidate features and compute the cross features that were impossible at billion scale. This is a batched multi-get against the feature store plus some arithmetic. Budget 15 ms.
-
-**Fourth stop: ranking.** The ranker sees roughly 1000 (user, video, context) rows and must produce calibrated scores. The standard architecture family is **DLRM**-style — Deep Learning Recommendation Model, Meta's published design, which has become the generic name for this shape. Sparse categorical features (user ID, video ID, channel ID, topic ID) go through embedding tables and come out as dense vectors. Genuinely numeric features (video age in hours, historical CTR, watch counts) go through a small MLP. The two are then combined by explicit **feature interactions**: DLRM takes pairwise dot products between every pair of embedding vectors, which is a compact way of asking "does this user's country interact with this video's language" without hand-writing that rule.
-
-That interaction step deserves a moment, because **feature crosses** are the concept the whole family is built around. A cross is the conjunction of two categorical features treated as a single new feature — not "country = Bangladesh" and "language = Bengali" separately, but the pair together. Linear models cannot represent conjunctions; they can only add up independent contributions. Historically you hand-engineered crosses and fed them to a linear model, which memorizes well but generalizes not at all (an unseen cross has no weight). **Wide-and-deep**, Google's 2016 design, is the direct response: a wide linear part over hand-crossed sparse features handles memorization of specific known-good combinations, a deep part over embeddings handles generalization to combinations never seen, and both are trained jointly to a single output. DLRM's dot-product interaction layer and DCN's explicit cross layers are later, more automatic ways of getting the same effect without a human writing out the crosses. Any of these three is a defensible answer; what matters is that you can say *why* interactions need special treatment.
-
-On top sits a **multi-task** head: several output heads sharing the same trunk. One predicts probability of click given impression, one predicts probability of watching past half the video given a click, one predicts like, one predicts a "not interested" or hide signal, and one regresses expected watch time. Sharing a trunk means the abundant click data helps the sparse like data learn better representations. Real systems use gated mixtures of experts — YouTube's published multi-task ranker uses Multi-gate Mixture-of-Experts — so that tasks which conflict can route to different expert subnetworks instead of fighting over one shared trunk.
-
-The final score is a combination such as
+A possible final score is:
 
 $$
-\text{score} = \big(p_{\text{click}}\big)^{\alpha} \cdot \big(\mathbb{E}[\text{watch time}]\big)^{\beta} \cdot \big(1 + \gamma \, p_{\text{like}}\big) \cdot \big(1 - \delta \, p_{\text{hide}}\big)
+\text{score}
+=
+P(\text{click})^\alpha
+\cdot \mathbb{E}[\text{watch time}]^\beta
+\cdot \left(1+\gamma P(\text{like})\right)
+\cdot \left(1-\delta P(\text{hide})\right).
 $$
 
-with exponents and weights tuned not by gradient descent but by online experiments, because they encode a product judgment about how much satisfaction is worth relative to consumption. Be honest in the interview that these are policy dials, not learned parameters.
+The weights $\alpha$, $\beta$, $\gamma$, and $\delta$ represent product priorities. I would tune them with online experiments.
 
-Position bias gets handled inside this model with a **shallow tower**: a small side network that takes only bias features — the position the item was shown at, the device, the surface — and whose output is added to the main logit during training, then dropped at serving. The main tower is thereby freed from having to explain away position, because the shallow tower absorbs it. Training with position and serving with position set to a constant is the practical recipe.
+YouTube's published 2016 approach used weighted logistic regression. Positive impressions were weighted by observed watch time. Negative impressions had weight one. Under this training method, the odds approximate expected watch time:
 
-**Fifth stop: the reranker.** The ranker's top 50 by score is usually a bad feed, because score-optimal lists are repetitive — five videos from the same channel about the same topic. The reranker enforces the things that are about the list rather than about any item: cap the number of items per channel and per topic in the top 20, apply hard policy filters, apply a modest freshness boost, and reserve a small number of slots for exploration. Exploration means deliberately showing items the model is uncertain about, using something like Thompson sampling — sample from the model's posterior over the item's value rather than using the mean, so items with wide uncertainty occasionally win a slot. This is the mechanism that breaks the feedback loop from Step 2. Budget 5 ms.
+$$
+\mathbb{E}[\text{watch time}] \approx \frac{p}{1-p}=e^{Wx+b}.
+$$
 
+This method lets a classification model produce a regression-like watch-time estimate.
+
+The labels have three main problems. First, watch time is an implicit and noisy satisfaction signal. Second, outcomes exist only for videos that the current system showed. This creates a feedback loop. Third, higher positions receive more clicks even when relevance is unchanged. This creates position bias. Therefore, the system needs exploration, position-bias correction, and long-term guardrails.
+
+### Step 3 — Data and features
+
+User features include long-term interests, the last 20–50 watched videos, language, country, device type, and account age. I would refresh long-term interests daily. I would update recent watch history within seconds because it represents current intent.
+
+Video features include channel, age, duration, language, topic, title, description, thumbnail, sampled frames, and speech transcript. Content features are critical for new videos because new videos have no engagement history.
+
+Cross features combine user and video information. Examples include the number of videos this user watched from this channel and the cosine similarity between the user-interest vector and the video vector. These features depend on both sides. Therefore, I compute them only after candidate retrieval.
+
+Every training feature must be point-in-time correct. For an impression at time $t$, the training row can use only information available before $t$. Otherwise, future engagement leaks into training. I would also split training and evaluation data by time.
+
+### Step 4 — Architecture
+
+The system uses retrieval followed by ranking. Retrieval reduces one billion videos to about 1,000–1,500 candidates. Ranking applies a more expensive model to those candidates. A final reranker constructs the list.
+
+The main candidate source is a two-tower model. The user tower converts the user and context into a 256-dimensional vector. The video tower converts each video into a vector in the same space. The affinity score is:
+
+$$
+s(u,v)=e_u^\top e_v.
+$$
+
+The video vector does not depend on the user. Therefore, I compute video vectors offline and store them in an approximate nearest-neighbor, or ANN, index. At request time, I run the user tower once and search the index.
+
+I would train the two-tower model with in-batch negatives and sampled softmax. In a batch of $B=8192$ positive user-video pairs, each user receives one positive and up to 8,191 negatives without extra video-encoder calls. I would apply logQ correction because popular videos occur more often in the batch. I would also add hard negatives, such as videos that were shown but not clicked and high-scoring videos that the user did not watch.
+
+At one billion videos, the ANN index probably needs IVF-PQ or a hybrid design. One billion 256-dimensional FP16 vectors require:
+
+$$
+10^9 \times 256 \times 2 = 512\text{ GB}.
+$$
+
+An HNSW graph with 32 four-byte neighbor IDs per item adds:
+
+$$
+10^9 \times 32 \times 4 = 128\text{ GB}.
+$$
+
+The total is about 640 GB before replication. Product quantization can reduce each vector to about 64 bytes. This reduces raw vector storage to about 64 GB, but it lowers ANN recall.
+
+I would not depend on one retrieval source. I would also retrieve videos from subscribed channels, regional trending lists, co-watch neighbors, and a fresh-content exploration source. These sources run in parallel. I would merge and deduplicate their results.
+
+After retrieval, the system fetches video and cross features for about 1,000 candidates. The ranker can use a DLRM or DCN architecture with Multi-gate Mixture-of-Experts, or MMoE, task heads. It predicts click, watch time, watch-through, like, and hide. A shallow bias tower can absorb position effects during training. I would remove that tower, or set position to a constant, during serving.
+
+The final reranker limits repeated channels and topics. It also applies safety rules, freshness, already-watched filtering, and exploration. Exploration is required because the model cannot learn about videos it never shows.
+
+#### Online and offline architecture
+
+```text
+ Home-feed request
+ (user_id, device, locale, timestamp)
+                    |
+                    v
+ +-------------------------------------+
+ | API GATEWAY / FEED SERVICE          |
+ | Authentication and request parsing  |
+ +------------------+------------------+
+                    |
+                    v
+ +-------------------------------------+
+ | USER FEATURE SERVICE                |  ~5 ms
+ | Long-term interests                 |
+ | Last 20-50 watched videos           |
+ | Language, country, device, session  |
+ +------------------+------------------+
+                    |
+                    | user vector + context
+                    v
+ +-------------------------------------------------------------+
+ |              PARALLEL CANDIDATE RETRIEVAL                   |
+ |                                                             |
+ | +----------------+ +--------------+ +--------------------+  |
+ | | TWO-TOWER ANN  | |SUBSCRIPTIONS | | REGIONAL TRENDING  |  |
+ | | user tower     | |new videos    | |fast-growing videos |  |
+ | | -> 256-D vector| |from followed | |by language/region  |  |
+ | | -> HNSW/IVF-PQ | |channels      | |                    |  |
+ | | ~500 candidates| | ~200         | | ~100               |  |
+ | +----------------+ +--------------+ +--------------------+  |
+ |                                                             |
+ | +----------------+ +--------------------------------------+ |
+ | | CO-WATCH / CF  | | FRESH-CONTENT EXPLORATION            | |
+ | | item neighbors | | new videos with little history       | |
+ | | ~200 candidates| | ~100 candidates                      | |
+ | +----------------+ +--------------------------------------+ |
+ +---------------------------+---------------------------------+
+                             |
+                             | ~1,100 candidates
+                             v
+ +-------------------------------------+
+ | MERGE, DEDUPLICATE, HARD FILTERS    |  ~3 ms
+ | Policy, region, availability        |
+ | Remove seen and duplicate videos    |
+ | Output: ~1,000 candidates           |
+ +------------------+------------------+
+                    |
+                    v
+ +-------------------------------------+
+ | CANDIDATE FEATURE HYDRATION         |  ~15 ms
+ | Video features and cross features   |
+ +------------------+------------------+
+                    |
+                    v
+ +-------------------------------------+
+ | MULTI-TASK RANKER                   |  ~50 ms
+ | DLRM/DCN + MMoE                     |
+ | P(click), E[watch time], P(like),   |
+ | P(watch-through), P(hide)           |
+ | Training-only position-bias tower   |
+ +------------------+------------------+
+                    |
+                    | top ~200
+                    v
+ +-------------------------------------+
+ | LIST-LEVEL RERANKER                 |  ~5 ms
+ | Diversity, freshness, policy,       |
+ | exploration, near-duplicate removal |
+ +------------------+------------------+
+                    |
+                    v
+ +-------------------------------------+
+ | RESPONSE: 50 VIDEOS                 |  ~5 ms
+ +------------------+------------------+
+                    |
+                    v
+ +-------------------------------------+
+ | EVENT LOG                           |
+ | Impressions, positions, scores,     |
+ | feature snapshots, actions, labels  |
+ +------------------+------------------+
+                    |
+                    v
+ +-------------------------------------+
+ | OFFLINE TRAINING PIPELINE           |
+ | Point-in-time features              |
+ | Train retriever and ranker          |
+ | Build versioned ANN index           |
+ | Evaluate -> registry -> deployment  |
+ +-------------------------------------+
 ```
-                       home-feed request (user_id, device, locale, ts)
-                                        |
-                                        v
-                        +-------------------------------+
-                        |  FEATURE SERVICE (KV store)   |   ~5 ms
-                        |  long-term vec, recent watches|
-                        +-------------------------------+
-                                        |
-              +--------------+----------+-----------+---------------+
-              v              v                      v               v
-      +---------------+ +------------+      +--------------+ +-------------+
-      | TWO-TOWER ANN | | SUBSCRIBED |      |  TRENDING    | |  FRESH /    |
-      | user vec ->   | | channels   |      |  per region  | |  CF co-watch|
-      | HNSW / IVF-PQ | | recent     |      |  counters    | |             |
-      |  ~500 cands   | |  ~200      |      |   ~100       | |   ~200      |
-      +---------------+ +------------+      +--------------+ +-------------+
-              |              |                      |               |
-              +--------------+----------+-----------+---------------+
-                                        v
-                        +-------------------------------+
-                        |  MERGE + DEDUPE + HARD FILTER |   ~3 ms
-                        |     -> ~1000-1500 candidates  |
-                        +-------------------------------+
-                                        |
-                                        v
-                        +-------------------------------+
-                        |  FEATURE HYDRATION            |   ~15 ms
-                        |  per-candidate + cross feats  |
-                        +-------------------------------+
-                                        |
-                                        v
-                        +-------------------------------+
-                        |  RANKER (DLRM + MMoE heads)   |   ~50 ms
-                        |  p_click, p_watch50, p_like,  |
-                        |  p_hide, E[watch time]        |
-                        |  + shallow position tower     |
-                        +-------------------------------+
-                                        |  top ~200 by blended score
-                                        v
-                        +-------------------------------+
-                        |  RERANKER                     |   ~5 ms
-                        |  diversity caps, freshness,   |
-                        |  policy, exploration slots    |
-                        +-------------------------------+
-                                        |
-                                        v
-                              response: 50 videos
-                                        |
-                                        v
-                        +-------------------------------+
-                        |  LOGGING -> event stream      |
-                        |  impressions, positions,      |
-                        |  scores, feature snapshot     |
-                        +-------------------------------+
-```
 
-That last box matters more than it looks. You must log the **feature values as they were at request time**, not recompute them later, or your training data will silently disagree with production. And you must log the scores and positions, because counterfactual evaluation and position-bias correction both need to know what the serving policy did.
+The event log must store feature values as they existed at request time. It must also store model versions, scores, positions, and outcomes. Otherwise, later training data can disagree with the production decision.
 
 ### Step 5 — Evaluation
 
-Offline, evaluate the two stages separately, because they have different jobs. For candidate generation the metric is **recall@k**: over held-out impressions where the user actually watched something, what fraction of the time does the watched video appear in the retrieved top $k$? If recall@1000 is 60%, then 40% of good outcomes are already lost before ranking runs, and no ranker improvement can recover them. For the ranker, the metric is **AUC** or, better, per-user grouped AUC — AUC computed within each user's impression list and then averaged — because global AUC can look great simply by separating heavy users from light users, which is not a ranking skill. Add log loss, which unlike AUC is sensitive to calibration and will catch a model that orders well but predicts nonsense magnitudes.
+I would evaluate retrieval and ranking separately. For retrieval, I would use recall@1000. It measures how often the watched video appears in the candidate set. If recall@1000 is 60%, retrieval has already lost 40% of observed positive outcomes. The ranker cannot recover them.
 
-The honest thing to say next is that all of these are measured on data the current system generated, and they therefore reward agreement with the current system. A new model that surfaces genuinely good videos the old model never showed gets *penalized* offline, because those impressions have no positive label — they have no label at all. This is why offline metrics are a filter for obviously-broken models, not a launch decision.
+For ranking, I would use per-user AUC, NDCG, log loss, and calibration. Log loss matters because the final score combines probabilities and expected values.
 
-Online, run an A/B test — Part 1 covers experiment mechanics. Randomize by user, not by request, because a user seeing two different rankers across sessions contaminates the comparison. Primary metric: watch time per user per day. Secondary: sessions per user, video starts, satisfaction survey responses if you have them. Guardrails that must not regress: day-7 retention, explicit dislike rate, "not interested" rate, and creator-side metrics like the share of impressions going to small channels. Run for at least two full weeks so weekday and weekend behaviour are both represented, and expect novelty effects — a new model often shows a first-week bump that decays as users adjust.
+Offline metrics are release gates, not launch decisions. The data came from the current policy, so it favors models that behave like the current model.
 
-For long-horizon effects, keep a small **holdback**: a permanent slice of users, perhaps 0.5%, held on an older model for months. It is the only way to measure whether a year of incremental watch-time optimization has quietly damaged retention, since each individual A/B was too short to see it.
+The launch decision requires an A/B test randomized by user. The primary metric is watch time per user per day. Guardrails include day-7 and day-28 retention, dislikes, “not interested” actions, satisfaction surveys, content diversity, and creator exposure. I would run the test for at least two weeks. I would also keep about 0.5% of users in a long-term holdback to detect slow retention damage.
 
 ### Step 6 — Production concerns
 
-**Throughput.** One billion home-feed loads per day is $10^9 / 86{,}400 \approx 11{,}600$ requests per second on average. Traffic is not flat; peak-to-average of about 3x is a reasonable assumption for a global consumer product, so plan for ~35,000 QPS. Each request scores about 1000 candidates in the ranker, so the ranker performs $35{,}000 \times 1000 = 3.5 \times 10^7$ item-scorings per second at peak. That number is the reason the ranker cannot be a large transformer: at 35 million scorings per second, every microsecond of per-item cost is 35 seconds of aggregate compute per second, i.e. 35 machines. Sizing the ranker is not an accuracy decision, it is a fleet-size decision.
+One billion daily requests gives:
 
-**Storage.** Item embeddings: $10^9 \times 256 \times 2$ bytes (fp16) = 512 GB, plus HNSW edges at $10^9 \times 32 \times 4$ = 128 GB, so ~640 GB, sharded across roughly 10 machines with 64 GB of index each plus replicas for throughput. With PQ at 64 bytes per vector this drops to 64 GB and the sharding is driven by QPS instead. User state: 2.5 billion users at ~2 KB each is 5 TB in the online store, though you would only keep the active subset hot and page the rest.
+$$
+\frac{10^9}{86{,}400}\approx 11{,}600 \text{ average QPS}.
+$$
 
-**Latency budget** at p99, summing to the 150 ms target: network and request parsing 10 ms; feature service read 5 ms; candidate generation 30 ms (all sources in parallel, so this is the slowest source, not the sum); merge and filter 3 ms; feature hydration 15 ms; ranker inference 50 ms; reranker 5 ms; response serialization 5 ms. Total 123 ms, leaving about 27 ms of headroom for tail effects. State the headroom explicitly — interviewers like a budget that does not exactly equal the target, because one that does is a budget that will be blown.
+With a $3\times$ peak factor, I would provision for about 35,000 QPS. If each request ranks 1,000 candidates, the ranker performs:
 
-**Failure modes and what happens.** Each stage needs a defined degradation, not a 500. If the ANN index is unreachable, serve from the other retrieval sources; the feed gets less personal but exists. If the feature service is down, use a locale-level default user profile. If the ranker times out, return candidates ordered by retrieval score and engagement priors — noticeably worse, still a feed. If everything is down, serve a cached per-locale popularity list, which should be pregenerated and refreshed hourly precisely so that this path is always warm. The general principle: every stage has a cheaper fallback, and you rehearse them, because a fallback path that has never taken traffic will not work the first time it has to.
+$$
+35{,}000 \times 1{,}000 = 35\text{ million item scores per second}.
+$$
 
-The subtler failure is **training/serving skew**: the feature computation in the training pipeline drifts from the one in the serving path, so the model is fed slightly different numbers in production than it learned on. This does not throw errors, it just quietly degrades quality. The defenses are a shared feature-definition layer used by both paths, and a continuous audit that samples live requests, recomputes their features through the training path, and alerts on mismatch.
+Therefore, the ranker cannot be a large transformer.
 
-**Monitoring** in three layers. Infrastructure: QPS, p50/p95/p99 per stage, error rates, cache hit rates, index staleness. Model: prediction distribution drift measured by population stability index (PSI), feature-level drift, calibration plots comparing predicted watch time to realized watch time in deciles, and coverage — what fraction of the catalog receives any impression at all, which catches a model collapsing onto a narrow slice. Business: watch time, sessions, retention, dislike rate, creator-side distribution. Part 1 covers the dashboard and alerting stack; the relevant point here is that the model layer is the one teams forget, and it is the one that fails silently.
+The p99 latency budget is:
 
-**Retraining.** The ranker retrains daily on a rolling window of recent logs, warm-started from yesterday's weights rather than from scratch. The two-tower retriever retrains weekly, because re-indexing a billion items is expensive and its embeddings move more slowly. New item embeddings are computed continuously at upload and inserted incrementally into the index, so a video is retrievable within about an hour without a full rebuild. Triggers for off-schedule retraining: PSI above a threshold on important features, calibration error exceeding a band, or a step change in a business metric. And the pipeline must support rollback to the previous model artifact in minutes, which means keeping the last several versions loadable and having a deployment flag that flips traffic instantly.
+```text
+Request handling                 10 ms
+User-feature lookup               5 ms
+Parallel candidate retrieval     30 ms
+Merge and hard filters            3 ms
+Candidate feature hydration      15 ms
+Multi-task ranking               50 ms
+List-level reranking              5 ms
+Response serialization            5 ms
+                               -------
+Total                           123 ms
+Headroom                         27 ms
+                               -------
+p99 target                      150 ms
+```
+
+Each stage needs a fallback. If ANN fails, use subscriptions, trending, fresh content, and co-watch candidates. If user features fail, use a locale-level default profile. If ranking times out, sort by retrieval score and engagement priors. If the full recommendation path fails, return a cached regional popularity feed.
+
+I would retrain the ranker daily. I would retrain the two-tower model weekly because each new retriever requires a large re-index. I would compute new-video embeddings at upload and insert them incrementally.
 
 ### The hard tradeoff
 
-**Should the ranker optimize watch time, or should it optimize satisfaction?**
+The central tradeoff is watch time versus satisfaction.
 
-The case for watch time is that it is dense, immediate, and unambiguous. Every impression produces a number within minutes. It is machine-readable, it correlates with revenue because more watching means more ad inventory, and it makes the training loop tight — you can retrain daily and see the effect. Sparse alternatives like surveys cover a tiny sample and arrive slowly, so a model trained on them is starved of data.
+Watch time is dense, immediate, and easy to optimize. However, it can reward long, repetitive, or emotionally provocative content. This can increase short-term engagement while reducing long-term trust.
 
-The case against is that watch time is a proxy that diverges from the goal in specific, predictable ways. It rewards length over quality: a mediocre 40-minute video beats an excellent 4-minute one. It rewards autoplay-friendly, low-effort content. It rewards emotionally activating content, since outrage holds attention. And crucially, the divergence compounds — each retraining cycle bakes in the previous cycle's drift, so the system walks steadily toward content that holds attention without being wanted. You do not see this in a two-week A/B test because the damage accrues over months.
+Therefore, I would use watch time as the main signal, add explicit positive and negative satisfaction signals, and make long-term retention a hard launch guardrail. I would not launch a model that improves watch time but significantly reduces day-28 retention.
 
-What I would actually do is neither pure option. Optimize a blended objective where watch time is the dominant term but explicit satisfaction signals — likes, surveys where available, and especially negative signals like hides and "not interested" — enter with meaningful weight, and treat long-horizon retention as a hard guardrail rather than an objective. Concretely, refuse to launch a model that improves watch time while regressing day-28 retention, even at high statistical significance on the primary metric.
-
-What would change my mind: evidence from the long-term holdback. If a year of watch-time optimization shows no retention divergence between the holdback and production, the proxy is not diverging and the added complexity of satisfaction modelling is not earning its keep. If the holdback shows divergence, I would go further than the blend and move satisfaction from a weighted term to a constraint.
+The design has one core shape: retrieve about 1,000 candidates from one billion videos, rank them with a calibrated multi-task model, rerank the list for policy, diversity, freshness, and exploration, and validate the result with long-term online metrics.
 
 
 ---
