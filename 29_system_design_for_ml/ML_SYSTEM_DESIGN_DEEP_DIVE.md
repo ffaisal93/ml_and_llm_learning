@@ -168,330 +168,179 @@ $$
 
 Use tests and offline evaluation before deployment. Shadow traffic measures production behavior without changing results. A canary sends a small fraction of traffic to the new version. An A/B test measures product impact. Keep the previous model and configuration ready for rollback.
 
-## Section D. The architecture menu
+## Section D. Reusable architecture patterns
 
-Production ML systems are assembled from a small number of recurring patterns. Once you recognize them, most design questions become a matter of choosing which patterns apply and how they compose, rather than inventing something. Each pattern below is presented as a problem and its resolution, because that is how you should present it in an interview — the pattern name alone means nothing until you have said what it fixes.
+### Retrieval followed by ranking
 
-### D.1 Two-stage retrieval and ranking
+Use two stages when the catalogue is too large for full scoring. Retrieval reduces millions or billions of items to hundreds or thousands. It uses cheap methods and optimizes recall. Ranking uses richer features and a more expensive model to optimize ordering. A final reranker applies list-level rules such as diversity, policy, freshness, and deduplication. Retrieval recall is a hard ceiling because ranking cannot recover an item that retrieval dropped.
 
-**The problem.** You have a catalog of $N$ items and a request. You want to return the ten best. The scoring function you would like to use is expensive — a neural network that attends jointly over the user's history and the item's content, costing perhaps a millisecond per item. With $N = 10^7$ and a 100ms budget, scoring everything is off by four orders of magnitude. Meanwhile, a scoring function cheap enough to run over everything is too crude to order the top ten well.
+### Bi-encoder and cross-encoder
 
-**The resolution.** Split the problem by the observation that the two ends of the ranked list need different things. Getting from ten million candidates down to a few hundred requires only that you not lose the good ones — a **recall** problem, where mistakes at the bottom of the list are free. Getting from a few hundred to the final ten requires precise ordering — a **precision** problem, where every position matters. So use a cheap high-recall method for the first reduction and an expensive high-precision method for the second.
+A bi-encoder computes query and item vectors independently. Therefore, item vectors can be computed offline and searched with an ANN index. This makes large-scale retrieval possible. A cross-encoder processes the query and item together. It models richer interactions but needs one forward pass per pair. Therefore, use the bi-encoder for retrieval and the cross-encoder only for a small reranking set.
 
-Stage one, **retrieval**, produces a few hundred to a few thousand candidates using methods that are sublinear or cheap-linear in catalog size: approximate nearest neighbour over embeddings, an inverted keyword index, precomputed item-to-item similarity lists, or simple rules like "items from creators this user follows." It is normal and correct to merge several such sources, since each has a different failure mode and the union has better recall than any one. Stage two, **ranking**, scores those few hundred with a model that can afford to be a hundred times more expensive per item because it sees a thousandth as many items. A third stage, **reranking**, often follows, applying business logic that is not naturally expressible as a per-item score: diversity, so the top ten are not ten near-identical items; freshness boosts; deduplication; policy filters; and exploration, deliberately showing some uncertain items to gather data.
+### Cascades
 
-**The properties to state.** The dominant failure mode is that stage one's recall bounds the whole system — an item that retrieval never surfaces cannot be ranked, so no ranker improvement can recover it, and the correct diagnostic is to measure retrieval recall against the set of items the ranker would have placed in the top ten had it seen everything. The second property is that the stages are trained on different distributions: the ranker only ever sees candidates that retrieval produced, so if you swap retrieval you have changed the ranker's input distribution and it needs retraining. The number of candidates passed between stages is the system's main latency-versus-quality dial, and being able to say "I'd start at 500 and tune it by measuring the quality curve against latency" is exactly the right register.
+A cascade applies cheap decisions first and expensive decisions only to unresolved cases. For example, moderation can use rules, a small classifier, a large multimodal model, and human review. The escalation threshold controls cost and quality. Early-stage confidence must be calibrated because a confidently wrong early decision never reaches a stronger stage.
 
-**When it is wrong.** When the catalog is small enough to score exhaustively — under roughly ten thousand items with a cheap model — where a single stage is simpler, has no recall ceiling, and is easier to reason about.
+### Feature freshness
 
-### D.2 Embedding retrieval and the two-tower pattern
+Use batch computation for stable long-window features, streaming for signals that change within seconds, and request-time computation for current context. Choose freshness per feature. Streaming every feature adds cost without value. Batch processing a fraud velocity feature makes it useless.
 
-**The problem.** You want retrieval to be semantic rather than lexical: to find items relevant to a user or query even when they share no words. And you want it fast over a huge catalog.
+### Read and write paths
 
-**The resolution.** Learn a function that maps queries (or users) and items into a shared vector space where geometric closeness means relevance, then reduce retrieval to nearest-neighbour search. The critical structural constraint is that the query representation and the item representation must be computed **independently** — this is the "two-tower" shape, one encoder per side, with the only interaction being a dot product or cosine similarity at the very end. That constraint is what makes the pattern work operationally: because the item tower does not depend on the query, every item embedding can be computed offline in a batch job and loaded into an ANN index, leaving only one small encoder forward pass at request time.
+The write path collects events, validates them, updates features and indexes, and creates training data. The read path serves requests from prepared state. Design them together. The read path depends on write-path freshness, and the write path must log enough information to reproduce each production decision.
 
-Contrast this with a **cross-encoder**, which feeds the query and item together into one model so that every layer can attend across both. Cross-encoders are consistently more accurate — the interaction is where the signal is — and are consistently unusable for retrieval, because there is nothing to precompute: you would need one forward pass per candidate. Hence the natural pairing: two-tower for retrieval, cross-encoder for ranking. Explaining that trade-off crisply is one of the highest-value ninety seconds in a search or recommendation interview.
-
-**The properties to state.** Training these models is dominated by **negative sampling**: positives come from observed interactions, and negatives must be constructed. In-batch negatives (treating other items in the batch as negatives) are nearly free and are the standard starting point, but they are easy negatives, so the model learns to distinguish relevant from random rather than relevant from plausible. Hard negative mining — retrieving with the current model and using its high-scoring wrong answers as negatives — is what actually improves top-of-list quality, and is the thing to mention. Second, index freshness: a new item has no embedding until the batch job runs, which is a cold-start problem with a concrete mechanical cause, and the fix is an incremental path where new items get embedded and inserted within minutes. Third, an embedding index built from model version $v$ is only valid for query encoders of version $v$; changing the model means rebuilding the entire index, which for a billion items is a multi-hour job that must be coordinated with the deployment — a genuinely good operational detail to raise.
-
-**When it is wrong.** When matching is genuinely lexical. Exact keyword search still beats dense retrieval for rare terms, product identifiers, names, and codes, because embeddings compress away exactly the rare specifics. The mature answer is **hybrid retrieval**: run both a keyword index and a vector index and fuse the results, which is what most serious production search systems actually do.
-
-### D.3 The cascade
-
-**The problem.** Your best model is expensive, and you cannot afford to run it on everything. But most inputs are easy, and a cheap model handles them perfectly well.
-
-**The resolution.** Arrange models in increasing order of cost and accuracy, and let each stage resolve what it can confidently and escalate only what it cannot. A content moderation pipeline is the canonical example: an exact-hash lookup against known violating content is essentially free and catches a meaningful fraction; a small classifier handles the clear cases; a large multimodal model handles what the small one is uncertain about; and human reviewers see only the residue. If 90% of traffic is resolved at a stage costing a thousandth of the next, the average cost collapses while the accuracy on hard cases is preserved.
-
-This differs from two-stage retrieval in an important way that is worth being precise about. In retrieval-and-ranking, every request passes through every stage and the stages reduce the *number of items*. In a cascade, stages reduce the *number of requests* by terminating early. They compose — a ranking system can itself be one stage of a cascade — but they are not the same idea.
-
-**The properties to state.** The escalation rule is the design. It is usually a confidence threshold, which requires the early model's confidence to be **calibrated** — meaning that among the cases where it outputs 0.9, about 90% really are positive — otherwise the threshold is arbitrary and you are escalating the wrong things. Temperature scaling or isotonic regression on a validation set is the standard fix, and mentioning it shows depth. The second property is that each stage's error compounds: anything the cheap stage wrongly resolves never reaches the expensive one, so the cheap stage's *false confidence* rate, not its accuracy, is the number that matters. Third, latency becomes bimodal — fast for the common path, slow for escalations — so p50 and p99 tell very different stories and you should quote both.
-
-**When it is wrong.** When the expensive model is affordable on everything, since a cascade adds real complexity. And when errors are asymmetric enough that the cheap stage's mistakes are unacceptable at any rate, in which case run the expensive model on everything and pay.
-
-### D.4 Batch, streaming, and on-demand feature computation
-
-**The problem.** A feature has to be computed at some point between the event that generates it and the prediction that uses it. Where you put that computation determines freshness, cost, and complexity, and the three options are genuinely different systems.
-
-**The resolution — three modes, chosen per feature, not per system.**
-
-**Batch** computation runs on a schedule, typically hourly or nightly, over the warehouse, and writes results to the online store. It is by far the cheapest per feature because it amortizes over huge row counts, it is the easiest to test and backfill, and the computation can be arbitrarily complex since nothing is waiting on it. Its cost is staleness bounded by the schedule interval. This is right for features that change slowly: a user's long-run topic affinities, an item's lifetime statistics, aggregate popularity.
-
-**Streaming** computation maintains features continuously from an event stream, updating the online store within seconds. It is more expensive and much harder to operate and backfill, and it buys you freshness measured in seconds. This is right for features where recency is the signal itself: transactions on this card in the last five minutes, items viewed in this session, current trending rate.
-
-**On-demand** computation happens at request time from data in the request. It is trivially fresh because it has not been stored at all, it costs latency directly out of your budget, and it is right for features that only exist at request time — the query text, the device, the time of day, and anything derived from combining the request with a stored value, such as the distance between the request's location and the user's stored home location.
-
-**The properties to state.** Real systems use all three simultaneously, and saying that is the answer. The key insight to volunteer is that freshness is a *per-feature* decision with a cost, so the design move is to identify which few features actually need second-level freshness and pay for streaming only on those. There is also a specific hazard: on-demand and precomputed versions of the same feature will drift apart unless they share a definition, which is exactly the training-serving skew problem, and is why the transformation logic must be shared code rather than parallel implementations.
-
-**When each is wrong.** Batch is wrong when the signal decays in minutes — a fraud velocity feature computed nightly is worthless, since the attack completes in an hour. Streaming is wrong when hours of staleness would have been fine, because you are paying substantial operational cost for freshness nobody uses. On-demand is wrong when the computation touches data that is expensive to fetch, since you have moved a batch job onto the critical path.
-
-### D.5 The read path and the write path
-
-**The problem.** The same system has to do two things with opposite requirements. It must absorb a very high volume of incoming events durably and without ever blocking the user, and it must answer queries with very low latency. Optimizing storage for one hurts the other: a layout good for fast writes is usually bad for fast reads, and indexes that make reads fast make writes slower.
-
-**The resolution.** Stop treating it as one system. Design the **write path** and the **read path** separately, connected by asynchronous processing, and accept a bounded delay between them.
-
-The write path's job is to accept events and never lose them. It should do as little work as possible: append the event to a durable log and return. No joins, no aggregation, no index updates on the critical path. Its requirements are throughput and durability, and its latency is measured in low single-digit milliseconds.
-
-The read path's job is to answer at request time from data structures already shaped for the query. It should do no computation that could have been done earlier: features precomputed and stored by key, embeddings already indexed, candidate lists already materialized. Its requirement is p99 latency.
-
-Between them sit the asynchronous processors — stream jobs and batch jobs — that consume the log and build the read path's data structures. The delay across that gap is the freshness lag, and naming it as an explicit number that you are choosing is a strong signal.
-
-**The properties to state.** This is the same idea as CQRS (command-query responsibility segregation) and event sourcing in general systems design, and the same idea as the Lambda and Kappa architectures in data engineering; naming the family is worth a point but explaining the separation is worth more. The main consequence is that the read path serves data that is slightly stale by construction, so the design question becomes "how stale, and does the product tolerate it?" — a question you should ask rather than assume. The second consequence is that a failure in the asynchronous layer is invisible to users at first: everything responds fine, it is just increasingly wrong. That is precisely why pipeline freshness needs its own monitoring and alerting, independent of service health, and it is the single most commonly missed monitoring item in interview answers.
-
-**When it is wrong.** When you truly need read-your-own-writes semantics — a user updates something and must see it immediately — which requires either a synchronous update or a read-through cache invalidation on the write path. And for small systems, where one database serving both paths is entirely adequate and splitting them is unnecessary machinery.
-
-### D.6 A note on composing them
-
-A typical design uses most of these at once, and it helps to see how they nest. The write path carries interactions into a log. Batch and streaming jobs consume it to maintain features, with the freshness mode chosen per feature. Those features feed a two-tower model whose item embeddings are indexed for approximate nearest neighbour search. At request time, the read path does an on-demand feature computation, a feature store lookup, a retrieval step over the index merged with a couple of other candidate sources, a ranking pass over the merged candidates, and a business rerank. The whole thing is deployed behind a feature flag, shadowed then canaried then A/B tested, gated offline by a regression suite, and watched with metrics, traces, and prediction logs.
-
-That paragraph is essentially the skeleton of every worked design in Parts 2 and 3. What changes between them is which pattern carries the weight and where the hard problem lives.
 
 ---
 
 ## Design 1 — YouTube's home-feed recommender
 
-### Requirements and assumptions
+**The scenario.** The interviewer says: *"Let's design the recommendation system behind YouTube's home feed. When I open the app, I get a grid of videos — how do you build the thing that decides what's in that grid? Assume you have all of Google's infrastructure. Roughly two billion users, a corpus in the billions of videos. Take me through it."* They will probably add something offhand like *"oh and it needs to feel fast"* — that throwaway line is the latency budget, and you should pick it up.
 
-I will design the logged-in home feed. I will optimize expected watch time per impression. However, watch time is only a proxy for satisfaction. Therefore, I will use day-7 and day-28 retention as guardrails.
+What makes this hard is not the model. It is the **corpus size**. There are on the order of a billion candidate videos and roughly a hundred milliseconds to produce twenty of them, which means you cannot score every video — not with any model, not on any hardware. The design is therefore forced into a shape: something cheap that reduces a billion to a thousand, then something expensive that reduces a thousand to twenty. Everything else in the answer hangs off that. The second thing being tested is whether you notice that **there is no label**. Nobody tells YouTube which video you wanted; the system only sees what it showed you and what you did. You have to manufacture a training signal out of behaviour, and every choice you make there — click versus watch time versus completion — becomes the product. Candidates who jump straight to "I'd use a transformer" fail this question because they never confront either problem.
 
-I will assume 2.5 billion monthly users, one billion feed requests per day, and one billion available videos. The service must return 50 ranked videos within 150 ms at p99. The client displays about 20 videos above the fold. New uploads must become reachable within one hour. Safety and policy rules are hard filters.
+### Step 1 — Clarify (2 minutes)
 
-**Functional requirements.** The system must generate a personalized home feed, retrieve candidates from several sources, rank them, apply safety and diversity rules, support new users and videos, log every decision, and return 50 playable videos. It must also support model experiments and fast rollback.
+These are the questions to actually say out loud, and what each answer buys you.
 
-**Non-functional requirements.** The recommendation call must stay below 150 ms at p99 and support about 35,000 QPS at peak. New videos must enter retrieval within one hour. The service must remain available when a feature, retrieval, or ranking dependency fails. Training data must be point-in-time correct. User data must follow privacy and retention rules.
+*"What are we optimizing — clicks, watch time, or something longer-horizon like retention?"* This is the single most consequential question in the whole design, and it is not a formality. If the answer is clicks, the system will learn clickbait: a thumbnail that overpromises maximizes clicks and minimizes satisfaction. If the answer is watch time, you get a different pathology — long, slow, autoplay-friendly content wins over short, excellent content. If the answer is retention, you have a beautiful objective and an unusable one, because you cannot wait thirty days for a label on every impression. The real answer at YouTube is a blend: optimize a short-horizon proxy that correlates with the long-horizon goal, and use the long-horizon goal as a guardrail in experiments.
+
+**Assume, for the rest of this answer:** we optimize expected watch time per impression, with day-7 and day-28 retention as experiment guardrails. Roughly 2.5 billion monthly logged-in users (this is the publicly reported figure; I am treating it as approximately right rather than exact) and about one billion home-feed loads per day. Corpus of one billion servable videos. Budget: 150 ms end-to-end at p99 for the recommendation call. Output: a ranked list of 50, of which the client shows about 20 above the fold. New uploads should be reachable within roughly an hour. Policy filters are hard filters.
+
+**Functional requirements.** Generate a personalized feed, retrieve from several sources, rank candidates, apply safety and diversity, support cold start, log decisions, return 50 playable videos, run experiments, and roll back safely.
+
+**Non-functional requirements.** Stay below 150 ms at p99 and support about 35,000 peak QPS. Index new videos within one hour. Degrade safely when dependencies fail. Keep training data point-in-time correct and follow privacy and retention rules.
 
 ### Step 2 — Frame it as an ML problem
 
-The prediction unit is one `(user, video, context)` impression. Context includes the device, locale, time, network quality, and recent session activity.
+Start by writing down the unit of prediction, because everything downstream is determined by it. The unit here is an **impression**: one (user, video, context) triple at one moment in time. Context means time of day, device, app surface, and network conditions. For each impression we want a number that lets us sort — and the number we choose is expected watch time if this video were shown to this user right now.
 
-For each candidate, the ranker predicts:
+Now the label. YouTube does not have a "did the user want this" label; it has logs. The logs record that video $v$ was shown to user $u$ at position $k$ and that the user either did nothing, or clicked and watched for $t$ seconds. So the label has to be constructed. The natural construction is: a positive example is an impression that led to a watch of at least some minimum duration, and the *value* of that positive is the watch time. The classic published approach from YouTube's own 2016 paper is elegant and worth knowing by name: they train **weighted logistic regression** on the final layer, where positive impressions are weighted by their observed watch time and negatives get weight one. Under that weighting, the learned odds $\frac{p}{1-p}$ come out approximately equal to expected watch time — because the positives have been inflated in proportion to how long they were watched — so at serving time they simply exponentiate the logit, $e^{Wx+b}$, and use it directly as a watch-time estimate. This is a nice trick to be able to state: it lets a classification model produce a regression-like quantity.
 
-$$
-P(\text{click}),\quad \mathbb{E}[\text{watch time}],\quad
-P(\text{like}),\quad P(\text{hide}).
-$$
+Three things are wrong with this label, and naming them is most of the points on this step.
 
-A possible final score is:
+The first pathology is that the label is **implicit**, meaning it is inferred from behaviour rather than stated. A user who watches ten minutes of a video may have loved it or may have left the tab open. A user who watches ten seconds may have hated it or may have gotten exactly the answer they needed. Implicit labels are noisy in a way that is systematic rather than random, and no amount of data fixes systematic noise.
 
-$$
-\text{score}
-=
-P(\text{click})^\alpha
-\cdot \mathbb{E}[\text{watch time}]^\beta
-\cdot \left(1+\gamma P(\text{like})\right)
-\cdot \left(1-\delta P(\text{hide})\right).
-$$
+### Step 3 — The data
 
-The weights $\alpha$, $\beta$, $\gamma$, and $\delta$ represent product priorities. I would tune them with online experiments.
+**Features about the user.** The strongest signal by far is watch history — the sequence of videos this person has watched, in order, with dwell times. Sequence matters: someone who just watched three videos about guitar pedals is in a different state than someone who watched them last March. So represent history two ways. Long-term interests become a dense vector summarizing months of behaviour, refreshed daily. Short-term intent becomes the last 20 to 50 watched video IDs, fed as a sequence into the model and refreshed within seconds of each action. Alongside these sit stable attributes — country, language, device class, account age — and request context.
 
-YouTube's published 2016 approach used weighted logistic regression. Positive impressions were weighted by observed watch time. Negative impressions had weight one. Under this training method, the odds approximate expected watch time:
+The word **embedding** is going to appear constantly, so pin it down here. An embedding is a fixed-length vector of numbers that stands in for a discrete thing. A video ID is just an arbitrary integer, and integers have no useful geometry — video 5 is not "between" videos 4 and 6. So we learn a vector for each video, say 256 floating-point numbers, such that videos watched in similar contexts end up with vectors close together. The mapping from ID to vector is stored in an **embedding table**: literally a big matrix with one row per ID, whose rows are learned parameters updated by gradient descent like any other weight. Once things are vectors, "similar" becomes a dot product, and dot products are something hardware is extremely good at.
 
-$$
-\mathbb{E}[\text{watch time}] \approx \frac{p}{1-p}=e^{Wx+b}.
-$$
+**Features about the video.** Metadata is cheap and useful: channel, upload time, duration, language, topic taxonomy. Content features come from the media itself — a text encoder over title and description, a vision encoder over the thumbnail and sampled frames, an ASR transcript. These matter most for new videos, which have no behavioural data at all. Engagement priors — historical click-through rate, average watch-through fraction, like rate — are extremely predictive and extremely dangerous, for reasons in the leakage discussion below.
 
-This method lets a classification model produce a regression-like watch-time estimate.
+### Step 4 — The architecture
 
-The labels have three main problems. First, watch time is an implicit and noisy satisfaction signal. Second, outcomes exist only for videos that the current system showed. This creates a feedback loop. Third, higher positions receive more clicks even when relevance is unchanged. This creates position bias. Therefore, the system needs exploration, position-bias correction, and long-term guardrails.
+Walk it as a story. A request arrives from a phone. It carries a user ID, a device, a locale, and a timestamp, and it needs 50 videos back in under 150 milliseconds.
 
-### Step 3 — Data and features
+**First stop: the feature service.** This is a low-latency key-value store — Redis or an internal equivalent, described properly in Part 1 — holding precomputed user state keyed by user ID. One read returns the long-term interest vector, the demographic block, and the recent-watch sequence. Budget 5 ms. If this read fails, you do not fail the request; you fall back to a locale-level default profile and continue, which will produce a generic but non-empty feed.
 
-User features include long-term interests, the last 20–50 watched videos, language, country, device type, and account age. I would refresh long-term interests daily. I would update recent watch history within seconds because it represents current intent.
+**Second stop: candidate generation.** This is the stage that reduces one billion to about one thousand, and it is the stage that must be cheap. The distinction between **candidate generation and ranking** is the backbone of the whole design: candidate generation optimizes *recall* — did the good videos survive into the shortlist — using a model cheap enough to run against the entire corpus. Ranking optimizes *precision at the top* — of the survivors, which order is best — using a model expensive enough that it could never be run on a billion items. Recall errors at stage one are unrecoverable: a video that does not make the shortlist has zero chance of being shown no matter how good the ranker is.
 
-Video features include channel, age, duration, language, topic, title, description, thumbnail, sampled frames, and speech transcript. Content features are critical for new videos because new videos have no engagement history.
-
-Cross features combine user and video information. Examples include the number of videos this user watched from this channel and the cosine similarity between the user-interest vector and the video vector. These features depend on both sides. Therefore, I compute them only after candidate retrieval.
-
-Every training feature must be point-in-time correct. For an impression at time $t$, the training row can use only information available before $t$. Otherwise, future engagement leaks into training. I would also split training and evaluation data by time.
-
-### Step 4 — Architecture
-
-The system uses retrieval followed by ranking. Retrieval reduces one billion videos to about 1,000–1,500 candidates. Ranking applies a more expensive model to those candidates. A final reranker constructs the list.
-
-The main candidate source is a two-tower model. The user tower converts the user and context into a 256-dimensional vector. The video tower converts each video into a vector in the same space. The affinity score is:
+The workhorse here is a **two-tower model**, and this is the term the reader must be able to say out loud. Picture two separate neural networks. The left tower takes everything about the user — history sequence, interests, context — and outputs a single 256-dimensional vector. The right tower takes everything about a video — content, metadata, priors — and outputs a 256-dimensional vector in the same space. The predicted affinity between a user and a video is just the dot product of the two vectors. The towers never see each other's inputs; they only meet at that final dot product. That restriction is the entire point. Because the video tower's output does not depend on the user, you can run it offline over all one billion videos and store the results. At request time you only run the user tower once, then find which of the billion stored vectors have the largest dot product with it — a pure geometry problem, no neural network involved. A model where user and item features are mixed together in early layers (a **cross-encoder**, which we will meet in Design 2) is more accurate and cannot be precomputed, so it is unusable at this stage.
 
 $$
-s(u,v)=e_u^\top e_v.
+\mathcal{L} = -\frac{1}{B}\sum_{i=1}^{B} \log \frac{\exp\!\big(s(u_i, v_i)/\tau\big)}{\sum_{j=1}^{B} \exp\!\big(s(u_i, v_j)/\tau - \log q(v_j)\big)}
 $$
 
-The video vector does not depend on the user. Therefore, I compute video vectors offline and store them in an approximate nearest-neighbor, or ANN, index. At request time, I run the user tower once and search the index.
-
-I would train the two-tower model with in-batch negatives and sampled softmax. In a batch of $B=8192$ positive user-video pairs, each user receives one positive and up to 8,191 negatives without extra video-encoder calls. I would apply logQ correction because popular videos occur more often in the batch. I would also add hard negatives, such as videos that were shown but not clicked and high-scoring videos that the user did not watch.
-
-At one billion videos, the ANN index probably needs IVF-PQ or a hybrid design. One billion 256-dimensional FP16 vectors require:
+Once trained, the video tower is run over the corpus offline and the resulting billion vectors are loaded into an **ANN index**. ANN stands for approximate nearest neighbour: given a query vector, return the vectors with the largest dot product, accepting that you might miss a few in exchange for being orders of magnitude faster than checking all one billion. Two structures matter.
 
 $$
-10^9 \times 256 \times 2 = 512\text{ GB}.
+\text{score} = \big(p_{\text{click}}\big)^{\alpha} \cdot \big(\mathbb{E}[\text{watch time}]\big)^{\beta} \cdot \big(1 + \gamma \, p_{\text{like}}\big) \cdot \big(1 - \delta \, p_{\text{hide}}\big)
 $$
 
-An HNSW graph with 32 four-byte neighbor IDs per item adds:
+#### Architecture diagram
 
-$$
-10^9 \times 32 \times 4 = 128\text{ GB}.
-$$
-
-The total is about 640 GB before replication. Product quantization can reduce each vector to about 64 bytes. This reduces raw vector storage to about 64 GB, but it lowers ANN recall.
-
-I would not depend on one retrieval source. I would also retrieve videos from subscribed channels, regional trending lists, co-watch neighbors, and a fresh-content exploration source. These sources run in parallel. I would merge and deduplicate their results.
-
-After retrieval, the system fetches video and cross features for about 1,000 candidates. The ranker can use a DLRM or DCN architecture with Multi-gate Mixture-of-Experts, or MMoE, task heads. It predicts click, watch time, watch-through, like, and hide. A shallow bias tower can absorb position effects during training. I would remove that tower, or set position to a constant, during serving.
-
-The final reranker limits repeated channels and topics. It also applies safety rules, freshness, already-watched filtering, and exploration. Exploration is required because the model cannot learn about videos it never shows.
-
-#### Online and offline architecture
-
-```text
- Home-feed request
- (user_id, device, locale, timestamp)
-                    |
-                    v
- +-------------------------------------+
- | API GATEWAY / FEED SERVICE          |
- | Authentication and request parsing  |
- +------------------+------------------+
-                    |
-                    v
- +-------------------------------------+
- | USER FEATURE SERVICE                |  ~5 ms
- | Long-term interests                 |
- | Last 20-50 watched videos           |
- | Language, country, device, session  |
- +------------------+------------------+
-                    |
-                    | user vector + context
-                    v
- +-------------------------------------------------------------+
- |              PARALLEL CANDIDATE RETRIEVAL                   |
- |                                                             |
- | +----------------+ +--------------+ +--------------------+  |
- | | TWO-TOWER ANN  | |SUBSCRIPTIONS | | REGIONAL TRENDING  |  |
- | | user tower     | |new videos    | |fast-growing videos |  |
- | | -> 256-D vector| |from followed | |by language/region  |  |
- | | -> HNSW/IVF-PQ | |channels      | |                    |  |
- | | ~500 candidates| | ~200         | | ~100               |  |
- | +----------------+ +--------------+ +--------------------+  |
- |                                                             |
- | +----------------+ +--------------------------------------+ |
- | | CO-WATCH / CF  | | FRESH-CONTENT EXPLORATION            | |
- | | item neighbors | | new videos with little history       | |
- | | ~200 candidates| | ~100 candidates                      | |
- | +----------------+ +--------------------------------------+ |
- +---------------------------+---------------------------------+
-                             |
-                             | ~1,100 candidates
-                             v
- +-------------------------------------+
- | MERGE, DEDUPLICATE, HARD FILTERS    |  ~3 ms
- | Policy, region, availability        |
- | Remove seen and duplicate videos    |
- | Output: ~1,000 candidates           |
- +------------------+------------------+
-                    |
-                    v
- +-------------------------------------+
- | CANDIDATE FEATURE HYDRATION         |  ~15 ms
- | Video features and cross features   |
- +------------------+------------------+
-                    |
-                    v
- +-------------------------------------+
- | MULTI-TASK RANKER                   |  ~50 ms
- | DLRM/DCN + MMoE                     |
- | P(click), E[watch time], P(like),   |
- | P(watch-through), P(hide)           |
- | Training-only position-bias tower   |
- +------------------+------------------+
-                    |
-                    | top ~200
-                    v
- +-------------------------------------+
- | LIST-LEVEL RERANKER                 |  ~5 ms
- | Diversity, freshness, policy,       |
- | exploration, near-duplicate removal |
- +------------------+------------------+
-                    |
-                    v
- +-------------------------------------+
- | RESPONSE: 50 VIDEOS                 |  ~5 ms
- +------------------+------------------+
-                    |
-                    v
- +-------------------------------------+
- | EVENT LOG                           |
- | Impressions, positions, scores,     |
- | feature snapshots, actions, labels  |
- +------------------+------------------+
-                    |
-                    v
- +-------------------------------------+
- | OFFLINE TRAINING PIPELINE           |
- | Point-in-time features              |
- | Train retriever and ranker          |
- | Build versioned ANN index           |
- | Evaluate -> registry -> deployment  |
- +-------------------------------------+
 ```
-
-The event log must store feature values as they existed at request time. It must also store model versions, scores, positions, and outcomes. Otherwise, later training data can disagree with the production decision.
+                       home-feed request (user_id, device, locale, ts)
+                                        |
+                                        v
+                        +-------------------------------+
+                        |  FEATURE SERVICE (KV store)   |   ~5 ms
+                        |  long-term vec, recent watches|
+                        +-------------------------------+
+                                        |
+              +--------------+----------+-----------+---------------+
+              v              v                      v               v
+      +---------------+ +------------+      +--------------+ +-------------+
+      | TWO-TOWER ANN | | SUBSCRIBED |      |  TRENDING    | |  FRESH /    |
+      | user vec ->   | | channels   |      |  per region  | |  CF co-watch|
+      | HNSW / IVF-PQ | | recent     |      |  counters    | |             |
+      |  ~500 cands   | |  ~200      |      |   ~100       | |   ~200      |
+      +---------------+ +------------+      +--------------+ +-------------+
+              |              |                      |               |
+              +--------------+----------+-----------+---------------+
+                                        v
+                        +-------------------------------+
+                        |  MERGE + DEDUPE + HARD FILTER |   ~3 ms
+                        |     -> ~1000-1500 candidates  |
+                        +-------------------------------+
+                                        |
+                                        v
+                        +-------------------------------+
+                        |  FEATURE HYDRATION            |   ~15 ms
+                        |  per-candidate + cross feats  |
+                        +-------------------------------+
+                                        |
+                                        v
+                        +-------------------------------+
+                        |  RANKER (DLRM + MMoE heads)   |   ~50 ms
+                        |  p_click, p_watch50, p_like,  |
+                        |  p_hide, E[watch time]        |
+                        |  + shallow position tower     |
+                        +-------------------------------+
+                                        |  top ~200 by blended score
+                                        v
+                        +-------------------------------+
+                        |  RERANKER                     |   ~5 ms
+                        |  diversity caps, freshness,   |
+                        |  policy, exploration slots    |
+                        +-------------------------------+
+                                        |
+                                        v
+                              response: 50 videos
+                                        |
+                                        v
+                        +-------------------------------+
+                        |  LOGGING -> event stream      |
+                        |  impressions, positions,      |
+                        |  scores, feature snapshot     |
+                        +-------------------------------+
+```
 
 ### Step 5 — Evaluation
 
-I would evaluate retrieval and ranking separately. For retrieval, I would use recall@1000. It measures how often the watched video appears in the candidate set. If recall@1000 is 60%, retrieval has already lost 40% of observed positive outcomes. The ranker cannot recover them.
+Offline, evaluate the two stages separately, because they have different jobs. For candidate generation the metric is **recall@k**: over held-out impressions where the user actually watched something, what fraction of the time does the watched video appear in the retrieved top $k$? If recall@1000 is 60%, then 40% of good outcomes are already lost before ranking runs, and no ranker improvement can recover them. For the ranker, the metric is **AUC** or, better, per-user grouped AUC — AUC computed within each user's impression list and then averaged — because global AUC can look great simply by separating heavy users from light users, which is not a ranking skill. Add log loss, which unlike AUC is sensitive to calibration and will catch a model that orders well but predicts nonsense magnitudes.
 
-For ranking, I would use per-user AUC, NDCG, log loss, and calibration. Log loss matters because the final score combines probabilities and expected values.
+The honest thing to say next is that all of these are measured on data the current system generated, and they therefore reward agreement with the current system. A new model that surfaces genuinely good videos the old model never showed gets *penalized* offline, because those impressions have no positive label — they have no label at all. This is why offline metrics are a filter for obviously-broken models, not a launch decision.
 
-Offline metrics are release gates, not launch decisions. The data came from the current policy, so it favors models that behave like the current model.
-
-The launch decision requires an A/B test randomized by user. The primary metric is watch time per user per day. Guardrails include day-7 and day-28 retention, dislikes, “not interested” actions, satisfaction surveys, content diversity, and creator exposure. I would run the test for at least two weeks. I would also keep about 0.5% of users in a long-term holdback to detect slow retention damage.
+For long-horizon effects, keep a small **holdback**: a permanent slice of users, perhaps 0.5%, held on an older model for months. It is the only way to measure whether a year of incremental watch-time optimization has quietly damaged retention, since each individual A/B was too short to see it.
 
 ### Step 6 — Production concerns
 
-One billion daily requests gives:
+**Throughput.** One billion home-feed loads per day is $10^9 / 86{,}400 \approx 11{,}600$ requests per second on average. Traffic is not flat; peak-to-average of about 3x is a reasonable assumption for a global consumer product, so plan for ~35,000 QPS. Each request scores about 1000 candidates in the ranker, so the ranker performs $35{,}000 \times 1000 = 3.5 \times 10^7$ item-scorings per second at peak. That number is the reason the ranker cannot be a large transformer: at 35 million scorings per second, every microsecond of per-item cost is 35 seconds of aggregate compute per second, i.e. 35 machines. Sizing the ranker is not an accuracy decision, it is a fleet-size decision.
 
-$$
-\frac{10^9}{86{,}400}\approx 11{,}600 \text{ average QPS}.
-$$
+**Storage.** Item embeddings: $10^9 \times 256 \times 2$ bytes (fp16) = 512 GB, plus HNSW edges at $10^9 \times 32 \times 4$ = 128 GB, so ~640 GB, sharded across roughly 10 machines with 64 GB of index each plus replicas for throughput. With PQ at 64 bytes per vector this drops to 64 GB and the sharding is driven by QPS instead. User state: 2.5 billion users at ~2 KB each is 5 TB in the online store, though you would only keep the active subset hot and page the rest.
 
-With a $3\times$ peak factor, I would provision for about 35,000 QPS. If each request ranks 1,000 candidates, the ranker performs:
+**Latency budget** at p99, summing to the 150 ms target: network and request parsing 10 ms; feature service read 5 ms; candidate generation 30 ms (all sources in parallel, so this is the slowest source, not the sum); merge and filter 3 ms; feature hydration 15 ms; ranker inference 50 ms; reranker 5 ms; response serialization 5 ms. Total 123 ms, leaving about 27 ms of headroom for tail effects. State the headroom explicitly — interviewers like a budget that does not exactly equal the target, because one that does is a budget that will be blown.
 
-$$
-35{,}000 \times 1{,}000 = 35\text{ million item scores per second}.
-$$
+**Failure modes and what happens.** Each stage needs a defined degradation, not a 500. If the ANN index is unreachable, serve from the other retrieval sources; the feed gets less personal but exists. If the feature service is down, use a locale-level default user profile. If the ranker times out, return candidates ordered by retrieval score and engagement priors — noticeably worse, still a feed. If everything is down, serve a cached per-locale popularity list, which should be pregenerated and refreshed hourly precisely so that this path is always warm. The general principle: every stage has a cheaper fallback, and you rehearse them, because a fallback path that has never taken traffic will not work the first time it has to.
 
-Therefore, the ranker cannot be a large transformer.
+**Monitoring** in three layers. Infrastructure: QPS, p50/p95/p99 per stage, error rates, cache hit rates, index staleness. Model: prediction distribution drift measured by population stability index (PSI), feature-level drift, calibration plots comparing predicted watch time to realized watch time in deciles, and coverage — what fraction of the catalog receives any impression at all, which catches a model collapsing onto a narrow slice. Business: watch time, sessions, retention, dislike rate, creator-side distribution. Part 1 covers the dashboard and alerting stack; the relevant point here is that the model layer is the one teams forget, and it is the one that fails silently.
 
-The p99 latency budget is:
-
-```text
-Request handling                 10 ms
-User-feature lookup               5 ms
-Parallel candidate retrieval     30 ms
-Merge and hard filters            3 ms
-Candidate feature hydration      15 ms
-Multi-task ranking               50 ms
-List-level reranking              5 ms
-Response serialization            5 ms
-                               -------
-Total                           123 ms
-Headroom                         27 ms
-                               -------
-p99 target                      150 ms
-```
-
-Each stage needs a fallback. If ANN fails, use subscriptions, trending, fresh content, and co-watch candidates. If user features fail, use a locale-level default profile. If ranking times out, sort by retrieval score and engagement priors. If the full recommendation path fails, return a cached regional popularity feed.
-
-I would retrain the ranker daily. I would retrain the two-tower model weekly because each new retriever requires a large re-index. I would compute new-video embeddings at upload and insert them incrementally.
+**Retraining.** The ranker retrains daily on a rolling window of recent logs, warm-started from yesterday's weights rather than from scratch. The two-tower retriever retrains weekly, because re-indexing a billion items is expensive and its embeddings move more slowly. New item embeddings are computed continuously at upload and inserted incrementally into the index, so a video is retrievable within about an hour without a full rebuild. Triggers for off-schedule retraining: PSI above a threshold on important features, calibration error exceeding a band, or a step change in a business metric. And the pipeline must support rollback to the previous model artifact in minutes, which means keeping the last several versions loadable and having a deployment flag that flips traffic instantly.
 
 ### The hard tradeoff
 
-The central tradeoff is watch time versus satisfaction.
+**Should the ranker optimize watch time, or should it optimize satisfaction?**
 
-Watch time is dense, immediate, and easy to optimize. However, it can reward long, repetitive, or emotionally provocative content. This can increase short-term engagement while reducing long-term trust.
+The case for watch time is that it is dense, immediate, and unambiguous. Every impression produces a number within minutes. It is machine-readable, it correlates with revenue because more watching means more ad inventory, and it makes the training loop tight — you can retrain daily and see the effect. Sparse alternatives like surveys cover a tiny sample and arrive slowly, so a model trained on them is starved of data.
 
-Therefore, I would use watch time as the main signal, add explicit positive and negative satisfaction signals, and make long-term retention a hard launch guardrail. I would not launch a model that improves watch time but significantly reduces day-28 retention.
+The case against is that watch time is a proxy that diverges from the goal in specific, predictable ways. It rewards length over quality: a mediocre 40-minute video beats an excellent 4-minute one. It rewards autoplay-friendly, low-effort content. It rewards emotionally activating content, since outrage holds attention. And crucially, the divergence compounds — each retraining cycle bakes in the previous cycle's drift, so the system walks steadily toward content that holds attention without being wanted. You do not see this in a two-week A/B test because the damage accrues over months.
 
-The design has one core shape: retrieve about 1,000 candidates from one billion videos, rank them with a calibrated multi-task model, rerank the list for policy, diversity, freshness, and exploration, and validate the result with long-term online metrics.
+What I would actually do is neither pure option. Optimize a blended objective where watch time is the dominant term but explicit satisfaction signals — likes, surveys where available, and especially negative signals like hides and "not interested" — enter with meaningful weight, and treat long-horizon retention as a hard guardrail rather than an objective. Concretely, refuse to launch a model that improves watch time while regressing day-28 retention, even at high statistical significance on the primary metric.
 
+What would change my mind: evidence from the long-term holdback. If a year of watch-time optimization shows no retention divergence between the holdback and production, the proxy is not diverging and the added complexity of satisfaction modelling is not earning its keep. If the holdback shows divergence, I would go further than the blend and move satisfaction from a weighted term to a constraint.
 
 ---
 
@@ -499,50 +348,165 @@ The design has one core shape: retrieve about 1,000 candidates from one billion 
 
 ### Requirements and assumptions
 
-I will design query understanding, retrieval, and organic ranking. I will assume a few hundred billion documents, 10–14 billion queries per day, a 200 ms p99 budget, and ten organic results. Human grades and click logs are available. Personalization uses language, locale, and coarse location.
+**Assume for the rest:** I own query understanding through final ordering. Corpus of a few hundred billion documents (Google publicly says "hundreds of billions of webpages," an index over 100 million gigabytes). Query volume on the order of 10-14 billion per day — public estimates vary widely and I am treating this as approximate. Both human relevance grades and click logs are available. Personalization limited to locale, language, and coarse location. Server-side budget 200 ms at p99. Output: ten organic results plus whatever else the page assembles.
 
 **Functional requirements.** The system must understand and rewrite queries, retrieve lexical and semantic candidates, rank by relevance and quality, remove spam and duplicates, support fresh documents, generate snippets, and log impressions and clicks.
 
-**Non-functional requirements.** The service must stay below 200 ms at p99, support global traffic, keep important documents fresh, survive slow shards, and provide stable quality across languages, regions, and head and tail queries.
+**Non-functional requirements.** The service must stay below 200 ms at p99, support global query volume, keep important documents fresh, survive slow or failed shards, and provide stable quality across languages, regions, and head and tail queries.
 
-### ML framing and data
+### Step 2 — Frame it as an ML problem
 
-This is learning to rank. Pointwise loss scores documents independently. Pairwise loss learns which of two documents ranks higher. Listwise methods optimize the result list. LambdaMART is a strong baseline because it weights pairwise gradients by the change in NDCG.
+The naive framing is binary classification: given a (query, document) pair, predict relevant or not. That framing is wrong and saying why is worth real points. Relevance is not a property of a document in isolation, it is a property of a document *relative to the other documents available for that query*. A mediocre page about a very obscure topic may deserve rank one because nothing better exists; an excellent page may deserve rank eight for a competitive query. And the loss you care about is not per-document accuracy, it is the quality of the *ordering of the top few*. Getting position 200 wrong costs nothing. Getting position 1 wrong costs everything.
 
-Human grades are small but unbiased by position. Click logs are large but biased. A position-based click model is:
+That is what **learning-to-rank** means: a family of methods whose loss function is defined over a list rather than an example. There are three, and interviewers ask you to compare them.
 
-$$
-P(\text{click}\mid d,k)=P(\text{examine}\mid k)P(\text{relevant}\mid d)=\theta_k\gamma_d.
-$$
+**Pointwise** treats each (query, document) pair independently and predicts an absolute score or grade — plain regression or classification. It is simple, it reuses all standard tooling, and its weakness is that it optimizes the wrong thing. A model that predicts every document's grade with small error can still order them badly, and it wastes capacity being accurate about documents nobody will ever see.
 
-I would estimate $\theta_k$ from a small randomized slice and use inverse propensity weights $1/\theta_k$. Query features include spelling, intent, entities, language, and freshness intent. Document features include authority, quality, spam, language, and age. Query-document features include BM25, title match, proximity, dense similarity, and point-in-time behavioral aggregates.
+**Pairwise** takes pairs of documents for the same query where one is graded higher, and learns to score the better one above the worse one. The loss is on the *difference*, so absolute calibration stops mattering and the model concentrates on ordering, which is what you want. RankNet introduced this with a logistic loss on score differences. The weakness is that all pairs count equally: swapping documents at positions 1 and 2 and swapping documents at positions 99 and 100 contribute the same gradient, which is not how anyone uses a search engine.
 
-### Architecture
+**Listwise** defines the loss over the whole ranked list and tries to optimize the ranking metric directly. The obstacle is that ranking metrics are step functions of the scores — a document's contribution changes only when it crosses another document — so they have zero gradient almost everywhere. LambdaRank's insight was to skip the loss entirely and specify the *gradient*: take the pairwise gradient and multiply it by how much the ranking metric would change if you swapped those two documents. Pairs that matter get large gradients, pairs deep in the tail get almost none. **LambdaMART** is that gradient rule implemented inside gradient-boosted trees, and for tabular ranking features it remains a genuinely strong baseline, not a historical curiosity.
 
-BM25 handles exact terms, names, and identifiers. A bi-encoder and ANN index handle semantics and paraphrases. Their union enters a ranking cascade.
+Now the labels. Two sources with opposite properties.
 
-```text
-query
- -> query understanding                                      ~10 ms
- -> BM25 inverted index + dense bi-encoder ANN in parallel   ~40 ms
- -> merge and deduplicate: about 30,000 documents             ~5 ms
- -> L1 cheap scorer: BM25, authority, spam -> 1,000          ~20 ms
- -> L2 LambdaMART with rich features -> 100                  ~30 ms
- -> L3 cross-encoder over query+document -> 10-20            ~60 ms
- -> snippets, diversity, and page assembly                   ~15 ms
- -> ten organic results
+**Human relevance grades** come from trained raters following a rubric, producing a graded label per (query, document) pair — commonly a 0-4 scale from "off-topic" to "fully meets the need." They are high quality, unbiased by position, and expensive: you get millions of pairs, not billions, and they skew toward queries someone thought to sample. They also measure topical relevance rather than satisfaction; a rater cannot tell you whether the page loaded slowly or was covered in ads.
+
+### Step 3 — The data
+
+**Query-side features** come out of query understanding: the corrected spelling, the segmentation into terms, a predicted intent class (navigational, informational, transactional, local, news-seeking), any linked entities, and the query's own statistics — how frequent it is, whether its volume just spiked, its historical reformulation rate.
+
+**Document-side features** are query-independent and precomputed at index time: link-graph authority in the PageRank family, spam and quality classifiers, page-experience signals like load time and layout stability, language, country, publication and last-update timestamps, and content-quality scores from models run offline over the page.
+
+**Query-document features** are the interesting ones. Lexical match, chiefly **BM25** — the standard bag-of-words scoring function that rewards a document for containing the query's terms, weighted so rare terms count more than common ones and so the tenth occurrence of a word adds less than the second, with a normalization for document length so long documents cannot win by sheer size. Field-specific matches (does the query appear in the title, the URL, the anchor text pointing at this page). Semantic similarity from dense embeddings. Proximity — do the query terms appear near each other. And aggregated historical behaviour for this exact query-document pair: click-through rate, dwell time after clicking, and whether users came back and searched again.
+
+That last family is enormously predictive and carries the sharpest **leakage** risk in the design, so explain it rather than naming it. Suppose you build a training row for query $q$ and document $d$ on some date, and you attach "CTR of $d$ for $q$" computed from the full log dump. That statistic includes the clicks from the very impression you are training on, and from impressions after it. The model then learns "documents that get clicked for this query are relevant," which is circular — at inference for a *new* query-document pair the feature is undefined or based on much less data. Offline metrics look spectacular, live performance does not move. The fix is point-in-time correctness: compute the feature over a window ending strictly before the row's timestamp, and enforce it in the pipeline rather than trusting people to remember. A second, sneakier form: these historical features do not exist for new documents, and if "missing" is encoded as zero, the model learns that new documents are bad, which permanently suppresses fresh content. Encode missing as genuinely missing — GBDTs handle this natively — and give the model a "document age" feature so it can learn how to treat young pages.
+
+### Step 4 — The architecture
+
+A query arrives. Two hundred milliseconds.
+
+**Query understanding** runs first and is cheap. Spelling correction, language identification, segmentation, intent classification, entity linking against a knowledge graph. It also produces query rewrites and expansions — synonyms and related forms that will be sent to retrieval alongside the original. Budget 10 ms. The output is not one query but a small bundle of them.
+
+**Retrieval** runs next and must reduce hundreds of billions to tens of thousands. Two complementary systems run in parallel.
+
+The **inverted index** is the classical structure: for every term in the vocabulary, a posting list of the document IDs containing it, sorted, compressed. To answer "machine learning tutorial" you intersect three posting lists and score the survivors with BM25. This is exact on terms, extremely fast, and it fails on vocabulary mismatch — a page that says "automobile" does not match a query that says "car." At this corpus size the index is sharded across many thousands of machines by document, each holding a slice; the query is broadcast to all shards, each returns its local top-$k$, and a gathering tier merges. Note the fan-out pattern, because it has a consequence: a request's latency is the *slowest* shard's latency, so tail latency at each shard becomes typical latency for the query. The standard mitigation is hedged requests — send the same shard request to two replicas and take whichever answers first — which trades roughly 5% extra load for a large p99 improvement.
+
+**Dense retrieval** covers what the inverted index misses. A **bi-encoder** — the same two-tower idea as Design 1, with a query encoder and a document encoder producing vectors in one space — is run over the corpus offline for documents and at query time for the query, and an ANN index (HNSW or IVF-PQ, defined in Design 1) returns nearest neighbours. This matches on meaning rather than tokens, so it retrieves the "automobile" page for the "car" query. Its weakness is the mirror image: it is fuzzy about exact strings, so it can miss a rare product code or a specific name. Union the two. Neither alone is acceptable, and knowing *why* each fails is the point of running both. Budget 40 ms. Output: on the order of tens of thousands of candidates.
+
+Now the **cascade**. The idea is simple and it is the organizing principle of the whole system: you have a fixed compute budget and a huge candidate set, so you apply a sequence of rankers of increasing cost and decreasing input size, each one's job being to hand a smaller, better set to the next. The economics only work if the cost per document rises faster than the candidate count falls. A useful way to say it: each tier should cost roughly the same in total, so a tier that is 100x more expensive per document should see 100x fewer documents.
+
+**L1** is a cheap, fast scorer over tens of thousands of candidates using only precomputed, cheap features — BM25, PageRank-family authority, spam score, a coarse semantic similarity. It is often a small GBDT or even a linear model, and it must be fast enough to run on 30,000 documents in under 20 ms, which means roughly half a microsecond per document. It cuts to about 1000.
+
+**L2** is a proper learning-to-rank model — LambdaMART over a few hundred features, or a lightweight neural equivalent — running on 1000 documents with full feature hydration. Budget 30 ms. It cuts to about 100.
+
+An optional **L4** exists in modern systems: an LLM used as a relevance judge or answer synthesizer for the hardest queries. Route only queries the earlier tiers flag as ambiguous or low-confidence, because you cannot afford it on all traffic. Say explicitly that this is a routed, minority path.
+
+**Result assembly** then builds the page: snippet generation per result, deduplication so the same site does not take six of ten slots, diversity for ambiguous queries (a query like "jaguar" should show both the animal and the car rather than betting everything on one interpretation), plus knowledge panels and other verticals. Budget 15 ms.
+
+#### Architecture diagram
+
+```
+                                query text
+                                     |
+                                     v
+                    +--------------------------------+
+                    |  QUERY UNDERSTANDING           |  ~10 ms
+                    |  spell, segment, intent,       |
+                    |  entity link, rewrites         |
+                    +--------------------------------+
+                                     |
+                 +-------------------+-------------------+
+                 v                                       v
+     +------------------------+              +------------------------+
+     | INVERTED INDEX (BM25)  |              | DENSE RETRIEVAL        |
+     | sharded x thousands    |              | bi-encoder + ANN       |
+     | exact term match       |              | semantic match         |
+     +------------------------+              +------------------------+
+                 |   scatter/gather, hedged                |
+                 +-------------------+---------------------+
+                                     v
+                    +--------------------------------+
+                    |  MERGE / DEDUPE  ~30k docs     |  ~40 ms total
+                    +--------------------------------+
+                                     |
+                                     v
+                    +--------------------------------+
+                    |  L1  cheap scorer              |  ~20 ms
+                    |  BM25, authority, spam, coarse |
+                    |  ~0.5 us per doc  -> top 1000  |
+                    +--------------------------------+
+                                     |
+                                     v
+                    +--------------------------------+
+                    |  L2  LambdaMART / LTR          |  ~30 ms
+                    |  few hundred features          |
+                    |  -> top 100                    |
+                    +--------------------------------+
+                                     |
+                                     v
+                    +--------------------------------+
+                    |  L3  cross-encoder             |  ~60 ms
+                    |  query+doc through transformer |
+                    |  -> top 10-20                  |
+                    +--------------------------------+
+                                     |
+                          (hard queries only)
+                                     v
+                    +--------------------------------+
+                    |  L4  LLM judge / synthesis     |  routed minority
+                    +--------------------------------+
+                                     |
+                                     v
+                    +--------------------------------+
+                    |  PAGE ASSEMBLY                 |  ~15 ms
+                    |  snippets, host dedupe,        |
+                    |  intent diversity, verticals   |
+                    +--------------------------------+
+                                     |
+                                     v
+                          10 results  +  logging
+                          (positions, scores,
+                           propensities)
 ```
 
-A bi-encoder computes document vectors offline. A cross-encoder processes query and document together. It is more accurate but cannot be precomputed. Therefore, it runs only on the final candidates.
+### Step 5 — Evaluation
 
-### Evaluation and production
+The offline metric is **NDCG**, and you should be able to derive it, not just name it. Start with discounted cumulative gain: each result contributes a gain based on its relevance grade, discounted by how far down it sits, since users look at the top.
+$$
+\mathrm{DCG@}k = \sum_{i=1}^{k} \frac{2^{\mathrm{rel}_i} - 1}{\log_2(i+1)}
+$$
+The $2^{\mathrm{rel}} - 1$ numerator makes highly relevant documents worth disproportionately more than moderately relevant ones — a grade-4 document is worth 15, a grade-2 is worth 3 — which matches the fact that one excellent result beats three mediocre ones. The $\log_2(i+1)$ denominator implements the position discount. DCG is not comparable across queries, because a query with many relevant documents can score higher than one with few no matter how well you rank. So normalize by the ideal ordering:
+$$
+\mathrm{NDCG@}k = \frac{\mathrm{DCG@}k}{\mathrm{IDCG@}k}
+$$
+where IDCG is DCG of the perfect ranking. Now every query is on a 0-to-1 scale and averaging across queries is meaningful.
 
-Use recall@k for retrieval and NDCG, MRR, and human relevance for ranking. Segment navigational, informational, local, news, head, and tail queries. Online metrics include long clicks, successful sessions, reformulation, abandonment, and latency.
+What NDCG misses is worth saying plainly. It measures topical relevance against a rater rubric, so it is blind to everything the rater did not judge: page load time, ad density, whether the answer required scrolling past three paragraphs of preamble. It scores each query independently, so it cannot see that your ten results are near-duplicates of one another, and it cannot see intent diversity for ambiguous queries — you need separate metrics such as $\alpha$-NDCG or explicit host-diversity counts for that. It is also only as good as your rater pool's agreement; if two raters disagree 20% of the time, an NDCG difference of half a point is noise.
 
-The stages total 180 ms and leave 20 ms of headroom. Cache popular query-locale results. Use hedged requests for slow shards. If dense retrieval fails, return lexical results. If L3 times out, return L2 ordering.
+Guardrails: NDCG on the held-out human-rated set must not regress; per-segment NDCG on tail queries, non-English queries, and each major locale must not regress even if the average improves; spam-domain share of top-10 impressions; and latency, since a ranking win that costs 40 ms may be a net loss.
 
-The main tradeoff is cross-encoder quality versus cost. I would route L3 to difficult queries when L2 confidence is low.
+### Step 6 — Production concerns
 
+**Throughput.** Take 12 billion queries per day as a working figure (public estimates run from roughly 8.5 to 14 billion; I am treating this as an assumption). That is $1.2 \times 10^{10} / 86{,}400 \approx 139{,}000$ queries per second on average. With a peak-to-average factor of 2, plan for about 280,000 QPS. Now the cascade arithmetic. L1 sees 30,000 documents per query, so at peak it processes $2.8\times10^5 \times 3\times10^4 = 8.4 \times 10^9$ document-scorings per second — which is why L1 must cost well under a microsecond per document and cannot be a neural network. L3 sees 100 documents, so $2.8\times10^5 \times 100 = 2.8\times10^7$ cross-encoder evaluations per second. Even a distilled cross-encoder at, say, 1 ms of accelerator time per document implies 28,000 accelerator-seconds per second of wall clock — an enormous fleet. This is the arithmetic that makes **caching** structural rather than an optimization: query frequency follows a heavy-tailed distribution, and if the top queries account for a large share of volume, caching full result pages for common queries at a modest TTL removes most of that load. Say the cache hit rate is 40%; the L3 fleet shrinks by 40% immediately.
+
+**Storage.** A few hundred billion documents with, say, 500 bytes of ranking features each is on the order of 100 TB of feature data, before the inverted index and the document text itself, distributed across many thousands of machines. The dense index at $3\times10^{11}$ documents is not storable as full-precision vectors under any budget — $3\times10^{11} \times 768 \times 4$ bytes is roughly 900 TB — which is why dense retrieval at web scale uses heavy quantization and typically covers a filtered subset of the corpus rather than every crawled page. Be willing to say that out loud: the honest answer is that dense retrieval complements the inverted index over a curated slice, it does not replace it over everything.
+
+**Latency budget** at p99, summing to 200 ms: query understanding 10; retrieval 40 (parallel, dominated by the slowest shard, mitigated by hedged requests); merge and dedupe 5; L1 20; L2 30; L3 60; page assembly 15. Total 180 ms, with 20 ms of slack.
+
+**Failure modes.** If dense retrieval fails, serve from the inverted index alone; results degrade on paraphrased queries and remain acceptable. If L3 times out, return L2's ordering, which is worse but coherent — this is the single most valuable property of a cascade, that every tier's output is a valid answer. If a retrieval shard is unresponsive, return results from the remaining shards and mark the response as partial; missing one shard out of thousands is usually invisible. The dangerous failure is a **poisoned index**: a spam campaign or an ingestion bug causing a class of low-quality documents to surge. That is not a crash, it is a quality collapse, and the only defense is monitoring the composition of top-10 results by domain age, domain reputation, and spam score, with alerts on sudden shifts.
+
+**Monitoring.** Infrastructure: QPS, per-tier latency, shard health, cache hit rate, index freshness lag. Model: score distribution drift, feature drift, the fraction of queries where L3 substantially reorders L2's output (if that fraction collapses, L3 has stopped contributing and you are paying a fleet for nothing), and per-segment NDCG on a continuously refreshed rated sample. Business and quality: reformulation rate, long-click rate, abandonment, and the spam and freshness composition metrics above.
+
+### The hard tradeoff
+
+**Should the cascade end in a cross-encoder, or should you push more work into retrieval and stop earlier?**
+
+The cross-encoder case: joint attention over query and document is qualitatively more capable than any comparison of independently-computed vectors. It is the only tier that can resolve negation, argument roles, and entity relationships — the difference between "who did X beat" and "who beat X." On hard, long-tail, natural-language queries this is not a marginal gain, it is the difference between an answer and a near-miss. And the cost is bounded by design: 100 documents, not 30,000.
+
+The other case: the cross-encoder is by a wide margin the most expensive component in the stack, and per the arithmetic above it dominates serving cost. Every millisecond it consumes is a millisecond unavailable elsewhere, and there is a real alternative use for that budget — a better bi-encoder with hard negative mining, or a larger L2 with richer features, might recover a large fraction of the gain at a fraction of the cost. There is also a distributional argument: head queries are navigational and are answered correctly by BM25 plus authority, so the cross-encoder's benefit concentrates on a minority of traffic while its cost is paid on all of it.
+
+My position is to keep the cross-encoder but **route** it: run it on all traffic only if the tier's contribution justifies the fleet, and otherwise gate it on a cheap confidence signal from L2 — run it when L2's top scores are close together or the query is long and natural-language, skip it when L2 is confident or the query is navigational. That converts a fixed cost into a cost proportional to difficulty. Distillation on top: train a small cross-encoder to imitate a large one, which typically retains most of the quality.
+
+What would change my mind: an ablation showing that on the routed subset the cross-encoder's NDCG lift is under a point, or that a strong bi-encoder trained with hard negatives closes most of the gap. Conversely, if the routed subset shows large gains and represents growing traffic — and natural-language queries are growing as people talk to search engines the way they talk to assistants — I would spend more here and cut L2 instead.
 
 ---
 
@@ -550,67 +514,172 @@ The main tradeoff is cross-encoder quality versus cost. I would route L3 to diff
 
 ### Requirements and assumptions
 
-I will assume 100 million eligible ads, 10 billion impressions per day, and a 50 ms p99 budget. Advertisers bid per click or conversion. The system uses a second-price-style auction, reserve prices, pacing, frequency caps, and about one ad per eight organic items.
+**Assume for the rest:** advertisers bid per click, with optional conversion-optimized campaigns where they bid per conversion and the platform converts internally. Second-price-style auction with per-slot reserve prices. Fixed ad load of roughly one ad per eight organic items. Budgets are paced across the day. About 100 million eligible ads, 10 billion impressions per day, 50 ms budget at p99 running in parallel with organic ranking.
 
-**Functional requirements.** The system must enforce targeting, predict click and conversion, calibrate probabilities, pace budgets, run the auction, enforce frequency caps, return a winner, and log impressions, prices, clicks, and delayed conversions.
+**Functional requirements.** The system must enforce targeting and eligibility, predict click and conversion probabilities, calibrate them, pace budgets, run the auction, enforce frequency caps, return a winner, and log impressions, prices, clicks, and delayed conversions.
 
-**Non-functional requirements.** The path must stay below 50 ms at p99, support peak traffic, prevent overspend, remain calibrated by segment, protect privacy, resist click fraud, and provide auditable prices and safe fallbacks.
+**Non-functional requirements.** The path must stay below 50 ms at p99, support peak auction traffic, prevent budget overspend, remain calibrated by placement and segment, protect user privacy, resist click fraud, and provide auditable prices and safe fallbacks.
 
-### ML framing
+### Step 2 — Frame it as an ML problem
 
-For click-priced campaigns:
+The system's job at each request is to pick the ad that maximizes expected value, where value is measured in money. Define the currency first.
 
+**eCPM** stands for effective cost per mille — expected revenue per thousand impressions. It exists because advertisers bid in different units and you need to compare them. If an advertiser bids \$2.00 per click and the model predicts a 1.5% click-through rate, then each impression is worth $0.015 \times \$2.00 = \$0.03$ in expectation, and per thousand impressions that is \$30. So
 $$
-\text{eCPM}=1000P(\text{click})\text{bid}_{\text{CPC}}.
+\text{eCPM} = 1000 \times p_{\text{click}} \times \text{bid}_{\text{CPC}}
 $$
-
-For conversion campaigns:
-
+For a conversion-optimized campaign bidding per action, you chain the two probabilities:
 $$
-\text{eCPM}=1000P(\text{click})P(\text{conversion}\mid\text{click})\text{bid}_{\text{CPA}}.
+\text{eCPM} = 1000 \times p_{\text{click}} \times p_{\text{conversion} \mid \text{click}} \times \text{bid}_{\text{CPA}}
 $$
+And for a CPM campaign the eCPM is just the bid, no model required. Everything now lives on the same axis, measured in dollars per thousand impressions, and the auction can rank across campaign types.
 
-Probabilities must be calibrated. Expected calibration error is:
+So the ML problem is two probability estimation tasks: $p_{\text{click}}$ given an impression, and $p_{\text{conversion}}$ given a click. Both are binary classification, both are trained with log loss, and both must be *calibrated*, not merely well-ordered.
 
+Say precisely what calibration means, because it is the hinge of this design. A model is calibrated if, among all impressions where it predicted 2%, about 2% actually get clicked. You measure it by bucketing predictions into deciles and comparing the mean prediction in each bucket to the observed rate, or with a single summary number, expected calibration error:
 $$
-\mathrm{ECE}=\sum_b\frac{n_b}{N}|\bar p_b-\bar y_b|.
+\mathrm{ECE} = \sum_{b=1}^{B} \frac{n_b}{N}\,\big|\,\overline{p}_b - \overline{y}_b\,\big|
 $$
+where $\overline{p}_b$ is the mean predicted probability in bucket $b$ and $\overline{y}_b$ the observed rate.
 
-In a simplified second-price auction:
-
+Why it matters here and not in Design 1: in a second-price auction the winner does not pay their own bid, they pay the smallest amount that would still have won. Concretely, the winner is the ad with the highest eCPM, and the price they are charged per click is
 $$
-\text{CPC}_{\text{charged}}=
-\frac{\text{eCPM}_{\text{second}}}{1000P(\text{click})_{\text{winner}}}.
+\text{CPC}_{\text{charged}} = \frac{\text{eCPM}_{\text{second}}}{1000 \times p_{\text{click}}^{(1)}}
 $$
+Look at where $p_{\text{click}}^{(1)}$ sits — in the denominator of the price. If the model overpredicts the winner's click rate by 10%, the winner still wins, the ordering is unchanged, and the platform charges 10% less per click than it should. Miscalibration converts directly into lost revenue without changing a single ranking decision. If the model *under*predicts, the advertiser is overcharged, which is worse in a different way — it is an advertiser-trust problem and, at scale, a regulatory one.
 
-Therefore, calibration errors directly change price. Clicks arrive quickly but have position and fraud bias. Conversions are sparse and delayed. Train on mature conversions or model the delay.
+Now the labels and their pathologies.
 
-### Architecture
+**Clicks** are fast, dense, and mostly honest. They arrive within seconds, so a click model can be retrained hourly. Their problems are position and context bias — an ad in the second slot outperforms the same ad in the seventh — and click fraud, which inflates rates for specific ads or specific traffic sources and must be filtered before training or the model learns to love bot traffic.
 
-```text
-ad request
- -> targeting index + eligibility, budget, policy, cap filters ~10 ms
-    100M ads -> 50K-100K
- -> two-tower and prior-eCPM retrieval -> 1,000-2,000           ~8 ms
- -> DLRM or wide-and-deep ranker                               ~20 ms
- -> segment calibration                                         ~1 ms
- -> pacing controller                                            ~2 ms
- -> auction and reserve price                                    ~2 ms
- -> winner, logging, response                                    ~4 ms
+### Step 3 — The data
+
+**User features** mirror Design 1: long-term interest embeddings from behaviour, recent activity, demographics available under the platform's privacy policy, device and connection, and — importantly here — advertising-specific history such as how many ads this user has seen today, how recently they saw *this* advertiser, and their historical rate of hiding or reporting ads. That last set drives both the model and the frequency-capping rules.
+
+**Ad features** include the creative itself (image and text, encoded by pretrained vision and text models into embeddings), the campaign objective, the advertiser and their vertical, the landing page and its quality, the targeting specification, and historical performance — this creative's click rate, this advertiser's click rate, this vertical's click rate. Historical performance is the strongest single feature and creates the same leakage and cold-start issues as Design 1: point-in-time correctness is mandatory, and "no history" must be encoded as unknown rather than zero, or every new creative will be ranked as though it were terrible.
+
+**Cross features** are where this model earns its keep, and they are why the architecture is what it is. The signal is not "this user clicks ads" or "this ad gets clicked" but "this user clicks *this kind of ad* in *this context*." Recall from Design 1 that a **feature cross** is the conjunction of two categorical features treated as a single new feature — (user's country, advertiser vertical) as one token rather than two independent ones. Linear models cannot represent conjunctions; they can only sum independent contributions. The cross is what lets the model know that people in one country respond to one vertical without inferring it from country alone and vertical alone.
+
+**Feature cardinality and hashing.** The sparse feature space here is enormous: hundreds of millions of ad IDs, a billion user IDs, plus crosses that multiply cardinalities together. A cross of 10,000 user segments with 10,000 ad categories is $10^8$ possible values. The **hashing trick** — mapping each feature string through a hash function into a fixed number of buckets, say $2^{24}$, and learning one embedding per bucket — makes the table size a design parameter instead of a consequence of the data. Collisions are the cost, and they are unevenly harmful: two rare features sharing a row barely matters, two head features sharing a row is a real quality loss. Mitigations are multiple independent hash functions whose embeddings are summed, so a collision in one is unlikely to coincide with a collision in another, and reserving explicit non-hashed rows for the top few million most frequent values.
+
+### Step 4 — The architecture
+
+A feed request arrives and contains an ad slot. Fifty milliseconds.
+
+**Targeting and eligibility filtering** runs first, and it is not machine learning — it is a fast set-intersection problem, and it does the heaviest reduction in the pipeline. Every campaign specifies a targeting predicate: geography, language, age range, interest segments, custom audiences, device type, plus exclusions. Given a user, you need the set of campaigns whose predicates the user satisfies. This is implemented as an inverted index over targeting attributes, the same structure as Design 2's text index but over audience attributes instead of terms: for each attribute value, a posting list of campaign IDs requiring it. Intersect and union the lists implied by this user's attributes and you get eligible campaigns without evaluating a hundred million predicates. Applied at the same time are the hard filters: campaigns that have exhausted their budget, campaigns paused by pacing, ads this user has been frequency-capped on, brand-safety exclusions, and policy blocks. This is where 100 million becomes something like 50,000 to 100,000. Budget 10 ms.
+
+**Candidate retrieval** narrows further. Even 50,000 is too many to score with a heavy model in the remaining budget, so use the same tools as Design 1: a two-tower retriever over user and ad embeddings, plus a cheap eCPM estimate using historical priors (last-known CTR times bid), plus a rule-based path guaranteeing that certain campaign types get considered. Take the union down to roughly 1,000 to 2,000. Budget 8 ms.
+
+**Ranking** scores the survivors with the pCTR and pCVR models. The architecture is the **wide-and-deep** or **DLRM** family described in Design 1 — sparse categorical features through hashed embedding tables, dense features through an MLP, an explicit interaction layer computing pairwise products among embeddings, then a shared trunk with task heads. Two heads matter here: click probability and conversion-given-click. In practice you also add auxiliary heads — probability of hide, probability of a long dwell on the landing page — because they regularize the trunk and because they feed the user-experience term in the final score.
+
+The wide part deserves a sentence of justification in this design specifically. Ads have a lot of *memorizable* structure: a particular advertiser genuinely does perform well with a particular audience segment, and that is a fact to be stored, not generalized. The wide linear component over explicit crosses stores such facts exactly. The deep component generalizes to combinations never observed, which is what handles the constant churn of new campaigns. Both matter, which is precisely the argument in the original wide-and-deep paper.
+
+**Calibration layer.** After the model comes an explicit, separately-fitted calibration stage, and this is a distinct component, not a training detail. The two standard methods: **Platt scaling** fits a one-dimensional logistic regression on the model's output, $p_{\text{cal}} = \sigma(a \cdot z + b)$ where $z$ is the model's logit, learning just two parameters on a held-out set — cheap, stable, and only capable of correcting a monotone S-shaped distortion. **Isotonic regression** fits an arbitrary non-decreasing step function mapping raw scores to calibrated probabilities — far more flexible, capable of fixing weird local distortions, and prone to overfitting on small data, so it needs a decent held-out sample. Fit calibration per meaningful segment, because a globally calibrated model is routinely miscalibrated per country, per placement, and per campaign objective, and the auction runs within segments.
+
+One correction to a common miscalibration source: if you **downsample negatives** during training — which you probably do, since impressions vastly outnumber clicks — the model's outputs are calibrated to the resampled distribution, not the real one. If you kept negatives with probability $w$, invert it analytically:
+$$
+p = \frac{p_s}{p_s + (1 - p_s)/w}
+$$
+where $p_s$ is the model's output on the downsampled distribution. Failing to apply this correction produces a model that overpredicts by exactly the downsampling factor, which in an auction is a direct, large revenue error.
+
+#### Architecture diagram
+
+```
+             feed request with ad slot (user, context, placement)
+                                  |
+                                  v
+              +-------------------------------------------+
+              |  TARGETING + ELIGIBILITY                   |  ~10 ms
+              |  inverted index over audience attributes;  |
+              |  budget-exhausted, paced-off, freq-capped, |
+              |  brand-safety and policy filters removed   |
+              |  100M ads  ->  ~50-100k eligible           |
+              +-------------------------------------------+
+                                  |
+                                  v
+              +-------------------------------------------+
+              |  CANDIDATE RETRIEVAL                       |  ~8 ms
+              |  two-tower ANN + prior-eCPM shortlist      |
+              |  -> ~1000-2000 candidates                  |
+              +-------------------------------------------+
+                                  |
+                                  v
+              +-------------------------------------------+
+              |  RANKING MODEL (wide-and-deep / DLRM)      |  ~20 ms
+              |  hashed sparse embeddings + dense MLP      |
+              |  + explicit crosses                        |
+              |  heads: p_click, p_conv|click, p_hide      |
+              +-------------------------------------------+
+                                  |
+                                  v
+              +-------------------------------------------+
+              |  CALIBRATION                               |  ~1 ms
+              |  Platt / isotonic, fitted per segment;     |
+              |  downsampling correction applied           |
+              +-------------------------------------------+
+                                  |
+                                  v
+              +-------------------------------------------+
+              |  PACING                                    |  ~2 ms
+              |  rho from PI controller vs spend curve     |
+              +-------------------------------------------+
+                                  |
+                                  v
+              +-------------------------------------------+
+              |  AUCTION                                   |  ~2 ms
+              |  eCPM = 1000 * pClick * (pConv) * bid      |
+              |  x rho x quality; reserve price applied;   |
+              |  second-price clearing                     |
+              +-------------------------------------------+
+                                  |
+                                  v
+                         winning ad -> rendered
+                                  |
+        +-------------------------+--------------------------+
+        v                         v                          v
+  impression log            click stream                conversion
+  (features, preds,         (seconds)                   pipeline
+   auction state,                                       (hours to days,
+   position)                                            attribution join)
 ```
 
-Targeting is set intersection, not ML. The ranker uses user, ad, context, and cross features. A wide part memorizes known combinations. A deep part generalizes to new campaigns. Platt scaling or isotonic regression calibrates each placement and objective. The pacing controller adjusts campaign admission or bid multipliers against a target spend curve.
+### Step 5 — Evaluation
 
-### Evaluation and production
+Offline, the primary metric is **log loss**, not AUC, and the reason is calibration. AUC depends only on the ordering of predictions, so a model that predicts every probability at exactly twice the true value has unchanged AUC and is catastrophic in an auction. Log loss,
+$$
+-\frac{1}{N}\sum_i \big[ y_i \log p_i + (1-y_i)\log(1-p_i) \big],
+$$
+is a proper scoring rule: it is minimized only when the predicted probabilities equal the true ones, so it penalizes both bad ordering and bad magnitude. Report AUC too, since it isolates ranking quality, but treat log loss as the gate. Add expected calibration error and a calibration plot per major segment, and report **relative information gain** — the log-loss improvement over a constant-rate baseline — because raw log loss values are hard to interpret when the base rate is 1.5%.
 
-Use log loss, ECE, PR-AUC, and ranking metrics offline. Use revenue, conversions, advertiser return, and budget delivery online. Guardrails include complaints, hides, ad load, latency, concentration, and segment calibration.
+What offline metrics miss here is severe and specific. First, they are computed on impressions the current system chose to serve, so they say nothing about ads never shown — the same selection bias as Design 1. Second, log loss on the conversion model computed over a recent window is *systematically wrong* because of delayed feedback, so a model can appear to degrade purely because the label window is young. Always evaluate the conversion model on a fully matured window. Third, and most important, offline metrics have no notion of the auction. A model can improve log loss and reduce revenue, because revenue depends on the *relationship* between the winner's and runner-up's predictions rather than on average accuracy.
 
-Ten billion impressions per day is about 116,000 per second on average. At $3\times$ peak, plan for about 350,000 per second. The latency total is 47 ms.
+### Step 6 — Production concerns
 
-If ranking fails, use calibrated historical priors. If pacing is stale, use conservative admission. Never skip policy, budget, or frequency-cap rules.
+**Throughput.** Ten billion impressions per day is $10^{10}/86{,}400 \approx 116{,}000$ per second on average; at a 3x peak factor, about 350,000 per second. Each request ranks roughly 1,500 candidates, so the ranker performs $3.5\times10^5 \times 1.5\times10^3 \approx 5.2\times10^8$ ad-scorings per second at peak. That is more than an order of magnitude above Design 1's ranker load, on a budget less than half as large, which is the quantitative reason ads rankers are shallow and wide rather than deep: the architecture is chosen for arithmetic intensity that suits batched inference on accelerators, and the embedding tables are the memory bottleneck rather than the compute.
 
-The main tradeoff is short-term revenue versus long-term user and advertiser trust.
+**Revenue arithmetic**, useful for grounding the calibration argument. At 10 billion impressions per day and a \$10 eCPM, daily revenue is $10^{10}/1000 \times \$10 = \$100$ million per day, roughly \$36.5 billion per year. A 1% systematic calibration error is therefore about \$365 million per year. That single sentence is usually the moment the interviewer starts nodding, and it is why calibration monitoring is a paging alert rather than a dashboard.
 
+**Storage.** Embedding tables dominate. A hashed table of $2^{24}$ rows at 64 dimensions in fp16 is $1.68\times10^7 \times 64 \times 2 \approx 2.1$ GB per feature field; with 30 sparse fields that is roughly 64 GB of embedding parameters, which does not fit on a single accelerator and must be sharded — the parameters are partitioned across hosts while the dense MLP is replicated on each, which is exactly the hybrid parallelism DLRM was designed around. Budget and pacing state is small but hot: 10 million active campaigns at 200 bytes is 2 GB in an in-memory store, read and written on every request, which makes it a genuine hot-spot requiring sharding by campaign and careful handling of counter contention on popular campaigns.
+
+**Latency budget** at p99, summing under 50 ms: targeting and eligibility 10; retrieval 8; ranking 20; calibration 1; pacing 2; auction 2; logging and response 4. Total 47 ms.
+
+**Failure modes, in order of how much they hurt.**
+
+*Calibration drift* is the top one. It happens silently after any distribution shift — a seasonal change, a new placement, a large advertiser entering — and produces no errors, no latency change, and a steady revenue leak. Defense: monitor predicted versus actual click rate continuously per segment, alert on deviation beyond a tight band, and refit the calibration layer far more frequently than the model itself, since refitting two Platt parameters on recent data is cheap and safe.
+
+**Monitoring.** Infrastructure: QPS, per-stage latency, eligibility-set sizes (a sudden collapse means a targeting index bug and is invisible in latency metrics), pacing-state write latency. Model: calibration per segment, prediction distribution drift, feature drift, coverage of the ad inventory, and the fraction of auctions cleared at the reserve price, which rises when competition thins. Business: eCPM by segment, revenue, delivery rate, advertiser-side cost per acquisition, and user-side hide and report rates.
+
+### The hard tradeoff
+
+**Should the auction rank purely by expected revenue, or should it discount for user experience?**
+
+Pure eCPM ranking is defensible and clean. It maximizes short-run revenue by construction, it is transparent to advertisers — the highest expected value wins, and everyone can reason about how to compete — and it avoids the platform imposing an opaque quality judgment that advertisers cannot see or contest. Any quality multiplier is a thumb on the scale whose weight the platform sets unilaterally, and advertisers reasonably distrust it.
+
+Discounting for user experience is also defensible. Ads impose a real cost on the product: an irrelevant or irritating ad reduces the probability that the user comes back, and that cost is paid by the platform in future impressions, not by the advertiser who caused it. Pure eCPM ranking makes that externality invisible — a high-bidding, low-quality advertiser can outbid a low-bidding, high-quality one and degrade the feed for everyone. Including a quality term internalizes the cost, and it also improves long-run revenue, because feed quality determines how many impressions exist at all.
+
+I would include the quality term, and I would be specific about how, because the vague version of this answer is weak. Estimate the user cost of showing an ad in currency terms — the expected reduction in future sessions, converted to expected lost revenue — and subtract it from eCPM rather than multiplying by an unitless fudge factor. That makes the trade explicit and auditable, and it lets you tell an advertiser exactly why their ad was discounted. Publish a quality score to advertisers so it is actionable rather than mysterious.
+
+What would change my mind: a long-run holdback showing that ad quality has no measurable effect on retention. If users tolerate bad ads without reducing engagement, the externality is imaginary and the quality term is just revenue foregone. My prior is strongly the other way, but it is an empirical question and the holdback is how you answer it.
 
 ---
 
@@ -618,58 +687,157 @@ The main tradeoff is short-term revenue versus long-term user and advertiser tru
 
 ### Requirements and assumptions
 
-I will design processor-side card-not-present fraud detection. The merchant bears chargeback loss. The inline path has a 100 ms p99 budget. Actions are approve, step-up, or decline. High-value cases can enter review. Assume a 0.1% fraud-attempt rate.
+**Assume for the rest:** processor-side, card-not-present, merchant bears chargeback losses. Inline decision with a 100 ms budget at p99. Actions are approve, decline, or step-up challenge, plus an asynchronous review queue for high-value cases. Volume assumptions below. Fraud attempt rate of roughly 0.1% of transactions by count — I am treating this as an assumption; published figures are usually expressed by *value*, where US card-not-present fraud has run on the order of 10-20 basis points of transaction value in recent Federal Reserve data.
 
-**Functional requirements.** The system must apply rules, compute velocity and graph features, produce a calibrated fraud probability, choose an action with reason codes, update state, support review, join delayed chargebacks, and log randomized approvals.
+**Functional requirements.** The system must apply hard rules, compute real-time velocity and graph features, produce a calibrated fraud probability, choose approve, step-up, or decline with reason codes, update state, support human review, join delayed chargebacks, and collect unbiased audit data.
 
-**Non-functional requirements.** It must stay below 100 ms at p99, support about 12,000 peak TPS, remain highly available, keep features fresh within seconds, protect payment data, support audit, and degrade conservatively.
+**Non-functional requirements.** The system must stay below 100 ms at p99, support about 12,000 peak transactions per second, remain highly available, keep streaming features fresh within seconds, protect payment data, support audit and explanation, and degrade conservatively.
 
-### ML framing and decision rule
+### Step 2 — Frame it as an ML problem
 
-Predict $p=P(\text{fraud}\mid x)$. Accuracy is useless because always predicting legitimate gives 99.9% accuracy.
+The prediction target is straightforward to state and subtle to define: given everything known at authorization time, estimate $p(\text{fraud} \mid \text{transaction})$. The unit is a single authorization request. The subtlety is in "fraud," which is not one thing. Stolen-card fraud, account takeover, friendly fraud where the legitimate cardholder disputes a purchase they made, merchant collusion, and card testing — where an attacker runs thousands of tiny transactions to find which stolen numbers still work — have different signatures and different costs. A single binary model conflates them. A reasonable answer is one primary model with fraud-type as an auxiliary multi-class head, so you get a single score for the decision and a type prediction for routing and for the human reviewers.
 
-Approve when:
+**The label.** Ground truth arrives as a chargeback: the cardholder disputes the transaction, the issuer reverses it, and you find out. Chargebacks arrive on a long tail — a large share within 30 days, most within 90, some out past 120. Three consequences.
 
-$$
-pC_{\mathrm{FN}}<(1-p)C_{\mathrm{FP}}.
-$$
+*The label is delayed*, exactly like the ad conversion problem in Design 3 but with a longer horizon. Any recent transaction labeled "not fraud" is only provisionally so. If you train on the last 30 days and treat unlabeled as legitimate, you systematically underestimate fraud, and the underestimate is concentrated in the most recent data. Handle it the same way: train the main model on a matured window, and if you need recency, weight recent negatives by the probability that a fraudulent transaction of that age would already have been disputed.
 
-The threshold is:
+*The label is incomplete in a specific direction.* Not all fraud produces a chargeback — some victims never notice small amounts, and some merchants refund proactively to avoid the dispute fee, which resolves the customer's complaint and destroys your label. So your negatives include real fraud, and your measured fraud rate is a lower bound.
 
-$$
-p^*=\frac{C_{\mathrm{FP}}}{C_{\mathrm{FN}}+C_{\mathrm{FP}}}.
-$$
+*The label is contaminated by your own decisions*, and this is the one to lead with because it is the deepest problem in the design. You only observe outcomes for transactions you approved. The ones you declined have no outcome — you will never know whether they were fraud. So your training data is a biased sample: it is exactly the set of transactions your current model thought were fine. Train on it naively and the new model learns to reproduce the old model's decision boundary, and it will look excellent on held-out data drawn from the same biased pool while being blind in the region the old model refused to enter. This is **selection bias**, and in credit and fraud it is classically called the **reject inference** problem: how do you learn about the rejected population when you have no labels for it?
 
-Missed-fraud cost grows with transaction amount. Therefore, thresholds depend on amount and merchant risk. Two thresholds create approve, step-up, and decline regions.
+With three actions the same logic yields two thresholds: below $\tau_1$ approve, between $\tau_1$ and $\tau_2$ step up, above $\tau_2$ decline — where the step-up band exists because a challenge has a small cost (some legitimate users abandon) and a large benefit (it stops most fraud), so it wins in the middle region where neither approving nor declining is clearly right.
 
-Features include amount, merchant, card, device, IP, location consistency, account age, velocity windows, and graph links. Chargebacks arrive 30–90 days later. Declined transactions have no normal outcome. A small randomized approval slice provides unbiased labels.
+### Step 3 — The data
 
-### Architecture
+**Transaction features** are the obvious ones and the weakest: amount, currency, merchant identifier, merchant category code, time, whether the card details were entered manually or from a stored token, the AVS and CVV verification results returned by the issuer, and the BIN, which identifies the issuing bank and card type.
 
-```text
-transaction
- -> schema, blocklist, deterministic rules                    ~1 ms
- -> parallel velocity and graph feature reads                ~20 ms
- -> calibrated GBDT fraud model                               ~8 ms
- -> cost-sensitive policy: approve / step-up / decline        ~3 ms
- -> reason codes, durable log, response                       ~5 ms
+**Velocity features** are the most predictive family in fraud detection, and they need a proper definition since the term is used constantly. A velocity feature is a count, sum, or distinct-count of events over a recent time window, keyed on some entity. Not "the amount of this transaction" but "how many transactions has this card attempted in the last 60 seconds," "how many distinct merchants has this device touched in the last hour," "what is the total amount charged to this card in the last 24 hours versus its 30-day average," "how many distinct cards has this IP address used today." They work because fraud is nearly always a *rate* phenomenon rather than a per-transaction one. A single stolen-card purchase looks exactly like a legitimate purchase; what betrays it is that the same card was tried at four merchants in ninety seconds, or that this device has cycled through fifteen cards this morning. Card testing is invisible per transaction and blindingly obvious in velocity space.
 
-events -> stream processor -> online feature store
-reviews + chargebacks -> mature labels -> training -> registry
+The entities to key on, and this list is worth reciting: card, device fingerprint, IP address, email address, billing address, shipping address, merchant, and the pairs among them. The windows to compute: something like 1 minute, 5 minutes, 1 hour, 24 hours, 7 days, 30 days. The aggregations: count, distinct count, sum, max, and the ratio of a short window to a long one, which is what actually detects a change in behaviour rather than a level.
+
+Two things about velocity features that separate a good answer from a shallow one. They are the hardest part of the infrastructure, because they must be *current to the second* — a velocity feature computed from a batch job that ran an hour ago cannot detect card testing that started five minutes ago, which is the entire use case. And they are the features most vulnerable to leakage, discussed below.
+
+**Historical and behavioural features** cover the entity's normal: card age with this processor, the merchant's own historical fraud rate, whether this transaction's amount and category are typical for this card, the geographic distance and elapsed time from the previous transaction — the "impossible travel" signal, where a card used in New York and then in Singapore twenty minutes later is physically implausible.
+
+### Step 4 — The architecture
+
+An authorization request arrives from a merchant's server. One hundred milliseconds, and the clock includes everything.
+
+**Stage zero: deterministic rules.** Before any model, a rules engine checks the things that are absolute — cards on a confirmed-compromised list, sanctioned entities, merchant-configured hard blocks, obviously malformed requests. These exist for three reasons: they are certain, they are auditable in a way a model is not, and they are the mechanism by which a human can respond to an attack in minutes rather than waiting for a retrain. Under 1 ms, in-memory. Say explicitly that rules and models coexist permanently in fraud systems; a candidate who proposes replacing all rules with a model has not operated one.
+
+**Stage one: feature retrieval.** This is the latency-critical component and the one that determines whether the design is real. Velocity features are read from an online store — Redis or equivalent, covered properly in Part 1 — keyed by card, device, IP, and email. The counters behind them are maintained by a streaming pipeline: every authorization event is published to a log-structured event bus (Kafka, again Part 1), a stream processor (Flink or equivalent) maintains windowed aggregates per key, and it writes the current values into the online store. The critical property is that the write path must complete fast enough that the *next* transaction on the same card sees the update — card testing runs at seconds per attempt, so a pipeline with 30 seconds of lag is blind to precisely the attack it exists to catch. Design for end-to-end freshness under a couple of seconds, and monitor that freshness as a first-class metric.
+
+A practical refinement worth mentioning: for the very shortest windows, do not rely on the streaming round trip at all. Keep a small in-process or co-located counter updated synchronously on the request path for the 1-minute and 5-minute windows, and use the streaming store for longer windows where a few seconds of lag is immaterial. This is the difference between a design that works against card testing and one that does not.
+
+Budget 20 ms for all feature reads, issued in parallel across key types.
+
+**Stage two: the model.** Use gradient-boosted decision trees — recall from Design 2 that GBDTs build an additive ensemble of small trees, each fitted to the residual of the ones before. They are the right choice here for reasons you should be able to list. The features are tabular and heterogeneous, mixing counts, amounts, ratios, and categories, which is exactly the regime where trees beat neural networks empirically. Missing values are pervasive — a new card has no history, a new device has no graph — and GBDTs handle missingness natively by learning a default direction at each split rather than requiring imputation, which matters enormously because *missing is informative* here. Inference is fast: a few hundred shallow trees score in single-digit milliseconds on CPU with no accelerator. And the model is inspectable: you can extract the features that drove a decision, which the review queue needs and which regulators may require.
+
+Add a second model where it earns its place rather than everywhere. A sequence model over the card's recent transaction history captures patterns that flat aggregates miss — the *shape* of a spending sequence rather than its summary statistics. A graph neural network catches ring structure. Both are best run asynchronously, scoring after the inline decision and feeding the review queue and the next model refresh, because their latency does not fit in the inline budget and their value is in catching what the fast model missed.
+
+Budget 8 ms.
+
+**Class imbalance handling**, since this is where the interviewer will push. Four techniques, and the important thing is knowing what each costs.
+
+*Class weighting* multiplies the loss on positive examples by some factor, typically the inverse class ratio, so the optimizer stops ignoring them. Cheap and effective. It distorts the output scale, so the model no longer predicts calibrated probabilities.
+
+#### Architecture diagram
+
+```
+              authorization request (card, amount, merchant, device, ip, ...)
+                                     |
+                                     v
+                  +--------------------------------------+
+                  |  RULES ENGINE                        |   <1 ms
+                  |  blocklists, sanctions, merchant     |
+                  |  hard blocks -> immediate decline    |
+                  +--------------------------------------+
+                                     |
+                                     v
+                  +--------------------------------------+
+                  |  FEATURE RETRIEVAL (parallel)        |   ~20 ms
+                  |  velocity by card / device / ip /    |
+                  |  email  (online KV store)            |
+                  |  graph neighbourhood stats           |
+                  |  card + merchant history             |
+                  |  in-process counters for 1-5 min     |
+                  +--------------------------------------+
+                                     ^
+                                     |  written by
+                  +--------------------------------------+
+                  |  STREAMING AGGREGATION               |
+                  |  event bus -> stream processor ->    |
+                  |  windowed counters -> online store   |
+                  |  target freshness < 2 s              |
+                  +--------------------------------------+
+                                     |
+                                     v
+                  +--------------------------------------+
+                  |  GBDT SCORER                         |   ~8 ms
+                  |  few hundred shallow trees, CPU      |
+                  |  native missing-value handling       |
+                  +--------------------------------------+
+                                     |
+                                     v
+                  +--------------------------------------+
+                  |  CALIBRATION                         |   ~1 ms
+                  |  undo downsampling; isotonic on      |
+                  |  true-distribution holdout           |
+                  +--------------------------------------+
+                                     |
+                                     v
+                  +--------------------------------------+
+                  |  COST-SENSITIVE DECISION             |   ~3 ms
+                  |  thresholds tau1, tau2 as functions  |
+                  |  of amount and merchant costs        |
+                  |  -> approve / step-up / decline      |
+                  |  + reason codes                      |
+                  +--------------------------------------+
+                                     |
+                        response to merchant  (~35 ms typical)
+                                     |
+                                     v
+                  +--------------------------------------+
+                  |  ASYNC: heavy models rescore,        |
+                  |  graph edges updated, review queue,  |
+                  |  randomized-approval slice logged,   |
+                  |  chargebacks joined weeks later      |
+                  +--------------------------------------+
 ```
 
-A GBDT handles tabular data, nonlinear thresholds, and missing values with low latency. Rules respond to new attacks within minutes. Streaming velocity features detect bursts such as card testing.
+### Step 5 — Evaluation
 
-### Evaluation and production
+Do not report accuracy, and say why: at a 0.1% base rate, predicting "legitimate" always yields 99.9% accuracy. Do not lead with ROC-AUC either, and this reason is subtler and worth knowing. ROC-AUC uses the false positive rate, whose denominator is the number of negatives — an enormous number — so a change from 10,000 to 20,000 false positives barely moves it while doubling the operational burden. Under heavy imbalance ROC-AUC is optimistically insensitive.
 
-Use PR-AUC, recall at a fixed false-positive rate, precision at fixed recall, calibration, and total expected dollar cost. Guardrails are authorization rate, false declines, step-up pass rate, latency, and segment disparities.
+Use the **precision-recall curve** and the area under it, because precision's denominator is the number of *predicted positives*, which is small, so the metric is sensitive to exactly the errors that matter. But even PR-AUC integrates over thresholds you would never use. In production you care about specific operating points, so report the concrete pair: recall at a fixed false-positive budget ("what fraction of fraud do we catch while declining at most 0.5% of legitimate transactions"), and precision at a fixed recall.
 
-Assuming $1.9$ trillion annual volume and a $50 average transaction gives about 1,200 TPS on average. A $10\times$ peak gives 12,000 TPS. The stages total about 43 ms.
+The metric that actually decides things is **cost-weighted**: total dollars of fraud approved plus total dollars of legitimate volume declined times the friction cost, evaluated at the chosen thresholds. This is the only number that maps to the business, and it is the number that will differ from the statistical ones — a model with worse PR-AUC can be better in dollars if its errors are concentrated on small transactions.
 
-Feature freshness is a paging metric. If streaming data is stale, use a fallback model without velocity features and route more traffic to step-up. If the model fails, use conservative rules.
+What offline metrics miss here is unusually severe. They are computed on approved transactions, so they measure the model on the population the current system lets through; performance in the declined region is unmeasured and unmeasurable without the randomized slice. They use matured labels, so they are evaluating on an attack landscape weeks old. And they cannot see the adversarial response: a model that would provoke fraudsters into a more damaging strategy scores the same offline as one that would not.
 
-The main tradeoff is fraud loss versus false declines. Choose thresholds with expected dollar cost and enforce authorization rate and fairness guardrails.
+### Step 6 — Production concerns
 
+**Throughput.** Take \$1.9 trillion of annual volume, which is Stripe's publicly reported 2025 figure, and an average transaction of \$50 — that average is my assumption and it swings the result, so state it. Then annual transaction count is $1.9\times10^{12} / 50 = 3.8\times10^{10}$, and the average rate is $3.8\times10^{10} / 3.15\times10^{7}\ \text{s} \approx 1{,}200$ transactions per second. Peaks are far above average in payments — Black Friday and Cyber Monday, plus the diurnal cycle — so a 10x peak factor gives roughly 12,000 transactions per second to design for. At 0.1% fraud that is about 12 fraudulent attempts per second at peak, and at 10 basis points of value the annual fraud exposure on \$1.9T is about \$1.9 billion, which is the number that justifies the whole system's budget.
+
+**Feature-store load.** Each transaction reads velocity features for perhaps 5 entity keys across 6 windows and several aggregations, which is a handful of multi-get operations, and it writes updates for the same keys. At 12,000 TPS that is on the order of 60,000 reads and 60,000 writes per second against the online store — well within a sharded in-memory store's capability, but it means the store is on the critical path for availability and must be replicated. Hot keys are a genuine problem: a large merchant's own key is touched by a substantial share of all traffic, so shard by a composite key or maintain merchant-level aggregates separately with relaxed consistency.
+
+**Latency budget** at p99, inside 100 ms: network ingress and parsing 5 ms; rules 1 ms; feature retrieval 20 ms (parallel across key types, so this is the slowest one); model inference 8 ms; calibration 1 ms; decision and reason codes 3 ms; logging and response 5 ms. Total 43 ms, which leaves substantial headroom — and you should keep it, because the tail here is not a quality issue but a timeout, and a timeout is usually treated as a decline. Deliberate over-provisioning is the correct posture in this system in a way it is not in a feed.
+
+**Failure modes.**
+
+*Adversarial probing.* Attackers test the boundary with small transactions to learn what passes. Mitigations: rate-limit per entity independently of the model, since probing is itself a velocity signature; add controlled randomness near the boundary so the response is not perfectly learnable; and never expose granular decline reasons to the transaction initiator, only to the merchant through an authenticated channel.
+
+**Monitoring.** Infrastructure: TPS, per-stage latency with a hard alert on p99 approaching the timeout, feature-store availability, and — most important — feature freshness lag as a paging metric. Model: score distribution drift and per-feature drift measured by population stability index, with the conventional reading that PSI above 0.1 warrants investigation and above 0.25 indicates a substantial shift; calibration plots on matured data; missing-feature rates, since a rise means an upstream pipeline broke. Business: decline rate overall and per segment, step-up rate and pass rate, authorization rate, chargeback rate as it matures, dollars of fraud approved, and review-queue volume and agreement rate between reviewers and the model.
+
+### The hard tradeoff
+
+**Should the inline decision use a fast, interpretable GBDT, or a heavier model — a sequence or graph network — that catches more sophisticated fraud?**
+
+The GBDT case is strong and mostly practical. It fits the latency budget with room to spare, which matters because exceeding the timeout converts into declines and the failure mode is worse than a slightly weaker model. It handles missing features natively, and missingness is everywhere in this data. Its decisions can be attributed to features, which the review queue needs and regulators may demand. It retrains in minutes on commodity hardware, which is what makes daily — or faster — retraining operationally realistic against an adapting adversary. And empirically, on tabular features with good velocity and graph aggregates, it is very hard to beat.
+
+The heavier-model case is also real. Sophisticated fraud shows up in structure that flat aggregates flatten: the ordering and timing of a card's recent transactions, the shape of a ring in the entity graph. A sequence model sees "three small probes then a large purchase" as a pattern; the aggregate sees a count of four. A GNN propagates fraud evidence across a ring, so a card whose device is two hops from confirmed fraud is flagged even with a clean individual history. These are exactly the cases with the largest dollar losses, because organized fraud is where the money is.
+
+The resolution I would argue for is not to choose but to **place them differently in time**. GBDT inline, because the inline path is latency-bound and interpretability-bound. Heavy models asynchronous, scoring within seconds after the decision, where they can trigger a capture cancellation before settlement, feed the review queue, and — crucially — generate features that the inline GBDT consumes on the *next* transaction. That last point is the trick worth stating: a graph model's output becomes a precomputed node score, which is just another input to the fast model, so the inline path benefits from graph reasoning without paying its latency.
 
 ---
 
@@ -677,93 +845,281 @@ The main tradeoff is fraud loss versus false declines. Choose thresholds with ex
 
 ### Requirements and assumptions
 
-Assume one billion items per day: 70% text, 25% images, and 5% video. The system supports 30 policy categories and 40 languages. Actions are allow, demote, age-gate, remove, or human review. Text has a 150 ms inline budget. Media decisions complete within 60 seconds. Human capacity is 250,000 reviews per day.
+**Assume, for the rest of this answer:** one billion items per day, roughly 70% text, 25% image, 5% video; about thirty policy categories; actions are allow / demote / age-gate / remove / escalate-to-human; text is moderated in-line with a 150 ms budget, image and video asynchronously within about 60 seconds of upload; a human review capacity of 250,000 items per day; appeals exist and their outcomes are logged; forty languages with region-specific policy overlays.
 
-**Functional requirements.** Detect violations across modalities, match known-bad content, produce per-policy scores, select actions, route uncertain or severe cases to humans, support appeals, update policies quickly, and log policy and model versions.
+**Functional requirements.** The system must detect policy violations across modalities, match known-bad content, produce per-policy scores, select an action, route uncertain or severe cases to humans, support appeals, update policies quickly, and log decisions with policy and model versions.
 
-**Non-functional requirements.** Process about 35,000 items per second at peak, keep text below 150 ms at p99, finish media checks within 60 seconds, limit human routing to 0.025%, support 40 languages, resist attacks, and provide auditable and reversible actions.
+**Non-functional requirements.** The system must process about 35,000 items per second at peak, keep text below 150 ms at p99, finish media checks within 60 seconds, limit human routing to 0.025%, support 40 languages, resist adversarial inputs, and provide auditable and reversible actions.
 
-### ML framing and architecture
+### Step 2 — Frame it as an ML problem
 
-This is multi-label classification followed by cost-sensitive routing. Each policy has its own precision, recall, severity, and thresholds. Review priority should approximate expected harm reduced per reviewer-minute. Labels come from reviewers, appeals, reports, random audits, and known-bad sets. Store the policy version with each label. Random audits prevent selection bias from training only on escalated content.
+The naive framing is multi-label classification: input is a piece of content plus its context, output is a probability per policy category, loss is per-head binary cross-entropy. That framing is correct and you should say it, but it is not the whole frame, and the interviewer is waiting to see whether you notice the two things it leaves out.
 
-```text
-content
- -> normalization, hard rules, and blocklists
- -> perceptual hash / known-bad matching
- -> modality encoder + per-policy classifier heads
-      confident safe -> allow
-      confident violation -> demote / age-gate / remove
-      uncertain -> multimodal LLM judge
-      severe or unresolved -> human review
- -> appeal -> corrected label -> training
+The first is that the *output of the model is not the output of the system*. The model emits thirty calibrated probabilities. The system emits one of five actions. The map between them is a policy engine: a per-category threshold table plus precedence rules (removal beats demotion; a CSAM hit short-circuits everything; a verified-news-publisher account gets a mandatory human step before removal). Keeping that map outside the model is a deliberate architectural choice, because policy changes weekly and models retrain monthly, and you do not want a policy change to require a training run. Say that explicitly.
+
+The second is that this is a **cascade under a budget**, not a single classifier. Formally, you have tiers with increasing cost and increasing accuracy, and you are choosing, per item, how far down the cascade to send it, subject to a total-cost constraint. If tier $i$ costs $c_i$ per item and you route a fraction $f_i$ of traffic to it, your daily cost is $N \sum_i f_i c_i$ and the human tier's $f$ is pinned by headcount. Framing it as constrained routing rather than "we run some models" is what makes the numbers in Step 6 fall out naturally.
+
+**Calibration** deserves a definition since the whole cascade depends on it: a model is calibrated when a predicted probability of 0.8 means that, among all items scored 0.8, about 80% really are violations. Uncalibrated scores are still fine for ranking but useless for thresholding, and thresholds are how policy talks to your system. You calibrate per policy head on a held-out set, typically with isotonic regression (a monotone step function fit to map raw scores onto empirical frequencies) or Platt scaling (fitting a one-dimensional logistic on the scores), and you re-fit calibration far more often than you retrain the model, because calibration drifts fast and re-fitting it is cheap.
+
+### Step 3 — The data
+
+Labels here are unusually hard, and the reason is worth stating plainly because it bounds everything else: **your model cannot be more accurate than your labels, and moderation labels genuinely disagree.** The measure of this is **inter-annotator agreement** — take the same items, give them to several trained reviewers independently, and measure how often they agree, usually with Cohen's or Fleiss' kappa, which corrects for agreement you'd get by chance. Spam and nudity come in high, often above 0.9. Hate speech and harassment, on published academic and industry numbers, routinely land in the 0.6–0.8 range even among trained reviewers with a written policy in front of them. Assume for this design that hate speech agreement is around 0.7. That has a hard consequence: if two trained humans disagree on 25% of borderline hate-speech items, a model that appears to be 85% accurate against single-annotator labels may be at ceiling already, and the way to improve it is to fix the policy document and the reviewer training, not the architecture. Saying that out loud is a strong senior signal.
+
+Your label sources, in order of volume and inversely in order of quality:
+
+The **human review queue** is your gold set — items a reviewer explicitly adjudicated against a policy. High quality, low volume, and critically it is a *biased sample*: it contains only things the system was already suspicious about, so a model trained purely on it never learns what ordinary content looks like. You fix that by always mixing in a **random audit sample** — a few thousand items per day drawn uniformly from all content, labelled by reviewers regardless of model score. That random sample is expensive and you will be tempted to cut it. Don't: it is the only unbiased estimate of your true recall in production, because it's the only place you see violations the model never flagged.
+
+**Appeals outcomes** are a second gold source with a useful property: an overturned removal is a confirmed false positive, which is the error type you're otherwise blind to. They're also biased — users who appeal skew toward the confident and the English-speaking — so weight them, don't just concatenate.
+
+**User reports** are high volume and low precision. People report things they dislike. Treat a report as a feature (a strong routing signal) rather than a label, and note that reports are gameable: brigading, where a coordinated group mass-reports a target, is a standard attack.
+
+Two techniques bridge the gap between the volume you need and the labels you can afford.
+
+### Step 4 — The architecture
+
+Walk the path of one post. A user hits Submit on a text post with an attached image.
+
+The request first meets the **hard-rule gate**. This is not machine learning: exact-match blocklists, banned URLs and domains, hashes of previously-removed content from this same user, and a small set of regex rules that Trust & Safety owns directly. It runs in under a millisecond against an in-memory hash set, and it exists for two reasons — it's free, and it gives policy a lever they can pull in five minutes during an incident without waiting for a model deploy. Roughly 1–2% of submissions die here, mostly spam.
+
+Next is **hash matching**, which handles known-bad content. The concept you need to define here is **perceptual hashing**. A cryptographic hash like SHA-256 changes completely if you flip one pixel, which makes it useless against an adversary who re-saves the JPEG. A perceptual hash is instead designed so that visually similar images produce *similar* hashes: you downscale the image to something tiny, convert to greyscale, take a frequency transform (a discrete cosine transform in the classic pHash construction), and emit a bit-string from the sign pattern of the low-frequency coefficients — the coefficients that survive resizing, re-compression and mild colour shifts. Two images match if the Hamming distance between their hashes (the number of differing bits) is below a threshold. Microsoft's PhotoDNA is the industry-standard variant for CSAM and works on similar principles over image gradients; matching against NCMEC-supplied hash sets is standard practice and in many jurisdictions effectively mandatory. Video gets the same treatment per sampled frame, plus audio fingerprinting for soundtrack matching. The engineering point: this is a nearest-neighbour lookup under Hamming distance over a set of tens of millions of hashes, which you serve with a multi-index hash table or a small ANN structure, and it comes back in well under 50 ms. The failure mode to name is that perceptual hashes are robust to *re-encoding* but not to *re-composition* — crop it, mirror it, overlay it on a meme template, and the hash moves. Hash matching catches redistribution, not novelty. That's the handoff to the next tier.
+
+Then the **fast classifier ensemble**, which is where most of the actual decisions get made. Architecturally this is one shared encoder per modality with a linear head per policy category. For text, a fine-tuned encoder in the RoBERTa/DeBERTa family, distilled down to something in the 20–60 M parameter range so it runs on CPU at scale or on a small GPU fleet with room to spare. For images, a vision transformer initialized from a **CLIP**-style checkpoint — I define CLIP properly in Design 7; for now it's an image encoder pretrained on hundreds of millions of image-caption pairs, which means its features already encode semantic content rather than just texture, so a linear probe on top learns a new policy from a few thousand examples. For video, sample frames (a few per second, plus scene-change detection so you don't miss a two-second clip inside a ten-minute upload), embed each, and aggregate with attention pooling over the frame sequence. For audio, transcribe with a Whisper-class ASR model and route the transcript into the text classifier, plus a direct audio embedding for things transcription destroys, like a gunshot or a specific piece of copyrighted music.
+
+Items the ensemble is confident about — score far from the threshold in either direction — are actioned immediately. Items in the uncertain band go on.
+
+#### Architecture diagram
+
+```
+ user submits post (text + image)
+        │
+        ▼
+ ┌──────────────────────────────┐
+ │ 1. Hard-rule gate            │  blocklists, banned URLs, regex     <1 ms
+ │    ~1-2% blocked             │  policy-owned, no model deploy
+ └──────────────────────────────┘
+        │ pass
+        ▼
+ ┌──────────────────────────────┐
+ │ 2. Perceptual-hash match     │  PhotoDNA / pHash / audio prints   <50 ms
+ │    ~3-5% matched             │  known-bad redistribution
+ └──────────────────────────────┘
+        │ no match
+        ▼
+ ┌──────────────────────────────┐
+ │ 3. Fast classifier ensemble  │  shared encoder + 30 policy heads
+ │    text  : distilled RoBERTa │  text  ~15 ms CPU/GPU
+ │    image : CLIP ViT + heads  │  image ~40 ms GPU
+ │    video : frames + pooling  │  video  async
+ │    fusion: text+image head   │  cross-modal cases
+ └──────────────────────────────┘
+        │
+        ├── confident violation ──► ACTION (remove / age-gate / demote)
+        ├── confident benign ─────► ALLOW
+        │
+        │ uncertain band (~2-5% of items)
+        ▼
+ ┌──────────────────────────────┐
+ │ 4. LLM judge (multimodal)    │  policy text in prompt, + context
+ │    structured verdict +      │  ~500 ms - 2 s, ASYNC only
+ │    rationale                 │  reads policy, not labels
+ └──────────────────────────────┘
+        │ still uncertain, or severe, or high-reach
+        ▼
+ ┌──────────────────────────────┐
+ │ 5. Human review queue        │  priority = severity x uncertainty
+ │    ~0.02-0.05% of items      │           x exposure / review-time
+ └──────────────────────────────┘
+        │
+        ▼
+ ┌──────────────────────────────┐
+ │ Policy engine                │  per-category thresholds,
+ │ → allow / demote / age-gate  │  precedence rules, region overlays
+ │   / remove / suspend         │  OWNED BY TRUST & SAFETY, not ML
+ └──────────────────────────────┘
+        │
+        ▼
+   labels from (4) and (5) ──────► training set  (active-learning loop)
+   appeals outcomes ─────────────► false-positive corpus
+   random audit sample ──────────► unbiased recall estimate
 ```
 
-A shared encoder reduces compute. Separate policy heads support independent policy changes. The LLM judge handles only a small uncertain band. Humans handle severe, high-reach, appealed, or unresolved cases.
+### Step 5 — Evaluation
 
-One billion items per day is 11,600 per second on average and about 35,000 at $3\times$ peak. The peak mix is 24,000 text, 8,700 image, and 1,700 video items per second. Video dominates compute because frame sampling multiplies work.
+Offline, you evaluate **per policy category, never in aggregate.** An aggregate F1 across thirty categories is dominated by spam and tells you nothing about the categories anyone cares about. For each category you report precision at the operating threshold, recall at that threshold, and the full precision-recall curve so that Trust & Safety can see what recall costs at each precision. The headline number to quote per policy is *recall at the precision they require* — "at 0.95 precision, which is what policy demands for auto-removal on harassment, we get 0.61 recall" is a sentence a T&S director can act on, and "our AUC is 0.94" is not.
 
-The inline text path uses about 15 ms for ingress, 1 ms for rules, 15 ms for context, 25 ms for classification, and 10 ms for policy and logging. This totals 66 ms and leaves 84 ms of headroom. LLM and human review stay asynchronous.
+The critical measurement problem is that **you cannot estimate recall from the escalation queue**, because the queue only contains items the model already suspected. Recall requires knowing about violations you never flagged, and the only way to see those is the random audit sample. So: draw a few thousand items per day uniformly at random, have reviewers label them fully against all policies, and estimate recall from that stratum. It's expensive and it's non-negotiable. To get a usable estimate for rare categories without labelling millions of items, use stratified sampling — oversample the high-score strata, then reweight by the inverse of each stratum's sampling probability — which gets you a variance-efficient unbiased estimate for a fraction of the labelling cost.
 
-### Evaluation and tradeoff
+### Step 6 — Production concerns
 
-Report precision, recall, calibration, and prevalence by policy, language, region, and modality. Track violating-content exposure, time to action, appeals, overturns, review backlog, false removals, and segment disparities.
+**Scale arithmetic.** A billion items a day is $10^9 / 86400 \approx 11{,}600$ items per second on average. Traffic isn't flat; assume a peak-to-average ratio of about 3, so provision for roughly 35,000 items per second. Split by the modality mix: about 24,000/s text, 8,700/s image, 1,700/s video at peak.
 
-If the media fleet fails, keep hash checks active and demote queued media. If the LLM judge fails, demote uncertain content and prioritize humans. Canary threshold changes and rate-limit mass removals.
+**Latency budget** for the in-line text path, against a 150 ms allowance:
 
-The main tradeoff is speed versus certainty. Fast automation reduces exposure but increases false actions. Demotion is a reversible action for uncertain cases. Reserve automatic removal for high-confidence or catastrophic categories.
+**Failure modes**, and what each one does to you. If the *image GPU fleet degrades*, you must not fail open on severe categories; the correct degradation is to keep hash matching (cheap, CPU) running and hold un-classified images in a Kafka backlog while auto-demoting them, so that reach is suppressed until you catch up. If the *LLM judge is down*, uncertain items route to the demote action and into the human queue at a higher rate — you accept a queue backlog rather than accept unreviewed exposure. If *someone changes a threshold badly*, you get a mass false-positive event within minutes; the mitigation is that threshold changes go through the same canary machinery as model changes, plus a rate limiter on total removals per hour per category that trips an alarm rather than silently removing four million posts. If *the human queue backs up*, severity-ordered prioritization means the backlog accumulates in low-severity categories, which is the correct place for it to accumulate — but you need an explicit queue-age SLO per severity tier so you find out. And the one people forget: *a training-data feedback loop*. If you only train on items your system escalated, you learn your own system's blind spots as truth, and your measured recall improves while your real recall degrades. The random audit sample is the circuit-breaker; treat it as load-bearing infrastructure.
 
+**Monitoring.** Infrastructure metrics — queue depth, stage latency, GPU utilization, throughput — come from **Prometheus** (a time-series database that scrapes numeric metrics from your services on an interval) and get displayed and alerted on in **Grafana** (a dashboarding and alerting layer on top of it); Part 1 covers both, and the thing to say here is only that every stage in the cascade emits its own routing rate, because a shift in routing rate between tiers is the earliest signal that something upstream changed. Model metrics — per-policy score distributions, calibration error, escalation rate per category — are computed continuously and compared against the previous week, because a score distribution that shifts without a deploy means the *input* distribution shifted. Business metrics — prevalence, time-to-action, appeal and overturn rates — are computed daily off the audit sample. The single highest-value alarm in the whole system is a jump in a category's escalation rate, because it fires within minutes of a new attack campaign starting and it needs no labels to compute.
+
+**Retraining triggers.** Retrain on a fixed cadence — weekly for the fast heads, since labels accumulate daily and the heads are cheap to fit; monthly or on-demand for the shared encoders. Retrain off-cadence when any of these fire: prevalence rises in a category for three consecutive days; the escalation rate in a category moves more than 30% week over week; a new policy category launches; calibration error on the audit set exceeds its threshold; or a coordinated campaign is detected. Refit calibration weekly regardless, since it's minutes of compute and it's what the thresholds depend on.
+
+### The hard tradeoff
+
+The real one is **speed of action versus certainty of action**, and it is genuinely unresolvable — you're choosing between two different kinds of harm to two different sets of people.
+
+Act fast and automatically, and violating content comes down within seconds, before it accrues views. That's the whole point: harm from content is roughly proportional to exposure, and exposure is roughly exponential in the first hour. But automatic action at speed means acting on model scores, and model scores are wrong on the tail, so you will remove legitimate content — journalism that documents violence, medical discussion that trips a self-harm classifier, reclaimed slurs used inside the community that owns them, satire. Those errors land disproportionately on marginalized users whose speech patterns are underrepresented in training data, which turns a modelling artifact into a fairness failure with a press cycle attached.
+
+Act slowly and carefully, route everything ambiguous to humans, and your false-positive rate collapses. But your queue is three days deep — which is exactly where this scenario started — and content that should have come down in ninety seconds is up for seventy hours, and by then the harm is done and the removal is theatre.
+
+The resolution isn't to pick one. It's to make the choice *per policy and explicit*, and to use the graded action space to escape the binary. Categories with catastrophic and irreversible harm and high annotator agreement — CSAM, credible violent threats, terrorist recruitment — get automatic action at aggressive recall, accepting false positives, with fast human appeal as the correction mechanism. Categories with contested boundaries and reversible harm — hate speech, misinformation, harassment — get a cheap intermediate action: *demote* rather than remove. Demotion cuts exposure by an order of magnitude, which captures most of the harm reduction, while remaining nearly invisible to the user if you got it wrong and being instantly reversible if you did. Reserve removal for the confident tail and the human-adjudicated tail. The sentence to say is: "the existence of a low-cost reversible action is what lets me be aggressive on recall without paying the full false-positive price, and if the product only lets me remove or allow, I'd push back on that constraint before I touched the model."
 
 ---
 
-## Design 6 — An LLM serving platform
+## Design 6 — An LLM serving platform (internal, multi-team, multi-model)
 
 ### Requirements and assumptions
 
-Assume 70% interactive and 30% batch traffic. The platform serves an 8 B model, a 70 B model, 20 LoRA adapters, and one vendor mixture-of-experts model. Interactive targets are TTFT below 1 second and inter-token latency below 50 ms at p95. Peak demand is four times average.
+**Assume, for the rest of this answer:** a mix of about 70% interactive chat and agentic traffic and 30% batch that tolerates minutes of delay; three base models — an 8 B, a 70 B, and one large mixture-of-experts model accessed through a vendor API rather than self-hosted — plus roughly twenty LoRA adapters over the 8 B; targets of TTFT under 1 s at p95 and ITL under 50 ms at p95 for interactive, no target for batch; peak-to-average around 4 with a predictable daily shape; reserved H100 capacity plus cloud burst; tenants may share batches but prompt caches are isolated per tenant by default.
 
-**Functional requirements.** Authenticate tenants, enforce request and token quotas, route model versions and adapters, stream tokens, batch requests, manage KV cache, support vendor and self-hosted models, record usage, and deploy versions safely.
+**Functional requirements.** The platform must authenticate tenants, enforce request and token quotas, route model versions and adapters, stream tokens, batch requests, manage KV cache, support vendor and self-hosted models, record usage, and deploy versions safely.
 
-**Non-functional requirements.** Meet TTFT and ITL SLOs, isolate tenants, prevent capacity monopolies, maximize GPU use, protect prompts and caches, support overload, provide accurate billing, and enable rollback.
+**Non-functional requirements.** The platform must meet TTFT and ITL SLOs, isolate tenants, prevent one tenant from exhausting capacity, maximize GPU utilization, protect prompts and caches, support graceful overload, provide accurate billing, and enable rollback.
 
-### Serving model and architecture
+### Step 2 — Frame it as an ML problem
 
-Prefill processes prompt tokens in parallel and is compute-bound. Decode produces one token per sequence per step and is memory-bandwidth-bound. Continuous batching adds and removes sequences after each decode step.
+It mostly isn't one, and saying so confidently is the right move. There is no training here and no labels. The framing is: **this is a scheduling and capacity-allocation problem over a heterogeneous, non-preemptible, memory-constrained accelerator pool, with per-tenant fairness and latency constraints.** The ML content is in knowing what the workload does to the hardware.
 
-KV-cache bytes per token are:
+There is one genuine modelling problem hiding inside it, and volunteering it scores points: **output-length prediction**. The scheduler would make much better decisions if it knew how many tokens a request will generate, since that determines how long the request will hold KV-cache memory. You don't know it in advance. You can predict it — a small regressor on the prompt's embedding, the requested model, the tenant, and the stated `max_tokens`, trained on your own request logs — and get a usable estimate. That prediction feeds admission control (don't admit a request you predict will hold 8 K tokens of cache when you're at 90% memory) and lets you approximate shortest-job-first scheduling, which is the policy that minimizes average waiting time. Get the prediction wrong in the optimistic direction and you preempt; that's a recoverable error, so bias the estimator to over-predict.
 
-$$
-2n_{\text{layers}}n_{\text{kv heads}}d_{\text{head}}\times\text{bytes per element}.
-$$
+The objective to optimize is **goodput**, not utilization, and the distinction is the most important conceptual point in this design. **GPU utilization** as reported by `nvidia-smi` measures the fraction of time at least one kernel was resident on the device. It is close to useless: a GPU running a batch of size 1 shows near-100% utilization while doing perhaps 2% of the useful work it could. **Goodput** is requests (or tokens) completed *within their latency SLO* per unit time. The gap between them is where all the money is. You can always raise throughput by batching harder, but past a point the added queueing pushes requests past their SLO, and tokens delivered too late to a chat user are worth zero. So the objective is: maximize tokens delivered inside SLO per dollar-hour of GPU. Say that sentence. The better proxy metric to actually watch is **MFU**, model FLOPs utilization — achieved FLOPs divided by the hardware's peak — which for well-tuned prefill lands around 40–50% and for decode is intrinsically low because decode is memory-bound, not compute-bound.
 
-PagedAttention stores cache in fixed blocks. Prefix caching reuses shared prompt blocks. Cache keys include tenant ID to prevent cross-tenant timing leaks.
+### Step 3 — The data
 
-```text
-client
- -> gateway: auth, quotas, token limits
- -> router: model, version, adapter, prefix affinity
- -> fair queues and admission control
- -> continuous-batching scheduler
- -> prefill/decode workers: PagedAttention + tensor parallelism
- -> streamed tokens
-telemetry -> billing, capacity, quality, safety
-vendor models -> same gateway and policies
+There's no training corpus, but there are three data assets the platform must produce, and forgetting them is a common failure in this answer.
+
+**Request telemetry** is the primary one, and it has to be complete enough to bill against: per request, the tenant and team, the model and adapter, input token count, output token count, cached-prefix token count, queue wait, TTFT, total latency, which worker served it, and the outcome. This is what powers chargeback, capacity forecasting, the output-length predictor, and every debugging session you will ever have. Emit it to **Kafka** (the distributed append-only event log; Part 1 covers it) and land it in a columnar warehouse. The critical detail is that token counts must be measured, not estimated from character counts, since billing correctness depends on it and teams will audit you.
+
+**Prompt and response logging** is a policy minefield and you should raise it unprompted. Logging full prompts makes debugging and evaluation possible and makes you a liability under any privacy regime; not logging them makes the platform very hard to operate. The workable answer is per-tenant opt-in with short retention, redaction of detected secrets and PII on ingest, and a strict separation between the metrics path (always on, no content) and the content path (opt-in, encrypted, 7-day TTL).
+
+**Evaluation data** exists because a serving platform still needs to answer "did this change break anything?" — a quantization change, an engine version bump, a speculative-decoding config, or a vendor model version rotating under you. You need a **golden set** of a few thousand representative requests per model, replayed on every change, scoring both output quality and latency. Which brings us to **automated evaluation**: a pipeline that runs candidate outputs against reference expectations without a human in the loop, typically mixing exact-match or unit-test-style checks for structured outputs, similarity metrics for free text, and LLM-as-judge scoring for open-ended quality. Part 1 covers the mechanics; the platform-specific point is that this pipeline is the *gate* on any change that could alter numerics, and quantization is exactly such a change.
+
+### Step 4 — The architecture
+
+Follow a single chat request through the system.
+
+It arrives at the **API gateway**, which authenticates the caller and resolves it to a tenant. Authentication is a token lookup; the tenant identity is what everything downstream keys on. The gateway then applies **rate limiting**, and the standard mechanism is the **token bucket**: each tenant has a conceptual bucket that refills at a fixed rate $r$ (say 100 requests per second) up to a capacity $b$ (say 500). A request takes one token from the bucket; if the bucket is empty the request is rejected with a 429. The reason this specific algorithm and not a simple counter is that the bucket's capacity $b$ allows a *burst* — a tenant that's been quiet can spend accumulated tokens all at once — while the refill rate $r$ bounds the sustained rate. That matches how real clients behave. For LLMs you run two buckets per tenant, one on requests per minute and one on **tokens** per minute, because one request with a 100 K-token prompt costs vastly more than a hundred short ones, and a request-only limit doesn't protect you at all. Buckets live in **Redis** (the in-memory key-value store; Part 1) so that all gateway replicas share the same counter, implemented as a small atomic script to avoid races.
+
+**Quotas** are the longer-horizon sibling of rate limits: a rate limit is per-second smoothing, a quota is "this team gets 20 million tokens a day" or "this team gets the equivalent of 4 GPUs." Quotas are how finance's chargeback becomes enforceable rather than advisory, and the useful design is soft quotas — exceed your quota and you aren't cut off, you're demoted to a lower scheduling priority. That way a team's overrun degrades their own latency rather than failing their product, and the pressure to fix it is real but not an outage.
+
+The request now hits the **router**, which decides which fleet serves it. Routing considers the requested model, whether an adapter is needed, the tenant's priority tier, and current fleet load. Two routing decisions earn their keep. First, **prefix-aware routing**: if this request shares a long prefix with a recent one (same system prompt, same RAG context, same agent conversation), route it to the worker that already has those KV blocks cached, because a cache hit turns thousands of prefill tokens into a pointer dereference. You implement this by hashing prefix chunks and keeping a Redis map from prefix-hash to worker, with consistent hashing as the fallback. Second, **batch offloading**: requests marked latency-tolerant go to a separate queue that fills GPU capacity during troughs and is preempted by interactive traffic.
+
+Then the **scheduler**, which is where the real work happens, and it's built around **continuous batching**. Here's the intuition. Naive batching collects, say, 32 requests, runs them together until *all* are done, then takes the next 32. Because output lengths vary wildly — one request generates 10 tokens, another generates 2,000 — the whole batch runs at the speed of its slowest member, and for most of that time you're computing padding. Continuous batching (the idea from the Orca paper, and how vLLM and every modern engine work) instead schedules at the granularity of a single decode *step*: after every step, finished sequences leave the batch and waiting requests join it immediately. The batch is a revolving door, not a bus. This alone is typically a several-fold throughput improvement over static batching on realistic mixed-length traffic, and it's the single highest-leverage thing in the stack.
+
+$$\text{bytes per token} = 2 \times n_{\text{layers}} \times n_{\text{kv heads}} \times d_{\text{head}} \times \text{bytes per element}$$
+
+#### Architecture diagram
+
+```
+                          ┌──────────────────────────────┐
+   client ───────────────►│ API gateway                  │
+                          │  auth → tenant identity      │
+                          │  token-bucket rate limit     │  Redis-backed
+                          │   (req/min AND tokens/min)   │  atomic counters
+                          │  quota check → priority tier │
+                          └──────────────┬───────────────┘
+                                         │
+                          ┌──────────────▼───────────────┐
+                          │ Router                       │
+                          │  model + adapter selection   │
+                          │  prefix-aware affinity ──────┼─► Redis: prefix-hash → worker
+                          │  interactive vs batch lane   │
+                          └──────┬────────────────┬──────┘
+                                 │                │
+                 ┌───────────────▼──────┐  ┌──────▼─────────────────┐
+                 │ Interactive queue    │  │ Batch queue            │
+                 │ priority + fair-     │  │ fills troughs,         │
+                 │ share (WFQ)          │  │ preempted by interactive│
+                 └───────────┬──────────┘  └──────┬─────────────────┘
+                             └────────┬───────────┘
+                                      ▼
+                     ┌────────────────────────────────────┐
+                     │ Scheduler — CONTINUOUS BATCHING    │
+                     │  admits/evicts at each decode step │
+                     │  admission control on KV headroom  │
+                     │  output-length prediction → SJF    │
+                     └────────────────┬───────────────────┘
+                                      │
+        ┌─────────────────────────────┴─────────────────────────────┐
+        │                                                           │
+ ┌──────▼───────────────────┐                         ┌─────────────▼──────────────┐
+ │ Fleet A: 8B + 20 LoRAs   │                         │ Fleet B: 70B               │
+ │  TP=1, 1 GPU per replica │                         │  TP=4 within one node      │
+ │  multi-LoRA: one base,   │                         │  NVLink for all-reduce     │
+ │  adapters swapped per req│                         │  chunked prefill on        │
+ └──────┬───────────────────┘                         └─────────────┬──────────────┘
+        │                                                           │
+        └───────────────────────────┬───────────────────────────────┘
+                                    ▼
+                  ┌──────────────────────────────────────┐
+                  │ KV cache (PagedAttention)            │
+                  │  16-token blocks, no fragmentation   │
+                  │  prefix sharing by refcount          │
+                  │   (cache key includes tenant id)     │
+                  │  FP8 quantized → 2x concurrency      │
+                  │  spill to CPU RAM for long tail      │
+                  └──────────────────┬───────────────────┘
+                                     ▼
+                          ┌─────────────────────┐
+                          │ SSE token stream    │──► client
+                          └──────────┬──────────┘
+                                     │
+                          ┌──────────▼──────────────────────┐
+                          │ Telemetry → Kafka → warehouse   │
+                          │  tokens in/out/cached, TTFT,    │
+                          │  ITL, queue wait, tenant, model │
+                          │  → chargeback + capacity model  │
+                          └─────────────────────────────────┘
+
+  Vendor-API models (large MoE) sit behind the same gateway as a
+  proxied fleet — same auth, quotas, telemetry, chargeback — so
+  teams see one endpoint and finance sees one bill.
 ```
 
-A 70 B FP16 model needs $70\times10^9\times2=140$ GB for weights. TP=4 across four 80 GB H100s gives 320 GB total and leaves useful KV-cache capacity. Estimate about 160 GB of KV cache, or 500,000 cached tokens.
+### Step 5 — Evaluation
 
-At 200 requests per second, 1,500 input tokens, and 300 output tokens, output demand is 60,000 tokens per second. At 3,520 output tokens per second per four-GPU node, base load needs about 17 nodes or 68 GPUs. Peak-only provisioning would need 272 GPUs. Caching, quantization, batch backfill, and queueing can reduce the practical fleet toward 100–120 GPUs.
+The platform is evaluated on three axes, and confusing them is the classic mistake.
 
-### Evaluation and tradeoff
+**Latency**, reported per model and per tenant, not globally, as p50/p95/p99 of TTFT and ITL, plus end-to-end. Track **queue wait separately from execution time** — this is the single most useful decomposition you can have, because when p95 TTFT regresses, queue wait tells you it's a capacity problem and execution time tells you it's a model or config problem, and you'll spend hours guessing without it.
 
-Track TTFT, ITL, queue wait, total latency, goodput, preemption, cache hit rate, GPU memory, batch size, throughput, errors, and cost by model and tenant.
+**Throughput and efficiency**: tokens per second per GPU, split into prefill and decode tokens because they're not comparable; batch size distribution over time; KV cache occupancy; MFU. And goodput as defined earlier — the fraction of interactive requests served within SLO — which is the number to put on the executive dashboard, because it's the only one that's simultaneously about users and about money.
 
-A 1-second TTFT budget can use 10 ms for gateway checks, 5 ms for routing, 300 ms for queueing, 130 ms for prefill, 30 ms for first-token delivery, and 525 ms of headroom.
+**Quality**, which people forget a serving platform has. Every change that touches numerics — quantization, engine upgrade, speculative decoding config, a new kernel, or a vendor model version rotating under you — runs the golden set through automated evaluation before rollout, with an explicit regression threshold. The vendor-rotation case is the sneaky one: you didn't deploy anything, and your quality moved. A weekly golden-set replay against every vendor model with alerting on score deltas catches it.
 
-Reject requests whose predicted KV footprint does not fit. Use chunked prefill for long prompts. Under overload, use fair scheduling and clear admission control. If a vendor fails, route to a compatible self-hosted model.
+Rollouts are **canaried** (Part 1 covers the mechanics): a new engine version or quantization config takes 5% of traffic, and the automatic rollback conditions are a latency regression at p95, an error-rate increase, or an evaluation-score drop beyond threshold. For a quantization change specifically I'd also run a **shadow** phase first — mirror real traffic to the candidate, don't return its output, and compare distributions of output length and evaluation scores — because quantization failures are often subtle quality degradation rather than crashes, and a canary measured only on latency will happily pass a model that's gotten dumber.
 
-The main tradeoff is latency versus cost. Larger batches improve throughput but raise queueing, ITL, and KV use. Segment interactive and batch traffic. Batch only until the interactive SLO is reached.
+### Step 6 — Production concerns
 
+**Capacity arithmetic.** Take the 70 B model at FP16 on H100 SXM hardware (80 GB HBM3, roughly 3.35 TB/s of memory bandwidth, about 990 TFLOPS dense BF16 — vendor specifications). Weights are $70 \times 10^9 \times 2 \text{ bytes} = 140$ GB, which does not fit on one 80 GB GPU, so you need tensor parallelism. At TP=2 you have 160 GB total and 140 GB of weights, leaving about 20 GB minus activation and framework overhead — call it 12 GB of usable KV cache, which at 0.31 MB per token is roughly 39,000 tokens of cache total, or about 19 concurrent users at 2 K context each. That's too thin, and it is worth noting that **the original source text claims 240 GB of requirement fits in TP=2 across 160 GB of memory, which is simply wrong** — I'd correct that. At TP=4 you have 320 GB, weights take 140 GB, and after overhead you have roughly 160 GB of KV cache: about 500,000 tokens, or 250 concurrent users at 2 K context. That's a working configuration, and it's what I'd run.
+
+**Cost.** Reserved H100 capacity runs somewhere around \$2–3 per GPU-hour depending on commitment and provider (market rate, changes constantly — state it as an assumption). At \$2.50, the four-GPU node costs \$10 per hour. At the 3,520 output tokens/second computed above, one hour produces $3520 \times 3600 = 1.27 \times 10^7$ output tokens, so:
+
+$$\text{cost per million output tokens} = \frac{\$10}{12.7} \approx \$0.79$$
+
+**Latency budget** for an interactive request against a 1 s TTFT target:
+
+**Failure modes.** *OOM during prefill* is the classic: a request with a 200 K-token prompt arrives, the engine tries to allocate 62 GB of KV cache for it, and the worker dies taking every in-flight request with it. Three defences, all needed: a per-tier maximum prompt length enforced at the gateway; admission control that refuses to admit a request whose predicted KV footprint exceeds current headroom; and chunked prefill so the allocation is incremental and can be aborted. *KV cache exhaustion under load* is the graceful version — you're at 98% cache occupancy and new requests can't be admitted. The engine's answer is preemption: evict a low-priority sequence, either by swapping its KV to CPU memory or by discarding and recomputing it later. Recomputation is often cheaper than swapping because prefill is fast and PCIe is slow, which is a pleasingly counterintuitive fact. *A hot tenant* — the 3 a.m. bug — is contained by the token bucket at the gateway, then by fair queueing (their overrun degrades their own share), then by a circuit breaker that sheds their load entirely if they're causing SLO violations for others. *Vendor API degradation* on the proxied models needs its own handling: timeouts, retries with jitter, and a documented fallback to a self-hosted model with a quality caveat surfaced to the caller. *Silent vendor model rotation* is caught by the weekly golden-set replay. *Speculative decoding going net-negative* when acceptance rate drops is caught by monitoring acceptance and auto-disabling below a threshold. And the operational one people miss: *a model deploy takes minutes*, because you're moving 140 GB of weights onto GPUs, so autoscaling cannot respond to a spike — you must either keep warm standby capacity or accept queueing, and choosing which is a cost conversation with the business, not a technical one.
+
+**Monitoring** splits three ways. Infrastructure: GPU memory occupancy, KV cache utilization, batch size distribution, achieved bandwidth, per-worker health, all scraped by **Prometheus** and charted and alerted in **Grafana** (Part 1). Serving quality: TTFT and ITL percentiles per model and tenant, queue wait separately, goodput, preemption rate, prefix cache hit rate, speculative acceptance rate. Business: tokens per tenant per day, cost per tenant, quota consumption, and cost per million tokens trended over time — that last one is the platform's own KPI and it should go down every quarter or the platform isn't earning its existence. The alerts that actually page someone are goodput below target, KV occupancy above 95% sustained, preemption rate spiking, and error rate on any fleet.
+
+**Retraining triggers** don't apply in the usual sense, but three things get refreshed on a cadence. The output-length predictor retrains weekly on recent logs, since traffic mix shifts. The capacity model — the forecast that says how many GPUs you need next month — refits monthly on observed demand. And the speculative-decoding draft model is re-evaluated quarterly against the current traffic distribution, since acceptance rate is a function of how well the draft matches real prompts, and that drifts as teams ship new features.
+
+### The hard tradeoff
+
+The central one is **latency versus cost**, and it is unusually clean here because the mechanism is a single knob: batch size.
+
+Increasing batch size increases throughput almost linearly at first, because decode is memory-bandwidth-bound — you read the weights once per step regardless of how many sequences are in the batch, so going from batch 1 to batch 64 gets you roughly 64× the tokens for nearly the same memory traffic. This is the fundamental economics of LLM serving and it's why batching is not an optimization but the entire business model. But every sequence in the batch shares the step, so a larger batch means a longer step, which means higher ITL for every user in it. And a larger batch means more KV cache, which means at some point you hit the memory wall and start preempting, which is catastrophic for tail latency.
+
+So you're choosing a point on a curve where one end is "every user gets a dedicated GPU and 5 ms tokens and it costs a hundred times too much" and the other is "batch of 512, wonderful cost per token, and everyone waits four seconds for their first word."
+
+The resolution has three parts and stating all three is what makes this answer complete. First, exploit the *satisfaction ceiling*: nobody perceives ITL below about 25 ms, so the correct policy is to batch up to the point where ITL hits your SLO and not one request further — improvements beyond that are converted into throughput, not given away as speed. Second, **segment the traffic** rather than picking one point, which is the real answer: interactive traffic runs on a fleet configured for moderate batch and tight ITL, batch traffic runs at maximum batch on the same hardware during troughs, and the two are scheduled against each other. Batch workloads are not a nuisance to tolerate; they are the thing that makes the interactive fleet affordable, because they convert idle capacity into revenue. Third, use the mechanisms that shift the curve instead of moving along it: prefix caching, quantization, and speculative decoding all give you more throughput at the *same* latency, and those are strictly better than any batch-size choice. Frame it that way — "first I'd shift the curve, then I'd pick a point on it per traffic class" — and you've answered a question the interviewer usually has to drag out of people.
 
 ---
 
@@ -771,147 +1127,170 @@ The main tradeoff is latency versus cost. Larger batches improve throughput but 
 
 ### Requirements and assumptions
 
-Design hybrid search for 50 million listings and 200 million images. Support text, image, and image-plus-text queries at 1,000 QPS and 300 ms p99. About 500,000 listings change daily and must be searchable within five minutes. The primary metric is add-to-cart rate, with relevance and revenue guardrails.
+**Assume, for the rest of this answer:** 50 million active listings averaging four images each, so about 200 million images; text, image, and image-plus-text queries all in scope; hybrid with existing lexical search; the objective is add-to-cart rate with revenue as a guardrail; roughly 500,000 new or updated listings per day with a freshness requirement of under five minutes; 1,000 queries/second at peak with a 300 ms budget end to end; reliable price and stock, noisy seller-provided categories; two years of click and purchase logs from keyword search.
 
-**Functional requirements.** Validate and crop uploads, encode text and images into one space, retrieve lexical and visual candidates, apply price, stock, rights, region, and safety filters, rerank, deduplicate products, support new listings, and return metadata and CDN URLs.
+**Functional requirements.** The system must validate and crop uploads, encode text and images into one space, retrieve lexical and visual candidates, apply price, stock, rights, region, and safety filters, rerank results, deduplicate products, support new listings, and return metadata and CDN image URLs.
 
-**Non-functional requirements.** Stay below 300 ms at p99, support 1,000 QPS, index updates within five minutes, scale to 200 million images, preserve ANN recall, keep encoder-index versions consistent, tolerate shard failures, and protect uploaded-image privacy.
+**Non-functional requirements.** The system must stay below 300 ms at p99, support 1,000 QPS, index updates within five minutes, scale to 200 million images, preserve ANN recall, keep encoder and index versions consistent, tolerate shard failures, and protect uploaded-image privacy.
 
-### ML framing and architecture
+### Step 2 — Frame it as an ML problem
 
-A CLIP-style bi-encoder maps text and images into one space. Contrastive learning uses matched pairs as positives and other batch items as negatives:
+This is **retrieval followed by ranking**, and the framing has two halves that people conflate.
 
-$$
-\mathcal{L}=-\frac{1}{N}\sum_i
-\log\frac{\exp(\operatorname{sim}(v_i,t_i)/\tau)}
-{\sum_j\exp(\operatorname{sim}(v_i,t_j)/\tau)}.
-$$
+The retrieval half is a **multimodal embedding** problem. An embedding is a fixed-length vector of real numbers representing an object, learned so that geometric closeness in the vector space corresponds to semantic closeness in the world. A *multimodal* embedding is one where objects of different types — here, images and text — are mapped into the **same** space by different encoders, so that a photograph of a walnut sideboard and the string "mid-century walnut sideboard" land near each other despite having no surface features in common. That shared space is the entire trick, and it's what makes text-to-image search a nearest-neighbour lookup rather than a translation problem.
 
-Fine-tune a pretrained model on purchases, clicks, and multiple images of one product. Use hard negatives such as visually similar but different models. Use human judgments for unbiased evaluation.
+**CLIP** (Contrastive Language–Image Pretraining, OpenAI 2021) is the canonical way to get one. It's two encoders — a vision transformer for images, a text transformer for text — trained jointly on hundreds of millions of image-caption pairs scraped from the web, with a projection at the end of each that maps both into a common vector space, typically 512 or 768 dimensions depending on the variant. Later models in the same family (SigLIP, EVA-CLIP, and various open reproductions) improve on it with different objectives and data, and in production I'd benchmark a few rather than assume CLIP itself is best; the architecture pattern is what matters.
 
-```text
-catalog:
-listing event -> validate/deduplicate -> image encoder
-              -> fresh ANN index -> main-index merge
-              -> metadata and lexical index
+**Contrastive learning** is how it's trained, and it's worth explaining properly because it's the mechanism behind half of modern retrieval. Take a batch of $N$ image-caption pairs. Encode all $N$ images and all $N$ captions. You now have an $N \times N$ matrix of similarities between every image and every caption. The $N$ diagonal entries are the true pairs and the $N^2 - N$ off-diagonal entries are wrong pairings, and the loss — InfoNCE, applied symmetrically in both directions — pushes the diagonal up and the off-diagonal down:
 
-query:
-upload/text -> decode, detect, crop -> image/text encoder
-            -> ANN + BM25 in parallel -> fusion + filters
-            -> cross-encoder rerank top 100
-            -> GBDT business ranker + diversity/dedup
-            -> products, metadata, CDN images
+$$\mathcal{L} = -\frac{1}{N}\sum_{i=1}^{N} \log \frac{\exp(\text{sim}(v_i, t_i)/\tau)}{\sum_{j=1}^{N} \exp(\text{sim}(v_i, t_j)/\tau)}$$
+
+where $v_i$ and $t_i$ are the normalized image and text vectors, $\text{sim}$ is cosine similarity, and $\tau$ is a learned temperature that controls how sharply the model separates the positive from the negatives. Two consequences follow directly and both matter in production. First, the other items in the batch serve as the negatives, so **large batches are essential** — with a batch of 32 the task is trivially easy and the model learns a lazy representation; CLIP was trained with batches in the tens of thousands. Second, the model only learns to separate things that appear together in a batch, which is why **hard negative mining** — deliberately including near-misses, like two sideboards that differ only in wood tone — matters enormously when you fine-tune on a product catalogue where everything already looks similar.
+
+One capability falls out of this for free and is worth naming: **zero-shot classification**. Because text and images share a space, you can classify an image into arbitrary categories without any training data for them — encode the candidate label strings ("a photo of a walnut sideboard", "a photo of a pine bookshelf"), encode the image, and take the nearest label. In this design that gives you a free category-inference model for the noisy seller-provided categories, and it costs you one forward pass you're already doing.
+
+### Step 3 — The data
+
+You have three data assets and they do different jobs.
+
+**The catalogue** is 200 million images plus structured metadata. The images are seller-uploaded, which means variable resolution, bad lighting, watermarks, collages of multiple products in one frame, and stock photos reused across sellers. That last one is worth flagging: duplicate and near-duplicate images across listings are extremely common on marketplaces, and if you don't deduplicate them your results page shows the same product eight times from eight sellers. **Perceptual hashing** — a hash designed so that visually similar images produce similar hashes, robust to resizing and re-compression, as defined in Design 5 — is the cheap first pass for exact and near-exact duplicates; embedding-space clustering catches the rest.
+
+**Behavioural logs** from the existing keyword search are your training signal, and the way you turn them into training pairs is the most consequential decision in this design. The naive approach — treat (query, clicked item) as a positive pair, sample random items as negatives — produces a model that learns *popularity* rather than *relevance*, because random negatives are trivially easy to separate and clicks are dominated by position. Three corrections. Use **hard negatives**: items that were shown in the same result page and *not* clicked, which forces the model to learn the fine distinction rather than the coarse one. Correct for **position bias** — users click the top result because it's the top result, not because it's best — by weighting each training example by the inverse of its estimated examination probability at that position (inverse propensity scoring; Part 1 and the ads design cover the mechanics). And prefer **purchase** over click as the positive signal where volume allows, since clicks are noisy and purchases are what you're actually paid for; a common compromise is a weighted objective with clicks at low weight and purchases at high weight.
+
+**Human relevance judgments** are the third asset and the one people skip. You need a few thousand (query, item) pairs rated by humans on a graded relevance scale, because behavioural data can only tell you about items your current system already showed. It cannot tell you whether there's a perfect match sitting at rank 40,000 that you've never surfaced, and that is exactly the failure mode a new retrieval system is supposed to fix. Without a judged set, your offline metrics will improve while the system gets worse at the thing you built it for.
+
+### Step 4 — The architecture
+
+Follow a query. The user uploads a photo of a chair and types "but in oak, under £400."
+
+The **query preprocessing** stage does the boring, necessary work: decode the image, strip EXIF (which carries GPS coordinates and is a privacy incident waiting to happen), resize to the encoder's expected resolution, and — importantly — detect and crop the salient object. A café photo contains a chair, a table, a coffee cup, and someone's elbow; embedding the whole frame gives you a vector that means "café interior," which retrieves other café interiors. Running a lightweight object detector and embedding the largest detected product region, or offering the user a crop box, is the difference between a demo and a product. Meanwhile the text part is parsed for structured constraints — "under £400" becomes a price filter, "oak" is retained as a soft semantic signal — with a small parser or a cheap LLM call handling the extraction.
+
+The image goes through the **image encoder** (a ViT, roughly 10–25 ms on GPU for a base-size model) producing a 768-dimensional vector; the residual text goes through the **text encoder** producing a vector in the same space. For a combined query, the simplest effective approach is a weighted sum of the two normalized vectors, re-normalized — which works better than it has any right to, because the space is approximately linear for compositional attributes. It does *not* handle negation or relational constraints, which is a limitation to name before the interviewer does.
+
+Now **retrieval** against the **vector index**. Define it: a vector index is a data structure over a large set of vectors that answers "which stored vectors are nearest to this query vector?" without comparing against all of them. Brute-force comparison against 200 million 768-dimensional vectors is $200\text{M} \times 768$ multiply-adds per query, about $1.5 \times 10^{11}$ operations — feasible on GPUs but wildly wasteful at 1,000 QPS. So you use **approximate nearest neighbour** search, which trades a small amount of correctness for orders of magnitude of speed.
+
+**ANN recall** is the metric that quantifies that trade: recall@$k$ for an index is the fraction of the *true* top-$k$ nearest neighbours that the approximate search actually returns. An index at 0.95 recall@100 returns 95 of the true top 100. This is a distinct concept from the recall of your search *system* and confusing the two is a common and visible error — you can have 0.99 ANN recall and terrible search quality if your embeddings are bad, and vice versa. ANN recall is tunable at query time and it trades directly against latency.
+
+The two index families to know. **HNSW** (Hierarchical Navigable Small World) builds a multi-layer graph where each vector is a node connected to its approximate neighbours, with sparse long-range links in upper layers; search starts at the top layer, greedily walks toward the query, and descends. It gives excellent recall at low latency, supports incremental insertion (which matters enormously for freshness), and costs memory — the graph edges alone are typically comparable to the vectors themselves. **IVF-PQ** (Inverted File with Product Quantization) instead clusters vectors into cells, searches only the few cells nearest the query, and stores each vector *compressed* by splitting it into sub-vectors and replacing each with a codebook index. It's dramatically more memory-efficient — compression of 16–32× is routine — at some cost in recall, and it's what you use when the vectors won't fit in RAM.
+
+The three legs are fused. **Reciprocal rank fusion** is the simple robust default: each item scores $\sum_{\text{legs}} 1/(k + \text{rank}_{\text{leg}})$ with $k$ around 60, which needs no score calibration across legs — a genuine advantage, since BM25 scores and cosine similarities aren't on comparable scales. A learned fusion is better if you have the data.
+
+#### Architecture diagram
+
 ```
+  query: photo of a chair  +  "but in oak, under £400"
+        │
+        ▼
+ ┌───────────────────────────────────────────────────────────┐
+ │ Query preprocessing                                       │
+ │  image: EXIF strip, resize, OBJECT DETECT + CROP          │  ~20 ms
+ │         (embedding the whole café gives you cafés)        │
+ │  text : parse hard constraints ("<£400" → filter)         │
+ │         keep soft attributes ("oak") as semantics         │
+ └───────────────────────┬───────────────────────────────────┘
+                         ▼
+ ┌───────────────────────────────────────────────────────────┐
+ │ Bi-encoder — SHARED EMBEDDING SPACE                       │
+ │  ViT image encoder ──┐                                    │  ~15 ms
+ │                      ├─► 768-d vector (normalized)        │
+ │  text encoder ───────┘   weighted sum for combined query  │
+ └───────────────────────┬───────────────────────────────────┘
+                         ▼
+ ┌──────────────┬────────────────────┬───────────────────────┐
+ │ DENSE leg    │ LEXICAL leg        │ FILTER leg            │
+ │ HNSW ANN,    │ BM25 over titles   │ in-stock, region,     │
+ │ 8 shards x   │ + descriptions     │ price < £400          │
+ │ 25M vectors  │ (exact brand/SKU   │                       │
+ │ recall@100   │  matches dense     │ APPLIED INSIDE the    │
+ │  ~0.97       │  retrieval misses) │ ANN search, NOT after │  ~40 ms
+ └──────┬───────┴─────────┬──────────┴──────────┬────────────┘
+        └─────────────────┼─────────────────────┘
+                          ▼
+              ┌───────────────────────────┐
+              │ Reciprocal rank fusion    │  ~1000 candidates
+              │  Σ 1/(60 + rank)          │  no score calibration needed
+              └─────────────┬─────────────┘
+                            ▼
+              ┌───────────────────────────┐
+              │ CROSS-ENCODER rerank      │  top 100 → full attention
+              │  query + item TOGETHER    │  over query AND item
+              │  not precomputable        │  ~40 ms (biggest budget item)
+              └─────────────┬─────────────┘
+                            ▼
+              ┌───────────────────────────┐
+              │ Business ranker (GBDT)    │  price, seller rating,
+              │  trained on add-to-cart   │  conversion, shipping,
+              │  "similar" → "good"       │  image quality, freshness
+              └─────────────┬─────────────┘
+                            ▼
+              ┌───────────────────────────┐
+              │ Diversity pass (MMR)      │  cap per seller / per cluster
+              └─────────────┬─────────────┘
+                            ▼
+                      top 20 results
 
-For 200 million 768-dimensional FP16 vectors:
+  ═══════════════ INDEXING PATH (continuous) ═══════════════
 
-$$
-200\times10^6\times768\times2\approx307\text{ GB}.
-$$
+### Step 5 — Evaluation
 
-With HNSW overhead, estimate 450 GB. Eight shards hold about 56 GB each. Replicate shards because sharding reduces data per machine, not per-shard QPS.
+Three layers, and you should distinguish them explicitly because they measure different failures.
 
-Use a small fresh HNSW index for updates. Merge it into the main index. Version encoder and index together. A V18 query vector is invalid against V17 catalog vectors. Build the full V18 index before a dual-index switch.
+**Embedding quality**, measured in isolation on a held-out set of (query, relevant-item) pairs, using recall@$k$ — the fraction of queries whose relevant item appears in the top $k$ retrieved from the *full* catalogue by exhaustive search. This measures the model, with the index removed from the picture. If this is bad, no amount of index tuning saves you.
 
-### Evaluation and tradeoff
+**Index quality**, measured as ANN recall@$k$ against exhaustive search on the *same* embeddings. This isolates the index. Run it as a scheduled job against a sample of queries, because ANN recall silently degrades as the index accumulates incremental inserts and tombstones, and nothing else will tell you. This is a separate alarm from search quality and mixing them costs you a day of debugging every time.
 
-Measure ANN recall against exact search, retrieval recall@k, precision@k, NDCG, human relevance, duplicate rate, and quality by query type. Online metrics are click, add-to-cart, conversion, abandonment, and reformulation. Guardrails include unsafe results, rights violations, latency, stale inventory, and concentration.
+**End-to-end ranking quality** on human-judged query sets, using NDCG@10 — normalized discounted cumulative gain, which rewards putting highly-relevant items near the top with a logarithmic position discount, normalized so 1.0 is a perfect ordering. Report it separately for text queries, image queries, and combined queries, because they fail differently and an average will hide that image queries are broken.
 
-A 300 ms budget can use 30 ms for upload, 20 ms for crop detection, 15 ms for encoding, 25 ms for ANN, 15 ms for parallel BM25, 2 ms for fusion, 40 ms for cross-encoder reranking, 5 ms for business ranking, and 8 ms for assembly. This uses 145 ms and leaves 155 ms for network and p99 headroom.
+Online, A/B test on add-to-cart rate as the primary metric, with revenue per session and search abandonment rate as guardrails. The specific counter-metric to watch is **query reformulation rate** — a user who searches again immediately didn't find what they wanted, and this catches "results looked plausible but were wrong" better than click-through does, since a bad-but-attractive result still gets clicked. Also segment by query type: a change that helps image queries and hurts text queries can look neutral in aggregate while making half your users' experience worse.
 
-If reranking fails, order by retrieval fusion. If a shard fails, merge remaining results. If a new index fails, keep the previous encoder-index pair.
+### Step 6 — Production concerns
 
-The main tradeoff is visual similarity versus purchase intent. Retrieval protects relevance. Ranking can optimize value, but it must not introduce irrelevant products.
+**Scale arithmetic.** 200 million images at 768 dimensions: FP32 is 614 GB, FP16 is 307 GB, plus HNSW graph overhead of roughly 40–50% brings it to about 450 GB. Sharded eight ways that's 56 GB per shard, which fits on commodity memory-heavy instances with room for the OS and the graph's working set. At 1,000 QPS across 8 shards, each shard sees 1,000 queries/second — note that sharding does *not* reduce per-shard QPS, since every query goes to every shard; it reduces per-shard *data*. So you also replicate each shard for throughput: HNSW at this size serves on the order of a few thousand queries/second/core with good recall settings, so two to three replicas per shard gives comfortable headroom. Total: roughly 16–24 index machines.
 
+**Latency budget** against 300 ms:
+
+**Failure modes.** *The index and the model fall out of sync* — half the vectors from the old model, half from the new — and the symptom is not an error but quietly bad results for a subset of queries. The fix is a dual-index swap with an explicit model-version tag on every vector and a hard check that all shards report the same version before serving. *ANN recall degrades silently* as incremental inserts and tombstones accumulate; the scheduled recall-against-exhaustive job is the only detection, and periodic compaction is the fix. *A shard goes down* and you're now searching 7/8 of the catalogue, which returns plausible-looking results with a silent quality hit; alarm on shard count, and prefer serving degraded-with-a-flag over failing, but make sure the flag is visible in monitoring. *Post-filtering collapse* when a user applies a narrow price filter and gets four results; handled by in-index filtering plus a fallback that widens the ANN search when the filtered result count is low. *Popularity feedback loop*: the ranker favours items with conversion history, those get shown more, they accumulate more history, and new listings never escape — which on a marketplace means seller churn. The counters are an explicit exploration budget for new listings, a freshness boost that decays, and content-based features that don't depend on history. *Adversarial sellers* upload attractive stock images unrelated to what they ship; detect with image-text consistency scoring (does the CLIP similarity between the listing's image and its own title look normal?) and with the returns rate as a downstream signal. And *query images that are garbage* — screenshots, memes, blurry photos of nothing — should be detected by an embedding-norm or out-of-distribution check and routed to a "we couldn't read that photo" experience rather than returning confident nonsense.
+
+**Monitoring.** Infrastructure metrics — per-shard latency, memory, index size, insert lag from Kafka — go to **Prometheus** and **Grafana** (Part 1). The index-specific ones that earn their place: **index freshness lag**, measured as the p99 age of the newest listing findable in search, alarmed at your five-minute SLO; ANN recall from the scheduled job; and vector count per shard, since a shard drifting in size means the sharding function is unbalanced. Model metrics: embedding-norm distribution on queries (a shift means input distribution changed), fusion-leg contribution rates (if the lexical leg suddenly wins every query, dense retrieval broke), and score distribution of the top result. Business metrics: add-to-cart rate and NDCG on the judged set, both segmented by query type; zero-result rate, which is the most user-visible failure; and reformulation rate.
+
+**Retraining triggers.** The bi-encoder is fine-tuned monthly, or when catalogue composition shifts materially — a new product category with unfamiliar vocabulary is the usual trigger. The cross-encoder and business ranker retrain weekly, since they're cheap and behavioural data accumulates fast. A full re-index happens on any bi-encoder change and nothing else. Off-cadence triggers: zero-result rate rising, NDCG on the judged set dropping beyond threshold, or a seasonal shift (the query distribution in November is genuinely different, and a model fitted on July data underperforms).
+
+### The hard tradeoff
+
+The one worth spending your time on is **visual similarity versus purchase intent**, because it's the tradeoff that determines whether this system makes money.
+
+The embedding space is optimized to place visually and semantically similar things near each other. So the nearest neighbour to a photo of a specific chair is a nearly identical chair — often literally the same product from a different seller, or the same product photographed slightly differently. That is exactly what the model was asked to do, and it is frequently not what the user wants. Someone photographing a chair in a café is usually not asking "find me this exact chair"; they're asking "find me a chair like this that I can afford, that ships to me, and that I'd actually be happy with." The pure nearest-neighbour answer to that is a page of twelve near-identical chairs, several out of stock, sorted by an accident of embedding geometry.
+
+Push too far the other way — rank purely on predicted conversion — and you get a different failure that's harder to see. The system learns to show whatever converts, which is the popular, cheap, heavily-reviewed items, regardless of whether they resemble what the user asked for. Users searching for a specific mid-century sideboard get the best-selling flat-pack unit, because that item converts well for everyone. Search stops being search and becomes a merchandising surface, and users stop trusting it, and the metric that catches this is not add-to-cart on the session — it's retention over months, which is exactly the metric your A/B test isn't long enough to measure.
 
 ---
 
 ## Cross-cutting questions
 
-These get asked regardless of which design you drew. They are the interviewer's way of finding out whether you've operated a system or only read about one, and the good news is that the answers transfer completely — learn these eight and you have a response to most probes in most designs.
+### Cold start
 
-### How do you handle cold start?
+For a new user, use locale, language, context, declared interests, and population priors. Update short-term state after each interaction. For a new item, use content features and explicit exploration. Missing history must mean “unknown,” not zero.
 
-Cold start is the problem that a model needs history to make a good prediction, and some entities have none: a user who signed up thirty seconds ago, an item listed this morning, a query nobody has ever typed. The reason it matters more than it seems is that cold entities are not a rare edge case — on a growing platform they're a large and strategically important slice, and they're exactly the population whose experience determines whether the platform keeps growing.
+### Drift
 
-The general answer is to **fall back through a hierarchy of decreasing specificity**, and to say which level you're on rather than pretending you have signal you don't. For a **cold user**: no personal history, so use whatever context the request itself carries — device, locale, referrer, time of day — plus population-level popularity, plus anything an onboarding flow collected. Then update aggressively, because the first few interactions carry enormous information relative to a long-tenured user's next one; a session-based model that conditions on the last handful of actions rather than a long-term embedding is often better for the first day than the main model is. For a **cold item**: you have no behavioural signal but you always have *content* — the text, the image, the category, the seller — so a content-derived embedding places the item in the same space as items that do have history, and it inherits their neighbourhood as a prior. This is the single most valuable property of content-based embeddings and it's why the image-search design leans on them. For a **cold query**: fall back to lexical matching, which needs no history at all, and to query rewriting against a taxonomy.
+Monitor feature distributions, missingness, score distributions, calibration, and outcomes by segment. Covariate drift changes inputs. Label drift changes the base rate. Concept drift changes the relationship between inputs and outcomes. First rule out a pipeline bug. Then decide whether to repair data, adjust thresholds, add features, or retrain.
 
-Two mechanisms deserve naming. **Exploration**: reserve a small budget — a few percent of impressions — for items with high uncertainty, because an item that's never shown never accumulates the data that would let it be shown. Without an explicit exploration budget, a ranker trained on its own logs will permanently suppress everything it wasn't initially confident about, and the catalogue quietly ossifies. Thompson sampling or a simple epsilon-greedy slice both work; the important part is that the budget exists and is measured. **Two-tower architectures with content features** make cold start structurally cheaper: if the item tower takes content features rather than a learned per-item ID embedding, a brand-new item gets a meaningful vector on its first forward pass, with no retraining at all. Designing for cold start at the architecture level beats patching it at serving time, and volunteering that is the senior version of this answer.
+### Delayed and missing labels
 
-### How do you detect and respond to drift?
+Train on cohorts whose outcome window has matured. Use early proxies for fast monitoring and mature labels for final evaluation. In systems such as fraud, declined cases have no normal outcome. Use a small randomized sample or another audit path to measure this rejected region.
 
-Drift is the model getting worse because the world changed, not because the code changed, and it comes in three flavours worth distinguishing. **Covariate shift** is the input distribution moving while the input-to-output relationship holds — new traffic from a new country, a UI change that alters what users type. **Label shift** is the base rate moving — fraud attempts triple, or a policy category's prevalence jumps during an election. **Concept drift** is the relationship itself changing — the features that predicted fraud last month don't this month, because the fraudsters adapted. The response differs by type, which is why naming them matters: covariate shift may need only recalibration, concept drift needs retraining, and label shift often needs neither if the model is well-calibrated and you adjust the prior.
+### Feedback loops
 
-Detection runs on three signals, in increasing order of usefulness and decreasing order of availability. **Input distributions**, monitored per feature, using population stability index or KL divergence against a reference window — cheap, immediate, no labels required, and noisy enough that it produces false alarms if you're not careful about which features you watch. **Output distributions**, which are usually the better signal: if the fraction of items scoring above threshold moves without a deploy, something upstream changed, and this single metric catches more real incidents than any input monitor. **Performance metrics** on whatever labels you have, which is the ground truth and is also the slowest and most expensive.
+The model changes what users see, so it changes its next training set. Log exposure probabilities, keep a small exploration budget, and do not treat unexposed items as negatives. Use inverse propensity weighting or doubly robust estimation when the logging policy is known.
 
-Responding well is mostly about having decided in advance. Automatic retraining on a schedule handles slow drift without anyone thinking about it. Threshold or calibration refits handle the common case where the model's ranking is still fine but its scores have shifted, and they're minutes of compute rather than hours. A **holdback** — a small permanent slice of traffic on a frozen old model — is the most underrated tool here, because comparing current-model to frozen-model performance over time separates "the world got harder" from "our model got worse," which are diagnosed and fixed completely differently. And for anything adversarial, accept that retraining cadence is a design parameter set by how fast your adversary adapts, not by convenience.
+### Offline improvement but online regression
 
-### How do you deal with delayed labels?
+Check experiment assignment and instrumentation first. Then check training-serving skew, feature freshness, latency, calibration, segment regressions, metric mismatch, and interactions with product rules. Offline metrics are proxies. Validate their historical correlation with online outcomes.
 
-Many labels arrive long after the prediction. A chargeback lands 60–90 days after the transaction. A moderation appeal resolves in days. A subscription cancellation is a label on an acquisition decision made a year ago. The problem this creates is subtle and it bites people: **at any moment, your recent data looks artificially clean**, because the positives haven't arrived yet. Train on it naively and you learn that recent transactions are safe, which is precisely backwards.
+### One model or several
 
-The first discipline is to never treat "no label yet" as "negative." Maintain an explicit label-maturity window per label type, and either exclude immature data from training or model the maturity explicitly. The clean way to model it is to estimate the **label delay distribution** — empirically, what fraction of eventual positives have arrived by day $d$ — and reweight recent examples by the inverse of that fraction, which is a standard survival-analysis correction and lets you use recent data without the bias.
+Start with one shared model. Split only when segments have different labels, constraints, feature meaning, or enough data to support separate models. Multi-task learning, adapters, or segment features often provide specialization with lower operational cost.
 
-The second move is to find **proxy labels** that arrive fast and correlate with the slow one. Fraud has manual-review outcomes in hours and card-network alerts in days, both long before the chargeback. Moderation has reviewer decisions in hours before appeals resolve. Churn has engagement decay weeks before cancellation. Train on the proxy for freshness, validate against the true label as it matures, and monitor the proxy-to-true correlation, because the day that correlation breaks is the day your fast pipeline starts lying to you.
+### Business and model metrics disagree
 
-The third is architectural: **separate the fast and slow loops**. A slow loop retrains the main model on mature, fully-labelled data at a cadence matched to the label delay. A fast loop adapts on top of it — recalibration, threshold adjustment, or a lightweight model on proxy labels — at a much higher cadence. This gets you responsiveness without contaminating the model that has to be right. And for evaluation, always report metrics with the as-of date and the maturity level attached, because comparing a mature month against an immature one is the most common way teams fool themselves into thinking a model improved.
-
-### How do you handle a feedback loop where the model's own output becomes its training data?
-
-This is the most important question in this list, because it's the failure mode that's invisible from inside the system. A recommender shows what it predicts you'll like, you can only click what it showed, and the clicks become training data — so the model learns that its own choices were correct. Moderation escalates what it suspects, humans label the escalations, and the model never sees its own blind spots. Search ranks by predicted relevance, users click the top result, and the click confirms the rank. In every case the system converges toward self-consistency rather than toward truth, and every offline metric improves while real quality degrades.
-
-The clearest symptom is a widening gap between offline and online performance, and a narrowing distribution of what the model outputs — reduced entropy in recommendations, escalation concentrated on a shrinking set of patterns, a long tail that stops being served at all. Both are directly measurable and neither requires labels, so they belong on a dashboard.
-
-The mitigations are structural and there are essentially four. **Random exploration** is the fundamental one: a slice of traffic where selection is randomized rather than model-driven, which gives you unbiased data about what the model *would* have suppressed. It costs a little quality on that slice and it is the only thing that genuinely breaks the loop, so budget for it explicitly and defend it when someone tries to cut it. **Propensity correction** lets you use the biased logged data honestly: record the probability with which each item was shown, then weight training examples by the inverse of that probability, which recovers an unbiased estimate of what would have happened under uniform exposure. Clip the weights, because small propensities produce enormous variance. **Independent evaluation** means a measurement path that doesn't depend on the model's own choices — human judgments, a random audit sample, a holdback on a frozen model. This is what the content-moderation design's random audit stratum is for, and it's the reason to protect it from cost-cutting. And **content-based features** reduce the loop's grip, because a model that scores items on their intrinsic properties rather than their accumulated interaction history can rate something it has never shown.
-
-The framing to offer: any system that both selects and learns from what it selected needs a deliberate source of information it did not select, and if you can't point at that source in your design, you have a feedback loop whether you've noticed it or not.
-
-### How do you debug a model that got worse in production but not offline?
-
-This is the most common real incident in ML, and the value of the answer is having an ordered procedure rather than a list of possibilities. Work from cheapest and most likely to most expensive.
-
-Start with **train/serve skew**, which is the culprit far more often than anything else. The same feature is computed by different code in the training pipeline and the serving path, and they disagree — a different default for missing values, a timezone difference, a unit difference, a normalization applied in one place and not the other. The direct test is to log the actual feature vectors used at serving time, replay the exact same examples through the training pipeline, and diff them feature by feature. If any feature differs, stop; you've found it. This is exactly what feature stores exist to prevent (Part 1), and "same code computes training and serving features" is the structural fix.
-
-Then check **temporal leakage** in the offline evaluation. If the offline split was random rather than time-based, the model saw the future during training — it learned from Wednesday to predict Tuesday — and offline metrics are inflated in a way production can never reproduce. Any aggregate feature computed over the full dataset rather than as-of the prediction time does the same thing more subtly. Re-run the offline evaluation with a strict temporal split and see whether the gap closes on its own.
-
-Then **distribution mismatch**: compare the production input distribution against the training distribution feature by feature. Common causes are a training set filtered in a way production isn't (deduplicated, bot-filtered, or restricted to complete records), or a training set that's simply older than you thought.
-
-Then **feedback and selection effects**: is the offline evaluation set drawn from what the previous model selected? If so, the new model is being graded on the old model's curriculum, which systematically favours models that behave like the old one.
-
-Then **the serving path itself**, which people check too late: a preprocessing difference, a truncation limit, a model-version mismatch between replicas, a batching bug that mixes up rows. Compare a handful of individual predictions between offline and online for the identical input. If the same input produces a different score, it's engineering, not modelling, and the search space just collapsed.
-
-Finally, consider that **the offline metric may be measuring the wrong thing** — a ranking model improving on NDCG while hurting revenue because it optimizes relevance and the business runs on margin. That's not a bug; it's a misalignment, and it's the topic of the last question in this section.
-
-### How do you decide between one model and many?
-
-The question shows up as: one global model, or one per country, per customer, per segment, per language? The honest framing is that this is a bias-variance tradeoff with an engineering-cost term attached, and the engineering term usually dominates in practice.
-
-A **single global model** sees all the data, so it has far more signal per parameter and generalizes better to sparse segments. It's one thing to train, deploy, monitor, and debug. Its weakness is that it fits the average, so it can systematically underperform on segments whose behaviour differs from the majority — and it'll do that invisibly, because the aggregate metric is dominated by the majority.
-
-**Many specialized models** fit each segment's idiosyncrasies exactly, and they fail in three ways: small segments have too little data and overfit, you now have $N$ training pipelines and $N$ monitoring dashboards and $N$ opportunities for one to go stale unnoticed, and cold-start for a new segment has no answer at all.
-
-The resolution that's almost always right is the **hybrid**: one shared model with segment identity as an input. Add a segment embedding, or per-segment feature crosses, or a per-segment output head over a shared trunk. This gets you most of the specialization benefit while keeping one pipeline, and it degrades gracefully — a new segment starts at the population average and specializes as data accumulates, which is exactly the cold-start behaviour you want. The content-moderation design's shared encoder with per-policy heads is this pattern, and so is multi-LoRA serving in the LLM platform: one base, many cheap adapters.
-
-Split into genuinely separate models only when there's a *structural* reason rather than a statistical one: different feature availability (one market has data you're not allowed to use elsewhere), different label semantics (a policy that means something different by jurisdiction), regulatory isolation, or wildly different scale where one segment's volume would swamp training. The diagnostic to actually run: train the global model, evaluate per segment, and look at where per-segment performance lags the aggregate. If the gap is small, you're done. If one segment is badly served, try adding it as a feature before you fork the model — and only fork if that fails.
-
-### How do you handle multi-tenancy and per-customer models?
-
-Multi-tenancy means one system serving many customers whose data must not mix, and it has three faces: isolation, customization, and fairness.
-
-**Isolation** is the non-negotiable one. Customer A's data must not leak into a prediction served to customer B, and the leak paths are more numerous than people expect. The obvious one is training on pooled data, where a memorizing model can reproduce another tenant's data — real for large models, essentially the same concern as training-data extraction. The less obvious ones are shared caches, where a timing difference reveals that another tenant sent the same input (this is the prompt-cache side channel from the LLM-serving design, and it generalizes to any cache keyed on content), and shared feature stores, where a badly-scoped key returns another tenant's aggregates. The defence is that tenant ID is part of every cache key, every feature key, and every index partition, enforced at the framework level rather than left to each service to remember.
-
-**Customization** is the same one-model-or-many question in a different costume, and the same hybrid answer applies with an extra tier. Most tenants get the shared model, because they don't have enough data to beat it and they benefit from everyone else's. Tenants with real volume get a cheap personalization layer — a tenant embedding, a per-tenant calibration, or a LoRA adapter in the LLM case — which is where most of the value is for most of the cost. Only tenants with genuinely different label semantics or a contractual demand for isolation get their own model, and they should pay for it, because a per-tenant model is a per-tenant pipeline and someone has to keep it alive. The economic point worth making: the cost of a customized model is not the training run, it's the perpetual maintenance, and that cost is linear in tenant count while the revenue often isn't.
-
-**Fairness** is resource allocation, and it's the LLM-serving design's weighted fair queueing generalized. One tenant must not be able to degrade another's service, whether through a traffic spike, a pathologically expensive request, or a retraining job that saturates the cluster. That means per-tenant rate limits and quotas, a service metric that reflects real cost rather than request count, and enough isolation in the scheduler that a noisy neighbour degrades their own experience first. And it means per-tenant monitoring, because an aggregate p95 hides the tenant for whom the system is broken — the single most common way a multi-tenant platform is bad without anyone knowing.
-
-### What do you do when the business metric and the model metric disagree?
-
-You launched a model with better AUC and revenue went down. This happens constantly, and how you respond is one of the sharper seniority signals in the whole interview, because the junior instinct is to defend the model and the senior instinct is to distrust the metric.
-
-The first thing to do is **believe the business metric**, provided it's measured properly. The model metric is a proxy chosen for convenience; the business metric is closer to what the company actually wants. If they disagree, the default assumption is that the proxy is wrong, not that the business is wrong.
-
-Then diagnose, because there are only a few things it can be. The most common is that **the proxy is misaligned**: AUC measures ranking quality uniformly across all pairs, but revenue depends on the top few positions and on calibration, and a model can improve average ranking while getting the head of the distribution slightly worse. In ads this is the classic — better AUC with worse calibration destroys revenue, because bids are computed from probabilities and a systematically shifted probability misprices every auction. Check calibration explicitly whenever a model's scores are used as numbers rather than as an ordering. The second possibility is a **distribution or segment effect**: the model improved on the bulk and regressed on a small high-value segment, and revenue is concentrated there. Segment the A/B result by user value, query type, and geography before concluding anything. The third is a **second-order effect**: the model is better at the immediate objective and worse for the system — more relevant results that reduce browsing, or higher short-term engagement that costs retention. These only show up over longer horizons and are why holdbacks and long-run experiments exist. The fourth, and check it early because it's embarrassing, is that **the experiment is broken**: unbalanced assignment, a novelty effect, insufficient power, or a bug that only fires in the treatment arm.
-
-Then act. If the proxy is misaligned, fix the proxy — retrain against a metric closer to the business objective, or add calibration as an explicit constraint — rather than fighting the evidence. If it's a segment regression, either fix the segment or gate the launch to the segments that improved. If it's second-order, you need a longer experiment before you can decide anything at all, and the right answer to the interviewer is "I'd hold the launch and run a holdback for 60 days," not a guess. And the lesson to state, because it's the general one: **the fastest way to prevent this is to choose the offline metric to correlate with the online metric, and to validate that correlation empirically** — take your last twenty experiments, plot offline delta against online delta, and if there's no correlation, your offline metric is not doing its job and no amount of improving it will help.
-
----
+Believe a well-measured business result before an offline proxy. Diagnose whether the proxy is misaligned, a high-value segment regressed, a second-order effect appeared, or the experiment is broken. Fix the metric or model rather than optimizing a proxy that has stopped predicting the business outcome.
