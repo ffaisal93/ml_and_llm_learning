@@ -1,6 +1,6 @@
 # RNNs and LSTMs — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 RNNs lost the architecture race to transformers, but they're still asked in interviews because: (1) the failure modes (vanishing gradients) motivate every modern architectural choice, (2) LSTM gating is the conceptual ancestor of attention, and (3) modern SSMs (Mamba) are essentially "RNNs done right" — knowing the lineage matters.
 

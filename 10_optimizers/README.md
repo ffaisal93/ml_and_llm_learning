@@ -1,13 +1,13 @@
 # Topic 10: Optimizers — Algorithmic Comparison
 
-> **Read first:** `02_gradient_descent/LEARNING_RATE_DEEP_DIVE.md` for the LR-side of the story (when LR works/fails, schedules, scaling rules). This file focuses on the **algorithms themselves** — what each optimizer is doing mathematically, what problem it fixes, and when each one is the right choice.
+> **Read first:** [`02_gradient_descent/LEARNING_RATE_DEEP_DIVE.md`](../02_gradient_descent/LEARNING_RATE_DEEP_DIVE.md) for the LR-side of the story (when LR works/fails, schedules, scaling rules). This file focuses on the **algorithms themselves** — what each optimizer is doing mathematically, what problem it fixes, and when each one is the right choice.
 
 ## Files in this folder
 
 | File | Purpose |
 |---|---|
-| `README.md` | Per-optimizer comparison — this file. |
-| `INTERVIEW_GRILL.md` | 40 interview questions on optimizer algorithms specifically (different angle from `02_gradient_descent/INTERVIEW_GRILL.md`). |
+| [`README.md`](README.md) | Per-optimizer comparison — this file. |
+| [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md) | 40 interview questions on optimizer algorithms specifically (different angle from [`02_gradient_descent/INTERVIEW_GRILL.md`](../02_gradient_descent/INTERVIEW_GRILL.md)). |
 | [`optimizers.py`](optimizers_py.md) | From-scratch implementations of SGD, Momentum, Nesterov, RMSProp, Adam, AdamW, Lion. |
 
 ---
@@ -248,7 +248,7 @@ LARS applied on top of Adam. Used for the famous "BERT in 76 minutes" run with b
 
 ## What the interviewer may ask next
 
-(Each fully answered in `INTERVIEW_GRILL.md`.)
+(Each fully answered in [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).)
 
 1. Walk me through Adam, including bias correction.
 2. Why is AdamW different from Adam-with-L2?
@@ -266,12 +266,12 @@ LARS applied on top of Adam. Used for the famous "BERT in 76 minutes" run with b
 2. Master Adam with bias correction (whiteboard-ready).
 3. Master the AdamW vs. Adam+L2 distinction (verbal, with example).
 4. Skim Lion, Sophia, Shampoo at concept level (one paragraph each).
-5. Drill `INTERVIEW_GRILL.md`.
+5. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 ---
 
 ## Cross-references
 
-- `02_gradient_descent/LEARNING_RATE_DEEP_DIVE.md` — the LR-centric companion to this file.
-- `02_gradient_descent/INTERVIEW_GRILL.md` — LR-focused grill (60 questions).
+- [`02_gradient_descent/LEARNING_RATE_DEEP_DIVE.md`](../02_gradient_descent/LEARNING_RATE_DEEP_DIVE.md) — the LR-centric companion to this file.
+- [`02_gradient_descent/INTERVIEW_GRILL.md`](../02_gradient_descent/INTERVIEW_GRILL.md) — LR-focused grill (60 questions).
 - `48_optimization_and_matrix_calculus/` — Hessians, conditioning, second-order theory.

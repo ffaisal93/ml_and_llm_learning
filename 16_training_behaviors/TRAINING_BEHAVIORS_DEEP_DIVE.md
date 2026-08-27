@@ -1,6 +1,6 @@
 # Training Behaviors — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 This deep dive complements the debugging deep dive (`53`). Where debugging is about diagnosing failures, this is about *expected behavior*: what should training look like, what's normal vs concerning, what early signals tell you about your run's trajectory? Senior ML interviews probe this to test if you've actually trained models, not just read about them.
 

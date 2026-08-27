@@ -1,8 +1,8 @@
 # Topic 45: Reinforcement Learning Fundamentals
 
 > 🔥 **For interviews, read these first:**
-> - **`RL_DEEP_DIVE.md`** — frontier-lab deep dive: MDPs, Bellman equations, value/policy iteration, Q-learning vs SARSA (on vs off-policy), DQN tricks (replay, target net, double/dueling), policy gradient theorem with derivation, REINFORCE + baselines, actor-critic, A2C, TRPO/PPO with clipped surrogate, GAE, RLHF connection, GRPO simplification.
-> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions.
+> - **[`RL_DEEP_DIVE.md`](RL_DEEP_DIVE.md)** — frontier-lab deep dive: MDPs, Bellman equations, value/policy iteration, Q-learning vs SARSA (on vs off-policy), DQN tricks (replay, target net, double/dueling), policy gradient theorem with derivation, REINFORCE + baselines, actor-critic, A2C, TRPO/PPO with clipped surrogate, GAE, RLHF connection, GRPO simplification.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 60 active-recall questions.
 
 ## What You'll Learn
 

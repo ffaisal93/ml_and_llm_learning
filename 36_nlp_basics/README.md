@@ -1,8 +1,8 @@
 # Topic 36: NLP Basics
 
 > 🔥 **For interviews, read these first:**
-> - **`NLP_BASICS_DEEP_DIVE.md`** — frontier-lab deep dive: TF-IDF, n-gram language models, smoothing (Laplace, Good-Turing, Kneser-Ney with continuation count), perplexity, Zipf's law, Heaps' law, edit distance DP, BM25 with hyperparameter intuition.
-> - **`INTERVIEW_GRILL.md`** — 50 active-recall questions.
+> - **[`NLP_BASICS_DEEP_DIVE.md`](NLP_BASICS_DEEP_DIVE.md)** — frontier-lab deep dive: TF-IDF, n-gram language models, smoothing (Laplace, Good-Turing, Kneser-Ney with continuation count), perplexity, Zipf's law, Heaps' law, edit distance DP, BM25 with hyperparameter intuition.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 50 active-recall questions.
 
 ## What You'll Learn
 
@@ -346,7 +346,7 @@ See [`nlp_basics.py`](nlp_basics_py.md) for complete implementations.
 - **Text Generation**: Decoding strategies, evaluation
 
 **Detailed Standard Procedures:**
-- **`nlp_problems_detailed.md`**: Complete industry-standard procedures for 10+ NLP problems
+- **[`nlp_problems_detailed.md`](nlp_problems_detailed.md)**: Complete industry-standard procedures for 10+ NLP problems
   - Text Classification, NER, QA, Translation, Summarization
   - Text Generation, Sentiment Analysis, Information Extraction, Dialogue Systems
   - Each with phase-by-phase procedures, model selection, training, evaluation
@@ -364,7 +364,7 @@ See [`evaluation_metrics.py`](evaluation_metrics_py.md), `nlp_tasks_and_solution
 ## Perplexity: Detailed Explanation
 
 **Perplexity is a fundamental metric in language modeling. See:**
-- **`03_evaluation_metrics/perplexity_detailed.md`**: Complete theoretical guide
+- **[`03_evaluation_metrics/perplexity_detailed.md`](../03_evaluation_metrics/perplexity_detailed.md)**: Complete theoretical guide
   - What is perplexity and intuitive understanding
   - Mathematical formulations and connection to entropy
   - Interpretation and typical values

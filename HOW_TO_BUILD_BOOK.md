@@ -227,7 +227,7 @@ Run with `python3 tools/gen_summary.py`.
 
 ## 6. Common gotchas
 
-- **Math doesn't render.** You forgot to install/enable mdbook-katex, or you're relying on default MathJax which can be flaky. Confirm by viewing one of the math-heavy files (e.g. `04_transformers/MODERN_LLM_ARCHITECTURE_CHOICES.md`).
+- **Math doesn't render.** You forgot to install/enable mdbook-katex, or you're relying on default MathJax which can be flaky. Confirm by viewing one of the math-heavy files (e.g. [`04_transformers/MODERN_LLM_ARCHITECTURE_CHOICES.md`](04_transformers/MODERN_LLM_ARCHITECTURE_CHOICES.md)).
 - **404 on a chapter.** The path in `SUMMARY.md` doesn't match the actual file location. Double-check.
 - **Chapter not appearing.** Check that the file is listed in `SUMMARY.md`. If not, mdBook silently skips it. (You can find orphaned files via `mdbook test` warnings.)
 - **`book.toml: src = "."` weirdness.** mdBook will treat *every* `.md` file at the source root as potentially renderable. Files not listed in `SUMMARY.md` get a "draft" warning but don't appear in the sidebar — usually fine.

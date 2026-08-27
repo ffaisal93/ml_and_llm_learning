@@ -95,7 +95,7 @@ A `tool_result` can carry `is_error: true`. That tells Claude the tool failed so
 
 ### Tool design in one line
 
-**A good tool interface makes the right action easy and the wrong one hard.** Concretely: descriptive names, enums for constrained params, stable IDs in outputs, structured errors, and returning a *page* of results on demand rather than auto-dumping 10,000 rows into the context. (Full treatment in `AGENTIC_PATTERNS_DEEP_DIVE.md`.)
+**A good tool interface makes the right action easy and the wrong one hard.** Concretely: descriptive names, enums for constrained params, stable IDs in outputs, structured errors, and returning a *page* of results on demand rather than auto-dumping 10,000 rows into the context. (Full treatment in [`AGENTIC_PATTERNS_DEEP_DIVE.md`](AGENTIC_PATTERNS_DEEP_DIVE.md).)
 
 ---
 

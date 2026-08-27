@@ -833,7 +833,7 @@ Same as DPO but applied to (good_step, bad_step) pairs at each reasoning step in
 
 ## 15. The 12 most-asked alignment interview questions
 
-(Brief answers; full grilling in `INTERVIEW_GRILL.md`.)
+(Brief answers; full grilling in [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).)
 
 1. **Walk me through the RLHF pipeline.** SFT → reward model on preference pairs → PPO with KL penalty.
 2. **Why do we need a KL penalty?** Bound reward hacking; preserve capabilities; stay in RM's training distribution.
@@ -858,7 +858,7 @@ Same as DPO but applied to (good_step, bad_step) pairs at each reasoning step in
 4. Know GRPO's value-function-replacement trick.
 5. Know Constitutional AI / RLAIF concept and motivation.
 6. Know the failure modes by name: reward hacking, KL blowup, mode collapse, sycophancy, overoptimization.
-7. Drill `INTERVIEW_GRILL.md`.
+7. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 ---
 

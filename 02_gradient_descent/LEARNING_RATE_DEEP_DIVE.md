@@ -348,7 +348,7 @@ If you internalize these eight steps, you will pass most learning-rate debugging
 
 ## 16. The 12 most common interview questions about learning rate
 
-(Brief answers; full grilling in `INTERVIEW_GRILL.md`.)
+(Brief answers; full grilling in [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).)
 
 1. **What's the relationship between LR and batch size?** Linear scaling for SGD, sqrt-ish for Adam, both break at the critical batch size.
 2. **Why do you need warmup?** Adam variance estimates are noisy early; residual streams are uncalibrated; the loss surface near init is sharp. Without warmup, transformers diverge.

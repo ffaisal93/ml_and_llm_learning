@@ -1,6 +1,6 @@
 # Linear Algebra for ML — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 ML is linear algebra at scale plus calculus. Senior interviews probe whether you understand the *operations* you're doing — not just the syntax — and whether you can reason about properties (rank, conditioning, definiteness) that determine whether a method works or fails.
 

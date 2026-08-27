@@ -98,7 +98,7 @@ When you configure MCP servers in **Claude Code**, configuration lives at **thre
 | **project** | checked into the repo (`.mcp.json`) | the whole team, shared via version control |
 | **user** | your machine, across all projects | your personal defaults everywhere |
 
-So a **local** server config overrides a **project** one, which overrides a **user** one. This mirrors the general Claude Code configuration hierarchy (see `CLAUDE_CODE_DEEP_DIVE.md`), where more specific/closer-to-the-work settings win.
+So a **local** server config overrides a **project** one, which overrides a **user** one. This mirrors the general Claude Code configuration hierarchy (see [`CLAUDE_CODE_DEEP_DIVE.md`](CLAUDE_CODE_DEEP_DIVE.md)), where more specific/closer-to-the-work settings win.
 
 > **Exam trap.** "A team wants an MCP server available to everyone who clones the repo." → **project** scope (committed `.mcp.json`), not user (that's only your machine) and not local (not shared).
 

@@ -100,7 +100,7 @@ Tools must return errors the model (or your code) can act on. Classify:
 
 > **The classic trap: uncertain writes.** A write (charge a card, create a record) **times out**. Did it succeed? **Do not blind-retry** — you risk a double charge. Design for **idempotency** (idempotency keys) or check state before retrying. This exact scenario appears on the exam.
 
-Also recall the MCP distinction: **protocol errors** (JSON-RPC plumbing) vs **tool execution errors** (`isError: true`, the tool ran but failed its job — feed these to the model to adapt). See `MCP_DEEP_DIVE.md`.
+Also recall the MCP distinction: **protocol errors** (JSON-RPC plumbing) vs **tool execution errors** (`isError: true`, the tool ran but failed its job — feed these to the model to adapt). See [`MCP_DEEP_DIVE.md`](MCP_DEEP_DIVE.md).
 
 ---
 

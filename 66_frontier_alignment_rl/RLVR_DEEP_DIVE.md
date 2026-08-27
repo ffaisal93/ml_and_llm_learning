@@ -2,7 +2,7 @@
 
 > Frontier-lab research-scientist depth on RLVR: the algorithm zoo (DAPO, Dr. GRPO, RLOO, REINFORCE++, GSPO, VinePPO, PRIME), verifier design, reward shaping, failure modes, open-source infra, and a substantial section on **low-resource multilingual reasoning** — the most under-explored applied RLVR direction in 2025-2026, with concrete research-project blueprints.
 
-Pair with `REASONING_MODELS_DEEP_DIVE.md` (the broader reasoning-RL story), `FRONTIER_REWARD_MODELING.md` (RM landscape), and `OPEN_SOURCE_POSTTRAIN_PLAYBOOKS.md` (R1, Tülu 3 recipes).
+Pair with [`REASONING_MODELS_DEEP_DIVE.md`](REASONING_MODELS_DEEP_DIVE.md) (the broader reasoning-RL story), [`FRONTIER_REWARD_MODELING.md`](FRONTIER_REWARD_MODELING.md) (RM landscape), and [`OPEN_SOURCE_POSTTRAIN_PLAYBOOKS.md`](OPEN_SOURCE_POSTTRAIN_PLAYBOOKS.md) (R1, Tülu 3 recipes).
 
 ---
 

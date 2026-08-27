@@ -44,7 +44,7 @@ Treat **both** the model's inputs and its outputs as untrusted with respect to d
 
 - **API key management:** keys are secrets — store in a secrets manager or env vars, **never in code, `CLAUDE.md`, or version control**. Rotate keys; scope them; use separate keys per environment.
 - **Least-privilege access (IAM):** give the app/agent only the permissions it needs; separate read vs write; require elevation/approval for sensitive operations.
-- **Per-tool credentials:** a tool/MCP server should hold only the credentials it needs, on the side that should hold them (client- vs server-side execution — see `TOOLS_AND_MCP.md`).
+- **Per-tool credentials:** a tool/MCP server should hold only the credentials it needs, on the side that should hold them (client- vs server-side execution — see [`TOOLS_AND_MCP.md`](TOOLS_AND_MCP.md)).
 - **Auth for agents:** do not expose end-user login/rate limits through third-party agents; use proper API-key auth as Anthropic requires.
 
 ---

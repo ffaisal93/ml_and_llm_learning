@@ -1,8 +1,8 @@
 # Topic 22: Recommendation Systems
 
 > 🔥 **For interviews, read these first:**
-> - **`RECOMMENDATION_SYSTEMS_DEEP_DIVE.md`** — frontier-lab deep dive: collaborative filtering, matrix factorization (BPR loss), two-tower retrieval (in-batch negatives, ANN serving), sequential models (GRU4Rec, SASRec, BERT4Rec), two-stage architecture (retrieval + ranking), GBDT/DeepFM/DLRM rankers, NDCG/MAP/MRR, cold start, echo chamber + exploration.
-> - **`INTERVIEW_GRILL.md`** — 55 active-recall questions.
+> - **[`RECOMMENDATION_SYSTEMS_DEEP_DIVE.md`](RECOMMENDATION_SYSTEMS_DEEP_DIVE.md)** — frontier-lab deep dive: collaborative filtering, matrix factorization (BPR loss), two-tower retrieval (in-batch negatives, ANN serving), sequential models (GRU4Rec, SASRec, BERT4Rec), two-stage architecture (retrieval + ranking), GBDT/DeepFM/DLRM rankers, NDCG/MAP/MRR, cold start, echo chamber + exploration.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 55 active-recall questions.
 
 ## What You'll Learn
 

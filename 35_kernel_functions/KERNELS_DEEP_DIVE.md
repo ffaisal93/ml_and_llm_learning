@@ -298,7 +298,7 @@ This connection is increasingly invoked in research (e.g., Tsai et al., "Transfo
 2. Memorize RBF kernel + Mercer's conditions.
 3. Walk through SVM dual derivation.
 4. Cite the NTK connection at sketchy level.
-5. Drill `INTERVIEW_GRILL.md`.
+5. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 ---
 

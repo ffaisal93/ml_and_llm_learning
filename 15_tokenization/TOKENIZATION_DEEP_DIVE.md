@@ -255,7 +255,7 @@ Multiple reasons; tokenization is one. GPT-4's tokenizer (`cl100k_base`) handles
 2. Memorize the four algorithms and what each is used in (BPE/WordPiece/Unigram/SentencePiece).
 3. Know the byte-level BPE coverage argument.
 4. Have an opinion on vocabulary size trade-offs.
-5. Drill `INTERVIEW_GRILL.md`.
+5. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 ---
 

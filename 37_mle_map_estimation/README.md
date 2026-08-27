@@ -1,8 +1,8 @@
 # Topic 37: MLE and MAP Estimation
 
 > 🔥 **For interviews, read these first:**
-> - **`MLE_MAP_DEEP_DIVE.md`** — frontier-lab deep dive: full MLE derivations (Bernoulli/Gaussian/Poisson/multinomial/linreg/logreg), asymptotic theory (consistency/Fisher info/CRLB), MAP-as-regularization (ridge from Gaussian prior, lasso from Laplace), conjugate priors catalog, MLE = forward KL, RLHF/DPO connections.
-> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions.
+> - **[`MLE_MAP_DEEP_DIVE.md`](MLE_MAP_DEEP_DIVE.md)** — frontier-lab deep dive: full MLE derivations (Bernoulli/Gaussian/Poisson/multinomial/linreg/logreg), asymptotic theory (consistency/Fisher info/CRLB), MAP-as-regularization (ridge from Gaussian prior, lasso from Laplace), conjugate priors catalog, MLE = forward KL, RLHF/DPO connections.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 60 active-recall questions.
 
 ## What You'll Learn
 
@@ -49,8 +49,8 @@ Regularization = MAP estimation
   - L1 Regularization = Laplace Prior (Lasso)
   - Detailed explanations and derivations
 
-See `mle_map_derivations.md` for complete mathematical derivations!
-See `regularization_priors.md` for detailed L1/L2 priors explanation!
+See [`mle_map_derivations.md`](mle_map_derivations.md) for complete mathematical derivations!
+See [`regularization_priors.md`](../36_nlp_basics/regularization_priors.md) for detailed L1/L2 priors explanation!
 
 ## Core Intuition
 

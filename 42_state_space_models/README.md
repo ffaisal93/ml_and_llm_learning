@@ -1,8 +1,8 @@
 # Topic 42: State Space Models (SSM)
 
 > 🔥 **For interviews, read these first:**
-> - **`SSM_DEEP_DIVE.md`** — frontier-lab interview deep dive: continuous SSM ODE, discretization, recurrent vs convolutional view, HiPPO, S4 (DPLR parameterization), Mamba (selectivity + parallel scan), hybrid models (Jamba), why SSMs haven't fully replaced transformers.
-> - **`INTERVIEW_GRILL.md`** — 35 active-recall questions.
+> - **[`SSM_DEEP_DIVE.md`](SSM_DEEP_DIVE.md)** — frontier-lab interview deep dive: continuous SSM ODE, discretization, recurrent vs convolutional view, HiPPO, S4 (DPLR parameterization), Mamba (selectivity + parallel scan), hybrid models (Jamba), why SSMs haven't fully replaced transformers.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 35 active-recall questions.
 
 ## What You'll Learn
 
@@ -126,10 +126,10 @@ State Space Models are a class of models that use a hidden state to process sequ
 ## Industry-Standard Boilerplate Code
 
 See detailed files for complete implementations:
-- `ssm_theory.md`: Complete theoretical foundation
+- [`ssm_theory.md`](ssm_theory.md): Complete theoretical foundation
 - [`ssm_code.py`](ssm_code_py.md): Full implementation
 - `mamba_code.py`: Mamba implementation
-- `ssm_qa.md`: Comprehensive interview Q&A
+- [`ssm_qa.md`](ssm_qa.md): Comprehensive interview Q&A
 
 ## Exercises
 

@@ -1,8 +1,8 @@
 # Topic 14: Advanced Positional Embeddings (RoPE, ALiBi)
 
 > 🔥 **For interviews, read these first:**
-> - **`POSITIONAL_DEEP_DIVE.md`** — frontier-lab interview deep dive: sinusoidal/learned/T5-bias/RoPE/ALiBi/NoPE, full RoPE derivation showing relative-position from rotated dot products, NTK scaling, YaRN, length extrapolation.
-> - **`INTERVIEW_GRILL.md`** — 45 active-recall questions.
+> - **[`POSITIONAL_DEEP_DIVE.md`](POSITIONAL_DEEP_DIVE.md)** — frontier-lab interview deep dive: sinusoidal/learned/T5-bias/RoPE/ALiBi/NoPE, full RoPE derivation showing relative-position from rotated dot products, NTK scaling, YaRN, length extrapolation.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 45 active-recall questions.
 
 ## What You'll Learn
 

@@ -1,6 +1,6 @@
 # Multimodal Models & Embedding History — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 The history of representation learning is the spine of modern ML. From bag-of-words to CLIP to multimodal LLMs, each era solved a specific limitation of the previous one. Frontier interviews probe this evolution — partly because contrastive learning, image-text alignment, and multimodal models are *the* hot topics, and partly because understanding the lineage shows you can reason about *why* design choices win.
 

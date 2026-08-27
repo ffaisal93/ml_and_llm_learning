@@ -373,7 +373,7 @@ For text generation, autoregressive models still dominate.
 3. Know CFG: train cond+uncond, combine at sampling.
 4. Know latent diffusion's role (Stable Diffusion).
 5. Know DiT and flow matching as the modern direction.
-6. Drill `INTERVIEW_GRILL.md`.
+6. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 ---
 

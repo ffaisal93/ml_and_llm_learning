@@ -297,7 +297,7 @@ For long-form generation where the model would otherwise loop or repeat phrases.
 
 Use a small draft model to propose $k$ tokens; verify with the target model in one forward pass; accept via rejection sampling. **Same output distribution as plain decoding** (mathematically exact). 2–3x speedup for typical setups.
 
-See `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md` for full details.
+See [`06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`](../06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md) for full details.
 
 > **Saying it out loud.** Speculative decoding is a speed trick, not a quality trick. A small cheap model guesses the next several tokens, then the big model checks all of them in a single forward pass, since scoring tokens in parallel is nearly free when you're memory-bound. Accepted guesses are kept, and at the first rejection you resample from a corrected distribution. The important claim is that the output distribution is provably identical to sampling from the big model alone — it's exact, not an approximation — and you typically get 2 to 3 times the throughput, more when the draft model agrees often.
 
@@ -354,4 +354,4 @@ Increasing $N$ is essentially "scaling test-time compute." Recent work (o1, Deep
 1. Whiteboard temperature softmax with $T \to 0$ and $T \to \infty$ limits.
 2. Walk through top-k vs top-p with a worked example (5-token vocab).
 3. Explain why beam search produces consensus-y text.
-4. Drill `INTERVIEW_GRILL.md`.
+4. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).

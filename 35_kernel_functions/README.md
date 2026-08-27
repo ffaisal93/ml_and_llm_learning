@@ -1,8 +1,8 @@
 # Topic 35: Kernel Functions
 
 > 🔥 **For interviews, read these first:**
-> - **`KERNELS_DEEP_DIVE.md`** — frontier-lab interview deep dive: kernel trick, Mercer's theorem, RBF/polynomial, SVM dual derivation, RKHS, NTK, attention-as-kernel.
-> - **`INTERVIEW_GRILL.md`** — 40 active-recall questions.
+> - **[`KERNELS_DEEP_DIVE.md`](KERNELS_DEEP_DIVE.md)** — frontier-lab interview deep dive: kernel trick, Mercer's theorem, RBF/polynomial, SVM dual derivation, RKHS, NTK, attention-as-kernel.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 40 active-recall questions.
 
 ## What You'll Learn
 

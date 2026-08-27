@@ -1,8 +1,8 @@
 # Topic 23: Clustering Evaluation
 
 > 🔥 **For interviews, read these first:**
-> - **`CLUSTERING_EVALUATION_DEEP_DIVE.md`** — frontier-lab deep dive: internal metrics (silhouette, Davies-Bouldin, Calinski-Harabasz, Dunn), external metrics (ARI, NMI, V-measure, purity, pairwise F), choosing $K$ (elbow, silhouette, gap statistic, stability), bootstrap stability validation, common pitfalls.
-> - **`INTERVIEW_GRILL.md`** — 45 active-recall questions.
+> - **[`CLUSTERING_EVALUATION_DEEP_DIVE.md`](CLUSTERING_EVALUATION_DEEP_DIVE.md)** — frontier-lab deep dive: internal metrics (silhouette, Davies-Bouldin, Calinski-Harabasz, Dunn), external metrics (ARI, NMI, V-measure, purity, pairwise F), choosing $K$ (elbow, silhouette, gap statistic, stability), bootstrap stability validation, common pitfalls.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 45 active-recall questions.
 
 ## What You'll Learn
 

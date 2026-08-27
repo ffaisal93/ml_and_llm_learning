@@ -1,8 +1,8 @@
 # Topic 8: Training Techniques (RLHF, DPO, PPO, GRPO)
 
 > 🔥 **For interviews, read these first:**
-> - **`ALIGNMENT_DEEP_DIVE.md`** — frontier-lab interview deep dive: full RLHF math, Bradley-Terry preference model, complete DPO derivation (whiteboard-ready), the alphabet soup (IPO/KTO/ORPO/SimPO/GRPO), Constitutional AI, RLAIF, process vs outcome supervision, reward hacking, KL blowup, mode collapse, sycophancy, alignment tax, Goodhart curves.
-> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions with strong answers covering the full post-training stack. Drill until you can answer 40+ cold.
+> - **[`ALIGNMENT_DEEP_DIVE.md`](ALIGNMENT_DEEP_DIVE.md)** — frontier-lab interview deep dive: full RLHF math, Bradley-Terry preference model, complete DPO derivation (whiteboard-ready), the alphabet soup (IPO/KTO/ORPO/SimPO/GRPO), Constitutional AI, RLAIF, process vs outcome supervision, reward hacking, KL blowup, mode collapse, sycophancy, alignment tax, Goodhart curves.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 60 active-recall questions with strong answers covering the full post-training stack. Drill until you can answer 40+ cold.
 >
 > The README below is the conceptual overview. The two files above are where the interview-grade depth lives.
 
@@ -239,7 +239,7 @@ def dpo_loss(policy_logprobs_chosen: torch.Tensor,
 
 **Detailed Implementation:** See [`ppo.py`](ppo_py.md) for basic implementation and [`ppo_complete.py`](ppo_complete_py.md) for complete version with all four models.
 
-**Complete Guide:** See `ppo_models_detailed.md` for comprehensive explanation of all four models:
+**Complete Guide:** See [`ppo_models_detailed.md`](ppo_models_detailed.md) for comprehensive explanation of all four models:
 - **Policy Model (π_θ)**: Generates responses, being optimized
 - **Critic Model (V_φ)**: Estimates values, computes advantages
 - **Reference Model (π_ref)**: Frozen, provides KL penalty
@@ -287,11 +287,11 @@ def dpo_loss(policy_logprobs_chosen: torch.Tensor,
 - **[`rlhf_dpo.py`](rlhf_dpo_py.md)**: RLHF and DPO loss implementations
 - **[`ppo.py`](ppo_py.md)**: Basic PPO implementation with detailed explanations
 - **[`ppo_complete.py`](ppo_complete_py.md)**: Complete PPO with all four models (Policy, Critic, Reference, Reward)
-- **`ppo_models_detailed.md`**: Comprehensive guide explaining all four models, their roles, and mathematical details
-- **`ppo_process_explanation.md`**: **NEW** - Complete paragraph-style explanations of PPO, GRPO, and DPO processes for interviews
-- **`rlhf_pipeline_explanation.md`**: **NEW** - Complete paragraph-style explanation of the three-stage RLHF pipeline
+- **[`ppo_models_detailed.md`](ppo_models_detailed.md)**: Comprehensive guide explaining all four models, their roles, and mathematical details
+- **[`ppo_process_explanation.md`](ppo_process_explanation.md)**: **NEW** - Complete paragraph-style explanations of PPO, GRPO, and DPO processes for interviews
+- **[`rlhf_pipeline_explanation.md`](rlhf_pipeline_explanation.md)**: **NEW** - Complete paragraph-style explanation of the three-stage RLHF pipeline
 - **[`grpo.py`](grpo_py.md)**: GRPO implementation for group-based optimization
-- **`rl_alignment_qa.md`**: Detailed interview Q&A on RL alignment
+- **[`rl_alignment_qa.md`](rl_alignment_qa.md)**: Detailed interview Q&A on RL alignment
 
 ## Exercises
 

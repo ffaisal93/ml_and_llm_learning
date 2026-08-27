@@ -1,8 +1,8 @@
 # Topic 3: Evaluation Metrics
 
 > 🔥 **For interviews, read these first:**
-> - **`EVALUATION_METRICS_DEEP_DIVE.md`** — frontier-lab interview deep dive: classification (precision/recall/F1/AUROC/PR-AUC), regression (MSE/MAE/R²/quantile loss), ranking (MAP/NDCG/MRR), LLM-specific (PPL, pass@k, BLEU, LLM-as-judge biases), calibration (Brier/ECE/temperature scaling), Goodhart's Law and methodology pitfalls.
-> - **`INTERVIEW_GRILL.md`** — 50 active-recall questions with strong answers.
+> - **[`EVALUATION_METRICS_DEEP_DIVE.md`](EVALUATION_METRICS_DEEP_DIVE.md)** — frontier-lab interview deep dive: classification (precision/recall/F1/AUROC/PR-AUC), regression (MSE/MAE/R²/quantile loss), ranking (MAP/NDCG/MRR), LLM-specific (PPL, pass@k, BLEU, LLM-as-judge biases), calibration (Brier/ECE/temperature scaling), Goodhart's Law and methodology pitfalls.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 50 active-recall questions with strong answers.
 
 ## What You'll Learn
 
@@ -231,7 +231,7 @@ def r2_score(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 
 **New Comprehensive Content:**
 
-- **`perplexity_detailed.md`**: Complete theoretical guide
+- **[`perplexity_detailed.md`](perplexity_detailed.md)**: Complete theoretical guide
   - What is perplexity and intuitive understanding
   - Mathematical formulations
   - Connection to entropy and cross-entropy

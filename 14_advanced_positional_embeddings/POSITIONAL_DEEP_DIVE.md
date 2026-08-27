@@ -336,7 +336,7 @@ T5 bias, Transformer-XL biases, AliBI — all variations on adding learned/heuri
 1. Whiteboard the RoPE rotation and the relative-position derivation.
 2. Memorize the four-method comparison (sinusoidal/learned/RoPE/ALiBi).
 3. Know how YaRN works at a sketchy level for context extension questions.
-4. Drill `INTERVIEW_GRILL.md`.
+4. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 ---
 

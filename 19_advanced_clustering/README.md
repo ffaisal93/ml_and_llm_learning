@@ -1,8 +1,8 @@
 # Topic 19: Advanced Clustering Methods
 
 > 🔥 **For interviews, read these first:**
-> - **`CLUSTERING_DEEP_DIVE.md`** — frontier-lab interview deep dive: K-means as coordinate descent, GMM with EM derivation, DBSCAN core/border/noise, hierarchical linkage, spectral clustering, curse of dimensionality.
-> - **`INTERVIEW_GRILL.md`** — 45 active-recall questions.
+> - **[`CLUSTERING_DEEP_DIVE.md`](CLUSTERING_DEEP_DIVE.md)** — frontier-lab interview deep dive: K-means as coordinate descent, GMM with EM derivation, DBSCAN core/border/noise, hierarchical linkage, spectral clustering, curse of dimensionality.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 45 active-recall questions.
 
 ## What You'll Learn
 

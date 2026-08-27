@@ -1,8 +1,8 @@
 # Topic 61: Large-Scale LLM Systems
 
 > 🔥 **For interviews, read these first:**
-> - **`LARGE_SCALE_LLM_DEEP_DIVE.md`** — frontier-lab deep dive: training memory math ($16P$ rule), activation checkpointing, BF16/FP8, ZeRO-1/2/3 / FSDP, Megatron tensor parallelism (column/row), pipeline parallelism + bubble formula, 3D parallelism layout, expert parallelism for MoE, sequence/context parallelism, MFU, training failure modes (loss spikes, NaNs, hangs, stragglers).
-> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions.
+> - **[`LARGE_SCALE_LLM_DEEP_DIVE.md`](LARGE_SCALE_LLM_DEEP_DIVE.md)** — frontier-lab deep dive: training memory math ($16P$ rule), activation checkpointing, BF16/FP8, ZeRO-1/2/3 / FSDP, Megatron tensor parallelism (column/row), pipeline parallelism + bubble formula, 3D parallelism layout, expert parallelism for MoE, sequence/context parallelism, MFU, training failure modes (loss spikes, NaNs, hangs, stragglers).
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 60 active-recall questions.
 
 ## What You'll Learn
 

@@ -1,7 +1,7 @@
 # Reasoning Models — Frontier Deep Dive
 
 > Frontier-lab research-scientist interview-grade reference on reasoning-model training: o1 / R1 / R1-Zero, test-time compute scaling, RLVR, PRMs vs ORMs, search + RL combinations, and reasoning distillation.
-> Pair with `08_training_techniques/ALIGNMENT_DEEP_DIVE.md` (DPO/PPO/GRPO foundations) and `FRONTIER_REWARD_MODELING.md` (this folder).
+> Pair with [`08_training_techniques/ALIGNMENT_DEEP_DIVE.md`](../08_training_techniques/ALIGNMENT_DEEP_DIVE.md) (DPO/PPO/GRPO foundations) and [`FRONTIER_REWARD_MODELING.md`](FRONTIER_REWARD_MODELING.md) (this folder).
 
 If you walk into an OpenAI / DeepMind / Anthropic research-scientist interview in 2025–2026, **reasoning RL** is the single highest-information-content topic. It's where the frontier moved most visibly between mid-2024 and 2025, with o1 (Sep 2024), o3 (Dec 2024), DeepSeek-R1 (Jan 2025), Qwen QwQ, Anthropic's Claude 3.7 Sonnet thinking modes, and Google's Gemini 2.5 thinking. This chapter walks the territory in interview-ready detail.
 
@@ -117,7 +117,7 @@ $$
 
 where $r(x, y) \in \{0, 1\}$ is the verifier output (correct / incorrect) — or a small graded set (correct / partial / wrong / format-error). $\pi_{\text{ref}}$ is typically the SFT model.
 
-The optimizer is usually GRPO, RLOO, or REINFORCE++ (no critic — see `ALIGNMENT_DEEP_DIVE.md`). PPO with a value head also works but adds memory.
+The optimizer is usually GRPO, RLOO, or REINFORCE++ (no critic — see [`ALIGNMENT_DEEP_DIVE.md`](../08_training_techniques/ALIGNMENT_DEEP_DIVE.md)). PPO with a value head also works but adds memory.
 
 > **Saying it out loud.** The objective is about as simple as RL gets: maximise expected reward, minus a penalty for drifting too far from where you started. The reward is usually just one or zero — did the verifier say the answer was right — plus maybe a small term for producing the right format. The KL term against the reference model is what keeps it from wandering off into incoherent text, and beta is the knob: too large and the model never explores enough to improve, too small and you get mode collapse, language drift, and reasoning that's fluent nonsense. In practice people drop the value network and use a group baseline instead — GRPO, RLOO — because with a binary verifier reward you don't need a learned critic to tell you how good a state was. The tradeoff to name is exploration versus stability, and it's controlled almost entirely by that one KL coefficient.
 
@@ -743,7 +743,7 @@ What separates a "knows the buzzwords" answer from a research-scientist answer.
 2. Memorize the R1 4-stage pipeline (§7.1) — you will be asked.
 3. Be able to sketch test-time compute scaling (§2) on a whiteboard with axes labeled.
 4. Drill the senior signals (§15) and the open questions (§14).
-5. Pair with `FRONTIER_REWARD_MODELING.md`, `OPEN_SOURCE_POSTTRAIN_PLAYBOOKS.md`, `INTERVIEW_GRILL.md` in this folder.
+5. Pair with [`FRONTIER_REWARD_MODELING.md`](FRONTIER_REWARD_MODELING.md), [`OPEN_SOURCE_POSTTRAIN_PLAYBOOKS.md`](OPEN_SOURCE_POSTTRAIN_PLAYBOOKS.md), [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md) in this folder.
 6. Spend 3 hours reading the actual DeepSeek-R1 paper if you haven't — it's the key.
 
 The single sentence to remember: **a 2025 frontier reasoning model is a long-CoT autoregressive policy trained by RL on verifiable + judge rewards, distilled from a larger search procedure, and deployed with inference-time compute as a third scaling axis alongside pretraining and post-training compute.**

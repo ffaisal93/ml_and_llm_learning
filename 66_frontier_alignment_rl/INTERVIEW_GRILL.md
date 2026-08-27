@@ -1,6 +1,6 @@
 # Frontier Alignment + RL — Interview Grill
 
-> 130+ active-recall questions calibrated for OpenAI / DeepMind / Anthropic research-scientist rounds. Pair with `REASONING_MODELS_DEEP_DIVE.md`, `FRONTIER_REWARD_MODELING.md`, `OPEN_SOURCE_POSTTRAIN_PLAYBOOKS.md` in this folder.
+> 130+ active-recall questions calibrated for OpenAI / DeepMind / Anthropic research-scientist rounds. Pair with [`REASONING_MODELS_DEEP_DIVE.md`](REASONING_MODELS_DEEP_DIVE.md), [`FRONTIER_REWARD_MODELING.md`](FRONTIER_REWARD_MODELING.md), [`OPEN_SOURCE_POSTTRAIN_PLAYBOOKS.md`](OPEN_SOURCE_POSTTRAIN_PLAYBOOKS.md) in this folder.
 > Answer each in <60 seconds aloud. Mark anything unclear and re-read the relevant section.
 
 ---

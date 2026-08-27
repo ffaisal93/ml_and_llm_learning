@@ -280,7 +280,7 @@ Many vision and NLP recipes (label smoothing 0.1 is common in transformer pretra
 
 ## 10. Weight decay (revisited)
 
-For SGD, weight decay = L2 regularization. For Adam, they differ; AdamW decouples them. See `02_gradient_descent/LEARNING_RATE_DEEP_DIVE.md` for the full story.
+For SGD, weight decay = L2 regularization. For Adam, they differ; AdamW decouples them. See [`02_gradient_descent/LEARNING_RATE_DEEP_DIVE.md`](../02_gradient_descent/LEARNING_RATE_DEEP_DIVE.md) for the full story.
 
 In LLM training: weight decay $0.1$ is typical. Decoupled (AdamW) so that high-gradient parameters are still penalized uniformly.
 
@@ -384,4 +384,4 @@ These are stronger than explicit L2 penalties for many tasks because they encode
 2. Walk through dropout's training and inference with the $1/(1-p)$ scaling.
 3. Explain early stopping ≈ L2 connection.
 4. Know the implicit regularization of SGD ($\eta/B$ story).
-5. Drill `INTERVIEW_GRILL.md`.
+5. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).

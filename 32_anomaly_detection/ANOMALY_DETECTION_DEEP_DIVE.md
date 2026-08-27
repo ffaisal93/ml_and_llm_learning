@@ -1,6 +1,6 @@
 # Anomaly Detection — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 Anomaly detection comes up in interviews because every production system needs it (fraud, system monitoring, quality control, security). What separates good answers is knowing *which* method matches *which* problem structure — not just listing names.
 

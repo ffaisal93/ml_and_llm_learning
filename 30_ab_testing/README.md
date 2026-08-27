@@ -1,8 +1,8 @@
 # Topic 30: A/B Testing & Experimentation
 
 > 🔥 **For interviews, read these first:**
-> - **`AB_TESTING_DEEP_DIVE.md`** — frontier-lab deep dive: hypothesis tests (z/t/Mann-Whitney/bootstrap), sample size formulas, CUPED, peeking and sequential testing, SUTVA / network effects, SRM check, novelty effects, multiple testing, Bayesian A/B, ML-specific (interleaving, holdback, off-policy / IPS).
-> - **`INTERVIEW_GRILL.md`** — 55 active-recall questions.
+> - **[`AB_TESTING_DEEP_DIVE.md`](AB_TESTING_DEEP_DIVE.md)** — frontier-lab deep dive: hypothesis tests (z/t/Mann-Whitney/bootstrap), sample size formulas, CUPED, peeking and sequential testing, SUTVA / network effects, SRM check, novelty effects, multiple testing, Bayesian A/B, ML-specific (interleaving, holdback, off-policy / IPS).
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 55 active-recall questions.
 
 ## What You'll Learn
 

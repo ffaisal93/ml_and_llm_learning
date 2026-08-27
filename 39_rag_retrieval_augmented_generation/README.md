@@ -1,8 +1,8 @@
 # Topic 39: RAG (Retrieval-Augmented Generation)
 
 > 🔥 **For interviews, read these first:**
-> - **`RAG_DEEP_DIVE.md`** — frontier-lab interview deep dive: indexing/retrieval/rerank/generate pipeline, chunking strategies, BM25 vs dense vs hybrid, HNSW/IVF/PQ vector indexing, embedding models (BGE/E5), HyDE, lost-in-the-middle, RAGAS evaluation, Self-RAG/GraphRAG.
-> - **`INTERVIEW_GRILL.md`** — 50 active-recall questions.
+> - **[`RAG_DEEP_DIVE.md`](RAG_DEEP_DIVE.md)** — frontier-lab interview deep dive: indexing/retrieval/rerank/generate pipeline, chunking strategies, BM25 vs dense vs hybrid, HNSW/IVF/PQ vector indexing, embedding models (BGE/E5), HyDE, lost-in-the-middle, RAGAS evaluation, Self-RAG/GraphRAG.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 50 active-recall questions.
 
 ## What You'll Learn
 

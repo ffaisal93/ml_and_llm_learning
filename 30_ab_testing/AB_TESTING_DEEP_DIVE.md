@@ -1,6 +1,6 @@
 # A/B Testing — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 A/B testing is how product decisions actually get made. ML interviews probe this hard because every model launch eventually goes through one — and most ML teams have at least one story of an A/B test that gave the wrong answer for a subtle reason.
 

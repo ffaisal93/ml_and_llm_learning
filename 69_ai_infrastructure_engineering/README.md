@@ -12,7 +12,7 @@
 > 8. Observability for LLM apps
 
 > 🔥 **Read these first:**
-> - **`AI_INFRA_ENGINEER_PLAYBOOK.md`** — 21 sections covering the full production stack: GPU hardware mental model with frontier specs (A100/H100/H200/B200); quantization in production (FP8, INT8, INT4 with GPTQ/AWQ/SmoothQuant); batching strategies (static/dynamic/continuous/chunked-prefill/disaggregated); inference engines (vLLM/TensorRT-LLM/TGI/SGLang/LMDeploy with decision matrix); KV caching production (PagedAttention, prefix cache, eviction, KV quant math); speculative decoding production gotchas; SLO metrics (TTFT/TPOT/TPS/ITL); distributed training infra (DDP/FSDP/DeepSpeed/Megatron + slurm/k8s/Ray); serving platforms (Triton/KServe/BentoML/Ray Serve/Modal/Baseten) with autoscaling and multi-tenant LoRA; vector DB pipelines (Pinecone/Weaviate/Qdrant/Milvus/pgvector + HNSW/IVF-PQ + hybrid retrieval); prompt caching and cost optimization (10-point checklist + worked GPU-cost example); observability for LLM apps (LangSmith/Langfuse/Helicone/Arize + OpenTelemetry GenAI); capacity planning math; reliability patterns (blue-green, canary, shadow, multi-AZ); infra-layer security; full production architecture diagram. Plus 100 interview-grill questions across A–M and a 7-day drill plan.
+> - **[`AI_INFRA_ENGINEER_PLAYBOOK.md`](AI_INFRA_ENGINEER_PLAYBOOK.md)** — 21 sections covering the full production stack: GPU hardware mental model with frontier specs (A100/H100/H200/B200); quantization in production (FP8, INT8, INT4 with GPTQ/AWQ/SmoothQuant); batching strategies (static/dynamic/continuous/chunked-prefill/disaggregated); inference engines (vLLM/TensorRT-LLM/TGI/SGLang/LMDeploy with decision matrix); KV caching production (PagedAttention, prefix cache, eviction, KV quant math); speculative decoding production gotchas; SLO metrics (TTFT/TPOT/TPS/ITL); distributed training infra (DDP/FSDP/DeepSpeed/Megatron + slurm/k8s/Ray); serving platforms (Triton/KServe/BentoML/Ray Serve/Modal/Baseten) with autoscaling and multi-tenant LoRA; vector DB pipelines (Pinecone/Weaviate/Qdrant/Milvus/pgvector + HNSW/IVF-PQ + hybrid retrieval); prompt caching and cost optimization (10-point checklist + worked GPU-cost example); observability for LLM apps (LangSmith/Langfuse/Helicone/Arize + OpenTelemetry GenAI); capacity planning math; reliability patterns (blue-green, canary, shadow, multi-AZ); infra-layer security; full production architecture diagram. Plus 100 interview-grill questions across A–M and a 7-day drill plan.
 
 ## Why this exists
 
@@ -35,16 +35,16 @@ These are the topics that come up in **AI Infrastructure Engineer** interviews a
 
 ## Cross-references
 
-- **`06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`** — algorithm internals.
-- **`61_large_scale_llm_systems/EFFICIENT_TRAINING_INFERENCE_PLAYBOOK.md`** — research-flavored training/inference depth.
+- **[`06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`](../06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md)** — algorithm internals.
+- **[`61_large_scale_llm_systems/EFFICIENT_TRAINING_INFERENCE_PLAYBOOK.md`](../61_large_scale_llm_systems/EFFICIENT_TRAINING_INFERENCE_PLAYBOOK.md)** — research-flavored training/inference depth.
 - **`63_paged_attention_and_llm_serving/`** — paged attention deep dive.
-- **`41_mixture_of_experts/MOE_DEEP_DIVE.md`** — MoE serving considerations.
-- **`39_rag_retrieval_augmented_generation/RAG_DEEP_DIVE.md`** — RAG algorithm side; this folder covers the infra side.
-- **`65_llm_security/LLM_SECURITY_DEEP_DIVE.md`** — security at the model layer; this folder covers infra-layer security.
+- **[`41_mixture_of_experts/MOE_DEEP_DIVE.md`](../41_mixture_of_experts/MOE_DEEP_DIVE.md)** — MoE serving considerations.
+- **[`39_rag_retrieval_augmented_generation/RAG_DEEP_DIVE.md`](../39_rag_retrieval_augmented_generation/RAG_DEEP_DIVE.md)** — RAG algorithm side; this folder covers the infra side.
+- **[`65_llm_security/LLM_SECURITY_DEEP_DIVE.md`](../65_llm_security/LLM_SECURITY_DEEP_DIVE.md)** — security at the model layer; this folder covers infra-layer security.
 
 ## How to use
 
-1. Read `AI_INFRA_ENGINEER_PLAYBOOK.md` cover-to-cover once.
+1. Read [`AI_INFRA_ENGINEER_PLAYBOOK.md`](AI_INFRA_ENGINEER_PLAYBOOK.md) cover-to-cover once.
 2. Memorize the GPU spec table (§2.3), inference engine decision matrix (§5.7), and the full stack diagram (§17).
 3. Be able to derive KV-cache size for any model in seconds.
 4. Be able to do the GPU cost calculation (§14.2) on a whiteboard for any DAU/QPS scenario.

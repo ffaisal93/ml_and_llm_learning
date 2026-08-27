@@ -1,6 +1,6 @@
 # Clustering Evaluation — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 Clustering evaluation is uniquely hard because there's often no ground truth. This deep dive covers internal metrics (don't need labels), external metrics (require labels), choosing $K$, stability analysis, and the practical principle that downstream task performance trumps any clustering metric.
 

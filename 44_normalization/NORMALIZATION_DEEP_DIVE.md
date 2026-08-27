@@ -341,7 +341,7 @@ For fine-tuning, BN running averages may not match the new data distribution. Co
 2. Whiteboard LN's forward pass with $\gamma, \beta$.
 3. Explain pre-LN vs post-LN training stability story.
 4. Explain why BN fails for transformers (3 reasons).
-5. Drill `INTERVIEW_GRILL.md`.
+5. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 ---
 

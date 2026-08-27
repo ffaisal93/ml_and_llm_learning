@@ -1,7 +1,7 @@
 # Frontier Intuitive Probability / Statistics — Interview Grill
 
 > 100+ active-recall questions calibrated for OpenAI / DeepMind / Anthropic research-scientist rounds. Each is a 60-second oral exam answer.
-> Pair with `INTUITIVE_QUESTIONS_DEEP_DIVE.md`.
+> Pair with [`INTUITIVE_QUESTIONS_DEEP_DIVE.md`](INTUITIVE_QUESTIONS_DEEP_DIVE.md).
 
 ---
 

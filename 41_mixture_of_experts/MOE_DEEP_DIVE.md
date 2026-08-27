@@ -314,7 +314,7 @@ Auxiliary-loss-free MoE (DeepSeek) has matched dense stability. Earlier MoE was 
 3. Know capacity factor and token dropping.
 4. Understand all-to-all communication for expert parallelism.
 5. Know DeepSeek's auxiliary-loss-free contribution.
-6. Drill `INTERVIEW_GRILL.md`.
+6. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 ---
 

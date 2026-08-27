@@ -1,8 +1,8 @@
 # Topic 62: Frontier Training Playbook
 
 > 🔥 **For interviews, read these first:**
-> - **`frontier_training_deep_dive.md`** — methodology-first deep dive: why training is mostly methodology not architecture, baselines, dense vs MoE, GQA reasoning, document masking, stability tricks (z-loss / softcapping / QK-norm), data mixture dominance, multi-stage training, post-training reward hacking.
-> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions covering scaling laws (Kaplan/Chinchilla), architecture choices, hyperparameter recipes, stability fixes, mid-training, evaluation, ablation methodology.
+> - **[`frontier_training_deep_dive.md`](frontier_training_deep_dive.md)** — methodology-first deep dive: why training is mostly methodology not architecture, baselines, dense vs MoE, GQA reasoning, document masking, stability tricks (z-loss / softcapping / QK-norm), data mixture dominance, multi-stage training, post-training reward hacking.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 60 active-recall questions covering scaling laws (Kaplan/Chinchilla), architecture choices, hyperparameter recipes, stability fixes, mid-training, evaluation, ablation methodology.
 
 ## What You'll Learn
 

@@ -1,6 +1,6 @@
 # Integrated Interview Synthesis — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 This is a meta-document. The repo's 50+ deep dives cover individual topics; this one is about the *cross-topic synthesis* that separates senior candidates from junior ones. Frontier interviews increasingly ask questions that span multiple areas — "design an LLM system that handles X" requires synthesizing inference, alignment, evaluation, A/B testing, system design, and prompting fluency in one answer.
 

@@ -1,8 +1,8 @@
 # Topic 58: Whiteboard Derivations
 
 > 🔥 **For interviews, read these first:**
-> - **`WHITEBOARD_DERIVATIONS_DEEP_DIVE.md`** — meta-collection of 13 must-master derivations: backprop, attention, OLS, logistic gradient, KL, EM, PCA via SVD, SVM dual, RoPE rotation, DPO, ELBO, bias-variance, information gain. Each with step-by-step proof + cross-references.
-> - **`INTERVIEW_GRILL.md`** — 40 active-recall questions verifying you can do each derivation cold.
+> - **[`WHITEBOARD_DERIVATIONS_DEEP_DIVE.md`](WHITEBOARD_DERIVATIONS_DEEP_DIVE.md)** — meta-collection of 13 must-master derivations: backprop, attention, OLS, logistic gradient, KL, EM, PCA via SVD, SVM dual, RoPE rotation, DPO, ELBO, bias-variance, information gain. Each with step-by-step proof + cross-references.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 40 active-recall questions verifying you can do each derivation cold.
 
 ## What You'll Learn
 

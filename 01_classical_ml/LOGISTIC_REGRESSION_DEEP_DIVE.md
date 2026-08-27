@@ -584,7 +584,7 @@ A few things real-world MLE interviews probe:
 4. **Defend cross-entropy over MSE** in two complementary ways (likelihood and convexity / vanishing gradients).
 5. **Explain separability and divergence** plus the regularization fix.
 6. **Explain the connection to softmax, NN, NB, SVM** — one sentence each.
-7. **Run through `LOGISTIC_REGRESSION_INTERVIEW_GRILL.md`** until 40+/50 cold.
+7. **Run through [`LOGISTIC_REGRESSION_INTERVIEW_GRILL.md`](LOGISTIC_REGRESSION_INTERVIEW_GRILL.md)** until 40+/50 cold.
 
 ---
 

@@ -3,11 +3,11 @@
 > **Scope.** This chapter is the frontier layer. It assumes you already know chunking,
 > embeddings, hybrid search, reranking, and RAG evaluation — those live in the sibling
 > files in this folder:
-> - `RAG_DEEP_DIVE.md` — the full pipeline, end to end
-> - `chunking_strategies.md` — fixed, recursive, semantic, and document-aware chunking
-> - `retrieval_methods.md` — BM25, dense, hybrid, fusion
-> - `rag_architecture.md` — system layout and components
-> - `rag_challenges_solutions.md` — the standard failure modes
+> - [`RAG_DEEP_DIVE.md`](RAG_DEEP_DIVE.md) — the full pipeline, end to end
+> - [`chunking_strategies.md`](chunking_strategies.md) — fixed, recursive, semantic, and document-aware chunking
+> - [`retrieval_methods.md`](retrieval_methods.md) — BM25, dense, hybrid, fusion
+> - [`rag_architecture.md`](rag_architecture.md) — system layout and components
+> - [`rag_challenges_solutions.md`](rag_challenges_solutions.md) — the standard failure modes
 >
 > Here we cover what changed in 2025–2026: whether long context killed RAG (it did not,
 > and the reason is interesting), what the modern ingestion pipeline looks like,
@@ -352,7 +352,7 @@ The general fix decouples the two: **search at fine granularity, return at coars
 granularity.** Match against small, semantically pure units; then expand to the parent,
 siblings, or neighbours before handing anything to the model. The naive version of this
 (small-to-big / parent-document retrieval) is already standard and covered in
-`chunking_strategies.md`. The 2025 development is doing the expansion over an
+[`chunking_strategies.md`](chunking_strategies.md). The 2025 development is doing the expansion over an
 *explicitly built hierarchy* rather than raw adjacency.
 
 ### 4.2 Hierarchical / tree approaches
@@ -815,7 +815,7 @@ chunking. Work down this list and stop when the numbers are good enough.
    You cannot fix what you cannot localise.
 4. **Fix parsing.** Tables, reading order, headers, OCR. Highest ROI, least glamorous.
 5. **Fix chunking.** Respect document structure. Add overlap. Prepend section headers to
-   every chunk. See `chunking_strategies.md`.
+   every chunk. See [`chunking_strategies.md`](chunking_strategies.md).
 6. **Add hybrid retrieval.** BM25 + dense with reciprocal rank fusion. Nearly always a
    win, especially on identifiers, error codes, product names, and rare terms — the exact
    cases the LIMIT paper predicts dense retrieval will miss.
@@ -1155,6 +1155,6 @@ still not a solved problem.
 
 ---
 
-*Fundamentals are in `RAG_DEEP_DIVE.md`, `chunking_strategies.md`, `retrieval_methods.md`,
-`rag_architecture.md`, and `rag_challenges_solutions.md`. Prices and model names in §1
+*Fundamentals are in [`RAG_DEEP_DIVE.md`](RAG_DEEP_DIVE.md), [`chunking_strategies.md`](chunking_strategies.md), [`retrieval_methods.md`](retrieval_methods.md),
+[`rag_architecture.md`](rag_architecture.md), and [`rag_challenges_solutions.md`](rag_challenges_solutions.md). Prices and model names in §1
 were verified in August 2026 and will drift; the ratios will outlast the numbers.*

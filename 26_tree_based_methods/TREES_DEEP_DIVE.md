@@ -439,7 +439,7 @@ GBDT (LightGBM/XGBoost/CatBoost) wins ~70% of tabular benchmarks. Deep tabular m
 2. Walk through gradient boosting end-to-end (residuals → tree → step size).
 3. Whiteboard XGBoost's second-order optimal leaf weight.
 4. Compare RF/XGBoost/LightGBM/CatBoost.
-5. Drill `INTERVIEW_GRILL.md`.
+5. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 ---
 

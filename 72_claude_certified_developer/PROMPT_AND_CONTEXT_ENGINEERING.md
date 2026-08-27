@@ -1,6 +1,6 @@
 # Prompt & Context Engineering (11%)
 
-> Writing prompts that produce reliable, well-shaped output, and managing context so long/agentic apps stay accurate and cheap. Foundations are shared with `../71_claude_certified_architect/CLAUDE_API_DEEP_DIVE.md` and `CONTEXT_AND_RELIABILITY_DEEP_DIVE.md`; here is the developer's practical toolkit.
+> Writing prompts that produce reliable, well-shaped output, and managing context so long/agentic apps stay accurate and cheap. Foundations are shared with `../71_claude_certified_architect/CLAUDE_API_DEEP_DIVE.md` and [`CONTEXT_AND_RELIABILITY_DEEP_DIVE.md`](../71_claude_certified_architect/CONTEXT_AND_RELIABILITY_DEEP_DIVE.md); here is the developer's practical toolkit.
 
 ---
 
@@ -55,7 +55,7 @@ The model is **stateless**; each request's context is what you assembled. As con
 
 Prompts often include untrusted data (user text, web pages, tool results). Two developer concerns:
 
-- **Prompt injection:** untrusted content may contain instructions ("ignore previous instructions and..."). Defend by **separating instructions from data** (put untrusted content in tags and tell the model to treat tagged content as data, not commands), least-privilege tools, and not blindly trusting model-extracted actions on sensitive operations. (Depth in `SECURITY_AND_SAFETY.md`.)
+- **Prompt injection:** untrusted content may contain instructions ("ignore previous instructions and..."). Defend by **separating instructions from data** (put untrusted content in tags and tell the model to treat tagged content as data, not commands), least-privilege tools, and not blindly trusting model-extracted actions on sensitive operations. (Depth in [`SECURITY_AND_SAFETY.md`](SECURITY_AND_SAFETY.md).)
 - **Sanitize before use:** validate/escape model output before it hits a shell, SQL query, or the DOM — treat LLM output like any untrusted input to downstream systems.
 
 ---

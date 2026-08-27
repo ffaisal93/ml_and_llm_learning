@@ -1,8 +1,8 @@
 # Topic 31: Neural Networks from Scratch
 
 > 🔥 **For interviews, read these first:**
-> - **`NEURAL_NETWORKS_DEEP_DIVE.md`** — frontier-lab interview deep dive: MLP fundamentals, universal approximation, activations (ReLU/GELU/SwiGLU), loss-activation pairing, backpropagation derivation, He/Xavier init, vanishing/exploding gradients, residual connections, modern training tricks.
-> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions.
+> - **[`NEURAL_NETWORKS_DEEP_DIVE.md`](NEURAL_NETWORKS_DEEP_DIVE.md)** — frontier-lab interview deep dive: MLP fundamentals, universal approximation, activations (ReLU/GELU/SwiGLU), loss-activation pairing, backpropagation derivation, He/Xavier init, vanishing/exploding gradients, residual connections, modern training tricks.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 60 active-recall questions.
 
 ## What You'll Learn
 

@@ -1,8 +1,8 @@
 # Topic 52: Statistical Learning Theory
 
 > 🔥 **For interviews, read these first:**
-> - **`STATISTICAL_LEARNING_THEORY_DEEP_DIVE.md`** — frontier-lab deep dive: ERM, PAC learning, VC dimension, Rademacher complexity, bias-variance, double descent, NFL theorem, regularization-as-inductive-bias, modern bounds (PAC-Bayes, stability, compression).
-> - **`INTERVIEW_GRILL.md`** — 50 active-recall questions.
+> - **[`STATISTICAL_LEARNING_THEORY_DEEP_DIVE.md`](STATISTICAL_LEARNING_THEORY_DEEP_DIVE.md)** — frontier-lab deep dive: ERM, PAC learning, VC dimension, Rademacher complexity, bias-variance, double descent, NFL theorem, regularization-as-inductive-bias, modern bounds (PAC-Bayes, stability, compression).
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 50 active-recall questions.
 
 ## What You'll Learn
 

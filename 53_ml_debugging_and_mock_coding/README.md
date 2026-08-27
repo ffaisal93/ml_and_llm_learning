@@ -1,8 +1,8 @@
 # Topic 53: ML Debugging and Mock Coding
 
 > 🔥 **For interviews, read these first:**
-> - **`ML_DEBUGGING_DEEP_DIVE.md`** — frontier-lab deep dive: 8-layer debugging tree, loss-curve interpretation, sanity checks (overfit one batch, tiny dataset), NaN debugging (FP16/log-of-zero/anomaly detection), leakage detection, gradient checking, distribution-shift investigation.
-> - **`INTERVIEW_GRILL.md`** — 50 active-recall questions.
+> - **[`ML_DEBUGGING_DEEP_DIVE.md`](ML_DEBUGGING_DEEP_DIVE.md)** — frontier-lab deep dive: 8-layer debugging tree, loss-curve interpretation, sanity checks (overfit one batch, tiny dataset), NaN debugging (FP16/log-of-zero/anomaly detection), leakage detection, gradient checking, distribution-shift investigation.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 50 active-recall questions.
 
 ## What You'll Learn
 

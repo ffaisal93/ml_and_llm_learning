@@ -58,7 +58,7 @@ The art is: pick the technique that addresses the *current* bottleneck without c
 
 **Hook.** "Tile Q/K/V into SRAM; store softmax norm factors not softmax outputs; recompute on backward."
 
-**Deep dive.** See `05_attention_mechanisms/ATTENTION_DEEP_DIVE.md`.
+**Deep dive.** See [`05_attention_mechanisms/ATTENTION_DEEP_DIVE.md`](../05_attention_mechanisms/ATTENTION_DEEP_DIVE.md).
 
 > **Saying it out loud.** FlashAttention is a memory-movement trick, not a math trick — and that's the part people get wrong. The output is bit-for-bit the same attention you'd get otherwise; it does not reduce FLOPs and it doesn't approximate anything. What it does is stop writing the giant n-by-n attention matrix out to HBM: it walks Q, K and V in tiles that fit in on-chip SRAM, keeps a running max and a running sum so softmax can be done in one pass, and on the backward pass it recomputes the tile instead of reading it back. The reason that's a win is that HBM is roughly an order of magnitude slower than SRAM, so trading a little extra arithmetic for a lot less traffic buys you two to four times the wall-clock speed and turns memory from quadratic in sequence length into linear.
 
@@ -74,7 +74,7 @@ The art is: pick the technique that addresses the *current* bottleneck without c
 
 **Hook.** "Share K/V across heads (MQA), groups (GQA), or via low-rank latent (MLA) — KV cache shrinks proportionally."
 
-**Deep dive.** `05_attention_mechanisms/ATTENTION_DEEP_DIVE.md`, `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`.
+**Deep dive.** [`05_attention_mechanisms/ATTENTION_DEEP_DIVE.md`](../05_attention_mechanisms/ATTENTION_DEEP_DIVE.md), [`06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`](../06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md).
 
 > **Saying it out loud.** GQA exists because the KV cache, not the weights, is what fills your GPU at long context. Every query head having its own key and value head is redundant, so the fix is to let several query heads share one KV head — MQA takes that to the extreme with a single shared KV head, and GQA sits in the middle. In a 32-head model with 8 KV heads you cut the cache by 4x and basically nobody can measure the quality loss, which is why Llama 3 and Qwen 2.5 both ship it. MQA's the cautionary tale: it saves the most memory but it measurably degrades on hard reasoning tasks, so the tradeoff is cache size against head diversity, and 8 groups is where the industry settled.
 
@@ -121,7 +121,7 @@ For very long context. The main families:
 
 **Hook ladder.** Sliding window → global tokens → low-rank projection → SSMs.
 
-**Deep dive.** `42_state_space_models/SSM_DEEP_DIVE.md`, `14_advanced_positional_embeddings/POSITIONAL_DEEP_DIVE.md`.
+**Deep dive.** [`42_state_space_models/SSM_DEEP_DIVE.md`](../42_state_space_models/SSM_DEEP_DIVE.md), [`14_advanced_positional_embeddings/POSITIONAL_DEEP_DIVE.md`](../14_advanced_positional_embeddings/POSITIONAL_DEEP_DIVE.md).
 
 > **Saying it out loud.** All the efficient-transformer variants are answering one question: which pairs of tokens can we afford *not* to compare? Sliding-window says only look at your neighbors, so cost goes from n-squared to n times window. Global tokens add a few hub tokens that everyone can reach, which restores long-range information cheaply, and low-rank methods like Linformer instead squash K and V down to a fixed size. State-space models like Mamba go furthest and drop attention for a recurrence that's genuinely linear in n. The honest tradeoff is that every one of these is an approximation of full attention, whereas FlashAttention is exact — so in practice the frontier mostly runs exact attention made fast, and reaches for sparsity only when context gets extreme.
 
@@ -152,7 +152,7 @@ Inference is where money lives in production. These techniques are the differenc
 
 **Hook.** "Cache K and V; new step computes only new K, V then attends to the full cache."
 
-**Deep dive.** `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`, `63_paged_attention_and_llm_serving/`.
+**Deep dive.** [`06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`](../06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md), `63_paged_attention_and_llm_serving/`.
 
 > **Saying it out loud.** The KV cache turns decoding from quadratic into linear, and then immediately becomes your biggest memory problem. Without it, generating token 1000 means re-running attention over all 999 previous tokens from scratch; with it, you keep every past key and value around, compute one new K and V, and attend against the stored cache. The catch is the arithmetic: for Llama-70B with GQA-8 at 8K context that's roughly 320 KB per token, about 2.7 GB per concurrent request, so at long context the cache dominates the weights. That's why every serving optimization — GQA, cache quantization, PagedAttention, eviction — is really the same fight over that one number, and the failure mode is always the same: you run out of KV space and your max batch size collapses, which kills throughput.
 
@@ -186,7 +186,7 @@ Inference is where money lives in production. These techniques are the differenc
 
 **Hook.** "Draft generates K, target verifies in one pass, accept longest correct prefix."
 
-**Deep dive.** `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`.
+**Deep dive.** [`06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`](../06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md).
 
 > **Saying it out loud.** Speculative decoding works because decode is memory-bandwidth-bound, not compute-bound — at batch one you're doing about one FLOP per byte you read, so the GPU's math units are almost idle while you drag the whole weight matrix through HBM for a single token. So you get the extra tokens basically for free: a small draft model proposes four or five, and the big model scores all of them in one forward pass that reads the weights exactly once. You keep the longest prefix where the target model agrees with the draft, and with an acceptance rate around 0.7 and K equal to 4 you get roughly 2.5x. It's also exactly output-equivalent to normal sampling if you do the rejection step properly — the tradeoff is draft-model memory and the fact that the win shrinks as you batch harder, because large batches are already using the bandwidth well.
 
@@ -216,7 +216,7 @@ Inference is where money lives in production. These techniques are the differenc
 
 > **Saying it out loud.** Quantization helps inference mainly because it's a bandwidth fix, not a math fix — decode is bound by how many bytes of weights you pull per token, so halving the bytes roughly halves the time. The main split is post-training quantization, where you just squeeze a trained model and INT8 is essentially free while INT4 needs care, versus quantization-aware training, where you simulate the rounding during training and push the gradient straight through the quantizer. The thing that actually breaks INT4 is outliers: a handful of activation channels with huge magnitudes blow up the scale factor and wreck everything else, which is what SmoothQuant, AWQ and per-group scales all exist to fix. The tradeoff worth naming is that weights quantize much more happily than activations, which is why the common production recipe is INT4 weights with BF16 activations rather than going low on both.
 
-**Deep dive.** `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`.
+**Deep dive.** [`06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`](../06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md).
 
 ---
 
@@ -317,7 +317,7 @@ The four axes of parallelism: **Data, Tensor, Pipeline, Expert**. Real frontier 
 
 > **Saying it out loud.** Tensor parallelism splits a single matrix multiply across GPUs, so no one GPU ever holds the whole layer. There are two ways to cut a weight matrix: split it by columns, and each GPU produces part of the output, so you finish with an all-gather; or split it by rows, and each GPU produces a partial sum of the whole output, so you finish with an all-reduce. Megatron's trick is to chain them — column-split the first MLP matrix, row-split the second — so the intermediate never needs to be gathered and you only pay one all-reduce per MLP and one per attention block, and you pay it after the nonlinearity where the tensor is smallest. The hard limit is bandwidth: those all-reduces happen twice per layer, on the critical path, so TP basically has to stay inside one NVLink node, which is why you almost always see TP equal to 8 and never TP across the datacenter.
 
-**Deep dive.** `61_large_scale_llm_systems/`, `04_transformers/TRANSFORMERS_DEEP_DIVE.md`.
+**Deep dive.** `61_large_scale_llm_systems/`, [`04_transformers/TRANSFORMERS_DEEP_DIVE.md`](../04_transformers/TRANSFORMERS_DEEP_DIVE.md).
 
 ### 5.5 Context Parallelism (a.k.a. Sequence Parallelism, Ring Attention)
 
@@ -364,7 +364,7 @@ The four axes of parallelism: **Data, Tensor, Pipeline, Expert**. Real frontier 
 
 **Hook.** "Sparse activation (top-K experts); All-to-All routes tokens; balance loss prevents popularity skew."
 
-**Deep dive.** `41_mixture_of_experts/MOE_DEEP_DIVE.md`.
+**Deep dive.** [`41_mixture_of_experts/MOE_DEEP_DIVE.md`](../41_mixture_of_experts/MOE_DEEP_DIVE.md).
 
 > **Saying it out loud.** A Mixture of Experts lets you grow parameters without growing compute per token. Instead of one big feed-forward block, you have many, and a small router sends each token to just the top one or two — DeepSeek-V3 has 671 billion parameters but only activates about 37 billion for any given token. The catch is routing is a popularity contest: left alone, a few experts get swamped while others starve, so you either add an auxiliary load-balancing loss, or do what DeepSeek-V3 does and nudge a per-expert bias up and down with no extra loss term. And the systems cost is real — every layer needs two all-to-all collectives to ship tokens to their experts and results back, and all-to-all is the worst-scaling collective across nodes, so on MoE models the network, not the GPU, is usually the bottleneck.
 
@@ -469,22 +469,22 @@ Where each topic is covered in detail elsewhere in this repo:
 
 | Topic | Detailed file |
 |---|---|
-| Flash Attention | `05_attention_mechanisms/ATTENTION_DEEP_DIVE.md` |
-| MQA / GQA / MLA | `05_attention_mechanisms/ATTENTION_DEEP_DIVE.md` |
+| Flash Attention | [`05_attention_mechanisms/ATTENTION_DEEP_DIVE.md`](../05_attention_mechanisms/ATTENTION_DEEP_DIVE.md) |
+| MQA / GQA / MLA | [`05_attention_mechanisms/ATTENTION_DEEP_DIVE.md`](../05_attention_mechanisms/ATTENTION_DEEP_DIVE.md) |
 | Activation checkpointing | `62_frontier_training_playbook/` |
-| Efficient transformers / SSMs | `42_state_space_models/SSM_DEEP_DIVE.md` |
-| KV cache | `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md` |
-| Stateful caching | `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md` |
-| Speculative decoding | `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md` |
-| Quantization | `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md` |
+| Efficient transformers / SSMs | [`42_state_space_models/SSM_DEEP_DIVE.md`](../42_state_space_models/SSM_DEEP_DIVE.md) |
+| KV cache | [`06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`](../06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md) |
+| Stateful caching | [`06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`](../06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md) |
+| Speculative decoding | [`06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`](../06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md) |
+| Quantization | [`06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`](../06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md) |
 | Mixed precision | `10_optimizers/`, `62_frontier_training_playbook/` |
 | ZeRO / FSDP / DDP | `61_large_scale_llm_systems/` |
 | Pipeline parallelism (GPipe / 1F1B / Zero Bubble / DualPipe) | `61_large_scale_llm_systems/`, `62_frontier_training_playbook/` |
 | Tensor parallelism (Megatron) | `61_large_scale_llm_systems/` |
-| Context / Ring attention | `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md` |
-| MoE | `41_mixture_of_experts/MOE_DEEP_DIVE.md` |
+| Context / Ring attention | [`06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`](../06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md) |
+| MoE | [`41_mixture_of_experts/MOE_DEEP_DIVE.md`](../41_mixture_of_experts/MOE_DEEP_DIVE.md) |
 | PagedAttention | `63_paged_attention_and_llm_serving/` |
-| Frontier 2024-2026 (FP8/FP4, MLA, DualPipe) | `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md` §14 |
+| Frontier 2024-2026 (FP8/FP4, MLA, DualPipe) | [`06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`](../06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md) §14 |
 
 ---
 

@@ -18,7 +18,7 @@ This topic provides 100+ interview questions covering:
 5. **Optimization** (15 questions)
 6. **Regularization** (10 questions)
 
-See `INTERVIEW_QA.md` for complete questions and answers.
+See [`INTERVIEW_QA.md`](INTERVIEW_QA.md) for complete questions and answers.
 
 ## Core Intuition
 

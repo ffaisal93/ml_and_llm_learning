@@ -1,8 +1,8 @@
 # Topic 63: Paged Attention and LLM Serving Internals
 
 > 🔥 **For interviews, read these first:**
-> - **`paged_attention_deep_dive.md`** — descriptive deep dive: serving vs training bottlenecks, KV-cache fragmentation, paging analogy, block tables, prefix sharing, continuous batching, prefill/decode disaggregation.
-> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions covering KV-cache math (GQA/MQA/MLA savings), PagedAttention internals, continuous batching, prefix caching / RadixAttention, speculative decoding, INT8/INT4/FP8 quantization, vLLM/SGLang/TensorRT-LLM differentiation.
+> - **[`paged_attention_deep_dive.md`](paged_attention_deep_dive.md)** — descriptive deep dive: serving vs training bottlenecks, KV-cache fragmentation, paging analogy, block tables, prefix sharing, continuous batching, prefill/decode disaggregation.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 60 active-recall questions covering KV-cache math (GQA/MQA/MLA savings), PagedAttention internals, continuous batching, prefix caching / RadixAttention, speculative decoding, INT8/INT4/FP8 quantization, vLLM/SGLang/TensorRT-LLM differentiation.
 
 ## What You'll Learn
 

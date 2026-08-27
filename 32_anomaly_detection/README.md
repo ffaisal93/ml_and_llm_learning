@@ -1,8 +1,8 @@
 # Topic 32: Anomaly Detection & Isolation Forest
 
 > 🔥 **For interviews, read these first:**
-> - **`ANOMALY_DETECTION_DEEP_DIVE.md`** — frontier-lab deep dive: statistical methods (z-score, Mahalanobis), density-based (KDE, LOF), Isolation Forest score derivation, One-Class SVM, autoencoder reconstruction, embedding-based AD with foundation models, time-series anomalies (point/contextual/collective), evaluation (AUPRC > AUC for imbalance).
-> - **`INTERVIEW_GRILL.md`** — 50 active-recall questions.
+> - **[`ANOMALY_DETECTION_DEEP_DIVE.md`](ANOMALY_DETECTION_DEEP_DIVE.md)** — frontier-lab deep dive: statistical methods (z-score, Mahalanobis), density-based (KDE, LOF), Isolation Forest score derivation, One-Class SVM, autoencoder reconstruction, embedding-based AD with foundation models, time-series anomalies (point/contextual/collective), evaluation (AUPRC > AUC for imbalance).
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 50 active-recall questions.
 
 ## What You'll Learn
 

@@ -1,8 +1,8 @@
 # Topic 40: Diffusion Models
 
 > 🔥 **For interviews, read these first:**
-> - **`DIFFUSION_DEEP_DIVE.md`** — frontier-lab interview deep dive: forward/reverse processes, why predict noise, score-matching connection, DDIM/DPM-Solver/Consistency Models, classifier-free guidance, latent diffusion, DiT, flow matching, ControlNet/LoRA conditioning.
-> - **`INTERVIEW_GRILL.md`** — 45 active-recall questions.
+> - **[`DIFFUSION_DEEP_DIVE.md`](DIFFUSION_DEEP_DIVE.md)** — frontier-lab interview deep dive: forward/reverse processes, why predict noise, score-matching connection, DDIM/DPM-Solver/Consistency Models, classifier-free guidance, latent diffusion, DiT, flow matching, ControlNet/LoRA conditioning.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 45 active-recall questions.
 
 ## What You'll Learn
 
@@ -144,7 +144,7 @@ Diffusion models are generative models that learn to reverse a gradual noising p
 
 **Complete Implementations:**
 
-- **`diffusion_theory.md`**: Complete theoretical foundation
+- **[`diffusion_theory.md`](diffusion_theory.md)**: Complete theoretical foundation
   - Core concepts and intuition
   - Mathematical formulations (forward, reverse, training)
   - Discrete diffusion for NLP
@@ -178,7 +178,7 @@ Diffusion models are generative models that learn to reverse a gradual noising p
   - Diffusion-specific metrics
   - Sample quality evaluation
 
-- **`diffusion_qa.md`**: Comprehensive interview Q&A
+- **[`diffusion_qa.md`](diffusion_qa.md)**: Comprehensive interview Q&A
   - 10 detailed questions covering all aspects
   - Theory, training, evaluation, NLP applications
   - Comparisons with other models

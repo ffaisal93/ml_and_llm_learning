@@ -1,6 +1,6 @@
 # Whiteboard Derivations — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 This deep dive is the catalog of derivations you should be able to do on a whiteboard cold. Frontier-lab interviews routinely ask "derive X" — backprop, attention, OLS gradient, KL, EM, DPO. Knowing the *shape* of these derivations beats memorizing the answer.
 

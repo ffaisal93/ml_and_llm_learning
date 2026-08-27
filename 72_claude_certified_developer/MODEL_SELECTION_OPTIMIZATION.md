@@ -34,7 +34,7 @@ The highest-leverage optimization is **not** using one model for everything. Rou
 - Multi-agent systems: a strong **orchestrator** (Opus) plans; cheap **workers** (Haiku/Sonnet) execute mechanical subtasks.
 - Drafting with a small model, then a single strong-model pass to polish.
 
-This is the "routing" pattern from `AGENTS_AND_WORKFLOWS.md`, applied for cost.
+This is the "routing" pattern from [`AGENTS_AND_WORKFLOWS.md`](AGENTS_AND_WORKFLOWS.md), applied for cost.
 
 ---
 
@@ -42,7 +42,7 @@ This is the "routing" pattern from `AGENTS_AND_WORKFLOWS.md`, applied for cost.
 
 - **Tokens ≈ word-pieces.** Rough rule: ~4 characters/token, ~0.75 words/token in English. You pay per input + output token; input dominates in long/agentic runs (you resend history).
 - **Context window** = the max tokens (input + output) a request can hold. 1M is large but **not free**: bigger prompts cost more, add latency, and dilute attention. **Relevance beats volume.**
-- Watch `usage` on every response to *see* token growth; when it balloons, compact context (see `PROMPT_AND_CONTEXT_ENGINEERING.md`).
+- Watch `usage` on every response to *see* token growth; when it balloons, compact context (see [`PROMPT_AND_CONTEXT_ENGINEERING.md`](PROMPT_AND_CONTEXT_ENGINEERING.md)).
 - `max_tokens` reserves output room; the effective input budget is window minus your `max_tokens`.
 
 ---
@@ -79,7 +79,7 @@ thinking={"type": "enabled", "budget_tokens": 4000}
 | Lever | What it saves | Mechanism |
 |---|---|---|
 | **Right-size the model** | \$\$\$ + latency | Haiku for easy/high-volume; Opus only when needed |
-| **Prompt caching** | input cost + latency on repeats | Cache stable prefix; keep it unchanged (`APPLICATIONS_INTEGRATION_DEEP_DIVE.md`) |
+| **Prompt caching** | input cost + latency on repeats | Cache stable prefix; keep it unchanged ([`APPLICATIONS_INTEGRATION_DEEP_DIVE.md`](APPLICATIONS_INTEGRATION_DEEP_DIVE.md)) |
 | **Message Batches** | ~50% on bulk | Async, latency-tolerant jobs |
 | **Context management** | input cost | Summarize/compact; retrieve instead of pre-loading |
 | **Model routing** | \$\$\$ | Cheap model triages; escalate only hard cases |

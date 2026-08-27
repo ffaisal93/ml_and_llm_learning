@@ -35,7 +35,7 @@ Implementation rules the exam rewards:
 
 ## 2. The tool-use loop and `tool_choice`
 
-The loop (full code in `APPLICATIONS_INTEGRATION_DEEP_DIVE.md`): send tools → model returns `tool_use` → **your code runs it** → return `tool_result` → repeat until `end_turn`.
+The loop (full code in [`APPLICATIONS_INTEGRATION_DEEP_DIVE.md`](APPLICATIONS_INTEGRATION_DEEP_DIVE.md)): send tools → model returns `tool_use` → **your code runs it** → return `tool_result` → repeat until `end_turn`.
 
 `tool_choice` modes:
 

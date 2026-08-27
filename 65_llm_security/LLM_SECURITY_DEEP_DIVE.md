@@ -1,7 +1,7 @@
 # LLM / AI Security — Deep Dive
 
 > Frontier-lab and big-tech interview-grade reference on the security of LLMs and LLM-powered products.
-> Pair with `07_llm_problems/HALLUCINATION_DETECTION_DEEP_DIVE.md` (factuality), `07_llm_problems/AGENT_IN_30_MIN.md` (agents), and `08_training_techniques/ALIGNMENT_DEEP_DIVE.md` (alignment).
+> Pair with [`07_llm_problems/HALLUCINATION_DETECTION_DEEP_DIVE.md`](../07_llm_problems/HALLUCINATION_DETECTION_DEEP_DIVE.md) (factuality), [`07_llm_problems/AGENT_IN_30_MIN.md`](../07_llm_problems/AGENT_IN_30_MIN.md) (agents), and [`08_training_techniques/ALIGNMENT_DEEP_DIVE.md`](../08_training_techniques/ALIGNMENT_DEEP_DIVE.md) (alignment).
 
 LLM security is its own discipline — different from classical alignment ("does the model want the right things"), different from classical infosec ("is the box hardened"), and different from ML robustness ("is the classifier robust to perturbations"). It sits at the intersection of all three. This chapter walks through the threat model, the canonical attack families with the named techniques, the defense families, the red-teaming and evaluation landscape, the agent-specific risks, and a production playbook.
 
@@ -694,7 +694,7 @@ What separates a good answer from a great one.
 2. Memorize §3 (injection), §4 (jailbreaks), §9 (agent security), §12 (defense families), §16 (production playbook).
 3. Be able to name and sketch the 8 attack techniques in §5 + §4.2 (GCG, PAIR, AutoDAN, PAP, Crescendo, Skeleton Key, Many-Shot, Best-of-N).
 4. Drill the §18 senior signals.
-5. Pair with `INTERVIEW_GRILL.md` for active recall.
+5. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md) for active recall.
 6. For a production interview, walk through one real product (a coding agent, a customer-support bot, a search-augmented chat) and apply §16 end-to-end.
 
 The single sentence to remember: **assume every prompt-path input is attacker-controlled, build defense-in-depth, and design every agent so no single confused-deputy step has all three legs of the lethal trifecta.**

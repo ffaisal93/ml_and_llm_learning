@@ -470,4 +470,4 @@ If you're evaluating 100 hyperparameter configurations, even random noise will g
 3. Know calibration tests (reliability diagram, Brier, ECE) and fixes (Platt, isotonic, temperature).
 4. Know perplexity definition and tokenizer-dependence.
 5. Know pass@k formula.
-6. Drill `INTERVIEW_GRILL.md`.
+6. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).

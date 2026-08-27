@@ -1,6 +1,6 @@
 # Advanced ML Theory — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 This is the "ML theory you should actually know cold" — bias-variance with proof, cross-validation theory, learning curves, model selection (AIC/BIC), and ROC analysis. Some of this overlaps with the SLT and generalization deep dives but here we focus on the *practical decisions* these theories inform.
 

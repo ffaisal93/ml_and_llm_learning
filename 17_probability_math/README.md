@@ -1,8 +1,8 @@
 # Topic 17: Probability Math Q&A
 
 > 🔥 **For interviews, read these first:**
-> - **`PROBABILITY_DEEP_DIVE.md`** — frontier-lab deep dive: axioms, conditional probability, Bayes' theorem (with base-rate fallacy), expectations and variance (linearity, total expectation, total variance), common distributions, multivariate Gaussian (marginals/conditionals), LLN/CLT.
-> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions.
+> - **[`PROBABILITY_DEEP_DIVE.md`](PROBABILITY_DEEP_DIVE.md)** — frontier-lab deep dive: axioms, conditional probability, Bayes' theorem (with base-rate fallacy), expectations and variance (linearity, total expectation, total variance), common distributions, multivariate Gaussian (marginals/conditionals), LLN/CLT.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 60 active-recall questions.
 
 ## What You'll Learn
 

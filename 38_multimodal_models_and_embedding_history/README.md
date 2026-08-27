@@ -1,8 +1,8 @@
 # Topic 38: Multimodal Models & Embedding History
 
 > 🔥 **For interviews, read these first:**
-> - **`MULTIMODAL_EMBEDDING_DEEP_DIVE.md`** — frontier-lab deep dive: BoW/TF-IDF → Word2Vec/GloVe → BERT → Sentence-BERT → CLIP → multimodal LLMs (Flamingo, LLaVA), full CLIP loss derivation, InfoNCE as MI bound, SigLIP, vector search (HNSW/IVF-PQ), hybrid retrieval.
-> - **`INTERVIEW_GRILL.md`** — 55 active-recall questions.
+> - **[`MULTIMODAL_EMBEDDING_DEEP_DIVE.md`](MULTIMODAL_EMBEDDING_DEEP_DIVE.md)** — frontier-lab deep dive: BoW/TF-IDF → Word2Vec/GloVe → BERT → Sentence-BERT → CLIP → multimodal LLMs (Flamingo, LLaVA), full CLIP loss derivation, InfoNCE as MI bound, SigLIP, vector search (HNSW/IVF-PQ), hybrid retrieval.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 55 active-recall questions.
 
 ## What You'll Learn
 

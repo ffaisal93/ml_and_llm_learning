@@ -1,6 +1,6 @@
 # MLE and MAP Estimation — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 This topic underpins almost everything in classical and modern ML. Cross-entropy, ridge/lasso, Bayesian deep learning, RLHF reward modeling — all are MLE/MAP under specific likelihoods and priors. Senior interviews probe whether you can derive these *cleanly*, not just recognize them.
 

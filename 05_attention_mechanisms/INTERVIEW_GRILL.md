@@ -1,6 +1,6 @@
 # Attention Mechanisms — Interview Grill
 
-> 50 questions on the attention family beyond the basic transformer. For the foundational scaled-dot-product material, see `04_transformers/INTERVIEW_GRILL.md`.
+> 50 questions on the attention family beyond the basic transformer. For the foundational scaled-dot-product material, see [`04_transformers/INTERVIEW_GRILL.md`](../04_transformers/INTERVIEW_GRILL.md).
 
 ---
 

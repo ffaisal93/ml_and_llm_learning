@@ -1,6 +1,6 @@
 # LLM Evaluation — Interview Grill
 
-> 70+ active-recall questions. Pair with `LLM_EVALUATION_DEEP_DIVE.md`.
+> 70+ active-recall questions. Pair with [`LLM_EVALUATION_DEEP_DIVE.md`](LLM_EVALUATION_DEEP_DIVE.md).
 > Answer each in <60 seconds out loud. Mark any you can't answer cleanly and re-read the relevant section.
 
 ---

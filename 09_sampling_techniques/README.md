@@ -1,8 +1,8 @@
 # Topic 9: Sampling Techniques
 
 > 🔥 **For interviews, read these first:**
-> - **`SAMPLING_DEEP_DIVE.md`** — frontier-lab interview deep dive: greedy/beam/temperature/top-k/top-p/min-p/typical/Mirostat/penalties, why beam search fails for LLMs, speculative decoding, best-of-N for test-time scaling.
-> - **`INTERVIEW_GRILL.md`** — 45 active-recall questions.
+> - **[`SAMPLING_DEEP_DIVE.md`](SAMPLING_DEEP_DIVE.md)** — frontier-lab interview deep dive: greedy/beam/temperature/top-k/top-p/min-p/typical/Mirostat/penalties, why beam search fails for LLMs, speculative decoding, best-of-N for test-time scaling.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 45 active-recall questions.
 
 ## What You'll Learn
 

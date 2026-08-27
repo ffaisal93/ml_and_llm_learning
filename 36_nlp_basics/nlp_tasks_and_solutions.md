@@ -448,7 +448,7 @@ Determine sentiment (positive, negative, neutral) of text
 ## Detailed Standard Procedures
 
 **For detailed, industry-standard solution procedures for each NLP problem type, see:**
-- **`nlp_problems_detailed.md`**: Complete procedures for:
+- **[`nlp_problems_detailed.md`](nlp_problems_detailed.md)**: Complete procedures for:
   - Text Classification (6 phases)
   - Named Entity Recognition (6 phases)
   - Question Answering (6 phases)

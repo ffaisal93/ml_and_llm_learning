@@ -350,4 +350,4 @@ shape: what changed, bisect rather than scan, make the hypothesis falsifiable, s
 it, and separate the fix that stops the bleeding from the fix that stops the recurrence.
 
 Mechanics are in `39_rag_retrieval_augmented_generation`; the component-level questions these build on
-are in `MODERN_QUESTION_BANK.md` §2 and §5.
+are in [`MODERN_QUESTION_BANK.md`](MODERN_QUESTION_BANK.md) §2 and §5.

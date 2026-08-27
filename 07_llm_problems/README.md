@@ -1,13 +1,13 @@
 # Topic 7: LLM Problem Solving
 
 > 🔥 **For interviews, read these first:**
-> - **`LLM_PROBLEMS_DEEP_DIVE.md`** — frontier-lab deep dive: long-context challenges (lost-in-the-middle), hallucination types and mitigations (overview), prompting techniques (CoT, self-consistency, ToT, ReAct), jailbreaks + defenses, indirect prompt injection, agent architectures and failure modes, multi-turn memory, latency/cost, evaluation.
-> - **`HALLUCINATION_DETECTION_DEEP_DIVE.md`** — dedicated comprehensive chapter on detecting hallucinations in LLM outputs: full taxonomy, why models hallucinate, reference-based / reference-free / internal-states-based detection (NLI, SelfCheckGPT, semantic entropy, CoVe, truth probes, RAGAS), benchmarks, mitigation, production design. The interview-grade reference.
-> - **`HALLUCINATION_INTERVIEW_GRILL.md`** — 90 active-recall questions on hallucination detection (taxonomy → causes → reference-based → reference-free → internal-states → RAG → benchmarks → mitigation → production → eval methodology).
-> - **`LLM_EVALUATION_DEEP_DIVE.md`** — frontier-lab deep dive on LLM evaluation: why eval is hard, capability benchmarks (knowledge/reasoning/code/long-context/agent/multimodal), instruction following, LLM-as-judge (biases + calibration), pairwise / ELO / Chatbot Arena, open-ended evaluation, factuality measurement (FactScore/SAFE/RAGAS), contamination detection, robustness, statistical methodology, harnesses (lm-eval-harness/HELM/Inspect), online telemetry, A/B testing, full product eval case study.
-> - **`LLM_EVALUATION_INTERVIEW_GRILL.md`** — 115 active-recall questions on LLM eval, organized A–M.
-> - **`AGENT_IN_30_MIN.md`** — codable-from-memory agent: 70-line working loop with tool calls + parser + complete walkthrough. Drill until you can write it cold in 25 minutes.
-> - **`INTERVIEW_GRILL.md`** — 55 active-recall questions on broader LLM problems.
+> - **[`LLM_PROBLEMS_DEEP_DIVE.md`](LLM_PROBLEMS_DEEP_DIVE.md)** — frontier-lab deep dive: long-context challenges (lost-in-the-middle), hallucination types and mitigations (overview), prompting techniques (CoT, self-consistency, ToT, ReAct), jailbreaks + defenses, indirect prompt injection, agent architectures and failure modes, multi-turn memory, latency/cost, evaluation.
+> - **[`HALLUCINATION_DETECTION_DEEP_DIVE.md`](HALLUCINATION_DETECTION_DEEP_DIVE.md)** — dedicated comprehensive chapter on detecting hallucinations in LLM outputs: full taxonomy, why models hallucinate, reference-based / reference-free / internal-states-based detection (NLI, SelfCheckGPT, semantic entropy, CoVe, truth probes, RAGAS), benchmarks, mitigation, production design. The interview-grade reference.
+> - **[`HALLUCINATION_INTERVIEW_GRILL.md`](HALLUCINATION_INTERVIEW_GRILL.md)** — 90 active-recall questions on hallucination detection (taxonomy → causes → reference-based → reference-free → internal-states → RAG → benchmarks → mitigation → production → eval methodology).
+> - **[`LLM_EVALUATION_DEEP_DIVE.md`](LLM_EVALUATION_DEEP_DIVE.md)** — frontier-lab deep dive on LLM evaluation: why eval is hard, capability benchmarks (knowledge/reasoning/code/long-context/agent/multimodal), instruction following, LLM-as-judge (biases + calibration), pairwise / ELO / Chatbot Arena, open-ended evaluation, factuality measurement (FactScore/SAFE/RAGAS), contamination detection, robustness, statistical methodology, harnesses (lm-eval-harness/HELM/Inspect), online telemetry, A/B testing, full product eval case study.
+> - **[`LLM_EVALUATION_INTERVIEW_GRILL.md`](LLM_EVALUATION_INTERVIEW_GRILL.md)** — 115 active-recall questions on LLM eval, organized A–M.
+> - **[`AGENT_IN_30_MIN.md`](AGENT_IN_30_MIN.md)** — codable-from-memory agent: 70-line working loop with tool calls + parser + complete walkthrough. Drill until you can write it cold in 25 minutes.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 55 active-recall questions on broader LLM problems.
 
 ## What You'll Learn
 

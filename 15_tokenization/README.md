@@ -1,8 +1,8 @@
 # Topic 15: Tokenization Methods
 
 > 🔥 **For interviews, read these first:**
-> - **`TOKENIZATION_DEEP_DIVE.md`** — frontier-lab interview deep dive: BPE/WordPiece/Unigram/SentencePiece, byte-level BPE, vocabulary trade-offs, arithmetic and multilingual quirks, glitch tokens, special tokens, multimodal extensions.
-> - **`INTERVIEW_GRILL.md`** — 45 active-recall questions.
+> - **[`TOKENIZATION_DEEP_DIVE.md`](TOKENIZATION_DEEP_DIVE.md)** — frontier-lab interview deep dive: BPE/WordPiece/Unigram/SentencePiece, byte-level BPE, vocabulary trade-offs, arithmetic and multilingual quirks, glitch tokens, special tokens, multimodal extensions.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 45 active-recall questions.
 
 ## What You'll Learn
 

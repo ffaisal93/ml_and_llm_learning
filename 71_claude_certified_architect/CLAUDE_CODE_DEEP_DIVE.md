@@ -6,7 +6,7 @@
 
 ## 1. What Claude Code is (and what it is on the exam)
 
-Claude Code is Anthropic's **agentic coding tool** that runs in your terminal (and IDEs). It can read and edit files, run commands, search the web, and call MCP tools — driving the full **agent loop** on your codebase. The Agent SDK is *the same engine exposed as a library* (see `AGENT_SDK_DEEP_DIVE.md`).
+Claude Code is Anthropic's **agentic coding tool** that runs in your terminal (and IDEs). It can read and edit files, run commands, search the web, and call MCP tools — driving the full **agent loop** on your codebase. The Agent SDK is *the same engine exposed as a library* (see [`AGENT_SDK_DEEP_DIVE.md`](AGENT_SDK_DEEP_DIVE.md)).
 
 For the exam, Claude Code shows up mostly as a **configuration and workflow** system: how you steer it with `CLAUDE.md`, `settings.json`, slash commands, plan mode, subagents, skills, and hooks — and how those layer.
 
@@ -76,7 +76,7 @@ Use it for: large or risky changes, unfamiliar codebases, anything where an unwa
 ## 7. Skills, subagents, and sessions (the newer surface area)
 
 - **Skills** — packaged, reusable capabilities/instructions (a folder with a `SKILL.md` and optional scripts) that load automatically when relevant. They extend what Claude Code can do without bloating every prompt. Loaded from the project's `.claude/` and from `~/.claude/`.
-- **Subagents** — specialized agents Claude Code can spawn for focused subtasks, each with its **own context window** and tool set. Delegating a self-contained subtask (e.g., "review this file for security issues") to a subagent keeps the main context clean and enables parallelism. (Orchestration patterns: `AGENTIC_PATTERNS_DEEP_DIVE.md`.)
+- **Subagents** — specialized agents Claude Code can spawn for focused subtasks, each with its **own context window** and tool set. Delegating a self-contained subtask (e.g., "review this file for security issues") to a subagent keeps the main context clean and enables parallelism. (Orchestration patterns: [`AGENTIC_PATTERNS_DEEP_DIVE.md`](AGENTIC_PATTERNS_DEEP_DIVE.md).)
 - **Sessions** — conversations persist and can be **resumed or forked**; long sessions use **context summarization/compaction** to stay within the window. "Continue where I left off" = resuming a session with summarized prior context.
 - **Plugins** — bundle skills, subagents, hooks, commands, and MCP servers into an installable package.
 

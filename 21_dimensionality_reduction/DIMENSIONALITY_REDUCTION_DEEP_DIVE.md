@@ -386,7 +386,7 @@ For most modern ML applications, dimensionality reduction is **implicit**: a dee
 2. State the SVD decomposition and connection to PCA.
 3. Know t-SNE's KL objective at sketchy level.
 4. Compare UMAP vs t-SNE on speed and structure preservation.
-5. Drill `INTERVIEW_GRILL.md`.
+5. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 ---
 

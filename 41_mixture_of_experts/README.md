@@ -1,8 +1,8 @@
 # Topic 41: Mixture of Experts (MoE)
 
 > 🔥 **For interviews, read these first:**
-> - **`MOE_DEEP_DIVE.md`** — frontier-lab interview deep dive: top-k routing, load balancing loss derivation, capacity factor / token dropping, expert parallelism + all-to-all, Switch/Mixtral/DeepSeek-V3, auxiliary-loss-free balancing, fine-grained vs coarse experts.
-> - **`INTERVIEW_GRILL.md`** — 40 active-recall questions.
+> - **[`MOE_DEEP_DIVE.md`](MOE_DEEP_DIVE.md)** — frontier-lab interview deep dive: top-k routing, load balancing loss derivation, capacity factor / token dropping, expert parallelism + all-to-all, Switch/Mixtral/DeepSeek-V3, auxiliary-loss-free balancing, fine-grained vs coarse experts.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 40 active-recall questions.
 
 ## What You'll Learn
 
@@ -137,10 +137,10 @@ Mixture of Experts is an architecture where multiple expert networks are trained
 ## Industry-Standard Boilerplate Code
 
 See detailed files for complete implementations:
-- `moe_theory.md`: Complete theoretical foundation
+- [`moe_theory.md`](moe_theory.md): Complete theoretical foundation
 - [`moe_code.py`](moe_code_py.md): Full implementation
 - `moe_training.py`: Training procedures
-- `moe_qa.md`: Comprehensive interview Q&A
+- [`moe_qa.md`](moe_qa.md): Comprehensive interview Q&A
 
 ## Exercises
 

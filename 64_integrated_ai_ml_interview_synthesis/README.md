@@ -1,11 +1,11 @@
 # Topic 64: Integrated AI and ML Interview Synthesis
 
 > 🔥 **For interviews, read these first:**
-> - **`INTERVIEW_SYNTHESIS_DEEP_DIVE.md`** — meta-document on cross-topic synthesis: 5 archetype questions (design/train/why-works/debug/tradeoff), bridge topics (cross-entropy, embeddings, attention), first-principles answer pattern, common mistakes, topic-bridging cheatsheet.
-> - **`INTERVIEW_GRILL.md`** — 50 active-recall questions on synthesis under pressure.
-> - **`answer_frameworks.md`** — original framework reference.
-> - **`cross_topic_map.md`** — original cross-topic mapping.
-> - **`descriptive_interview_narratives.md`** — original narrative-style examples.
+> - **[`INTERVIEW_SYNTHESIS_DEEP_DIVE.md`](INTERVIEW_SYNTHESIS_DEEP_DIVE.md)** — meta-document on cross-topic synthesis: 5 archetype questions (design/train/why-works/debug/tradeoff), bridge topics (cross-entropy, embeddings, attention), first-principles answer pattern, common mistakes, topic-bridging cheatsheet.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 50 active-recall questions on synthesis under pressure.
+> - **[`answer_frameworks.md`](answer_frameworks.md)** — original framework reference.
+> - **[`cross_topic_map.md`](cross_topic_map.md)** — original cross-topic mapping.
+> - **[`descriptive_interview_narratives.md`](descriptive_interview_narratives.md)** — original narrative-style examples.
 
 ## What You'll Learn
 

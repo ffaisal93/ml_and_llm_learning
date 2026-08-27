@@ -1,7 +1,7 @@
 # LLM Evaluation — Deep Dive
 
 > Frontier-lab interview-grade reference on evaluating LLMs and LLM-powered products.
-> Read with `HALLUCINATION_DETECTION_DEEP_DIVE.md` (factuality is one slice of eval) and `LLM_PROBLEMS_DEEP_DIVE.md`.
+> Read with [`HALLUCINATION_DETECTION_DEEP_DIVE.md`](HALLUCINATION_DETECTION_DEEP_DIVE.md) (factuality is one slice of eval) and [`LLM_PROBLEMS_DEEP_DIVE.md`](LLM_PROBLEMS_DEEP_DIVE.md).
 
 LLM evaluation is the bottleneck of modern LLM development. Training methods are mostly known; what separates labs is whether they can *measure* whether a change is an improvement. This chapter walks through what makes LLM eval hard, the benchmark landscape, LLM-as-judge methodology, factuality measurement, contamination, robustness, online/production evaluation, and how to design an eval suite for a real product.
 
@@ -396,7 +396,7 @@ For creative tasks, you also want diversity, not just quality. Self-BLEU within 
 
 ## 8. Factuality and faithfulness measurement
 
-(See `HALLUCINATION_DETECTION_DEEP_DIVE.md` for the full chapter; this is the eval-specific summary.)
+(See [`HALLUCINATION_DETECTION_DEEP_DIVE.md`](HALLUCINATION_DETECTION_DEEP_DIVE.md) for the full chapter; this is the eval-specific summary.)
 
 ### Factuality benchmarks
 
@@ -846,7 +846,7 @@ Run the agent end-to-end. Score with:
 
 ## 17. Common interview questions
 
-A subset; full grill in `INTERVIEW_GRILL.md`.
+A subset; full grill in [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 1. Why is LLM evaluation harder than evaluating a classifier?
 2. List 5 LLM-judge biases and how you mitigate each.
@@ -951,6 +951,6 @@ A subset; full grill in `INTERVIEW_GRILL.md`.
 2. Memorize §2 (taxonomy), §5 (judge biases), §11 (statistical methodology), §15 (case study).
 3. Drill yourself with §17 questions — be able to give a 60-second answer to each.
 4. Pick one product you've used (or invent one) and design its eval suite using the §15 four-layer pattern. Whiteboard it.
-5. Pair with `HALLUCINATION_DETECTION_DEEP_DIVE.md` for the factuality slice.
+5. Pair with [`HALLUCINATION_DETECTION_DEEP_DIVE.md`](HALLUCINATION_DETECTION_DEEP_DIVE.md) for the factuality slice.
 
 If you can fluently distinguish capability vs product eval, identify all the LLM-judge biases, design contamination detection, size A/B tests, and articulate the offline → shadow → canary → A/B pipeline — you'll handle frontier-lab and big-tech eval interviews well.

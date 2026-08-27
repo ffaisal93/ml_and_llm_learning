@@ -1,8 +1,8 @@
 # Topic 43: Language Modeling Training Losses
 
 > 🔥 **For interviews, read these first:**
-> - **`LM_LOSSES_DEEP_DIVE.md`** — frontier-lab interview deep dive: CLM/MLM/Span-corruption/PrefixLM/MoD/ELECTRA, why CLM dominates, why NSP died, how ICL emerges from CLM, multi-token prediction, prompt masking for SFT.
-> - **`INTERVIEW_GRILL.md`** — 40 active-recall questions.
+> - **[`LM_LOSSES_DEEP_DIVE.md`](LM_LOSSES_DEEP_DIVE.md)** — frontier-lab interview deep dive: CLM/MLM/Span-corruption/PrefixLM/MoD/ELECTRA, why CLM dominates, why NSP died, how ICL emerges from CLM, multi-token prediction, prompt masking for SFT.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 40 active-recall questions.
 
 ## What You'll Learn
 
@@ -150,7 +150,7 @@ L_NSP = -log P(is_next | sentence_A, sentence_B)
 
 See detailed files for complete implementations:
 - [`language_modeling_losses.py`](language_modeling_losses_py.md): Complete implementations
-- `loss_explanations.md`: Detailed theoretical explanations
+- [`loss_explanations.md`](loss_explanations.md): Detailed theoretical explanations
 - `loss_comparison.md`: Comparison and when to use each
 
 ## Exercises

@@ -1,8 +1,8 @@
 # Topic 44: Normalization Techniques (Batch Norm & Layer Norm)
 
 > 🔥 **For interviews, read these first:**
-> - **`NORMALIZATION_DEEP_DIVE.md`** — frontier-lab interview deep dive: BN/LN/RMSNorm/GroupNorm, why BN fails for transformers, pre-LN vs post-LN, the affine transform, the loss-landscape-smoothing argument (and why "internal covariate shift" is wrong).
-> - **`INTERVIEW_GRILL.md`** — 40 active-recall questions with strong answers.
+> - **[`NORMALIZATION_DEEP_DIVE.md`](NORMALIZATION_DEEP_DIVE.md)** — frontier-lab interview deep dive: BN/LN/RMSNorm/GroupNorm, why BN fails for transformers, pre-LN vs post-LN, the affine transform, the loss-landscape-smoothing argument (and why "internal covariate shift" is wrong).
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 40 active-recall questions with strong answers.
 
 ## What You'll Learn
 
@@ -149,8 +149,8 @@ y = γ * x̂ + β
 
 See detailed files for complete implementations:
 - [`normalization_implementations.py`](normalization_implementations_py.md): Complete implementations from scratch
-- `normalization_theory.md`: Detailed theoretical explanations
-- `normalization_qa.md`: Comprehensive interview Q&A
+- [`normalization_theory.md`](normalization_theory.md): Detailed theoretical explanations
+- [`normalization_qa.md`](normalization_qa.md): Comprehensive interview Q&A
 
 ## Exercises
 

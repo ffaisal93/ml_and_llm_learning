@@ -1,9 +1,9 @@
 # Topic 4: Transformers
 
 > 🔥 **For interviews, read these first:**
-> - **`TRANSFORMERS_DEEP_DIVE.md`** — frontier-lab interview deep dive: scaled dot-product derivation, multi-head reasoning, FFN role, residual stream, pre-LN vs post-LN, encoder/decoder/cross-attention, scaling laws, training instabilities.
-> - **`MODERN_LLM_ARCHITECTURE_CHOICES.md`** — distilled from Stanford CS336's *Architecture and Hyperparameters* lecture. The "what every modern LLM actually does and why" view: layer norm placement (pre-norm out of residual + RMSNorm + drop biases); activations (SwiGLU/GeGLU with the 2/3 correction); parallel-vs-serial blocks; RoPE geometric intuition + variants (NoPE, Pi-RoPE); hyperparameter wide-basins (FFN ratio, head-dim×heads=d_model, aspect ratio ~100, vocab size); weight-decay-as-optimization-not-regularization; stability tricks (z-loss, QK-Norm, logit soft-capping); attention variants (MHA → MQA → GQA → MLA with KV-cache and arithmetic-intensity argument); long-context via alternating sliding-window + full attention. Convergence table covering 17 architectural axes across modern open models. 30-second oral pitches and 60-question grill.
-> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions with strong answers.
+> - **[`TRANSFORMERS_DEEP_DIVE.md`](TRANSFORMERS_DEEP_DIVE.md)** — frontier-lab interview deep dive: scaled dot-product derivation, multi-head reasoning, FFN role, residual stream, pre-LN vs post-LN, encoder/decoder/cross-attention, scaling laws, training instabilities.
+> - **[`MODERN_LLM_ARCHITECTURE_CHOICES.md`](MODERN_LLM_ARCHITECTURE_CHOICES.md)** — distilled from Stanford CS336's *Architecture and Hyperparameters* lecture. The "what every modern LLM actually does and why" view: layer norm placement (pre-norm out of residual + RMSNorm + drop biases); activations (SwiGLU/GeGLU with the 2/3 correction); parallel-vs-serial blocks; RoPE geometric intuition + variants (NoPE, Pi-RoPE); hyperparameter wide-basins (FFN ratio, head-dim×heads=d_model, aspect ratio ~100, vocab size); weight-decay-as-optimization-not-regularization; stability tricks (z-loss, QK-Norm, logit soft-capping); attention variants (MHA → MQA → GQA → MLA with KV-cache and arithmetic-intensity argument); long-context via alternating sliding-window + full attention. Convergence table covering 17 architectural axes across modern open models. 30-second oral pitches and 60-question grill.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 60 active-recall questions with strong answers.
 >
 > The README below is the conceptual overview; the three files above hold the interview-grade depth.
 
@@ -310,7 +310,7 @@ def positional_encoding(seq_len: int, d_model: int) -> np.ndarray:
   - Complete GPT model
   - Training function
   - Decoding function
-- **`gpt_training_decoding.md`**: Detailed explanations
+- **[`gpt_training_decoding.md`](gpt_training_decoding.md)**: Detailed explanations
   - How GPT is trained (next token prediction, loss function, optimization)
   - How GPT decodes (autoregressive generation, decoding strategies)
   - Temperature scaling, stopping conditions

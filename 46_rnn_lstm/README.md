@@ -1,8 +1,8 @@
 # Topic 46: RNN and LSTM
 
 > 🔥 **For interviews, read these first:**
-> - **`RNN_LSTM_DEEP_DIVE.md`** — frontier-lab deep dive: vanilla RNN forward/BPTT, vanishing/exploding gradients (with Jacobian product analysis), LSTM gates and cell-state additive update, GRU, bidirectional, seq2seq + attention (Bahdanau/Luong), transformer transition, connection to modern SSMs.
-> - **`INTERVIEW_GRILL.md`** — 50 active-recall questions.
+> - **[`RNN_LSTM_DEEP_DIVE.md`](RNN_LSTM_DEEP_DIVE.md)** — frontier-lab deep dive: vanilla RNN forward/BPTT, vanishing/exploding gradients (with Jacobian product analysis), LSTM gates and cell-state additive update, GRU, bidirectional, seq2seq + attention (Bahdanau/Luong), transformer transition, connection to modern SSMs.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 50 active-recall questions.
 
 ## What You'll Learn
 
@@ -140,7 +140,7 @@ y_t = W_hy * h_t + b_y
 
 See detailed files for complete implementations:
 - [`rnn_lstm_code.py`](rnn_lstm_code_py.md): Simple, precise implementations
-- `rnn_lstm_explanations.md`: Key concepts explained
+- [`rnn_lstm_explanations.md`](rnn_lstm_explanations.md): Key concepts explained
 
 ## Exercises
 

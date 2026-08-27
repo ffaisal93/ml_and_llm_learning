@@ -1,8 +1,8 @@
 # Topic 25: Adapters & LoRA (Parameter-Efficient Fine-tuning)
 
 > 🔥 **For interviews, read these first:**
-> - **`LORA_DEEP_DIVE.md`** — frontier-lab interview deep dive: LoRA math (ΔW = B·A), intrinsic-dimension hypothesis, α/r scaling, QLoRA's three innovations (NF4, double quantization, paged optimizer), adapter modules, prefix tuning, IA³, DoRA, GaLore, multi-LoRA serving (S-LoRA, Punica).
-> - **`INTERVIEW_GRILL.md`** — 40 active-recall questions.
+> - **[`LORA_DEEP_DIVE.md`](LORA_DEEP_DIVE.md)** — frontier-lab interview deep dive: LoRA math (ΔW = B·A), intrinsic-dimension hypothesis, α/r scaling, QLoRA's three innovations (NF4, double quantization, paged optimizer), adapter modules, prefix tuning, IA³, DoRA, GaLore, multi-LoRA serving (S-LoRA, Punica).
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 40 active-recall questions.
 
 ## What You'll Learn
 
@@ -321,7 +321,7 @@ class LoRALinear(nn.Module):
 
 **New Comprehensive Content:**
 
-- **`prompt_prefix_tuning.md`**: Complete detailed guide
+- **[`prompt_prefix_tuning.md`](prompt_prefix_tuning.md)**: Complete detailed guide
   - What is prompt tuning and prefix tuning
   - Why they work (theory and intuition)
   - Mathematical formulations with detailed explanations
@@ -337,7 +337,7 @@ class LoRALinear(nn.Module):
   - Parameter comparison utilities
   - Usage examples
 
-- **`prompt_prefix_qa.md`**: Comprehensive interview Q&A
+- **[`prompt_prefix_qa.md`](prompt_prefix_qa.md)**: Comprehensive interview Q&A
   - 10 detailed questions and answers
   - Comparisons with LoRA and full fine-tuning
   - Implementation details

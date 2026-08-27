@@ -1,6 +1,6 @@
 # Optimization and Matrix Calculus — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 Optimization is what training is. Senior interviews go beyond "use Adam" — they probe whether you understand convexity, second-order behavior, conditioning, and the trade-offs between methods. This deep dive complements the linear-algebra deep dive by focusing on what *changes* during training: gradients, Hessians, step sizes, and convergence behavior.
 

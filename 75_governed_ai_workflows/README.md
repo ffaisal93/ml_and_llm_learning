@@ -13,7 +13,7 @@ idea is a single sentence worth memorizing:
 
 | File | Purpose |
 |---|---|
-| `GOVERNED_WORKFLOW_ARCHITECTURE.md` | The fourteen responsibilities — orchestration, typed tools, the four retrieval modes, persistent state, provenance, sandboxing, deterministic validators, permissions, approval gates, budgets, observability, evaluation, versioning — plus the deployment sequence and why any of it belongs in an ML repository. |
+| [`GOVERNED_WORKFLOW_ARCHITECTURE.md`](GOVERNED_WORKFLOW_ARCHITECTURE.md) | The fourteen responsibilities — orchestration, typed tools, the four retrieval modes, persistent state, provenance, sandboxing, deterministic validators, permissions, approval gates, budgets, observability, evaluation, versioning — plus the deployment sequence and why any of it belongs in an ML repository. |
 
 ## Why it is worth reading even if you never work in a regulated domain
 

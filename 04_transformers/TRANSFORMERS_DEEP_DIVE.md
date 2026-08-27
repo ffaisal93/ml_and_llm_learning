@@ -442,7 +442,7 @@ SSMs reintroduce sequential structure but in a way that's parallelizable on GPU 
 
 ## 14. The 12 most-asked transformer interview questions
 
-(Brief; full grilling in `INTERVIEW_GRILL.md`.)
+(Brief; full grilling in [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).)
 
 1. **Why scale by $\sqrt{d_k}$?** Variance of dot products grows with $d_k$; scaling keeps softmax in linear regime.
 2. **Why softmax?** Non-negative weights summing to 1, differentiable, sharpens dominant scores.
@@ -465,7 +465,7 @@ SSMs reintroduce sequential structure but in a way that's parallelizable on GPU 
 2. Whiteboard the full block (pre-LN, residual, FFN).
 3. Explain residual stream metaphor in 60 seconds.
 4. Cite encoder/decoder/cross-attention differences.
-5. Drill `INTERVIEW_GRILL.md` until 40+/60 cold.
+5. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md) until 40+/60 cold.
 
 ---
 

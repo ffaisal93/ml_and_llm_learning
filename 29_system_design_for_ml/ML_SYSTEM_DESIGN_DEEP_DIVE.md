@@ -1231,6 +1231,23 @@ The three legs are fused. **Reciprocal rank fusion** is the simple robust defaul
 
   ═══════════════ INDEXING PATH (continuous) ═══════════════
 
+  new/updated listing ──► Kafka ──► embed worker ──► perceptual-hash
+                                    (GPU, batched)    dedup check
+                                          │
+                                          ▼
+                          ┌───────────────────────────────┐
+                          │ FRESH index (small HNSW,      │  minutes
+                          │  last 24h, in memory)         │  queried in
+                          └───────────────┬───────────────┘  parallel with
+                                          │                  main index,
+                                          ▼                  results merged
+                          ┌───────────────────────────────┐
+                          │ MAIN index (8 shards)         │  nightly merge
+                          │  full rebuild only on model   │  dual-index swap
+                          │  change (dual-index swap)     │  on model change
+                          └───────────────────────────────┘
+```
+
 ### Step 5 — Evaluation
 
 Three layers, and you should distinguish them explicitly because they measure different failures.

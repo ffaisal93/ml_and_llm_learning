@@ -1,8 +1,8 @@
 # Topic 47: Statistical Inference
 
 > 🔥 **For interviews, read these first:**
-> - **`STATISTICAL_INFERENCE_DEEP_DIVE.md`** — frontier-lab deep dive: estimators (unbiased/consistent/efficient + CRLB), MLE asymptotics, CIs (Wald/bootstrap/credible), hypothesis testing, multiple testing (Bonferroni/BH), Bayesian updates with conjugate priors, MAP-as-regularization.
-> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions.
+> - **[`STATISTICAL_INFERENCE_DEEP_DIVE.md`](STATISTICAL_INFERENCE_DEEP_DIVE.md)** — frontier-lab deep dive: estimators (unbiased/consistent/efficient + CRLB), MLE asymptotics, CIs (Wald/bootstrap/credible), hypothesis testing, multiple testing (Bonferroni/BH), Bayesian updates with conjugate priors, MAP-as-regularization.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 60 active-recall questions.
 
 ## What You'll Learn
 

@@ -1,6 +1,6 @@
 # Large-Scale LLM Systems — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 This is the systems content that separates "I trained a model in a notebook" from "I trained Llama-70B on 1000 GPUs." Frontier labs and big-tech infra teams probe this hard. The interview test isn't whether you've done it — it's whether you understand the math that determines what *can* be done.
 

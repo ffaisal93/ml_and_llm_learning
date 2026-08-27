@@ -1,8 +1,8 @@
 # Topic 24: Linear Algebra Q&A
 
 > 🔥 **For interviews, read these first:**
-> - **`LINEAR_ALGEBRA_DEEP_DIVE.md`** — frontier-lab deep dive: rank, eigendecomposition, SVD (with Eckart-Young), positive (semi)definiteness, matrix calculus (OLS gradient + Hessian), conditioning, projections.
-> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions.
+> - **[`LINEAR_ALGEBRA_DEEP_DIVE.md`](LINEAR_ALGEBRA_DEEP_DIVE.md)** — frontier-lab deep dive: rank, eigendecomposition, SVD (with Eckart-Young), positive (semi)definiteness, matrix calculus (OLS gradient + Hessian), conditioning, projections.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 60 active-recall questions.
 
 ## What You'll Learn
 

@@ -1435,7 +1435,7 @@ Daily routine:
 1. Read once, top to bottom. Note which patterns feel weak.
 2. For weak patterns, drill 5+ problems each.
 3. Re-read §1 (triage), §20 (transformations), §22 (traps), §23 (protocol) every Sunday.
-4. Pair with `INTERVIEW_GRILL.md` — pattern-recognition active recall.
+4. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md) — pattern-recognition active recall.
 5. Practice on NeetCode 150 / Blind 75 / Grind 75 — the curated lists.
 
 The single sentence to remember: **for any problem, do the 30-second triage by input shape, output shape, constraints, and structural cues; then match to one of 18 patterns; then deploy the template.**

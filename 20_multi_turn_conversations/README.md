@@ -3,8 +3,8 @@
 Every LLM problem, compounded by *time*. A single-turn system either works or it doesn't; a
 conversation degrades, and it degrades in ways that no single-turn evaluation will ever show you.
 
-> **Start here:** `MULTI_TURN_DEEP_DIVE.md`, read straight through once. `INTERVIEW_GRILL.md` is
-> active-recall questions for afterwards, and `conversation_py.md` is a minimal working loop.
+> **Start here:** [`MULTI_TURN_DEEP_DIVE.md`](MULTI_TURN_DEEP_DIVE.md), read straight through once. [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md) is
+> active-recall questions for afterwards, and [`conversation_py.md`](conversation_py.md) is a minimal working loop.
 
 ## What the deep dive covers
 

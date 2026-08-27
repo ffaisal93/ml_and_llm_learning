@@ -1,8 +1,8 @@
 # Topic 33: Information Theory & Probability Metrics
 
 > 🔥 **For interviews, read these first:**
-> - **`INFORMATION_THEORY_DEEP_DIVE.md`** — frontier-lab interview deep dive: entropy/cross-entropy/KL/MI, forward vs reverse KL (mean-seeking vs mode-seeking), why MLE = forward KL, MI for InfoNCE/CLIP, KL in VAE/RLHF/distillation, f-divergences, Wasserstein, source coding theorem.
-> - **`INTERVIEW_GRILL.md`** — 45 active-recall questions.
+> - **[`INFORMATION_THEORY_DEEP_DIVE.md`](INFORMATION_THEORY_DEEP_DIVE.md)** — frontier-lab interview deep dive: entropy/cross-entropy/KL/MI, forward vs reverse KL (mean-seeking vs mode-seeking), why MLE = forward KL, MI for InfoNCE/CLIP, KL in VAE/RLHF/distillation, f-divergences, Wasserstein, source coding theorem.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 45 active-recall questions.
 
 ## What You'll Learn
 
@@ -342,7 +342,7 @@ See [`information_theory.py`](information_theory_py.md) for complete implementat
 - Entropy: bits (information content)
 - Perplexity: "effective vocabulary size" (more intuitive)
 
-**See `03_evaluation_metrics/perplexity_detailed.md` for complete explanation!**
+**See [`03_evaluation_metrics/perplexity_detailed.md`](../03_evaluation_metrics/perplexity_detailed.md) for complete explanation!**
 
 ## Next Steps
 

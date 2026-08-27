@@ -1,7 +1,7 @@
 # Frontier Reward Modeling — Deep Dive
 
 > Frontier-lab interview-grade reference on reward models in 2025: scalar vs generative, Bradley-Terry vs regression, LLM-as-judge, RLAIF, Constitutional AI, reward hacking, length bias, sycophancy, and the production playbook for RM training and monitoring.
-> Pair with `REASONING_MODELS_DEEP_DIVE.md` (this folder) and `08_training_techniques/ALIGNMENT_DEEP_DIVE.md` (RLHF foundations).
+> Pair with [`REASONING_MODELS_DEEP_DIVE.md`](REASONING_MODELS_DEEP_DIVE.md) (this folder) and [`08_training_techniques/ALIGNMENT_DEEP_DIVE.md`](../08_training_techniques/ALIGNMENT_DEEP_DIVE.md) (RLHF foundations).
 
 The 2024–2025 frontier moved reward modeling from "train a Bradley-Terry head on preference pairs" to a much richer landscape: generative judges that themselves CoT, AI-generated preference data, process-level rewards, verifiable rewards as preferred when available, and aggressive instrumentation for reward hacking. This chapter walks the territory at the depth a research-scientist interview at OpenAI / Anthropic / DeepMind expects.
 
@@ -165,7 +165,7 @@ For RL: pointwise is needed (the policy needs a scalar per rollout). Conversion:
 
 ## 5. Process reward models (PRMs) revisited
 
-Already introduced in `REASONING_MODELS_DEEP_DIVE.md` §4. Recap and depth here.
+Already introduced in [`REASONING_MODELS_DEEP_DIVE.md`](REASONING_MODELS_DEEP_DIVE.md) §4. Recap and depth here.
 
 ### 5.1 Motivation
 
@@ -395,7 +395,7 @@ Eval on tasks the RM wasn't trained on; usually it does worse. Honest report.
 
 ## 11. Reward composition and shaping
 
-Already covered in `REASONING_MODELS_DEEP_DIVE.md` §13. Key patterns:
+Already covered in [`REASONING_MODELS_DEEP_DIVE.md`](REASONING_MODELS_DEEP_DIVE.md) §13. Key patterns:
 
 - **Hierarchical.** Format gates correctness gates content; small tier weights.
 - **Sum of soft signals.** $r = \sum_i w_i r_i$ with hand-tuned $w_i$.

@@ -194,7 +194,7 @@ The KL anchor prevents the policy from drifting too far from the reference. Same
 
 ### DPO derivation
 
-The closed-form solution to the KL-regularized RL objective, which becomes the basis for DPO. See `08_training_techniques/ALIGNMENT_DEEP_DIVE.md`.
+The closed-form solution to the KL-regularized RL objective, which becomes the basis for DPO. See [`08_training_techniques/ALIGNMENT_DEEP_DIVE.md`](../08_training_techniques/ALIGNMENT_DEEP_DIVE.md).
 
 ### Knowledge distillation
 
@@ -281,7 +281,7 @@ Geometric inverse of average per-token probability. Lower perplexity = better mo
 
 ### Tokenizer dependence
 
-Perplexity depends on tokenization. Same text, different tokenizer, different PPL. Cannot directly compare across tokenizers — see `03_evaluation_metrics/EVALUATION_METRICS_DEEP_DIVE.md`.
+Perplexity depends on tokenization. Same text, different tokenizer, different PPL. Cannot directly compare across tokenizers — see [`03_evaluation_metrics/EVALUATION_METRICS_DEEP_DIVE.md`](../03_evaluation_metrics/EVALUATION_METRICS_DEEP_DIVE.md).
 
 > **Saying it out loud.** Perplexity is just cross-entropy exponentiated, and the intuitive reading is "how many options is the model effectively choosing between at each token." A perplexity of twenty means the model is about as confused as if it were picking uniformly among twenty words. That makes it a nicer number to talk about than a loss in nats. Two bounds anchor it: the ceiling is your vocabulary size, which is what a completely uniform model scores, and the floor is the true entropy of the text, which nobody can beat. The trap to always name is tokenizer dependence — the same model on the same text gets different perplexity under a different tokenizer, so comparing perplexity across models with different vocabularies is meaningless.
 
@@ -388,7 +388,7 @@ A very recent line of research (Deletang et al., "Language Modeling is Compressi
 2. Walk through forward vs reverse KL with multimodal-vs-unimodal example.
 3. Show MI = $\mathrm{KL}(\text{joint} \,\|\, \text{marginals product})$.
 4. Connect cross-entropy to MLE under categorical.
-5. Drill `INTERVIEW_GRILL.md`.
+5. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 ---
 

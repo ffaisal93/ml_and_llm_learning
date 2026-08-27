@@ -1,6 +1,6 @@
 # Claude Certified Architect — Foundations (CCAR-F)
 
-> **What this chapter is.** A complete, self-contained study course for the **Claude Certified Architect – Foundations** exam. It is written to *teach*, not just to summarize: every concept starts with plain-English intuition, builds up the mechanism, shows a small worked example, and ends with the trade-off an architect is expected to reason about. Read the chapters in order for a first pass, then drill `PRACTICE_QUESTIONS.md` until you can answer cold.
+> **What this chapter is.** A complete, self-contained study course for the **Claude Certified Architect – Foundations** exam. It is written to *teach*, not just to summarize: every concept starts with plain-English intuition, builds up the mechanism, shows a small worked example, and ends with the trade-off an architect is expected to reason about. Read the chapters in order for a first pass, then drill [`PRACTICE_QUESTIONS.md`](PRACTICE_QUESTIONS.md) until you can answer cold.
 
 > ⚠️ **Accuracy note.** Exam logistics and product features change. The numbers below are cross-checked against multiple public study guides as of **August 2026**, but before you book, confirm everything against the **official Exam Guide PDF** on the Anthropic Partner Academy (Skilljar) page. Product behavior is stated from the current Anthropic docs at `platform.claude.com`, `code.claude.com`, and `modelcontextprotocol.io`.
 
@@ -47,11 +47,11 @@ The five scored domains and their approximate weights. Study time should follow 
 
 | # | Domain | Weight | This chapter's file |
 |---|---|---|---|
-| 1 | **Agentic Architecture & Orchestration** | **27%** | `AGENTIC_PATTERNS_DEEP_DIVE.md`, `AGENT_SDK_DEEP_DIVE.md` |
-| 2 | **Claude Code Configuration & Workflows** | **20%** | `CLAUDE_CODE_DEEP_DIVE.md` |
-| 3 | **Prompt Engineering & Structured Output** | **20%** | `CLAUDE_API_DEEP_DIVE.md` |
-| 4 | **Tool Design & MCP Integration** | **18%** | `MCP_DEEP_DIVE.md`, `AGENTIC_PATTERNS_DEEP_DIVE.md` |
-| 5 | **Context Management & Reliability** | **15%** | `CONTEXT_AND_RELIABILITY_DEEP_DIVE.md` |
+| 1 | **Agentic Architecture & Orchestration** | **27%** | [`AGENTIC_PATTERNS_DEEP_DIVE.md`](AGENTIC_PATTERNS_DEEP_DIVE.md), [`AGENT_SDK_DEEP_DIVE.md`](AGENT_SDK_DEEP_DIVE.md) |
+| 2 | **Claude Code Configuration & Workflows** | **20%** | [`CLAUDE_CODE_DEEP_DIVE.md`](CLAUDE_CODE_DEEP_DIVE.md) |
+| 3 | **Prompt Engineering & Structured Output** | **20%** | [`CLAUDE_API_DEEP_DIVE.md`](CLAUDE_API_DEEP_DIVE.md) |
+| 4 | **Tool Design & MCP Integration** | **18%** | [`MCP_DEEP_DIVE.md`](MCP_DEEP_DIVE.md), [`AGENTIC_PATTERNS_DEEP_DIVE.md`](AGENTIC_PATTERNS_DEEP_DIVE.md) |
+| 5 | **Context Management & Reliability** | **15%** | [`CONTEXT_AND_RELIABILITY_DEEP_DIVE.md`](CONTEXT_AND_RELIABILITY_DEEP_DIVE.md) |
 
 > Domain 1 (orchestration) is the single biggest slice. If you are short on time, over-invest there and in tool design — together they are ~45% of the exam and share the same underlying mental model ("who is responsible for what: model, application, tool, or schema?").
 
@@ -82,15 +82,15 @@ Fixed steps → prompt chaining. Distinct categories → routing. Coordinator + 
 
 **Pass 1 — understand (read in this order):**
 
-1. `CLAUDE_API_DEEP_DIVE.md` — the foundation; everything else assumes the stateless request model.
-2. `MCP_DEEP_DIVE.md` — tools / resources / prompts and the trust model.
-3. `CLAUDE_CODE_DEEP_DIVE.md` — configuration hierarchy and workflows.
-4. `AGENT_SDK_DEEP_DIVE.md` — building agents; the agent loop.
-5. `AGENTIC_PATTERNS_DEEP_DIVE.md` — orchestration patterns + tool design (the 27% + 18% core).
-6. `CONTEXT_AND_RELIABILITY_DEEP_DIVE.md` — context strategies + error handling.
-7. `EXAM_GUIDE.md` — objective-by-objective checklist to self-assess.
+1. [`CLAUDE_API_DEEP_DIVE.md`](CLAUDE_API_DEEP_DIVE.md) — the foundation; everything else assumes the stateless request model.
+2. [`MCP_DEEP_DIVE.md`](MCP_DEEP_DIVE.md) — tools / resources / prompts and the trust model.
+3. [`CLAUDE_CODE_DEEP_DIVE.md`](CLAUDE_CODE_DEEP_DIVE.md) — configuration hierarchy and workflows.
+4. [`AGENT_SDK_DEEP_DIVE.md`](AGENT_SDK_DEEP_DIVE.md) — building agents; the agent loop.
+5. [`AGENTIC_PATTERNS_DEEP_DIVE.md`](AGENTIC_PATTERNS_DEEP_DIVE.md) — orchestration patterns + tool design (the 27% + 18% core).
+6. [`CONTEXT_AND_RELIABILITY_DEEP_DIVE.md`](CONTEXT_AND_RELIABILITY_DEEP_DIVE.md) — context strategies + error handling.
+7. [`EXAM_GUIDE.md`](EXAM_GUIDE.md) — objective-by-objective checklist to self-assess.
 
-**Pass 2 — drill:** work `PRACTICE_QUESTIONS.md`. For every question, say *out loud* why each distractor is wrong. On this exam the distractors teach you as much as the keys.
+**Pass 2 — drill:** work [`PRACTICE_QUESTIONS.md`](PRACTICE_QUESTIONS.md). For every question, say *out loud* why each distractor is wrong. On this exam the distractors teach you as much as the keys.
 
 **Pass 3 — hands-on (highly recommended):** the exam rewards people who have actually built something. Spin up the Agent SDK quickstart, wire one MCP server, and write a `CLAUDE.md`. Thirty minutes of real usage cements a dozen exam facts.
 
@@ -106,7 +106,7 @@ Fixed steps → prompt chaining. Distinct categories → routing. Coordinator + 
 | 4 | Agent SDK + agentic patterns (the heavy 27%) |
 | 5 | Context management & reliability + error-handling patterns |
 | 6 | Practice questions, first cold pass; review every miss |
-| 7 | Re-read weak files; second practice pass; skim `EXAM_GUIDE.md` checklist |
+| 7 | Re-read weak files; second practice pass; skim [`EXAM_GUIDE.md`](EXAM_GUIDE.md) checklist |
 
 ---
 

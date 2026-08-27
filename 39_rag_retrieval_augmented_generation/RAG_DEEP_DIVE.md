@@ -431,7 +431,7 @@ Reciprocal Rank Fusion (RRF): given ranked lists from multiple retrievers, score
 2. Know chunking strategies and trade-offs.
 3. BM25 + dense + reranking; explain why.
 4. RAGAS-style faithfulness/relevance evaluation.
-5. Drill `INTERVIEW_GRILL.md`.
+5. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 ---
 

@@ -1,6 +1,6 @@
 # LeetCode / NeetCode 150 — Interview Grill (Pattern Recognition)
 
-> 150+ pattern-recognition questions — read the problem statement, name the pattern in <30 seconds. Pair with `LEETCODE_PATTERNS_DEEP_DIVE.md`.
+> 150+ pattern-recognition questions — read the problem statement, name the pattern in <30 seconds. Pair with [`LEETCODE_PATTERNS_DEEP_DIVE.md`](LEETCODE_PATTERNS_DEEP_DIVE.md).
 
 The point of these questions is *not* solving — it's **identifying which template to deploy**. Speed of recognition is the leverage skill.
 

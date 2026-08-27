@@ -1,6 +1,6 @@
 # Agents & Workflows (14.7%)
 
-> Building agents in code: when to use a workflow vs an agent, constructing agents with the Claude Agent SDK, manager/supervisor hierarchies, and subagents. Deep conceptual treatment of the patterns lives in `../71_claude_certified_architect/AGENTIC_PATTERNS_DEEP_DIVE.md` and `AGENT_SDK_DEEP_DIVE.md`; this file is the developer's build-focused view.
+> Building agents in code: when to use a workflow vs an agent, constructing agents with the Claude Agent SDK, manager/supervisor hierarchies, and subagents. Deep conceptual treatment of the patterns lives in `../71_claude_certified_architect/AGENTIC_PATTERNS_DEEP_DIVE.md` and [`AGENT_SDK_DEEP_DIVE.md`](../71_claude_certified_architect/AGENT_SDK_DEEP_DIVE.md); this file is the developer's build-focused view.
 
 ---
 

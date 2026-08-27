@@ -1,8 +1,8 @@
 # Topic 26: Tree-Based Methods
 
 > 🔥 **For interviews, read these first:**
-> - **`TREES_DEEP_DIVE.md`** — frontier-lab interview deep dive: Gini/entropy splits, RF decorrelation math, gradient boosting derivation, XGBoost regularized objective + second-order trick, LightGBM/CatBoost innovations, categorical handling, missing values.
-> - **`INTERVIEW_GRILL.md`** — 55 active-recall questions.
+> - **[`TREES_DEEP_DIVE.md`](TREES_DEEP_DIVE.md)** — frontier-lab interview deep dive: Gini/entropy splits, RF decorrelation math, gradient boosting derivation, XGBoost regularized objective + second-order trick, LightGBM/CatBoost innovations, categorical handling, missing values.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 55 active-recall questions.
 
 ## What You'll Learn
 

@@ -1,8 +1,8 @@
 # Topic 18: Distribution Classification
 
 > 🔥 **For interviews, read these first:**
-> - **`DISTRIBUTIONS_DEEP_DIVE.md`** — frontier-lab deep dive: which distribution to use for which data type, exponential family unification, GLMs and canonical links, heavy-tailed distributions, common pitfalls.
-> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions.
+> - **[`DISTRIBUTIONS_DEEP_DIVE.md`](DISTRIBUTIONS_DEEP_DIVE.md)** — frontier-lab deep dive: which distribution to use for which data type, exponential family unification, GLMs and canonical links, heavy-tailed distributions, common pitfalls.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 60 active-recall questions.
 
 ## What You'll Learn
 

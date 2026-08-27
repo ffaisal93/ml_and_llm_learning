@@ -1,8 +1,8 @@
 # Topic 21: Dimensionality Reduction
 
 > 🔥 **For interviews, read these first:**
-> - **`DIMENSIONALITY_REDUCTION_DEEP_DIVE.md`** — frontier-lab interview deep dive: PCA derivation (variance maximization → eigendecomposition), SVD connection, Eckart-Young, kernel PCA, t-SNE (KL with Student-t), UMAP (fuzzy simplicial complex), autoencoders, VAE, ICA, NMF, method-selection guide.
-> - **`INTERVIEW_GRILL.md`** — 60+ active-recall questions.
+> - **[`DIMENSIONALITY_REDUCTION_DEEP_DIVE.md`](DIMENSIONALITY_REDUCTION_DEEP_DIVE.md)** — frontier-lab interview deep dive: PCA derivation (variance maximization → eigendecomposition), SVD connection, Eckart-Young, kernel PCA, t-SNE (KL with Student-t), UMAP (fuzzy simplicial complex), autoencoders, VAE, ICA, NMF, method-selection guide.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 60+ active-recall questions.
 
 ## What You'll Learn
 

@@ -1,6 +1,6 @@
 # Optimizers — Interview Grill
 
-> 40 questions focused on **optimizer algorithms specifically** — different angle from the LR-centric grill in `02_gradient_descent/INTERVIEW_GRILL.md`. Use both.
+> 40 questions focused on **optimizer algorithms specifically** — different angle from the LR-centric grill in [`02_gradient_descent/INTERVIEW_GRILL.md`](../02_gradient_descent/INTERVIEW_GRILL.md). Use both.
 
 ---
 

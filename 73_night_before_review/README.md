@@ -7,10 +7,10 @@ when learning is over and the only useful activity is refreshing what you alread
 
 | File | Purpose |
 |---|---|
-| `CODE_FROM_MEMORY.md` | The implementations you must be able to write cold — softmax, linear and logistic regression, attention, multi-head attention, a transformer block, the training loop — in NumPy and PyTorch. Every snippet verified by execution. |
-| `FORMULA_SHEET.md` | One page of losses, gradients, activations, norms, optimizers, metrics, and scaling rules. For staring at, not reading. |
-| `DEPTH_AND_BREADTH_QA.md` | Ten depth ladders that follow a topic down five levels, ~100 rapid-fire breadth questions, the ones people fumble, and questions to ask them. |
-| `AI_ENGINEER_ONE_PAGER.md` | The applied GenAI compression — RAG failure modes, the latency budget and optimization hierarchy, what breaks at scale, OWASP for RAG, and the things people get backwards. For an AI/GenAI engineer loop rather than a classical ML one. |
+| [`CODE_FROM_MEMORY.md`](CODE_FROM_MEMORY.md) | The implementations you must be able to write cold — softmax, linear and logistic regression, attention, multi-head attention, a transformer block, the training loop — in NumPy and PyTorch. Every snippet verified by execution. |
+| [`FORMULA_SHEET.md`](FORMULA_SHEET.md) | One page of losses, gradients, activations, norms, optimizers, metrics, and scaling rules. For staring at, not reading. |
+| [`DEPTH_AND_BREADTH_QA.md`](DEPTH_AND_BREADTH_QA.md) | Ten depth ladders that follow a topic down five levels, ~100 rapid-fire breadth questions, the ones people fumble, and questions to ask them. |
+| [`AI_ENGINEER_ONE_PAGER.md`](AI_ENGINEER_ONE_PAGER.md) | The applied GenAI compression — RAG failure modes, the latency budget and optimization hierarchy, what breaks at scale, OWASP for RAG, and the things people get backwards. For an AI/GenAI engineer loop rather than a classical ML one. |
 
 ---
 
@@ -25,7 +25,7 @@ A ninety-minute pass that works:
 **First twenty minutes — the formula sheet.** Read it once, slowly. Do not take notes. You are refreshing
 recognition, not building anything.
 
-**Next forty minutes — the code.** Read `CODE_FROM_MEMORY.md` through once. Then close it and retype two
+**Next forty minutes — the code.** Read [`CODE_FROM_MEMORY.md`](CODE_FROM_MEMORY.md) through once. Then close it and retype two
 or three of the implementations from memory in a blank editor. Pick the ones you feel least sure about,
 which for most people means scaled dot-product attention and the multi-head reshape. This step is the
 highest-value thirty minutes available to you, because recognition and recall are different skills and
@@ -39,7 +39,7 @@ only way to find that gap before someone else does.
 points and they are lost by people who know the material perfectly well.
 
 **If tomorrow is an AI/GenAI engineer loop rather than a classical ML one**, swap the middle forty
-minutes for `AI_ENGINEER_ONE_PAGER.md` and read it twice. That loop asks about retrieval quality,
+minutes for [`AI_ENGINEER_ONE_PAGER.md`](AI_ENGINEER_ONE_PAGER.md) and read it twice. That loop asks about retrieval quality,
 evaluation, latency, and failure modes rather than derivations, and the code round is usually ordinary
 software engineering rather than implementing attention. The formula sheet is still worth twenty minutes
 — a bias-variance or attention question will still land, it just is not the discriminating part.
@@ -80,7 +80,7 @@ before.
   `05_attention_mechanisms`, scaling in `70_scaling_laws`.
 - `13_interview_qa` and `56_spoken_interview_question_bank` are the longer question banks; this folder is
   the compressed pass over them.
-- `74_ai_engineer_interview_prep` is what `AI_ENGINEER_ONE_PAGER.md` compresses — the interview loop
+- `74_ai_engineer_interview_prep` is what [`AI_ENGINEER_ONE_PAGER.md`](AI_ENGINEER_ONE_PAGER.md) compresses — the interview loop
   itself, the modern question bank, RAG failure diagnosis, and latency engineering. Read that folder
   weeks out; read the one-pager tonight.
 - `50_ml_coding_interview_patterns` and `68_leetcode_patterns` cover the coding round, which this folder

@@ -1,6 +1,6 @@
 # LLM Problems & Mitigations — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 This deep dive covers the *practical* failure modes of deployed LLMs — long context, hallucination, prompt sensitivity, jailbreaks, agents, and tool use. These are different from training problems (covered elsewhere); they're what users and engineers actually encounter and what frontier interviews probe to test product-engineering judgment.
 

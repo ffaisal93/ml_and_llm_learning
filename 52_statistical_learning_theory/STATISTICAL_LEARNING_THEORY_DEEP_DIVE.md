@@ -1,6 +1,6 @@
 # Statistical Learning Theory — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 Statistical learning theory is the formal answer to "why does ML generalize?" Frontier-lab interviews use it sparingly but tellingly — the questions reveal whether you understand what *over-parameterization*, *regularization*, and *capacity* actually mean. This deep dive makes those concepts precise.
 

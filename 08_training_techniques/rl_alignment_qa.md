@@ -229,7 +229,7 @@ ratio = exp(policy_logprobs - ref_logprobs)
 L = min(ratio*A, clip(ratio)*A) + c_v*(V-R)² + β*KL(π_θ||π_ref)
 ```
 
-See `ppo_models_detailed.md` for complete mathematical details!
+See [`ppo_models_detailed.md`](ppo_models_detailed.md) for complete mathematical details!
 
 
 > **Saying it out loud.** PPO is a policy-gradient method with a safety belt. The problem it solves is that you're learning from your own samples, so one bad batch can shove the policy somewhere it can't recover from — PPO stops that by computing the ratio of new to old probability for each token and clipping it to roughly 0.8 to 1.2, so no single update can move things too far. That's what lets you reuse a batch of expensive rollouts for several gradient steps instead of one. The thing to have ready is the four-models answer: policy, frozen reference for KL, reward model, and critic — which for a 70B policy is about a terabyte of weights, and is exactly the cost GRPO and DPO were invented to cut.
@@ -605,14 +605,14 @@ All with detailed explanations, mathematical formulations, and code examples!
 
 **For detailed paragraph-style explanations suitable for interviews, see:**
 
-- **`ppo_process_explanation.md`**: Complete process explanations of:
+- **[`ppo_process_explanation.md`](ppo_process_explanation.md)**: Complete process explanations of:
   - PPO training process (full paragraph style)
   - GRPO training process (full paragraph style)
   - DPO training process (full paragraph style)
   - When to use each approach
   - Complete mathematical flow in narrative form
 
-- **`rlhf_pipeline_explanation.md`**: Complete three-stage RLHF pipeline:
+- **[`rlhf_pipeline_explanation.md`](rlhf_pipeline_explanation.md)**: Complete three-stage RLHF pipeline:
   - Stage 1: Supervised Fine-Tuning (detailed process)
   - Stage 2: Reward Model Training (detailed process)
   - Stage 3: RL Optimization with PPO (detailed process)

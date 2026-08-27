@@ -374,7 +374,7 @@ In high-dimensional spaces, all pairwise distances become similar. Clustering re
 2. Walk through GMM EM end-to-end.
 3. Know DBSCAN's core/border/noise classification.
 4. Know spectral clustering's graph Laplacian basis.
-5. Drill `INTERVIEW_GRILL.md`.
+5. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 ---
 

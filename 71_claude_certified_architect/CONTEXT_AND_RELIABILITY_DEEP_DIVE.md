@@ -6,7 +6,7 @@
 
 ## 1. The core principle
 
-Because the Messages API is **stateless** (see `CLAUDE_API_DEEP_DIVE.md`), the model's entire knowledge on any turn is the request you assembled. Your database, your logs, the previous 40 turns — none of it exists to the model unless you put it in. So **context engineering is application design**: deciding, per request, what to include, what to summarize, and what to leave out.
+Because the Messages API is **stateless** (see [`CLAUDE_API_DEEP_DIVE.md`](CLAUDE_API_DEEP_DIVE.md)), the model's entire knowledge on any turn is the request you assembled. Your database, your logs, the previous 40 turns — none of it exists to the model unless you put it in. So **context engineering is application design**: deciding, per request, what to include, what to summarize, and what to leave out.
 
 Two forces pull against each other:
 - **Include more** → the model has the facts it needs.
@@ -52,7 +52,7 @@ Design notes the exam likes:
 ## 4. Returning users and long sessions
 
 - **Returning-user pattern:** on a new session, don't replay the entire old transcript — do a **fresh state lookup** (load their structured state / recent summary) and start clean. Cheaper and avoids dragging stale context.
-- **System-prompt versioning:** if you change the system prompt across a long-lived session, do it deliberately and note it — an abrupt mid-session change can confuse behavior *and* (as in `CLAUDE_API_DEEP_DIVE.md`) invalidate prompt caching.
+- **System-prompt versioning:** if you change the system prompt across a long-lived session, do it deliberately and note it — an abrupt mid-session change can confuse behavior *and* (as in [`CLAUDE_API_DEEP_DIVE.md`](CLAUDE_API_DEEP_DIVE.md)) invalidate prompt caching.
 - **Reinforce key instructions** at natural breakpoints, because attention to the (still-present) system prompt weakens as history grows.
 
 ---
@@ -61,7 +61,7 @@ Design notes the exam likes:
 
 Reliability on this exam is mostly: (a) constrain outputs, (b) classify errors, (c) don't corrupt state, (d) route uncertainty to humans.
 
-### Recap: classify errors (full table in `AGENTIC_PATTERNS_DEEP_DIVE.md`)
+### Recap: classify errors (full table in [`AGENTIC_PATTERNS_DEEP_DIVE.md`](AGENTIC_PATTERNS_DEEP_DIVE.md))
 - **Transient** → retry with backoff.
 - **Validation** → return structured details; request a correction (source + prior output + exact error), not a blind retry.
 - **Business rule** → non-retryable; surface to user.

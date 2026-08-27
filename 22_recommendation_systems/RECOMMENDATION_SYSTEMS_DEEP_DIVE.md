@@ -1,6 +1,6 @@
 # Recommendation Systems — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 Recommenders are everywhere — search, social feeds, ads, e-commerce, content discovery. Big-tech ML interviews probe this hard because it's the canonical "design at scale" problem: millions of users, millions of items, sub-50ms latency, business metrics that matter.
 

@@ -340,7 +340,7 @@ For $A$ diagonal in Mamba (each state dim is independent), this scan is straight
 3. Explain Mamba's selectivity: input-dependent $B, C, \Delta t$.
 4. Know parallel scan = how Mamba parallelizes training.
 5. Cite hybrid models (Jamba) as the practical compromise.
-6. Drill `INTERVIEW_GRILL.md`.
+6. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 ---
 

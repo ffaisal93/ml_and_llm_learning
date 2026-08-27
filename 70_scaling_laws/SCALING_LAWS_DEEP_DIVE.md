@@ -4,7 +4,7 @@
 >
 > The point: **scaling laws turn frontier model engineering from "spend \$10M and pray" into "fit a curve at small scale and extrapolate."** They're not a free pass — they're an engineered measurement instrument that requires careful execution. This chapter walks the math, the historical lineage, the modern practice, and the canonical Kaplan-vs-Chinchilla cautionary tale.
 >
-> Pair with `04_transformers/MODERN_LLM_ARCHITECTURE_CHOICES.md` (the architecture choices scaling laws are used to justify), `52_statistical_learning_theory/` (the generalization-bound lineage), `62_frontier_training_playbook/` (production-scale recipes).
+> Pair with [`04_transformers/MODERN_LLM_ARCHITECTURE_CHOICES.md`](../04_transformers/MODERN_LLM_ARCHITECTURE_CHOICES.md) (the architecture choices scaling laws are used to justify), `52_statistical_learning_theory/` (the generalization-bound lineage), `62_frontier_training_playbook/` (production-scale recipes).
 
 ---
 
@@ -456,7 +456,7 @@ Used by many production runs.
 
 Both strategies have shipped frontier models. **Strategy 1 is more common; μP is gaining ground.**
 
-(Detailed coverage in `02_gradient_descent/LEARNING_RATE_DEEP_DIVE.md` and the *advanced* scaling lecture's μP section.)
+(Detailed coverage in [`02_gradient_descent/LEARNING_RATE_DEEP_DIVE.md`](../02_gradient_descent/LEARNING_RATE_DEEP_DIVE.md) and the *advanced* scaling lecture's μP section.)
 
 > **Saying it out loud.** Optimal learning rate shrinks as models get wider — roughly like one over width under standard parameterization — so you cannot sweep the learning rate on a small model and reuse the winner. Two ways out. You can fit a learning-rate scaling law: sweep at several sizes, fit optimal LR against width, extrapolate. Or you can use muP, which rescales initialization and per-parameter learning rates so that the optimal LR becomes the same at every width, and then a single small-scale sweep transfers directly. The tradeoff is real: muP is theoretically clean and removes the extrapolation entirely, but it touches every parameter group and is fiddly to implement correctly, and lab reports on it are genuinely mixed. Fitting the scaling law is still the more common production choice.
 
@@ -867,11 +867,11 @@ Even though we don't follow the 20:1 ratio, the Chinchilla saga teaches:
 - Liu, Hashimoto et al. *Pretraining Under Infinite Compute.*
 
 ### Cross-references in this repo
-- `04_transformers/MODERN_LLM_ARCHITECTURE_CHOICES.md` — what architecture choices scaling laws are used to justify.
-- `02_gradient_descent/LEARNING_RATE_DEEP_DIVE.md` — LR-scaling math.
+- [`04_transformers/MODERN_LLM_ARCHITECTURE_CHOICES.md`](../04_transformers/MODERN_LLM_ARCHITECTURE_CHOICES.md) — what architecture choices scaling laws are used to justify.
+- [`02_gradient_descent/LEARNING_RATE_DEEP_DIVE.md`](../02_gradient_descent/LEARNING_RATE_DEEP_DIVE.md) — LR-scaling math.
 - `52_statistical_learning_theory/` — generalization bounds.
 - `62_frontier_training_playbook/` — production-scale recipes.
-- `66_frontier_alignment_rl/REASONING_MODELS_DEEP_DIVE.md` — test-time-compute as a *third* scaling axis.
+- [`66_frontier_alignment_rl/REASONING_MODELS_DEEP_DIVE.md`](../66_frontier_alignment_rl/REASONING_MODELS_DEEP_DIVE.md) — test-time-compute as a *third* scaling axis.
 
 ---
 

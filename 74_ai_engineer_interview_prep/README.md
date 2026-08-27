@@ -15,16 +15,16 @@ the job. None of them anywhere in the preparation.
 
 | File | Purpose |
 |---|---|
-| `LOOP_RESEARCH_QA.md` | 51 questions on your own paper or project — the walkthrough, motivation, method depth, results and rigor, limitations, extension — plus the variant where they hand you a paper to critique. Model answers are built on one consistent running example so you can see the shape end to end. |
-| `LOOP_ML_DEPTH_QA.md` | 57 questions with full answers. Attention and transformers, training dynamics, generalization, LLM-specific, and the classical ML that still gets asked. The derivations are done, not gestured at. |
-| `LOOP_STATISTICS_QA.md` | 60 questions. The round most ML candidates skip and get eliminated by. Inference, regression as a statistics object, A/B testing and causal inference, probability, and the applied traps. Numbers are computed. |
-| `LOOP_CODING_QA.md` | 60 problems with runnable solutions. ML implementations from scratch, the DSA that actually appears in these loops, data manipulation, and debugging. Every solution was executed and checked against an independent oracle. |
-| `LOOP_SYSTEM_DESIGN_QA.md` | 14 design prompts worked end to end — clarifying questions, the design, where the AI actually is and what you would not use a model for, the hard tradeoff, evaluation, failure modes, and the follow-ups. |
-| `LOOP_BEHAVIORAL_QA.md` | 52 questions with model answers, plus 28 questions to ask them grouped by who you are asking. Built on one consistent persona, and the answers admit real failures rather than humble-bragging. |
-| `THE_LOOPS.md` | The process. Five distinct roles that share vocabulary and nothing else, the standard pipeline stage by stage, what each round type is actually grading, a fully worked real loop, take-homes, behavioral, and reading the room. |
-| `MODERN_QUESTION_BANK.md` | The content. Eleven sections of applied GenAI questions — RAG, agents, prompting and context, evaluation, LLMOps, deployment, safety, judgement — plus 65 rapid-fire, each with the answer written the way you would say it out loud. |
-| `RAG_FAILURE_DIAGNOSIS.md` | The diagnostic drill. Five symptom-shaped RAG questions worked end to end — sudden regression, the retrieval-generation gap, proving an embedding change helped, five-document synthesis, and 10k to 1M documents — each with the ordered hypotheses, the experiment that discriminates between them, and the follow-ups. |
-| `RAG_LATENCY_IN_PRODUCTION.md` | The latency chapter. Where the milliseconds actually go (with measured numbers, and a warning about the invented ones), how to set a budget and read percentiles, the five-level optimization hierarchy, caching including semantic caching in full, and the worked answer to "how would you optimize this for latency." |
+| [`LOOP_RESEARCH_QA.md`](LOOP_RESEARCH_QA.md) | 51 questions on your own paper or project — the walkthrough, motivation, method depth, results and rigor, limitations, extension — plus the variant where they hand you a paper to critique. Model answers are built on one consistent running example so you can see the shape end to end. |
+| [`LOOP_ML_DEPTH_QA.md`](LOOP_ML_DEPTH_QA.md) | 57 questions with full answers. Attention and transformers, training dynamics, generalization, LLM-specific, and the classical ML that still gets asked. The derivations are done, not gestured at. |
+| [`LOOP_STATISTICS_QA.md`](LOOP_STATISTICS_QA.md) | 60 questions. The round most ML candidates skip and get eliminated by. Inference, regression as a statistics object, A/B testing and causal inference, probability, and the applied traps. Numbers are computed. |
+| [`LOOP_CODING_QA.md`](LOOP_CODING_QA.md) | 60 problems with runnable solutions. ML implementations from scratch, the DSA that actually appears in these loops, data manipulation, and debugging. Every solution was executed and checked against an independent oracle. |
+| [`LOOP_SYSTEM_DESIGN_QA.md`](LOOP_SYSTEM_DESIGN_QA.md) | 14 design prompts worked end to end — clarifying questions, the design, where the AI actually is and what you would not use a model for, the hard tradeoff, evaluation, failure modes, and the follow-ups. |
+| [`LOOP_BEHAVIORAL_QA.md`](LOOP_BEHAVIORAL_QA.md) | 52 questions with model answers, plus 28 questions to ask them grouped by who you are asking. Built on one consistent persona, and the answers admit real failures rather than humble-bragging. |
+| [`THE_LOOPS.md`](THE_LOOPS.md) | The process. Five distinct roles that share vocabulary and nothing else, the standard pipeline stage by stage, what each round type is actually grading, a fully worked real loop, take-homes, behavioral, and reading the room. |
+| [`MODERN_QUESTION_BANK.md`](MODERN_QUESTION_BANK.md) | The content. Eleven sections of applied GenAI questions — RAG, agents, prompting and context, evaluation, LLMOps, deployment, safety, judgement — plus 65 rapid-fire, each with the answer written the way you would say it out loud. |
+| [`RAG_FAILURE_DIAGNOSIS.md`](RAG_FAILURE_DIAGNOSIS.md) | The diagnostic drill. Five symptom-shaped RAG questions worked end to end — sudden regression, the retrieval-generation gap, proving an embedding change helped, five-document synthesis, and 10k to 1M documents — each with the ordered hypotheses, the experiment that discriminates between them, and the follow-ups. |
+| [`RAG_LATENCY_IN_PRODUCTION.md`](RAG_LATENCY_IN_PRODUCTION.md) | The latency chapter. Where the milliseconds actually go (with measured numbers, and a warning about the invented ones), how to set a budget and read percentiles, the five-level optimization hierarchy, caching including semantic caching in full, and the worked answer to "how would you optimize this for latency." |
 
 
 ## Start with the round you are actually in
@@ -37,7 +37,7 @@ Work them by covering the answer, saying yours out loud, then uncovering and com
 what you said and what is written is almost always the same two things — the tradeoff you did not name,
 and the number you did not have.
 
-`THE_LOOPS.md` is the map, not the material: which rounds exist, what each one grades, and how the
+[`THE_LOOPS.md`](THE_LOOPS.md) is the map, not the material: which rounds exist, what each one grades, and how the
 pipeline is shaped. Read it once so you know which files to work, then spend your time in the banks.
 
 
@@ -52,7 +52,7 @@ differently in each. An applied scientist loop will ask you to defend a modeling
 An AI engineer loop will ask what happens when the tool call times out. Both are reasonable; guessing
 wrong costs you the loop before you say anything technical.
 
-So `THE_LOOPS.md` opens with the taxonomy, and the single highest-leverage thing in this folder is the
+So [`THE_LOOPS.md`](THE_LOOPS.md) opens with the taxonomy, and the single highest-leverage thing in this folder is the
 advice to just ask your recruiter which one you are in. They will tell you. Asking reads as prepared,
 not presumptuous.
 
@@ -87,7 +87,7 @@ and why.
 
 ## Why there is a whole chapter on RAG failures
 
-`RAG_FAILURE_DIAGNOSIS.md` exists because of a distinct question type that the other two chapters do not
+[`RAG_FAILURE_DIAGNOSIS.md`](RAG_FAILURE_DIAGNOSIS.md) exists because of a distinct question type that the other two chapters do not
 cover well. The question bank asks *what is hybrid search and why* — component knowledge, answerable by
 anyone who has built one. The diagnostic chapter asks *your system suddenly started giving wrong answers,
 what do you investigate and how would you prove it* — which is answerable only by someone who has
@@ -122,8 +122,8 @@ knowing the shape does.
 
 ## How to use it
 
-Read `THE_LOOPS.md` once, early — ideally before you start preparing at all, because it tells you what
-to prepare. Then work `MODERN_QUESTION_BANK.md` the way you would work any question bank: answer out
+Read [`THE_LOOPS.md`](THE_LOOPS.md) once, early — ideally before you start preparing at all, because it tells you what
+to prepare. Then work [`MODERN_QUESTION_BANK.md`](MODERN_QUESTION_BANK.md) the way you would work any question bank: answer out
 loud before reading the answer, and pay attention to the gap between what you said and what is written.
 That gap is almost always the same thing — the tradeoff you did not name, or the number you did not
 have.

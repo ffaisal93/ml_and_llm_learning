@@ -1,6 +1,6 @@
 # Discriminative vs Generative Models — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 The discriminative-vs-generative distinction is one of the most-asked classifier questions in interviews because it forces you to understand what a model is actually estimating. Many candidates conflate them; a clean answer earns points fast.
 

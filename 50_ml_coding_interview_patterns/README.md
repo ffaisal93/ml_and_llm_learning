@@ -1,8 +1,8 @@
 # Topic 50: ML Coding Interview Patterns
 
 > 🔥 **For interviews, read these first:**
-> - **`CODING_PATTERNS_DEEP_DIVE.md`** — frontier-lab deep dive: stable softmax + log-sum-exp, scaled dot-product attention with masking, multi-head, top-k/top-p sampling, beam search, K-means, padding/masking, vectorized cosine similarity, logistic regression, backprop from scratch.
-> - **`INTERVIEW_GRILL.md`** — 50 active-recall questions + 8 must-code patterns to drill.
+> - **[`CODING_PATTERNS_DEEP_DIVE.md`](CODING_PATTERNS_DEEP_DIVE.md)** — frontier-lab deep dive: stable softmax + log-sum-exp, scaled dot-product attention with masking, multi-head, top-k/top-p sampling, beam search, K-means, padding/masking, vectorized cosine similarity, logistic regression, backprop from scratch.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 50 active-recall questions + 8 must-code patterns to drill.
 
 ## What You'll Learn
 

@@ -616,7 +616,7 @@ Frontier interviewers always probe one or two of these after your initial answer
 2. Memorize the seven frameworks (§2-§8) at a level where you can name them and the canonical formula on demand.
 3. Drill §10 — 25 worked questions — until each has a 30-second answer.
 4. Memorize §9 (the DeepMind two-distribution question) verbatim as your "model answer" template.
-5. Pair with `INTERVIEW_GRILL.md` for active recall.
+5. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md) for active recall.
 6. Practice out loud — these are oral exams in real interviews.
 
 Single sentence to remember: **frame as Bayesian classification or MLE / decision / concentration, name the framework explicitly, quantify with KL or Fisher or Chernoff, discuss assumptions and OOD, and end with sample complexity.**

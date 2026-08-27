@@ -379,4 +379,4 @@ Cross-entropy is the same loss as binary cross-entropy in logistic regression ge
 2. Compare CLM vs MLM (sample efficiency, generation, representations).
 3. Know the failure of NSP empirically.
 4. Be able to discuss ICL emergence from CLM at a sketchy level.
-5. Drill `INTERVIEW_GRILL.md`.
+5. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).

@@ -4,9 +4,9 @@
 
 | File | Purpose |
 |---|---|
-| `README.md` | Conceptual overview (this file) — read this first. |
-| `LEARNING_RATE_DEEP_DIVE.md` | The core interview deep-dive on learning rate: when it works, when it fails, schedules, scaling rules, edge of stability, AdamW. **Most important file in this folder.** |
-| `INTERVIEW_GRILL.md` | 60 active-recall interview questions with strong answers. Drill before interviews. |
+| [`README.md`](README.md) | Conceptual overview (this file) — read this first. |
+| [`LEARNING_RATE_DEEP_DIVE.md`](LEARNING_RATE_DEEP_DIVE.md) | The core interview deep-dive on learning rate: when it works, when it fails, schedules, scaling rules, edge of stability, AdamW. **Most important file in this folder.** |
+| [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md) | 60 active-recall interview questions with strong answers. Drill before interviews. |
 
 ---
 
@@ -19,7 +19,7 @@
 - How to read training curves and gradient norms to debug an unstable run.
 - The frontier-lab vocabulary: edge of stability, critical batch size, gradient noise scale, muP.
 
-If you can answer the **60 grill questions** in `INTERVIEW_GRILL.md` cleanly, you are above the bar for an applied scientist screen on this topic.
+If you can answer the **60 grill questions** in [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md) cleanly, you are above the bar for an applied scientist screen on this topic.
 
 ---
 
@@ -181,7 +181,7 @@ Computes $\nabla L$ from one sample per step. **Cheap per step**, **very noisy**
 
 ### Mini-batch gradient descent
 
-The default. Batch size $B$ (typically 32–8192) trades stability for speed. Variance of the gradient estimate is $\sigma^2 / B$. The right $B$ depends on hardware (memory, parallelism) and on the gradient noise scale (after which doubling $B$ stops paying off). See `LEARNING_RATE_DEEP_DIVE.md` §6 for critical batch size.
+The default. Batch size $B$ (typically 32–8192) trades stability for speed. Variance of the gradient estimate is $\sigma^2 / B$. The right $B$ depends on hardware (memory, parallelism) and on the gradient noise scale (after which doubling $B$ stops paying off). See [`LEARNING_RATE_DEEP_DIVE.md`](LEARNING_RATE_DEEP_DIVE.md) §6 for critical batch size.
 
 ---
 
@@ -195,7 +195,7 @@ In real deep networks:
 - $H$ itself changes during training.
 - We don't compute $H$; we approximate.
 
-This is why a single global $\eta$ is fundamentally wrong, and why every modern optimizer is some attempt to recover per-direction step sizes. Adam approximates per-parameter step sizes via $1/\sqrt{\hat v_t}$. AdamW separates weight decay from preconditioning. LARS/LAMB and muP scale per layer. See `LEARNING_RATE_DEEP_DIVE.md` §1, §10, §14 for the full story.
+This is why a single global $\eta$ is fundamentally wrong, and why every modern optimizer is some attempt to recover per-direction step sizes. Adam approximates per-parameter step sizes via $1/\sqrt{\hat v_t}$. AdamW separates weight decay from preconditioning. LARS/LAMB and muP scale per layer. See [`LEARNING_RATE_DEEP_DIVE.md`](LEARNING_RATE_DEEP_DIVE.md) §1, §10, §14 for the full story.
 
 ---
 
@@ -211,7 +211,7 @@ This is why a single global $\eta$ is fundamentally wrong, and why every modern 
 | Occasional spike, recovery | Edge of stability — often fine | Add gradient clipping at norm 1.0 |
 | Fine-tuning destroys pretrained capability | LR too high for transfer | Reduce 10–100x |
 
-The single most useful debugging quantity is the **per-layer update-to-weight ratio** $\|\eta \cdot \text{update}\| / \|\theta\|$. Healthy training has this around $10^{-3}$ per layer. See `LEARNING_RATE_DEEP_DIVE.md` §3.
+The single most useful debugging quantity is the **per-layer update-to-weight ratio** $\|\eta \cdot \text{update}\| / \|\theta\|$. Healthy training has this around $10^{-3}$ per layer. See [`LEARNING_RATE_DEEP_DIVE.md`](LEARNING_RATE_DEEP_DIVE.md) §3.
 
 ---
 
@@ -358,7 +358,7 @@ These five sentences, said cleanly, get you 70% of the way through any LR-relate
 
 ## What the interviewer may ask next
 
-(Each is fully answered in `INTERVIEW_GRILL.md`.)
+(Each is fully answered in [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).)
 
 1. Walk me through Adam with bias correction.
 2. Why does AdamW exist?
@@ -384,6 +384,6 @@ If any of these aren't crisp for you, that's the next thing to drill.
 
 ## Next steps
 
-1. Read `LEARNING_RATE_DEEP_DIVE.md` from start to finish.
-2. Drill `INTERVIEW_GRILL.md` until you can answer 40+ of 60 cold.
+1. Read [`LEARNING_RATE_DEEP_DIVE.md`](LEARNING_RATE_DEEP_DIVE.md) from start to finish.
+2. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md) until you can answer 40+ of 60 cold.
 3. Move on to `10_optimizers/` for the per-optimizer comparisons.

@@ -1,8 +1,8 @@
 # Topic 27: Advanced ML Theory
 
 > 🔥 **For interviews, read these first:**
-> - **`ADVANCED_THEORY_DEEP_DIVE.md`** — frontier-lab deep dive: bias-variance decomposition with proof, cross-validation theory (k-fold/stratified/group/time-series/nested with LOO closed form), learning curves (high bias vs high variance signatures), AIC vs BIC, ROC/PR curves with cost-aware operating points, F-beta scores.
-> - **`INTERVIEW_GRILL.md`** — 50 active-recall questions.
+> - **[`ADVANCED_THEORY_DEEP_DIVE.md`](ADVANCED_THEORY_DEEP_DIVE.md)** — frontier-lab deep dive: bias-variance decomposition with proof, cross-validation theory (k-fold/stratified/group/time-series/nested with LOO closed form), learning curves (high bias vs high variance signatures), AIC vs BIC, ROC/PR curves with cost-aware operating points, F-beta scores.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 50 active-recall questions.
 
 ## What You'll Learn
 

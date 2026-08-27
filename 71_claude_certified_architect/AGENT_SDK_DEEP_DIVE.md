@@ -71,7 +71,7 @@ Subagents are how the SDK does multi-agent work. A subagent:
 - can have a **restricted tool set** (least privilege per role),
 - returns a **summary/result** to the coordinator, not its whole transcript.
 
-This maps directly onto the orchestration patterns (full treatment in `AGENTIC_PATTERNS_DEEP_DIVE.md`):
+This maps directly onto the orchestration patterns (full treatment in [`AGENTIC_PATTERNS_DEEP_DIVE.md`](AGENTIC_PATTERNS_DEEP_DIVE.md)):
 - **Orchestrator-workers:** a coordinator delegates subtasks to worker subagents and synthesizes.
 - **Parallel subagents:** independent partitions (e.g., review 10 files) run concurrently.
 

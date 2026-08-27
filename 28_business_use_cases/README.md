@@ -1,8 +1,8 @@
 # Topic 28: Business ML Case Studies
 
 > 🔥 **For interviews, read these first:**
-> - **`BUSINESS_CASE_STUDIES_DEEP_DIVE.md`** — substantially redesigned (2025): 9-step framework + 8 fully-worked case studies (SaaS churn with uplift modeling, consumer-bank fraud with multi-tier thresholds, marketplace cold-start with Bayesian shrinkage, demand forecasting with quantile loss, dynamic pricing with endogeneity, A/B test analysis, content moderation product flow, LLM customer-support agent). Each example covers business context → metrics → ML formulation → data → features → model evolution (v0/v1/v2) → evaluation → deployment → failure modes → senior signals.
-> - **`INTERVIEW_GRILL.md`** — 55 active-recall questions.
+> - **[`BUSINESS_CASE_STUDIES_DEEP_DIVE.md`](BUSINESS_CASE_STUDIES_DEEP_DIVE.md)** — substantially redesigned (2025): 9-step framework + 8 fully-worked case studies (SaaS churn with uplift modeling, consumer-bank fraud with multi-tier thresholds, marketplace cold-start with Bayesian shrinkage, demand forecasting with quantile loss, dynamic pricing with endogeneity, A/B test analysis, content moderation product flow, LLM customer-support agent). Each example covers business context → metrics → ML formulation → data → features → model evolution (v0/v1/v2) → evaluation → deployment → failure modes → senior signals.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 55 active-recall questions.
 
 This document focuses on **product/business case studies** ("design churn prediction"). For *platform-scale* system design ("design YouTube recommender"), see `29_system_design_for_ml/`.
 

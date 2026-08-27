@@ -1,6 +1,6 @@
 # Attention Mechanisms: A Frontier-Lab Interview Deep Dive
 
-> **Why this exists.** "Attention" is not one mechanism — it's a family. Vanilla MHA is just the starting point. Modern LLMs use MQA/GQA/MLA for KV memory, sliding window for long context, sparse and linear variants for sub-quadratic compute, and FlashAttention for I/O efficiency. This document covers the full taxonomy with the math, trade-offs, and interview gotchas. For the basic scaled-dot-product derivation, see `04_transformers/TRANSFORMERS_DEEP_DIVE.md`.
+> **Why this exists.** "Attention" is not one mechanism — it's a family. Vanilla MHA is just the starting point. Modern LLMs use MQA/GQA/MLA for KV memory, sliding window for long context, sparse and linear variants for sub-quadratic compute, and FlashAttention for I/O efficiency. This document covers the full taxonomy with the math, trade-offs, and interview gotchas. For the basic scaled-dot-product derivation, see [`04_transformers/TRANSFORMERS_DEEP_DIVE.md`](../04_transformers/TRANSFORMERS_DEEP_DIVE.md).
 
 ---
 
@@ -24,7 +24,7 @@ A specific attention mechanism is a point in this space. "MHA + causal + full + 
 
 ## 2. Multi-Head Attention (MHA): the baseline
 
-Already covered in `04_transformers/TRANSFORMERS_DEEP_DIVE.md`. One-line recap, for $h$ heads of dim $d_h = d/h$:
+Already covered in [`04_transformers/TRANSFORMERS_DEEP_DIVE.md`](../04_transformers/TRANSFORMERS_DEEP_DIVE.md). One-line recap, for $h$ heads of dim $d_h = d/h$:
 
 $$
 \text{head}_i = \mathrm{softmax}\!\left(\frac{Q_i K_i^\top}{\sqrt{d_h}}\right) V_i, \qquad \text{Output} = \mathrm{concat}(\text{heads}) \cdot W_O
@@ -313,7 +313,7 @@ Mamba, S4, etc. are essentially structured linear attention with specific kernel
 
 ## 12. FlashAttention recap
 
-Already covered in `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`. One-paragraph recap:
+Already covered in [`06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`](../06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md). One-paragraph recap:
 
 > FlashAttention (Dao et al. 2022) computes standard softmax attention with the same FLOPs but radically less memory traffic by tiling $Q, K, V$ to fit in SRAM and using online softmax to compute partial softmax statistics block-by-block. 2–4× wall-clock speedup, especially at long sequences. FA-2 (2023) and FA-3 (2024) extend with better parallelization and Hopper-native primitives.
 
@@ -365,7 +365,7 @@ Many heads can be removed without loss (Voita et al., Michel et al.). Suggests r
 2. Understand sliding window's receptive-field argument for $L \cdot W$.
 3. Know one linear-attention example (Performer or Mamba) at a sketchy level.
 4. Cite induction heads as the canonical interpretability finding.
-5. Drill `INTERVIEW_GRILL.md`.
+5. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 ---
 

@@ -1,8 +1,8 @@
 # Topic 6: LLM Inference Techniques
 
 > 🔥 **For interviews, read these first:**
-> - **`LLM_INFERENCE_DEEP_DIVE.md`** — frontier-lab interview deep dive: prefill vs decode dichotomy, KV memory math, PagedAttention, continuous batching, FlashAttention, speculative decoding (with rejection-sampling proof), quantization (GPTQ/AWQ/SmoothQuant/FP8), MQA/GQA, TTFT vs TPOT, cost-per-token model.
-> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions with strong answers. Drill until you can answer 40+ cold.
+> - **[`LLM_INFERENCE_DEEP_DIVE.md`](LLM_INFERENCE_DEEP_DIVE.md)** — frontier-lab interview deep dive: prefill vs decode dichotomy, KV memory math, PagedAttention, continuous batching, FlashAttention, speculative decoding (with rejection-sampling proof), quantization (GPTQ/AWQ/SmoothQuant/FP8), MQA/GQA, TTFT vs TPOT, cost-per-token model.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 60 active-recall questions with strong answers. Drill until you can answer 40+ cold.
 >
 > The README below is the conceptual overview. The two files above are where the interview-grade depth lives.
 
@@ -300,7 +300,7 @@ def dequantize_from_int8(quantized: np.ndarray, scale: float,
 
 **New Comprehensive Guides:**
 
-- **`kv_cache_detailed.md`**: Complete detailed explanation
+- **[`kv_cache_detailed.md`](kv_cache_detailed.md)**: Complete detailed explanation
   - The problem with standard inference (redundancy)
   - How KV cache solves it (step-by-step)
   - Code-level comparison (standard vs KV cache)

@@ -4,7 +4,7 @@
 >
 > The point: the original 2017 transformer got most things right. Modern LLMs differ only on a small number of architectural axes. This chapter walks each axis, says **what the consensus is**, **what alternatives exist**, **why people changed**, and **how confidently to use each choice**.
 >
-> Pair with `TRANSFORMERS_DEEP_DIVE.md` (architecture mechanics), `05_attention_mechanisms/ATTENTION_DEEP_DIVE.md` (attention details), `14_advanced_positional_embeddings/POSITIONAL_DEEP_DIVE.md` (position embedding depth), `61_large_scale_llm_systems/EFFICIENT_TRAINING_INFERENCE_PLAYBOOK.md` (training systems).
+> Pair with [`TRANSFORMERS_DEEP_DIVE.md`](TRANSFORMERS_DEEP_DIVE.md) (architecture mechanics), [`05_attention_mechanisms/ATTENTION_DEEP_DIVE.md`](../05_attention_mechanisms/ATTENTION_DEEP_DIVE.md) (attention details), [`14_advanced_positional_embeddings/POSITIONAL_DEEP_DIVE.md`](../14_advanced_positional_embeddings/POSITIONAL_DEEP_DIVE.md) (position embedding depth), [`61_large_scale_llm_systems/EFFICIENT_TRAINING_INFERENCE_PLAYBOOK.md`](../61_large_scale_llm_systems/EFFICIENT_TRAINING_INFERENCE_PLAYBOOK.md) (training systems).
 
 ---
 

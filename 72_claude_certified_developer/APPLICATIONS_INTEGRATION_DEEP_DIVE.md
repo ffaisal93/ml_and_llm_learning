@@ -87,7 +87,7 @@ while True:
 print(messages[-1])
 ```
 
-Memorize the loop: **call → if `tool_use`, execute and append `tool_result`, repeat → else done.** The model asks; your code acts. `tool_choice` modes (`auto`/`any`/`tool`/`none`) control whether/which tool is forced — details in `TOOLS_AND_MCP.md`.
+Memorize the loop: **call → if `tool_use`, execute and append `tool_result`, repeat → else done.** The model asks; your code acts. `tool_choice` modes (`auto`/`any`/`tool`/`none`) control whether/which tool is forced — details in [`TOOLS_AND_MCP.md`](TOOLS_AND_MCP.md).
 
 ---
 
@@ -137,7 +137,7 @@ resp = client.messages.create(
 )
 ```
 
-Trade-off: better multi-step reasoning at the cost of extra thinking tokens + latency. Enable for planning/math/complex debugging; leave off for simple, latency-sensitive calls. (More in `MODEL_SELECTION_OPTIMIZATION.md`.)
+Trade-off: better multi-step reasoning at the cost of extra thinking tokens + latency. Enable for planning/math/complex debugging; leave off for simple, latency-sensitive calls. (More in [`MODEL_SELECTION_OPTIMIZATION.md`](MODEL_SELECTION_OPTIMIZATION.md).)
 
 ---
 

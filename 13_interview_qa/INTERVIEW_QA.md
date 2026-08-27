@@ -942,7 +942,7 @@ KL_penalty = β * (log π_θ - log π_ref)
 
 ---
 
-See `08_training_techniques/rl_alignment_qa.md` for even more detailed answers!
+See [`08_training_techniques/rl_alignment_qa.md`](../08_training_techniques/rl_alignment_qa.md) for even more detailed answers!
 
 ---
 
@@ -1427,7 +1427,7 @@ Now fit a single Gaussian $Q$ to a bimodal $P$ and the two directions give visib
 
 ---
 
-See `33_information_theory/interview_qa.md` for even more detailed answers!
+See [`33_information_theory/interview_qa.md`](../33_information_theory/interview_qa.md) for even more detailed answers!
 
 ---
 
@@ -1490,7 +1490,7 @@ The real dividing line is *what the model spends its capacity on*. A discriminat
 | **4. Normality of errors** | Exact small-sample inference only | Q-Q plot, Shapiro-Wilk | Transformations; fades as $n$ grows |
 | **5. No multicollinearity** | Interpretability of single coefficients — *not* prediction | Correlation matrix, VIF | Drop features, regularise |
 
-**What happens if violated:** poor predictions, wrong standard errors, unreliable tests. See `34_discriminative_generative/model_assumptions_detailed.md` for detailed explanations.
+**What happens if violated:** poor predictions, wrong standard errors, unreliable tests. See [`34_discriminative_generative/model_assumptions_detailed.md`](../34_discriminative_generative/model_assumptions_detailed.md) for detailed explanations.
 
 **Why it works.**
 
@@ -1614,7 +1614,7 @@ P(A|B) = P(B|A) * P(A) / P(B)
 - **The headline example:** 1% prevalence, 95% accurate test, positive result → only ~16% chance of disease, because of false positives from the large healthy population.
 - **Uses:** naive Bayes, spam detection, medical diagnosis, recommendation systems.
 
-See `34_discriminative_generative/bayes_theorem_detailed.md` for comprehensive explanation!
+See [`34_discriminative_generative/bayes_theorem_detailed.md`](../34_discriminative_generative/bayes_theorem_detailed.md) for comprehensive explanation!
 
 **Why it works.**
 
@@ -1644,7 +1644,7 @@ Here: prior odds $1{:}99$, likelihood ratio $0.95/0.05 = 19$, so posterior odds 
 
 ---
 
-See `34_discriminative_generative/model_assumptions_detailed.md` for detailed assumption explanations!
+See [`34_discriminative_generative/model_assumptions_detailed.md`](../34_discriminative_generative/model_assumptions_detailed.md) for detailed assumption explanations!
 
 ---
 
@@ -1817,7 +1817,7 @@ At $\gamma = 0.01$ every point in a standardised dataset is similar to every oth
 
 ---
 
-See `35_kernel_functions/interview_qa.md` for even more detailed answers!
+See [`35_kernel_functions/interview_qa.md`](../35_kernel_functions/interview_qa.md) for even more detailed answers!
 
 ---
 
@@ -2002,7 +2002,7 @@ That relation, $\lambda \propto 1/\tau^2$, is the useful takeaway: a strong pena
 
 ---
 
-See `36_nlp_basics/regularization_priors.md` for comprehensive explanation!
+See [`36_nlp_basics/regularization_priors.md`](../36_nlp_basics/regularization_priors.md) for comprehensive explanation!
 
 ---
 
@@ -2182,7 +2182,7 @@ Text → Preprocessing → Feature Extraction → Model → Output → Evaluatio
 
 ---
 
-See `36_nlp_basics/nlp_tasks_and_solutions.md` for detailed procedures!
+See [`36_nlp_basics/nlp_tasks_and_solutions.md`](../36_nlp_basics/nlp_tasks_and_solutions.md) for detailed procedures!
 
 ---
 
@@ -2574,8 +2574,8 @@ Read the three rows in order and you have the whole lesson. In row one the prior
 
 ---
 
-See `37_mle_map_estimation/mle_map_derivations.md` for complete derivations!
-See `37_mle_map_estimation/interview_qa.md` for more detailed answers!
+See [`37_mle_map_estimation/mle_map_derivations.md`](../37_mle_map_estimation/mle_map_derivations.md) for complete derivations!
+See [`37_mle_map_estimation/interview_qa.md`](../37_mle_map_estimation/interview_qa.md) for more detailed answers!
 
 ---
 
@@ -3604,7 +3604,7 @@ The decision reduces to one tension. Small chunks retrieve precisely, because th
 
 ---
 
-See `39_rag_retrieval_augmented_generation/chunking_strategies.md` for complete guide!
+See [`39_rag_retrieval_augmented_generation/chunking_strategies.md`](../39_rag_retrieval_augmented_generation/chunking_strategies.md) for complete guide!
 
 ---
 
@@ -3974,7 +3974,7 @@ The cleanest way to say what these two share is that both are *generalized linea
 
 ---
 
-See `01_classical_ml/linear_regression_derivation.md` and `01_classical_ml/logistic_regression_derivation.md` for complete derivations!
+See [`01_classical_ml/linear_regression_derivation.md`](../01_classical_ml/linear_regression_derivation.md) and [`01_classical_ml/logistic_regression_derivation.md`](../01_classical_ml/logistic_regression_derivation.md) for complete derivations!
 
 ---
 
@@ -4191,7 +4191,7 @@ The right way to answer this is not a preference ordering but a mapping from *qu
 
 ---
 
-See `39_rag_retrieval_augmented_generation/retrieval_methods.md` for detailed explanations!
+See [`39_rag_retrieval_augmented_generation/retrieval_methods.md`](../39_rag_retrieval_augmented_generation/retrieval_methods.md) for detailed explanations!
 
 ---
 
@@ -4556,7 +4556,7 @@ The real distinction is not technique but guarantee. Extractive summarization co
 
 ---
 
-See `36_nlp_basics/nlp_problems_detailed.md` for complete procedures for all NLP problems!
+See [`36_nlp_basics/nlp_problems_detailed.md`](../36_nlp_basics/nlp_problems_detailed.md) for complete procedures for all NLP problems!
 
 ---
 
@@ -5164,7 +5164,7 @@ The right summary is that the field bifurcated: encoders for *representation*, d
 
 ---
 
-See `38_multimodal_and_embeddings/foundation_models_evolution.md` for complete evolution story!
+See [`38_multimodal_and_embeddings/foundation_models_evolution.md`](../38_multimodal_and_embeddings/foundation_models_evolution.md) for complete evolution story!
 
 ---
 
@@ -5544,7 +5544,7 @@ Nobody knows the path to AGI, and an interviewer asking this is not checking whe
 
 ---
 
-See `38_multimodal_and_embeddings/multimodal_integration_and_world_models.md` for complete details!
+See [`38_multimodal_and_embeddings/multimodal_integration_and_world_models.md`](../38_multimodal_and_embeddings/multimodal_integration_and_world_models.md) for complete details!
 
 ---
 
@@ -5767,7 +5767,7 @@ Next-token prediction is self-supervised, which means the labels are free — ev
 - Self-supervised: no labels needed, just text
 - Learns language patterns, syntax, semantics, reasoning
 
-**See `04_transformers/gpt_training_decoding.md` for complete details!**
+**See [`04_transformers/gpt_training_decoding.md`](../04_transformers/gpt_training_decoding.md) for complete details!**
 
 **Walkthrough: what one training step actually does.**
 
@@ -5862,7 +5862,7 @@ The model never outputs text; it outputs a probability distribution over the voc
 - Upper triangular matrix: -inf for future, 0 for past
 - Ensures model only sees previous tokens
 
-**See `04_transformers/gpt_training_decoding.md` for complete details!**
+**See [`04_transformers/gpt_training_decoding.md`](../04_transformers/gpt_training_decoding.md) for complete details!**
 
 **The missing piece: the KV cache, and why generation is memory-bound.**
 
@@ -5983,7 +5983,7 @@ The $n^2$ comes from the fact that attention compares every token to every other
 - Doesn't store full attention matrix
 - Memory efficient
 
-**See `05_attention_mechanisms/attention_complexity.md` for complete analysis!**
+**See [`05_attention_mechanisms/attention_complexity.md`](../05_attention_mechanisms/attention_complexity.md) for complete analysis!**
 
 **Getting the accounting exactly right.**
 
@@ -6019,8 +6019,8 @@ Total $O(n^{2}d + nd^{2})$. Which term dominates is just the ratio $n/d$, and th
 ---
 
 See `04_transformers/gpt_complete.py` for complete GPT implementation!
-See `04_transformers/gpt_training_decoding.md` for training and decoding details!
-See `05_attention_mechanisms/attention_complexity.md` for complexity analysis!
+See [`04_transformers/gpt_training_decoding.md`](../04_transformers/gpt_training_decoding.md) for training and decoding details!
+See [`05_attention_mechanisms/attention_complexity.md`](../05_attention_mechanisms/attention_complexity.md) for complexity analysis!
 
 ---
 
@@ -6514,9 +6514,9 @@ print(logits[:, P:, :].shape)  # torch.Size([4, 16, 50257]) -- slice before loss
 
 ---
 
-See `25_adapters_lora/prompt_prefix_tuning.md` for detailed theory!
+See [`25_adapters_lora/prompt_prefix_tuning.md`](../25_adapters_lora/prompt_prefix_tuning.md) for detailed theory!
 See `25_adapters_lora/prompt_prefix_code.py` for complete code!
-See `25_adapters_lora/prompt_prefix_qa.md` for comprehensive Q&A!
+See [`25_adapters_lora/prompt_prefix_qa.md`](../25_adapters_lora/prompt_prefix_qa.md) for comprehensive Q&A!
 
 ---
 
@@ -6965,12 +6965,12 @@ Within one denoising step, all positions are predicted independently given the c
 
 ---
 
-See `40_diffusion_models/diffusion_theory.md` for complete theory!
+See [`40_diffusion_models/diffusion_theory.md`](../40_diffusion_models/diffusion_theory.md) for complete theory!
 See `40_diffusion_models/diffusion_code.py` for continuous diffusion!
 See `40_diffusion_models/nlp_diffusion.py` for discrete diffusion!
 See `40_diffusion_models/training_diffusion.py` for training procedures!
 See `40_diffusion_models/evaluation_diffusion.py` for evaluation methods!
-See `40_diffusion_models/diffusion_qa.md` for comprehensive Q&A!
+See [`40_diffusion_models/diffusion_qa.md`](../40_diffusion_models/diffusion_qa.md) for comprehensive Q&A!
 
 ---
 
@@ -7487,7 +7487,7 @@ If you care about factuality, perplexity cannot help — use task accuracy or a 
 
 ---
 
-See `03_evaluation_metrics/perplexity_detailed.md` for complete theory!
+See [`03_evaluation_metrics/perplexity_detailed.md`](../03_evaluation_metrics/perplexity_detailed.md) for complete theory!
 See `03_evaluation_metrics/perplexity_code.py` for complete code!
 See `33_information_theory/information_theory.py` for entropy implementation!
 
@@ -7592,7 +7592,7 @@ Note that `np.tril` produces a *keep* mask: 1 means allowed. PyTorch's `torch.tr
 
 Use a large negative finite number (or `-torch.inf` with care) rather than computing `exp` of a genuine `-inf` inside an unstable softmax. If an entire row is masked — which happens with padded sequences where a query position has no valid keys — `softmax` over all $-\infty$ produces `NaN`, and the `NaN` then propagates through the whole batch. This is a real production bug, not a theoretical one.
 
-**See `05_attention_mechanisms/causal_attention_detailed.md` for complete explanation!**
+**See [`05_attention_mechanisms/causal_attention_detailed.md`](../05_attention_mechanisms/causal_attention_detailed.md) for complete explanation!**
 
 **Follow-up:** *Why is the mask usually a registered buffer, not a parameter?* Because it is fixed, has no gradient, and depends only on the maximum sequence length. Registering it as a buffer means it moves to the GPU with `.to(device)` and is built once rather than reallocated every forward pass.
 
@@ -7791,7 +7791,7 @@ Row $i$ of the attention matrix has $i+1$ non-zero entries, so the number of liv
 
 ---
 
-See `05_attention_mechanisms/causal_attention_detailed.md` for complete theory!
+See [`05_attention_mechanisms/causal_attention_detailed.md`](../05_attention_mechanisms/causal_attention_detailed.md) for complete theory!
 See `05_attention_mechanisms/causal_attention_code.py` for visualization!
 
 ---
@@ -8073,7 +8073,7 @@ With `block_size = 16`, a 25-token sequence occupies $\lceil 25/16 \rceil = 2$ b
 
 Attention can no longer be one contiguous `Q @ K.T`; the kernel must gather K and V through the block table, which is why PagedAttention is a custom CUDA kernel rather than a memory-allocator change. There is a small per-token indirection cost, repaid many times over by the higher batch size the saved memory allows — vLLM reported 2-4x throughput over the then-current systems at the same latency.
 
-**See `05_attention_mechanisms/advanced_attention_mechanisms.md` for complete details!**
+**See [`05_attention_mechanisms/advanced_attention_mechanisms.md`](../05_attention_mechanisms/advanced_attention_mechanisms.md) for complete details!**
 
 > **Note on currency (2026).** Paged KV cache is now standard across serving stacks rather than a vLLM-specific feature, and it is routinely combined with prefix caching, chunked prefill, continuous batching, and KV quantization. Specific throughput multipliers from the 2023 paper are baselines against 2023 systems — quote them as historical, not as current speedups.
 
@@ -8176,7 +8176,7 @@ The table's suggestion that MHA is for training is a bit misleading. GQA is used
 
 ---
 
-See `05_attention_mechanisms/advanced_attention_mechanisms.md` for complete theory!
+See [`05_attention_mechanisms/advanced_attention_mechanisms.md`](../05_attention_mechanisms/advanced_attention_mechanisms.md) for complete theory!
 See `05_attention_mechanisms/advanced_attention_code.py` for complete code!
 
 ---
@@ -8394,9 +8394,9 @@ Router z-loss, $L_z = \frac{1}{N}\sum_n (\log \sum_i e^{s_{ni}})^2$, penalizes l
 
 ---
 
-See `41_mixture_of_experts/moe_theory.md` for complete theory!
+See [`41_mixture_of_experts/moe_theory.md`](../41_mixture_of_experts/moe_theory.md) for complete theory!
 See `41_mixture_of_experts/moe_code.py` for complete code!
-See `41_mixture_of_experts/moe_qa.md` for comprehensive Q&A!
+See [`41_mixture_of_experts/moe_qa.md`](../41_mixture_of_experts/moe_qa.md) for comprehensive Q&A!
 
 ---
 
@@ -8620,9 +8620,9 @@ Because the state is a fixed-size compression, SSMs are measurably worse at task
 
 ---
 
-See `42_state_space_models/ssm_theory.md` for complete theory!
+See [`42_state_space_models/ssm_theory.md`](../42_state_space_models/ssm_theory.md) for complete theory!
 See `42_state_space_models/ssm_code.py` for complete code!
-See `42_state_space_models/ssm_qa.md` for comprehensive Q&A!
+See [`42_state_space_models/ssm_qa.md`](../42_state_space_models/ssm_qa.md) for comprehensive Q&A!
 
 ## Classical ML: Trees, Ensembles, and Dimensionality
 

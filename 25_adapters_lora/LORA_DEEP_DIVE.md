@@ -359,7 +359,7 @@ This is now standard in serving systems for personalized LLMs.
 2. Know $\alpha/r$ scaling and why it matters.
 3. Know QLoRA's three innovations (NF4, double quantization, paged optimizer).
 4. Compare LoRA to alternatives (adapters, prefix tuning, IA³).
-5. Drill `INTERVIEW_GRILL.md`.
+5. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 ---
 

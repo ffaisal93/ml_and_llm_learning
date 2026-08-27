@@ -1,6 +1,6 @@
 # NLP Basics — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 Classical NLP — n-grams, smoothing, BM25, perplexity, edit distance — predates the deep-learning era but remains interview-relevant. Many production systems still use these methods (BM25 in retrieval, edit distance for spell check, Laplace smoothing in counting models). And the concepts (perplexity, smoothing, Zipf) carry through to modern LLMs.
 

@@ -2,7 +2,7 @@
 
 > **Why this exists.** ML interviews at product companies (Meta, Google, Amazon, Netflix, Stripe, Uber, AirBnB, etc.) increasingly include "case study" rounds: a business problem, propose an ML solution end-to-end. The art is structuring the answer so the interviewer sees you understand *product reasoning* (why does this matter?), *ML reasoning* (how do you formulate it?), and *operational reasoning* (how do you ship and measure it?) together. This deep dive gives you a framework + 8 fully worked business case studies at the depth product-company interviews actually probe.
 
-**Companion document.** `29_system_design_for_ml/ML_SYSTEM_DESIGN_DEEP_DIVE.md` covers *platform-scale* system design (recommender, search, ads, LLM serving). This document covers *business-case* design (churn, growth experiments, marketplace dynamics, demand forecasting, etc.) — narrower but more product-flavored. Use 29 for "design YouTube," use 28 for "we want to reduce churn."
+**Companion document.** [`29_system_design_for_ml/ML_SYSTEM_DESIGN_DEEP_DIVE.md`](../29_system_design_for_ml/ML_SYSTEM_DESIGN_DEEP_DIVE.md) covers *platform-scale* system design (recommender, search, ads, LLM serving). This document covers *business-case* design (churn, growth experiments, marketplace dynamics, demand forecasting, etc.) — narrower but more product-flavored. Use 29 for "design YouTube," use 28 for "we want to reduce churn."
 
 ---
 
@@ -499,7 +499,7 @@ Even with p<0.05 and positive effect, launch decision needs:
 - Holdback experiments for measuring long-term effects.
 - Distinguish statistical significance from practical significance.
 
-(For more: `30_ab_testing/AB_TESTING_DEEP_DIVE.md`.)
+(For more: [`30_ab_testing/AB_TESTING_DEEP_DIVE.md`](../30_ab_testing/AB_TESTING_DEEP_DIVE.md).)
 
 > **Saying it out loud.** When someone hands me an A/B result, I don't start with the p-value. First I check the sample ratio — if the split was supposed to be five-five-ninety and it came out four-seven-five-two, randomization is broken and the whole test is garbage. Then I look at the effect size with a confidence interval, because a statistically significant 0.1 percent lift and a significant five percent lift are completely different business decisions. Then guardrails: if the primary is up but latency or unsubscribes are down past threshold, that's a no-launch. And I'd ask whether the effect is durable, which means running a holdback for thirty days after launch — novelty effects mean week one is often the best week the feature will ever have.
 
@@ -787,7 +787,7 @@ ticket comes in
 - Cost accounting (LLM API cost vs human cost).
 - Brand-voice and safety filter as a second-stage check.
 
-(For agent implementation patterns: see `07_llm_problems/AGENT_IN_30_MIN.md`.)
+(For agent implementation patterns: see [`07_llm_problems/AGENT_IN_30_MIN.md`](../07_llm_problems/AGENT_IN_30_MIN.md).)
 
 > **Saying it out loud.** An LLM support agent is mostly a routing and gating problem, not a prompting problem. Seventy percent of a hundred thousand daily tickets are repetitive, so the upside is huge, but the cost asymmetry cuts the other way: a wrong AI answer is worse than no answer, because now the customer is angry *and* still needs a human. So I'd put a confidence-gated intent classifier in front, use retrieval so answers are grounded in real policy docs, and never let the model actually move money — tool calls get verified server-side with hard limits. The metric I'd optimize is deflection rate times CSAT, with post-AI escalation rate as the guardrail, since a rising escalation rate means the AI is making things worse while looking successful on the deflection dashboard.
 

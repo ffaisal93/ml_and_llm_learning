@@ -1,6 +1,6 @@
 # Claude Certified Developer — Foundations (CCDV-F)
 
-> **What this chapter is.** A complete, self-contained study course for the **Claude Certified Developer – Foundations** exam. Written to teach: intuition → mechanism → runnable example → the decision a developer must make. Read in order for a first pass, then drill `PRACTICE_QUESTIONS.md`.
+> **What this chapter is.** A complete, self-contained study course for the **Claude Certified Developer – Foundations** exam. Written to teach: intuition → mechanism → runnable example → the decision a developer must make. Read in order for a first pass, then drill [`PRACTICE_QUESTIONS.md`](PRACTICE_QUESTIONS.md).
 
 > ⚠️ **Accuracy note.** Numbers below are cross-checked against public study guides as of **August 2026**; confirm against the **official Exam Guide PDF** on the Anthropic Partner Academy (Skilljar) before booking. Product behavior reflects current Anthropic docs (`platform.claude.com`, `code.claude.com`).
 
@@ -36,14 +36,14 @@ The tell that this is a *developer* exam: **Applications & Integration is 33.1%*
 
 | # | Domain | Weight | This chapter's file |
 |---|---|---|---|
-| 1 | **Applications & Integration** | **33.1%** | `APPLICATIONS_INTEGRATION_DEEP_DIVE.md` |
-| 2 | **Model Selection & Optimization** | **16.8%** | `MODEL_SELECTION_OPTIMIZATION.md` |
-| 3 | **Agents & Workflows** | **14.7%** | `AGENTS_AND_WORKFLOWS.md` |
-| 4 | **Prompt & Context Engineering** | **11.0%** | `PROMPT_AND_CONTEXT_ENGINEERING.md` |
-| 5 | **Tools & MCPs** | **10.6%** | `TOOLS_AND_MCP.md` |
-| 6 | **Security & Safety** | **8.1%** | `SECURITY_AND_SAFETY.md` |
-| 7 | **Claude Code** | **3.1%** | `CLAUDE_CODE_AND_DEBUGGING.md` |
-| 8 | **Evaluation, Testing & Debugging** | **2.6%** | `CLAUDE_CODE_AND_DEBUGGING.md` |
+| 1 | **Applications & Integration** | **33.1%** | [`APPLICATIONS_INTEGRATION_DEEP_DIVE.md`](APPLICATIONS_INTEGRATION_DEEP_DIVE.md) |
+| 2 | **Model Selection & Optimization** | **16.8%** | [`MODEL_SELECTION_OPTIMIZATION.md`](MODEL_SELECTION_OPTIMIZATION.md) |
+| 3 | **Agents & Workflows** | **14.7%** | [`AGENTS_AND_WORKFLOWS.md`](AGENTS_AND_WORKFLOWS.md) |
+| 4 | **Prompt & Context Engineering** | **11.0%** | [`PROMPT_AND_CONTEXT_ENGINEERING.md`](PROMPT_AND_CONTEXT_ENGINEERING.md) |
+| 5 | **Tools & MCPs** | **10.6%** | [`TOOLS_AND_MCP.md`](TOOLS_AND_MCP.md) |
+| 6 | **Security & Safety** | **8.1%** | [`SECURITY_AND_SAFETY.md`](SECURITY_AND_SAFETY.md) |
+| 7 | **Claude Code** | **3.1%** | [`CLAUDE_CODE_AND_DEBUGGING.md`](CLAUDE_CODE_AND_DEBUGGING.md) |
+| 8 | **Evaluation, Testing & Debugging** | **2.6%** | [`CLAUDE_CODE_AND_DEBUGGING.md`](CLAUDE_CODE_AND_DEBUGGING.md) |
 
 > Domains 1 + 2 are **~50%** of the exam. If time is short, master API integration and model/cost optimization first.
 
@@ -62,11 +62,11 @@ The tell that this is a *developer* exam: **Applications & Integration is 33.1%*
 
 ## 5. How to study this chapter
 
-**Pass 1 — read in order:** `APPLICATIONS_INTEGRATION_DEEP_DIVE.md` → `MODEL_SELECTION_OPTIMIZATION.md` → `AGENTS_AND_WORKFLOWS.md` → `PROMPT_AND_CONTEXT_ENGINEERING.md` → `TOOLS_AND_MCP.md` → `SECURITY_AND_SAFETY.md` → `CLAUDE_CODE_AND_DEBUGGING.md`.
+**Pass 1 — read in order:** [`APPLICATIONS_INTEGRATION_DEEP_DIVE.md`](APPLICATIONS_INTEGRATION_DEEP_DIVE.md) → [`MODEL_SELECTION_OPTIMIZATION.md`](MODEL_SELECTION_OPTIMIZATION.md) → [`AGENTS_AND_WORKFLOWS.md`](AGENTS_AND_WORKFLOWS.md) → [`PROMPT_AND_CONTEXT_ENGINEERING.md`](PROMPT_AND_CONTEXT_ENGINEERING.md) → [`TOOLS_AND_MCP.md`](TOOLS_AND_MCP.md) → [`SECURITY_AND_SAFETY.md`](SECURITY_AND_SAFETY.md) → [`CLAUDE_CODE_AND_DEBUGGING.md`](CLAUDE_CODE_AND_DEBUGGING.md).
 
 **Pass 2 — build:** run the Quickstart, make a tool-use call, add streaming, add prompt caching, and read back the `usage` field to *see* the token/cost effects. Nothing cements the integration domain like one real script.
 
-**Pass 3 — drill:** `PRACTICE_QUESTIONS.md`, cold, explaining every distractor.
+**Pass 3 — drill:** [`PRACTICE_QUESTIONS.md`](PRACTICE_QUESTIONS.md), cold, explaining every distractor.
 
 ---
 

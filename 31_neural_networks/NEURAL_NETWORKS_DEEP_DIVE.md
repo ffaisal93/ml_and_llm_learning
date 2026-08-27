@@ -1,6 +1,6 @@
 # Neural Networks Fundamentals — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 Every modern model — transformers, CNNs, diffusion U-Nets, MoE — is built on the basics covered here. This deep dive nails MLPs, activations, initialization, backpropagation, and the gradient pathologies that motivate every later innovation (residual connections, normalization, modern optimizers).
 

@@ -3,8 +3,8 @@
 The open-ended round — "design YouTube's recommender" — and the one candidates most often
 under-prepare for, because it is not really a modelling question.
 
-> **Start here:** `ML_SYSTEM_DESIGN_DEEP_DIVE.md`. It is a single long document meant to be read
-> straight through once and then dipped into. `INTERVIEW_GRILL.md` is 55 active-recall questions for
+> **Start here:** [`ML_SYSTEM_DESIGN_DEEP_DIVE.md`](ML_SYSTEM_DESIGN_DEEP_DIVE.md). It is a single long document meant to be read
+> straight through once and then dipped into. [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md) is 55 active-recall questions for
 > after you have read it.
 
 ## What is in the deep dive
@@ -56,5 +56,5 @@ prediction," where the work is framing a business problem rather than serving a 
 - `30_ab_testing` — how you decide whether the thing you designed actually shipped an improvement.
 - `39_rag_retrieval_augmented_generation` — the same exercise for a retrieval-augmented LLM.
 - `06_llm_inference` and `63_paged_attention_and_llm_serving` — the serving internals behind Design 6.
-- `74_ai_engineer_interview_prep/LOOP_SYSTEM_DESIGN_QA.md` — fourteen more design prompts, worked in the
+- [`74_ai_engineer_interview_prep/LOOP_SYSTEM_DESIGN_QA.md`](../74_ai_engineer_interview_prep/LOOP_SYSTEM_DESIGN_QA.md) — fourteen more design prompts, worked in the
   same shape.

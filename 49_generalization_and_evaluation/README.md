@@ -1,8 +1,8 @@
 # Topic 49: Generalization and Evaluation
 
 > 🔥 **For interviews, read these first:**
-> - **`GENERALIZATION_DEEP_DIVE.md`** — frontier-lab deep dive: data leakage (4 types), calibration (ECE, Platt/isotonic/temperature), distribution shift (covariate/label/concept), class imbalance, double descent, cross-validation done right, ablations, metric uncertainty.
-> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions.
+> - **[`GENERALIZATION_DEEP_DIVE.md`](GENERALIZATION_DEEP_DIVE.md)** — frontier-lab deep dive: data leakage (4 types), calibration (ECE, Platt/isotonic/temperature), distribution shift (covariate/label/concept), class imbalance, double descent, cross-validation done right, ablations, metric uncertainty.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 60 active-recall questions.
 
 ## What You'll Learn
 

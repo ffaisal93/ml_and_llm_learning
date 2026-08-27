@@ -1,10 +1,10 @@
 # Topic 5: Attention Mechanisms
 
 > 🔥 **For interviews, read these first:**
-> - **`ATTENTION_DEEP_DIVE.md`** — frontier-lab interview deep dive: MHA → MQA → GQA → MLA hierarchy, sliding window receptive-field math, sparse attention, linear attention (Performer, RWKV, SSM connection), induction heads, attention sinks.
-> - **`INTERVIEW_GRILL.md`** — 50 active-recall questions.
+> - **[`ATTENTION_DEEP_DIVE.md`](ATTENTION_DEEP_DIVE.md)** — frontier-lab interview deep dive: MHA → MQA → GQA → MLA hierarchy, sliding window receptive-field math, sparse attention, linear attention (Performer, RWKV, SSM connection), induction heads, attention sinks.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 50 active-recall questions.
 >
-> See also `04_transformers/TRANSFORMERS_DEEP_DIVE.md` for foundational scaled-dot-product attention.
+> See also [`04_transformers/TRANSFORMERS_DEEP_DIVE.md`](../04_transformers/TRANSFORMERS_DEEP_DIVE.md) for foundational scaled-dot-product attention.
 
 ## What You'll Learn
 
@@ -224,7 +224,7 @@ return self_attention(Q, K, V, d_k, mask=mask)
 - Upper triangular = wrong (would allow future, block past)
 - This enforces causal constraint for autoregressive generation
 
-**See `causal_attention_detailed.md` for complete explanation!**
+**See [`causal_attention_detailed.md`](causal_attention_detailed.md) for complete explanation!**
 
 ### Sparse Attention (Longformer-style)
 
@@ -314,7 +314,7 @@ def cross_attention(Q_encoder, K_decoder, V_decoder, d_k):
 
 ### Attention Complexity
 
-**Detailed Analysis:** See `attention_complexity.md` for complete complexity breakdown!
+**Detailed Analysis:** See [`attention_complexity.md`](attention_complexity.md) for complete complexity breakdown!
 
 | Type | Time Complexity | Space Complexity | Use Case |
 |------|----------------|------------------|----------|
@@ -345,7 +345,7 @@ def cross_attention(Q_encoder, K_decoder, V_decoder, d_k):
 
 **New Comprehensive Guide:**
 
-- **`causal_attention_detailed.md`**: Complete theoretical explanation
+- **[`causal_attention_detailed.md`](causal_attention_detailed.md)**: Complete theoretical explanation
   - Why we need causal attention (autoregressive constraint)
   - How causal attention works (lower triangular mask)
   - Step-by-step code explanation
@@ -372,7 +372,7 @@ def cross_attention(Q_encoder, K_decoder, V_decoder, d_k):
 
 **New Comprehensive Content:**
 
-- **`advanced_attention_mechanisms.md`**: Complete theoretical guide
+- **[`advanced_attention_mechanisms.md`](advanced_attention_mechanisms.md)**: Complete theoretical guide
   - Multi-Head Attention (MHA) - baseline
   - Multi-Query Attention (MQA) - shares K, V across all heads
   - Group Query Attention (GQA) - shares K, V within groups

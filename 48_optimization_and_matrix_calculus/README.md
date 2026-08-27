@@ -1,8 +1,8 @@
 # Topic 48: Optimization and Matrix Calculus
 
 > 🔥 **For interviews, read these first:**
-> - **`OPTIMIZATION_DEEP_DIVE.md`** — frontier-lab deep dive: convex/strongly-convex/smooth definitions, GD convergence rates, Nesterov acceleration, Newton/BFGS/Gauss-Newton, SGD scaling, Lagrangian + KKT (with SVM dual), deep-learning loss landscape (saddles dominate, flat minima, edge of stability).
-> - **`INTERVIEW_GRILL.md`** — 60 active-recall questions.
+> - **[`OPTIMIZATION_DEEP_DIVE.md`](OPTIMIZATION_DEEP_DIVE.md)** — frontier-lab deep dive: convex/strongly-convex/smooth definitions, GD convergence rates, Nesterov acceleration, Newton/BFGS/Gauss-Newton, SGD scaling, Lagrangian + KKT (with SVM dual), deep-learning loss landscape (saddles dominate, flat minima, edge of stability).
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 60 active-recall questions.
 
 ## What You'll Learn
 

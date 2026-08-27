@@ -1,6 +1,6 @@
 # Statistical Inference — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 Statistical inference is what separates "I trained a model and it has 87% accuracy" from "I have evidence that my model's true accuracy is 87% ± 1.2% and that's a statistically significant 0.4-point improvement over the baseline." Senior interviews probe this hard because production ML decisions hinge on it.
 

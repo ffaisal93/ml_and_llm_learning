@@ -1,6 +1,6 @@
 # LLM / AI Security — Interview Grill
 
-> 100+ active-recall questions. Pair with `LLM_SECURITY_DEEP_DIVE.md`.
+> 100+ active-recall questions. Pair with [`LLM_SECURITY_DEEP_DIVE.md`](LLM_SECURITY_DEEP_DIVE.md).
 > Answer each in <60 seconds out loud. Mark anything you can't answer cleanly and re-read the relevant section.
 
 ---

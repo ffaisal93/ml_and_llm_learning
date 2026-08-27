@@ -3,8 +3,8 @@
 > The kind of question DeepMind / OpenAI / Anthropic interviewers actually ask in research-scientist rounds: **open-ended Bayesian / probabilistic / decision-theoretic scenarios** that test whether you can frame a fuzzy problem cleanly.
 
 > 🔥 **Read these first:**
-> - **`INTUITIVE_QUESTIONS_DEEP_DIVE.md`** — 7 core frameworks (Bayesian classification, MLE, concentration / tail bounds, KL divergence, sequential decision / bandits, importance sampling, Stein / shrinkage); the canonical DeepMind two-distribution question fully worked end-to-end with 90-second oral answer template; 25 additional worked frontier-lab questions; common follow-up probes; senior-level interview signals.
-> - **`INTERVIEW_GRILL.md`** — 125 active-recall questions across A–K plus quick-fire and a 5-day drill plan.
+> - **[`INTUITIVE_QUESTIONS_DEEP_DIVE.md`](INTUITIVE_QUESTIONS_DEEP_DIVE.md)** — 7 core frameworks (Bayesian classification, MLE, concentration / tail bounds, KL divergence, sequential decision / bandits, importance sampling, Stein / shrinkage); the canonical DeepMind two-distribution question fully worked end-to-end with 90-second oral answer template; 25 additional worked frontier-lab questions; common follow-up probes; senior-level interview signals.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 125 active-recall questions across A–K plus quick-fire and a 5-day drill plan.
 
 ## The motivating question
 
@@ -36,9 +36,9 @@ The hardest frontier-lab probability questions are not "compute something" — t
 
 ## How to use
 
-1. Read `INTUITIVE_QUESTIONS_DEEP_DIVE.md` straight through.
+1. Read [`INTUITIVE_QUESTIONS_DEEP_DIVE.md`](INTUITIVE_QUESTIONS_DEEP_DIVE.md) straight through.
 2. Memorize §1 (framing checklist) and §9 (the two-distribution model answer).
-3. Drill `INTERVIEW_GRILL.md` — target 110+/125 before a frontier-lab interview.
+3. Drill [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md) — target 110+/125 before a frontier-lab interview.
 4. Practice **out loud** — these are oral-exam questions in the actual interview.
 5. Read Cover & Thomas Ch. 11 (hypothesis testing) and Wasserman Ch. 10 for textbook depth.
 

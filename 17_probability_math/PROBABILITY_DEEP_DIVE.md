@@ -1,6 +1,6 @@
 # Probability for ML — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 Probability is the substrate of ML. Senior interviews use probability to test whether you understand uncertainty, can do clean derivations, and can apply Bayesian reasoning under pressure. This deep dive nails the foundations.
 

@@ -1,6 +1,6 @@
 # ML Coding Interview Patterns — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 The "live coding" round of ML interviews tests whether you can implement the right thing under pressure — fast, correct, idiomatic. This deep dive covers the canonical patterns: numerical stability, attention internals, sampling, batched operations, training-loop boilerplate. Master these and you'll be fluent on most ML coding prompts.
 

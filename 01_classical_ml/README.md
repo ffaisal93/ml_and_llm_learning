@@ -55,7 +55,7 @@ This topic teaches you to implement classical ML algorithms from scratch:
   - Normal equation derivation
   - Geometric intuition
   - Gradient descent alternative
-  - See `linear_regression_derivation.md`
+  - See [`linear_regression_derivation.md`](linear_regression_derivation.md)
 
 - **Logistic Regression**: Complete derivation with intuitive explanations
   - Why sigmoid function?
@@ -63,14 +63,14 @@ This topic teaches you to implement classical ML algorithms from scratch:
   - Cross-entropy loss derivation
   - Gradient descent
   - Decision boundary
-  - See `logistic_regression_derivation.md`
+  - See [`logistic_regression_derivation.md`](logistic_regression_derivation.md)
 
 ### 🔥 Logistic Regression — Interview-Grade Files (READ THESE FOR INTERVIEWS)
 
 The base derivation file is fine for understanding. But if you're prepping for applied scientist or ML engineer interviews, the bar is much higher. The two files below cover the deep, intuitive, gotcha-style questions that interviewers actually ask:
 
-- **`LOGISTIC_REGRESSION_DEEP_DIVE.md`** — Frontier-lab interview deep dive: linear log-odds assumption, MLE derivation, why CE not MSE (likelihood + convexity), separability and divergence, IRLS, calibration, multicollinearity, L1/L2 geometry, max entropy, connections to softmax/NB/SVM/neural networks. **Read this whole document before any classical-ML interview.**
-- **`LOGISTIC_REGRESSION_INTERVIEW_GRILL.md`** — 60 active-recall questions with strong answers. Drill until you can answer 40+ cold.
+- **[`LOGISTIC_REGRESSION_DEEP_DIVE.md`](LOGISTIC_REGRESSION_DEEP_DIVE.md)** — Frontier-lab interview deep dive: linear log-odds assumption, MLE derivation, why CE not MSE (likelihood + convexity), separability and divergence, IRLS, calibration, multicollinearity, L1/L2 geometry, max entropy, connections to softmax/NB/SVM/neural networks. **Read this whole document before any classical-ML interview.**
+- **[`LOGISTIC_REGRESSION_INTERVIEW_GRILL.md`](LOGISTIC_REGRESSION_INTERVIEW_GRILL.md)** — 60 active-recall questions with strong answers. Drill until you can answer 40+ cold.
 
 ## Core Intuition
 

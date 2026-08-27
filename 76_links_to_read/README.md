@@ -27,15 +27,15 @@ Format:
   control. → became `75_governed_ai_workflows`.
 - [How to Optimize RAG for Latency in Production](https://www.linkedin.com/pulse/how-optimize-rag-latency-production-ayush-singh-vrezc/) —
   Ayush Singh, Aug 2026. Fifty sections on RAG latency; the five-level optimization hierarchy and the
-  worked 5s→2s example are the durable parts. → `74_ai_engineer_interview_prep/RAG_LATENCY_IN_PRODUCTION.md`,
+  worked 5s→2s example are the durable parts. → [`74_ai_engineer_interview_prep/RAG_LATENCY_IN_PRODUCTION.md`](../74_ai_engineer_interview_prep/RAG_LATENCY_IN_PRODUCTION.md),
   with measured figures substituted for the illustrative ones.
 - [RAG in 2025: From RAG to Context Engineering](https://ragflow.io/blog/rag-review-2025-from-rag-to-context) —
   RAGFlow. The frontier survey — RAPTOR, GraphRAG, PageIndex, ColPali, late interaction. Vendor-published,
-  so read with that in mind. → `39_rag_retrieval_augmented_generation/RAG_TO_CONTEXT_ENGINE.md`, which
+  so read with that in mind. → [`39_rag_retrieval_augmented_generation/RAG_TO_CONTEXT_ENGINE.md`](../39_rag_retrieval_augmented_generation/RAG_TO_CONTEXT_ENGINE.md), which
   flags ten unverifiable claims.
 - [HimankSehgal/AI-interview-prep](https://github.com/HimankSehgal/AI-interview-prep) — mostly a stub, but
   `microsoft.md` documents a complete five-stage Applied Scientist 2 loop in useful detail. →
-  `74_ai_engineer_interview_prep/THE_LOOPS.md`.
+  [`74_ai_engineer_interview_prep/THE_LOOPS.md`](../74_ai_engineer_interview_prep/THE_LOOPS.md).
 
 ---
 

@@ -1,6 +1,6 @@
 # ML Debugging — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 Senior ML interviews increasingly include "the model isn't training, debug it" — testing whether you have a systematic methodology, not just textbook knowledge. This deep dive is the methodology: how to debug failing training, NaN gradients, leakage, and production regressions.
 

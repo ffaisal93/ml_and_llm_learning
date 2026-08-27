@@ -1,6 +1,6 @@
 # Picking the Right Distribution — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 A surprisingly common interview question: "I have data of type X — what distribution should I model it with?" Or: "What does GLM canonical link mean and why does it matter?" The right answer pulls from a small set of distributions and one unifying framework — the exponential family.
 

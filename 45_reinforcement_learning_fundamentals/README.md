@@ -162,8 +162,8 @@ That distinction is a very common follow-up.
 
 See detailed files for complete implementations:
 - [`rl_fundamentals.py`](rl_fundamentals_py.md): Complete implementations from scratch
-- `rl_explanations.md`: Easy-to-understand explanations in simple language
-- `rl_qa.md`: Comprehensive interview Q&A
+- [`rl_explanations.md`](rl_explanations.md): Easy-to-understand explanations in simple language
+- [`rl_qa.md`](rl_qa.md): Comprehensive interview Q&A
 
 ## Exercises
 

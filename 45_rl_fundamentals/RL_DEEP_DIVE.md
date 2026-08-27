@@ -1,6 +1,6 @@
 # Reinforcement Learning Fundamentals — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 RL is the foundation underneath RLHF, agentic systems, and tool-use training. Frontier-lab interviews probe RL not because they want game-playing agents but because RLHF/PPO/GRPO fluency requires understanding the underlying machinery. This deep dive covers what you need.
 

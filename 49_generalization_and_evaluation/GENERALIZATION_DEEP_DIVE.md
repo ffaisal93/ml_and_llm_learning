@@ -1,6 +1,6 @@
 # Generalization and Evaluation — Deep Dive
 
-> Frontier-lab interview prep. Pair with `INTERVIEW_GRILL.md`.
+> Frontier-lab interview prep. Pair with [`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md).
 
 The single most common reason ML systems fail in production: the offline metric was wrong, the test set was contaminated, or the model didn't generalize the way you expected. This deep dive is about *not getting fooled by your own evaluation*.
 

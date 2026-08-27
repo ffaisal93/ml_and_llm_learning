@@ -1,6 +1,6 @@
 # Hallucination Detection — Interview Grill
 
-> 75 active-recall questions on detecting hallucinations in LLM outputs. Drill until you can answer 50+ cold. Pair with `HALLUCINATION_DETECTION_DEEP_DIVE.md`.
+> 75 active-recall questions on detecting hallucinations in LLM outputs. Drill until you can answer 50+ cold. Pair with [`HALLUCINATION_DETECTION_DEEP_DIVE.md`](HALLUCINATION_DETECTION_DEEP_DIVE.md).
 
 ---
 

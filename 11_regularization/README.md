@@ -1,8 +1,8 @@
 # Topic 11: Regularization
 
 > 🔥 **For interviews, read these first:**
-> - **`REGULARIZATION_DEEP_DIVE.md`** — frontier-lab interview deep dive: bias-variance trade-off, L1/L2 geometry and Bayesian priors, dropout (3 stories), early stopping ≈ L2, MixUp/CutMix, label smoothing, SAM, implicit regularization of SGD, why modern LLMs use no dropout.
-> - **`INTERVIEW_GRILL.md`** — 50 active-recall questions.
+> - **[`REGULARIZATION_DEEP_DIVE.md`](REGULARIZATION_DEEP_DIVE.md)** — frontier-lab interview deep dive: bias-variance trade-off, L1/L2 geometry and Bayesian priors, dropout (3 stories), early stopping ≈ L2, MixUp/CutMix, label smoothing, SAM, implicit regularization of SGD, why modern LLMs use no dropout.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 50 active-recall questions.
 
 ## What You'll Learn
 

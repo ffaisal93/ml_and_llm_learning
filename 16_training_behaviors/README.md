@@ -1,8 +1,8 @@
 # Topic 16: Training Behaviors & Single GPU Optimization
 
 > 🔥 **For interviews, read these first:**
-> - **`TRAINING_BEHAVIORS_DEEP_DIVE.md`** — frontier-lab deep dive: healthy loss curves and pathologies, LR (warmup, decay, finder), batch size effects (linear scaling, critical batch, generalization gap), gradient norm tracking, mixed precision (FP16/BF16/FP8), loss spike recovery, catastrophic forgetting + mitigations.
-> - **`INTERVIEW_GRILL.md`** — 45 active-recall questions.
+> - **[`TRAINING_BEHAVIORS_DEEP_DIVE.md`](TRAINING_BEHAVIORS_DEEP_DIVE.md)** — frontier-lab deep dive: healthy loss curves and pathologies, LR (warmup, decay, finder), batch size effects (linear scaling, critical batch, generalization gap), gradient norm tracking, mixed precision (FP16/BF16/FP8), loss spike recovery, catastrophic forgetting + mitigations.
+> - **[`INTERVIEW_GRILL.md`](INTERVIEW_GRILL.md)** — 45 active-recall questions.
 
 ## What You'll Learn
 

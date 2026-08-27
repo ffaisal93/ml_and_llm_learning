@@ -13,7 +13,7 @@
 >
 > The research-scientist focus elsewhere in this repo covers the *what* and *why*. This chapter is the *how to actually run it in production* layer — what AI infra engineers at OpenAI, Anthropic, Cohere, Together, Fireworks, Anyscale, Modal, Baseten, Replicate, etc. ship and operate.
 >
-> Pair with `61_large_scale_llm_systems/EFFICIENT_TRAINING_INFERENCE_PLAYBOOK.md` (algorithmic depth), `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md` (inference internals), `63_paged_attention_and_llm_serving/` (paged attention deep dive).
+> Pair with [`61_large_scale_llm_systems/EFFICIENT_TRAINING_INFERENCE_PLAYBOOK.md`](../61_large_scale_llm_systems/EFFICIENT_TRAINING_INFERENCE_PLAYBOOK.md) (algorithmic depth), [`06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`](../06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md) (inference internals), `63_paged_attention_and_llm_serving/` (paged attention deep dive).
 
 ---
 
@@ -132,7 +132,7 @@ That's a senior answer.
 
 ## 3. Quantization in Production
 
-(Short recap — full coverage in `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`.)
+(Short recap — full coverage in [`06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`](../06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md).)
 
 ### 3.1 The standard production menu (2025-2026)
 
@@ -388,7 +388,7 @@ The four numbers you live and die by.
 
 **In plain language: the three ways to split a job.** *Data parallelism* gives every GPU a full copy of the model and a different slice of the batch; they average their gradients at the end of each step. It's the simplest and it's what you use until the model stops fitting on one GPU. *Tensor parallelism* cuts each individual layer's matrices into pieces so several GPUs compute one layer together — that requires talking to each other multiple times per layer, so it lives inside a single NVLink-connected node, usually eight GPUs. *Pipeline parallelism* gives each GPU a different consecutive stack of layers, like stations on an assembly line, so the chatter is only at the handoffs and it can cross nodes. Real frontier runs use all three at once plus ZeRO/FSDP sharding of the optimizer state, and the named cost of pipelining is the "bubble" — idle GPUs waiting for the first micro-batch to work its way down the line.
 
-The training side. Detailed coverage in `61_large_scale_llm_systems/EFFICIENT_TRAINING_INFERENCE_PLAYBOOK.md` — production focus here.
+The training side. Detailed coverage in [`61_large_scale_llm_systems/EFFICIENT_TRAINING_INFERENCE_PLAYBOOK.md`](../61_large_scale_llm_systems/EFFICIENT_TRAINING_INFERENCE_PLAYBOOK.md) — production focus here.
 
 ### 9.1 The library landscape
 
@@ -736,7 +736,7 @@ The survival skills.
 
 ## 16. Security at the Infrastructure Layer
 
-(Cross-reference: `65_llm_security/LLM_SECURITY_DEEP_DIVE.md` covers prompt injection, jailbreaks, lethal trifecta. Here, infra-layer concerns.)
+(Cross-reference: [`65_llm_security/LLM_SECURITY_DEEP_DIVE.md`](../65_llm_security/LLM_SECURITY_DEEP_DIVE.md) covers prompt injection, jailbreaks, lethal trifecta. Here, infra-layer concerns.)
 
 - **Secrets management.** Vault, AWS KMS, GCP Secret Manager. Never bake API keys into images.
 - **Network isolation.** Private VPC, no public LLM endpoints unless authenticated.
@@ -895,12 +895,12 @@ What separates "knows the words" from "has shipped this."
 - Sebastian Raschka — *Building LLMs from Scratch*.
 
 ### Cross-references in this repo
-- `06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`
-- `61_large_scale_llm_systems/EFFICIENT_TRAINING_INFERENCE_PLAYBOOK.md`
+- [`06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md`](../06_llm_inference/LLM_INFERENCE_DEEP_DIVE.md)
+- [`61_large_scale_llm_systems/EFFICIENT_TRAINING_INFERENCE_PLAYBOOK.md`](../61_large_scale_llm_systems/EFFICIENT_TRAINING_INFERENCE_PLAYBOOK.md)
 - `63_paged_attention_and_llm_serving/`
-- `41_mixture_of_experts/MOE_DEEP_DIVE.md`
-- `39_rag_retrieval_augmented_generation/RAG_DEEP_DIVE.md`
-- `65_llm_security/LLM_SECURITY_DEEP_DIVE.md`
+- [`41_mixture_of_experts/MOE_DEEP_DIVE.md`](../41_mixture_of_experts/MOE_DEEP_DIVE.md)
+- [`39_rag_retrieval_augmented_generation/RAG_DEEP_DIVE.md`](../39_rag_retrieval_augmented_generation/RAG_DEEP_DIVE.md)
+- [`65_llm_security/LLM_SECURITY_DEEP_DIVE.md`](../65_llm_security/LLM_SECURITY_DEEP_DIVE.md)
 
 ---
 
