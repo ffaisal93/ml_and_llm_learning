@@ -41,7 +41,7 @@ Each day therefore has something to type, even the reading-heavy days.
 
 ### Day 1 — Classical ML and the loss vocabulary
 
-**Workbook.** [Classical ML](../77_two_week_workbook/01_classical_ml.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
+**Workbook.** [Linear algebra](../77_two_week_workbook/16_linear_algebra.md) and [Classical ML](../77_two_week_workbook/01_classical_ml.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
 
 **Read.** Start with [Classical ML](../01_classical_ml/README.md) for the map of models and losses.
 Then read the [Logistic regression deep dive](../01_classical_ml/LOGISTIC_REGRESSION_DEEP_DIVE.md), because logistic regression is the model interviewers use to test whether you know where a loss comes from.
@@ -115,7 +115,7 @@ What is a novelty effect, and how does it change your test duration?
 
 ### Day 4 — Probability and the scenario problems
 
-**Workbook.** [Probability and statistics](../77_two_week_workbook/04_probability_stats.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
+**Workbook.** [Probability and statistics](../77_two_week_workbook/04_probability_stats.md) and [Conditional probability: worked problems](../77_two_week_workbook/17_conditional_probability_problems.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
 
 **Read.** Start with the [Probability deep dive](../17_probability_math/PROBABILITY_DEEP_DIVE.md) for the core rules, Bayes, and the standard distributions.
 Then work through [Scenario problems on conditional probability](../17_probability_math/SCENARIO_PROBLEMS_CONDITIONAL.md) and [Scenario problems on expectation](../17_probability_math/SCENARIO_PROBLEMS_EXPECTATION.md).

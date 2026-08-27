@@ -153,7 +153,7 @@ def cohens_kappa(a, b):
     pe = sum((ca[l] / n) * (cb[l] / n) for l in labels)  # chance agreement
     return (po - pe) / (1 - pe), po, pe
 
-# 2x2 counts: agree-yes 25, human-only 15, judge-only 10, agree-no 50
+## 2x2 counts: agree-yes 25, human-only 15, judge-only 10, agree-no 50
 human = ["y"]*25 + ["y"]*15 + ["n"]*10 + ["n"]*50
 judge = ["y"]*25 + ["n"]*15 + ["y"]*10 + ["n"]*50
 k, po, pe = cohens_kappa(human, judge)

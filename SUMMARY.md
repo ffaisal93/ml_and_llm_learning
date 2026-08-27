@@ -676,3 +676,5 @@
   - [LLM Security and Safety](77_two_week_workbook/13_security.md)
   - [The ML Coding Round](77_two_week_workbook/14_ml_coding.md)
   - [The Algorithms Round](77_two_week_workbook/15_leetcode.md)
+  - [Linear Algebra](77_two_week_workbook/16_linear_algebra.md)
+  - [Conditional Probability: Worked Problems](77_two_week_workbook/17_conditional_probability_problems.md)
