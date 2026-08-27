@@ -1,82 +1,69 @@
+
+# Environment variables
+# FUSE-mount tombstones (Cowork / FUSE workspace mounts)
+# IDE
+# Jupyter Notebook
+# Local scratch (do not commit)
+# Logs
+# OS
+# Plots
 # Python
-__pycache__/
-*.py[cod]
+# Temporary files
+# Virtual Environment
+# mdBook output
+# personal, not published
+# pytest
 *$py.class
+*.egg
+*.egg-info/
+*.jpg
+*.log
+*.pdf
+*.png
+*.py[cod]
 *.so
+*.swo
+*.swp
+*.tmp
+*~
+.DS_Store
 .Python
+.coverage
+.eggs/
+.env
+.env.local
+.fuse_hidden*
+.idea/
+.installed.cfg
+.ipynb_checkpoints
+.pytest_cache/
+.tox/
+.vscode/
+/book/
+ENV/
+MANIFEST
+Thumbs.db
+__pycache__/
+_local/
+_to_delete/
+_trash/
 build/
 develop-eggs/
 dist/
 downloads/
 eggs/
-.eggs/
+env.bak/
+env/
+htmlcov/
 lib/
 lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual Environment
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# pytest
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-
-# Plots
-*.png
-*.jpg
-*.pdf
-
-# Logs
-*.log
 logs/
-
-# Environment variables
-.env
-.env.local
-
-# Temporary files
-tmp/
-temp/
-*.tmp
-
-# Local scratch (do not commit)
+parts/
 practice/temp.*
-
-# OS
-Thumbs.db
-.DS_Store
-
-# FUSE-mount tombstones (Cowork / FUSE workspace mounts)
-.fuse_hidden*
-
-# mdBook output
-/book/
-
-
-# personal, not published
-_local/
-_trash/
+sdist/
+temp/
+tmp/
+var/
+venv.bak/
+venv/
+wheels/

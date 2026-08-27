@@ -254,6 +254,7 @@
 - [29_system_design_for_ml](29_system_design_for_ml/README.md)
   - [Ml System Design Deep Dive](29_system_design_for_ml/ML_SYSTEM_DESIGN_DEEP_DIVE.md)
   - [Interview Grill](29_system_design_for_ml/INTERVIEW_GRILL.md)
+  - [AI System Design Scenarios](29_system_design_for_ml/AI_SYSTEM_DESIGN_SCENARIOS.md)
 
 # 29 System Design Ml
 
@@ -630,6 +631,7 @@
 # 73 Night Before Review
 
 - [73_night_before_review](73_night_before_review/README.md)
+  - [The Two-Week Plan](73_night_before_review/TWO_WEEK_PLAN.md)
   - [Code From Memory](73_night_before_review/CODE_FROM_MEMORY.md)
   - [Formula Sheet](73_night_before_review/FORMULA_SHEET.md)
   - [Depth And Breadth Qa](73_night_before_review/DEPTH_AND_BREADTH_QA.md)

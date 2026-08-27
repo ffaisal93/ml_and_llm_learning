@@ -1,12 +1,20 @@
-# Topic 73: The Night Before
+# Topic 73: The Plan, and the Night Before
 
-Everything else in this repository is for learning. This folder is for the evening before an interview,
-when learning is over and the only useful activity is refreshing what you already know.
+This folder holds two things. `TWO_WEEK_PLAN.md` is a fourteen-day route through all four books, from
+classical ML to LeetCode patterns, with the pages to read and the code to write on each day. The other
+four files are the compression pass for the last evening, when learning is over.
+
+If your interview is more than a day away, start with [the two-week plan](TWO_WEEK_PLAN.md). If it is
+tomorrow, skip it and read the rest of this page.
+
+Everything else in this repository is for learning. The rest of this page is for the evening before an
+interview, when learning is over and the only useful activity is refreshing what you already know.
 
 ## Files in this folder
 
 | File | Purpose |
 |---|---|
+| `TWO_WEEK_PLAN.md` | Fourteen days, each with what to read, what to type, what to say out loud, and a checkable outcome. Links across all four books. Start here unless the interview is tomorrow. |
 | [`CODE_FROM_MEMORY.md`](CODE_FROM_MEMORY.md) | The implementations you must be able to write cold — softmax, linear and logistic regression, attention, multi-head attention, a transformer block, the training loop — in NumPy and PyTorch. Every snippet verified by execution. |
 | [`FORMULA_SHEET.md`](FORMULA_SHEET.md) | One page of losses, gradients, activations, norms, optimizers, metrics, and scaling rules. For staring at, not reading. |
 | [`DEPTH_AND_BREADTH_QA.md`](DEPTH_AND_BREADTH_QA.md) | Ten depth ladders that follow a topic down five levels, ~100 rapid-fire breadth questions, the ones people fumble, and questions to ask them. |
@@ -68,8 +76,8 @@ That you have already worked through the material. The compression here only hel
 underneath it to decompress — a formula sheet read by someone who never derived the formulas is just a
 list of symbols.
 
-If you are more than a day out, close this and go read the topic folders properly. Come back the night
-before.
+If you are more than a day out, close this and follow [the two-week plan](TWO_WEEK_PLAN.md) instead.
+Come back to this page the night before.
 
 ---
 

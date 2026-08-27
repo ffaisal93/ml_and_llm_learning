@@ -58,3 +58,7 @@ prediction," where the work is framing a business problem rather than serving a 
 - [`06_llm_inference`](../06_llm_inference/README.md) and [`63_paged_attention_and_llm_serving`](../63_paged_attention_and_llm_serving/README.md) — the serving internals behind Design 6.
 - [`74_ai_engineer_interview_prep/LOOP_SYSTEM_DESIGN_QA.md`](../74_ai_engineer_interview_prep/LOOP_SYSTEM_DESIGN_QA.md) — fourteen more design prompts, worked in the
   same shape.
+
+## Also in this folder
+
+[AI system design scenarios](AI_SYSTEM_DESIGN_SCENARIOS.md) — fifteen scenario questions, from turning "make it smarter" into a specification to architecting inside a 150 ms latency budget or a 500-dollar-a-month infrastructure budget.
