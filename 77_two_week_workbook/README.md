@@ -1,0 +1,41 @@
+# Topic 77: The Two-Week Workbook
+
+Fifteen pages, one per topic, holding what you need to say and write in an interview. Each page has the
+equations with a plain-language gloss, code short enough to type from memory, and the questions with a
+spoken answer for each. Every code block on every page was executed before it was published, and where a
+result can be checked against a library — sklearn, PyTorch — it was checked and the agreement is stated
+in the text.
+
+This is the practice material. The schedule that routes you through it is
+[the two-week plan](../73_night_before_review/TWO_WEEK_PLAN.md), and the compression pass for the last
+evening is the rest of [topic 73](../73_night_before_review/README.md).
+
+## The pages
+
+| Page | Covers |
+|---|---|
+| [Classical ML](01_classical_ml.md) | Linear and logistic regression, regularisation, bias-variance, trees, SVM, bagging and boosting. |
+| [Optimization and training dynamics](02_optimization.md) | SGD through Adam and AdamW, normalisation, warmup, mixed precision, and how to read a broken loss curve. |
+| [Evaluation metrics and A/B testing](03_evaluation.md) | Precision and recall through calibration and proper scoring rules, ranking metrics, and experiment design. |
+| [Probability and statistics](04_probability_stats.md) | Bayes, expectation, MLE and MAP, KL divergence, and the scenario problems, each verified by simulation. |
+| [Transformers and attention](05_transformers.md) | Scaled dot-product attention, multi-head shapes, the KV cache, and where the parameters live. |
+| [Tokenization and positional embeddings](06_tokenization_positional.md) | BPE, sinusoidal encoding, RoPE and ALiBi, and why tokenization causes the failures it does. |
+| [LLM training and alignment](07_llm_training.md) | Pretraining through SFT to PPO, GRPO and DPO, reward models, LoRA and QLoRA. |
+| [LLM inference and serving](08_inference_serving.md) | Prefill versus decode, the roofline argument, PagedAttention, batching, quantisation, speculative decoding. |
+| [Retrieval-augmented generation](09_rag.md) | Chunking, hybrid search, reranking, the RAGAS quartet, and what breaks at a million documents. |
+| [Agents](10_agents.md) | The ReAct loop, tool design, loop control, memory, multi-agent failure, and MCP. |
+| [Evaluating LLM and agent systems](11_agent_evaluation.md) | The four evaluation levels, trajectory scoring, LLM-as-judge and its biases, statistical deploy gates. |
+| [ML system design](12_system_design.md) | The framework, capacity estimates, the tail math, monitoring and drift, canary and rollback. |
+| [LLM security and safety](13_security.md) | The OWASP list, direct and indirect injection, the lethal trifecta, access control at retrieval time. |
+| [The ML coding round](14_ml_coding.md) | Six primitives to write cold — softmax, cross-entropy, attention, k-means, k-NN, the training loop. |
+| [The algorithms round](15_leetcode.md) | Binary search, sliding window, BFS and DFS, dynamic programming, heaps, graphs, and how to talk while coding. |
+
+## How to use a page
+
+Read the equations once. Then close the page and write the code from a blank file. Then read the
+questions and say your own answer aloud BEFORE reading the one given. The gap between what you said and
+what is written is the thing to work on, and it is almost always the same two things: the failure mode
+you did not name, and the tradeoff you did not state.
+
+Recognition and recall are different skills, and only recall gets tested. Reading a page twice feels
+like progress and is not.

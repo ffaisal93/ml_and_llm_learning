@@ -659,3 +659,20 @@
 # 76 Links To Read
 
 - [76_links_to_read](76_links_to_read/README.md)
+
+- [77_two_week_workbook](77_two_week_workbook/README.md)
+  - [Classical ML](77_two_week_workbook/01_classical_ml.md)
+  - [Optimization and Training Dynamics](77_two_week_workbook/02_optimization.md)
+  - [Evaluation Metrics and A/B Testing](77_two_week_workbook/03_evaluation.md)
+  - [Probability and Statistics](77_two_week_workbook/04_probability_stats.md)
+  - [Transformers and Attention](77_two_week_workbook/05_transformers.md)
+  - [Tokenization and Positional Embeddings](77_two_week_workbook/06_tokenization_positional.md)
+  - [LLM Training and Alignment](77_two_week_workbook/07_llm_training.md)
+  - [LLM Inference and Serving](77_two_week_workbook/08_inference_serving.md)
+  - [Retrieval-Augmented Generation](77_two_week_workbook/09_rag.md)
+  - [Agents](77_two_week_workbook/10_agents.md)
+  - [Evaluating LLM and Agent Systems](77_two_week_workbook/11_agent_evaluation.md)
+  - [ML System Design](77_two_week_workbook/12_system_design.md)
+  - [LLM Security and Safety](77_two_week_workbook/13_security.md)
+  - [The ML Coding Round](77_two_week_workbook/14_ml_coding.md)
+  - [The Algorithms Round](77_two_week_workbook/15_leetcode.md)

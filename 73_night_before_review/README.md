@@ -4,8 +4,10 @@ This folder holds two things. `TWO_WEEK_PLAN.md` is a fourteen-day route through
 classical ML to LeetCode patterns, with the pages to read and the code to write on each day. The other
 four files are the compression pass for the last evening, when learning is over.
 
-If your interview is more than a day away, start with [the two-week plan](TWO_WEEK_PLAN.md). If it is
-tomorrow, skip it and read the rest of this page.
+If your interview is more than a day away, start with [the two-week plan](TWO_WEEK_PLAN.md), which
+routes you day by day through [the two-week workbook](../77_two_week_workbook/README.md) — fifteen topic
+pages of equations, code and spoken answers. If the interview is tomorrow, skip both and read the rest
+of this page.
 
 Everything else in this repository is for learning. The rest of this page is for the evening before an
 interview, when learning is over and the only useful activity is refreshing what you already know.

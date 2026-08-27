@@ -17,6 +17,11 @@ You either say the answers out loud, at speaking speed, with nobody prompting yo
 If a day runs short of time, drop the reading and keep the recall.
 The reverse trade fails, because reading builds recognition and interviews test production.
 
+Every day opens with a **Workbook** line pointing at the matching page in
+[the two-week workbook](../77_two_week_workbook/README.md). That page holds the equations, the code to
+write from memory, and the questions with a spoken answer for each, so you can work a day without
+leaving it. The Read links are for depth when a workbook answer is not enough.
+
 ## How the fortnight is shaped
 
 Week 1 builds the foundation and then the depth.
@@ -35,6 +40,8 @@ Each day therefore has something to type, even the reading-heavy days.
 ## Week 1
 
 ### Day 1 — Classical ML and the loss vocabulary
+
+**Workbook.** [Classical ML](../77_two_week_workbook/01_classical_ml.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
 
 **Read.** Start with [Classical ML](../01_classical_ml/README.md) for the map of models and losses.
 Then read the [Logistic regression deep dive](../01_classical_ml/LOGISTIC_REGRESSION_DEEP_DIVE.md), because logistic regression is the model interviewers use to test whether you know where a loss comes from.
@@ -60,6 +67,8 @@ Then take five questions from the [Logistic regression interview grill](../01_cl
 
 ### Day 2 — Optimisation and training behaviour
 
+**Workbook.** [Optimization and training dynamics](../77_two_week_workbook/02_optimization.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
+
 **Read.** Start with [Gradient descent](../02_gradient_descent/README.md) for the batch, mini-batch and stochastic variants.
 Then read the [Learning rate deep dive](../02_gradient_descent/LEARNING_RATE_DEEP_DIVE.md), because the learning rate is the hyperparameter interviewers probe first.
 Then read [Optimizers](../10_optimizers/README.md) for momentum, RMSProp and Adam, and how they differ in what they store.
@@ -81,6 +90,8 @@ Your training loss falls and your validation loss rises from epoch three — wha
 **Done when.** You can write the Adam update from a blank file, name every term in it, and give an ordered debugging list for a diverging loss without pausing.
 
 ### Day 3 — Evaluation and statistics
+
+**Workbook.** [Evaluation metrics and A/B testing](../77_two_week_workbook/03_evaluation.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
 
 **Read.** Start with the [Evaluation metrics deep dive](../03_evaluation_metrics/EVALUATION_METRICS_DEEP_DIVE.md) for precision, recall, F1, ROC-AUC and PR-AUC, and for when each one lies.
 Then read the [Statistical inference deep dive](../47_statistical_inference/STATISTICAL_INFERENCE_DEEP_DIVE.md) for hypothesis tests, confidence intervals and p-values.
@@ -104,6 +115,8 @@ What is a novelty effect, and how does it change your test duration?
 
 ### Day 4 — Probability and the scenario problems
 
+**Workbook.** [Probability and statistics](../77_two_week_workbook/04_probability_stats.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
+
 **Read.** Start with the [Probability deep dive](../17_probability_math/PROBABILITY_DEEP_DIVE.md) for the core rules, Bayes, and the standard distributions.
 Then work through [Scenario problems on conditional probability](../17_probability_math/SCENARIO_PROBLEMS_CONDITIONAL.md) and [Scenario problems on expectation](../17_probability_math/SCENARIO_PROBLEMS_EXPECTATION.md).
 Treat both as problem sets, not as reading.
@@ -125,6 +138,8 @@ Pick one scenario problem you failed and explain the trap in it aloud.
 **Done when.** You can solve a fresh conditional-probability scenario on paper in five minutes and confirm it with a twenty-line simulation.
 
 ### Day 5 — Transformers and attention
+
+**Workbook.** [Transformers and attention](../77_two_week_workbook/05_transformers.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
 
 This is the highest-value day of the fortnight for an LLM role.
 Give it your best hours.
@@ -152,6 +167,8 @@ What does grouped-query attention trade away, and what does it buy?
 
 ### Day 6 — Tokenization, positions and training techniques
 
+**Workbook.** [Tokenization and positional embeddings](../77_two_week_workbook/06_tokenization_positional.md) and [LLM training and alignment](../77_two_week_workbook/07_llm_training.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
+
 Weekend. This is a long day, so plan three blocks with breaks.
 
 **Read.** Start with the [Tokenization deep dive](../15_tokenization/TOKENIZATION_DEEP_DIVE.md) for byte-pair encoding and the failure modes it creates.
@@ -175,6 +192,8 @@ How many parameters does LoRA train at rank eight on a 4096-wide layer, and why 
 **Done when.** You can write a LoRA layer and the RoPE rotation from blank files, and narrate the full RLHF pipeline in ninety seconds.
 
 ### Day 7 — LLM inference and serving
+
+**Workbook.** [LLM inference and serving](../77_two_week_workbook/08_inference_serving.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
 
 Weekend. Long day again. This day brings in the serving book.
 
@@ -201,6 +220,8 @@ When does quantisation hurt quality, and which parts of the model do you quantis
 
 ### Day 8 — RAG, end to end
 
+**Workbook.** [Retrieval-augmented generation](../77_two_week_workbook/09_rag.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
+
 **Read.** Start with the [RAG deep dive](../39_rag_retrieval_augmented_generation/RAG_DEEP_DIVE.md) for the full pipeline.
 Then read [Retrieval methods](../39_rag_retrieval_augmented_generation/retrieval_methods.md) and [Chunking strategies](../39_rag_retrieval_augmented_generation/chunking_strategies.md), which are the two places most real systems fail.
 Then read [RAG failure diagnosis](../74_ai_engineer_interview_prep/RAG_FAILURE_DIAGNOSIS.md), because interviewers give you a broken system and ask what you check.
@@ -221,6 +242,8 @@ Your p99 latency is four seconds — name the three stages you would time first.
 **Done when.** You can build a hybrid retriever with reranking from a blank file, and give an ordered diagnosis for a RAG system that returns confident wrong answers.
 
 ### Day 9 — Agents
+
+**Workbook.** [Agents](../77_two_week_workbook/10_agents.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
 
 The production agent book is the spine today.
 
@@ -245,6 +268,8 @@ When does a multi-agent design pay for its coordination cost?
 
 ### Day 10 — Agent and LLM evaluation
 
+**Workbook.** [Evaluating LLM and agent systems](../77_two_week_workbook/11_agent_evaluation.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
+
 **Read.** Start with the [Evaluation frameworks deep dive](https://fahimfaisal.info/agentic-ai-evaluation-guide/02_evaluation_frameworks/EVALUATION_FRAMEWORKS_DEEP_DIVE.html) for how to structure an eval at all.
 Then read the [Metrics and benchmarks deep dive](https://fahimfaisal.info/agentic-ai-evaluation-guide/03_metrics_and_benchmarks/METRICS_AND_BENCHMARKS_DEEP_DIVE.html) and the [Tool use evaluation deep dive](https://fahimfaisal.info/agentic-ai-evaluation-guide/04_tool_use_evaluation/TOOL_USE_EVALUATION_DEEP_DIVE.html), because tool-use correctness is what separates agent evals from model evals.
 Then read the [Automated evaluation deep dive](https://fahimfaisal.info/agentic-ai-evaluation-guide/09_automated_evaluation/AUTOMATED_EVALUATION_DEEP_DIVE.html) for LLM-as-judge and its biases.
@@ -265,6 +290,8 @@ What do you monitor in production that an offline eval cannot catch?
 **Done when.** You can specify an eval suite for a given agent in ten minutes, with per-case rubric, sample size and the metric you would gate a release on.
 
 ### Day 11 — ML system design
+
+**Workbook.** [ML system design](../77_two_week_workbook/12_system_design.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
 
 **Read.** Start with the [ML system design deep dive](../29_system_design_for_ml/ML_SYSTEM_DESIGN_DEEP_DIVE.md) for the framework: requirements, data, features, model, serving, evaluation, monitoring.
 Then read the [Large-scale LLM systems deep dive](../61_large_scale_llm_systems/LARGE_SCALE_LLM_DEEP_DIVE.md) for the version of that framework that involves GPUs.
@@ -287,6 +314,8 @@ What do you log on day one so that you can debug this in month three?
 
 ### Day 12 — Security, alignment and frontier topics
 
+**Workbook.** [LLM security and safety](../77_two_week_workbook/13_security.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
+
 **Read.** Start with the [LLM security deep dive](../65_llm_security/LLM_SECURITY_DEEP_DIVE.md) for prompt injection, data exfiltration and the tool-permission problem.
 Then read [Security](https://fahimfaisal.info/learn-production-agent/06_production/04-security.html) from the agent book for the production controls.
 Then read the [Reasoning models deep dive](../66_frontier_alignment_rl/REASONING_MODELS_DEEP_DIVE.md) and the [RLVR deep dive](../66_frontier_alignment_rl/RLVR_DEEP_DIVE.md), which are the current-events part of a research interview.
@@ -306,6 +335,8 @@ Given a fixed compute budget, do you train a larger model or use more tokens, an
 **Done when.** You can state a threat model for a tool-using agent and name a specific control for each threat, without falling back on "we would add guardrails".
 
 ### Day 13 — ML coding and LeetCode patterns
+
+**Workbook.** [The ML coding round](../77_two_week_workbook/14_ml_coding.md) and [The algorithms round](../77_two_week_workbook/15_leetcode.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
 
 Weekend. This is a keyboard day. Read little, type all day.
 
@@ -330,6 +361,8 @@ Which pattern applies here, and how did you recognise it in the first thirty sec
 **Done when.** You wrote twelve or more programs today, and every one of them ran, and you never opened a solution before your timer rang.
 
 ### Day 14 — The mock loop and the compression pass
+
+**Workbook.** [The algorithms round](../77_two_week_workbook/15_leetcode.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
 
 Weekend. Morning is a full loop. Afternoon is compression. Then you stop.
 
