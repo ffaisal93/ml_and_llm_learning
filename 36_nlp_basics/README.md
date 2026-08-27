@@ -370,7 +370,7 @@ See [`evaluation_metrics.py`](evaluation_metrics_py.md), `nlp_tasks_and_solution
   - Interpretation and typical values
   - Computing perplexity step-by-step
   - Perplexity variants and applications
-- **`03_evaluation_metrics/perplexity_code.py`**: Complete implementations
+- **[`03_evaluation_metrics/perplexity_code.py`](../03_evaluation_metrics/perplexity_code_py.md)**: Complete implementations
   - All perplexity computation methods
   - Bits per token, normalized perplexity
   - Model comparison utilities

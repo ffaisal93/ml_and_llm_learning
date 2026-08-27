@@ -333,15 +333,15 @@ automation bias, rubber-stamp gates — is worth more than another benchmark num
 
 ## 6. Where to go deeper in this repository
 
-- `65_llm_security` — least privilege, prompt injection, and the trust boundary, which components 9 and
+- [`65_llm_security`](../65_llm_security/README.md) — least privilege, prompt injection, and the trust boundary, which components 9 and
   10 depend on.
-- `74_ai_engineer_interview_prep` — the interview layer, including OWASP for RAG and the diagnostic
+- [`74_ai_engineer_interview_prep`](../74_ai_engineer_interview_prep/README.md) — the interview layer, including OWASP for RAG and the diagnostic
   questions.
-- `39_rag_retrieval_augmented_generation` — the retrieval mechanics behind component 4, and the reason
+- [`39_rag_retrieval_augmented_generation`](../39_rag_retrieval_augmented_generation/README.md) — the retrieval mechanics behind component 4, and the reason
   "just use RAG" is an incomplete answer.
-- `03_evaluation_metrics` and `47_statistical_inference` — calibration, proper scoring rules, and the
+- [`03_evaluation_metrics`](../03_evaluation_metrics/README.md) and [`47_statistical_inference`](../47_statistical_inference/README.md) — calibration, proper scoring rules, and the
   sampling traps in component 13.
-- `69_ai_infrastructure_engineering` — sandboxing, budgets, and the operational half.
+- [`69_ai_infrastructure_engineering`](../69_ai_infrastructure_engineering/README.md) — sandboxing, budgets, and the operational half.
 
 ---
 

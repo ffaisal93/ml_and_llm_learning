@@ -76,12 +76,12 @@ before.
 ## Cross-references
 
 - Full derivations for anything on the formula sheet live in the numbered topic folders — logistic
-  regression in `01_classical_ml`, optimization in `02_gradient_descent`, attention in
-  `05_attention_mechanisms`, scaling in `70_scaling_laws`.
-- `13_interview_qa` and `56_spoken_interview_question_bank` are the longer question banks; this folder is
+  regression in [`01_classical_ml`](../01_classical_ml/README.md), optimization in [`02_gradient_descent`](../02_gradient_descent/README.md), attention in
+  [`05_attention_mechanisms`](../05_attention_mechanisms/README.md), scaling in [`70_scaling_laws`](../70_scaling_laws/README.md).
+- [`13_interview_qa`](../13_interview_qa/README.md) and [`56_spoken_interview_question_bank`](../56_spoken_interview_question_bank/README.md) are the longer question banks; this folder is
   the compressed pass over them.
 - `74_ai_engineer_interview_prep` is what [`AI_ENGINEER_ONE_PAGER.md`](AI_ENGINEER_ONE_PAGER.md) compresses — the interview loop
   itself, the modern question bank, RAG failure diagnosis, and latency engineering. Read that folder
   weeks out; read the one-pager tonight.
-- `50_ml_coding_interview_patterns` and `68_leetcode_patterns` cover the coding round, which this folder
+- [`50_ml_coding_interview_patterns`](../50_ml_coding_interview_patterns/README.md) and [`68_leetcode_patterns`](../68_leetcode_patterns/README.md) cover the coding round, which this folder
   deliberately does not.

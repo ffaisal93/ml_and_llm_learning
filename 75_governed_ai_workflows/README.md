@@ -57,9 +57,9 @@ also the two the source insists cannot be retrofitted.
 
 ## Cross-references
 
-- `65_llm_security` — least privilege, prompt injection, and the trust boundary.
-- `74_ai_engineer_interview_prep` — the interview layer, including OWASP for RAG.
-- `39_rag_retrieval_augmented_generation` — the mechanics behind the retrieval component.
-- `03_evaluation_metrics`, `47_statistical_inference` — calibration and proper scoring rules.
-- `69_ai_infrastructure_engineering` — sandboxing and the operational half.
-- `76_links_to_read` — where this article was parked before it became a chapter.
+- [`65_llm_security`](../65_llm_security/README.md) — least privilege, prompt injection, and the trust boundary.
+- [`74_ai_engineer_interview_prep`](../74_ai_engineer_interview_prep/README.md) — the interview layer, including OWASP for RAG.
+- [`39_rag_retrieval_augmented_generation`](../39_rag_retrieval_augmented_generation/README.md) — the mechanics behind the retrieval component.
+- [`03_evaluation_metrics`](../03_evaluation_metrics/README.md), [`47_statistical_inference`](../47_statistical_inference/README.md) — calibration and proper scoring rules.
+- [`69_ai_infrastructure_engineering`](../69_ai_infrastructure_engineering/README.md) — sandboxing and the operational half.
+- [`76_links_to_read`](../76_links_to_read/README.md) — where this article was parked before it became a chapter.

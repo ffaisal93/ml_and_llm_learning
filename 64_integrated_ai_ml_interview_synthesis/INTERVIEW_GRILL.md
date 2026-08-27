@@ -10,7 +10,7 @@
 Design X, Train X, Why does X work, Debug X, Trade off X vs Y.
 
 **2. "Design X" — what framework?**
-6 steps: clarify → frame → data → features+model → serving → monitoring. From `29_system_design_for_ml`.
+6 steps: clarify → frame → data → features+model → serving → monitoring. From [`29_system_design_for_ml`](../29_system_design_for_ml/README.md).
 
 **3. "Train X" — what framework?**
 Frontier training playbook: scaling laws → architecture → data mixture → stages → evaluation. From `62`.

@@ -107,18 +107,18 @@ knowing the shape does.
 
 ## How this folder relates to the others
 
-- `13_interview_qa` and `56_spoken_interview_question_bank` are the classical ML and general question
+- [`13_interview_qa`](../13_interview_qa/README.md) and [`56_spoken_interview_question_bank`](../56_spoken_interview_question_bank/README.md) are the classical ML and general question
   banks. This folder does not repeat them — it assumes an AI engineer loop will still drop a
   bias-variance question on you, it just is not the discriminating part.
-- `64_integrated_ai_ml_interview_synthesis` connects topics across the repository. This folder is
+- [`64_integrated_ai_ml_interview_synthesis`](../64_integrated_ai_ml_interview_synthesis/README.md) connects topics across the repository. This folder is
   narrower and more current.
-- `73_night_before_review` is the compressed retrieval pass. Read this folder weeks out; read that one
+- [`73_night_before_review`](../73_night_before_review/README.md) is the compressed retrieval pass. Read this folder weeks out; read that one
   the evening before.
-- `50_ml_coding_interview_patterns` and `68_leetcode_patterns` cover the coding round, which neither
+- [`50_ml_coding_interview_patterns`](../50_ml_coding_interview_patterns/README.md) and [`68_leetcode_patterns`](../68_leetcode_patterns/README.md) cover the coding round, which neither
   chapter here duplicates.
 - Depth on any answer here lives in the numbered topics — retrieval mechanics in
-  `39_rag_retrieval_augmented_generation`, serving and latency in `63_paged_attention_and_llm_serving`,
-  alignment and safety in `66_frontier_alignment_rl`.
+  [`39_rag_retrieval_augmented_generation`](../39_rag_retrieval_augmented_generation/README.md), serving and latency in [`63_paged_attention_and_llm_serving`](../63_paged_attention_and_llm_serving/README.md),
+  alignment and safety in [`66_frontier_alignment_rl`](../66_frontier_alignment_rl/README.md).
 
 ## How to use it
 

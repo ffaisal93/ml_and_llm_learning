@@ -22,5 +22,5 @@ Frontier-lab interviews probe RL not because they want game-playing agents but b
 
 ## Next Steps
 
-- **Topic 8**: Post-training and alignment (`08_training_techniques`) — RLHF, PPO, DPO, GRPO in depth.
+- **Topic 8**: Post-training and alignment ([`08_training_techniques`](../08_training_techniques/README.md)) — RLHF, PPO, DPO, GRPO in depth.
 - **Topic 33**: Information theory — KL divergence machinery used in RLHF.

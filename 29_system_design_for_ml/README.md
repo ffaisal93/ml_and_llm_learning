@@ -53,8 +53,8 @@ prediction," where the work is framing a business problem rather than serving a 
 
 ## Next
 
-- `30_ab_testing` — how you decide whether the thing you designed actually shipped an improvement.
-- `39_rag_retrieval_augmented_generation` — the same exercise for a retrieval-augmented LLM.
-- `06_llm_inference` and `63_paged_attention_and_llm_serving` — the serving internals behind Design 6.
+- [`30_ab_testing`](../30_ab_testing/README.md) — how you decide whether the thing you designed actually shipped an improvement.
+- [`39_rag_retrieval_augmented_generation`](../39_rag_retrieval_augmented_generation/README.md) — the same exercise for a retrieval-augmented LLM.
+- [`06_llm_inference`](../06_llm_inference/README.md) and [`63_paged_attention_and_llm_serving`](../63_paged_attention_and_llm_serving/README.md) — the serving internals behind Design 6.
 - [`74_ai_engineer_interview_prep/LOOP_SYSTEM_DESIGN_QA.md`](../74_ai_engineer_interview_prep/LOOP_SYSTEM_DESIGN_QA.md) — fourteen more design prompts, worked in the
   same shape.

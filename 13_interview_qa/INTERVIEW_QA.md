@@ -5567,7 +5567,7 @@ See [`38_multimodal_and_embeddings/multimodal_integration_and_world_models.md`](
 | 7 | Final layer norm | stabilizes the output of the residual stream |
 | 8 | Output projection | $d \to$ vocab logits, usually weight-tied to the embedding |
 
-**See `04_transformers/gpt_complete.py` for complete implementation!**
+**See [`04_transformers/gpt_complete.py`](../04_transformers/gpt_complete_py.md) for complete implementation!**
 
 **Why it works.**
 
@@ -5615,7 +5615,7 @@ Two mechanisms alternating. Attention is the *communication* step: each token as
 - Maps to vocabulary size
 - Produces logits for next token prediction
 
-**See `04_transformers/gpt_complete.py` for complete implementation!**
+**See [`04_transformers/gpt_complete.py`](../04_transformers/gpt_complete_py.md) for complete implementation!**
 
 **Narrative walkthrough: building it in the order you would write it.**
 
@@ -6018,7 +6018,7 @@ Total $O(n^{2}d + nd^{2})$. Which term dominates is just the ratio $n/d$, and th
 
 ---
 
-See `04_transformers/gpt_complete.py` for complete GPT implementation!
+See [`04_transformers/gpt_complete.py`](../04_transformers/gpt_complete_py.md) for complete GPT implementation!
 See [`04_transformers/gpt_training_decoding.md`](../04_transformers/gpt_training_decoding.md) for training and decoding details!
 See [`05_attention_mechanisms/attention_complexity.md`](../05_attention_mechanisms/attention_complexity.md) for complexity analysis!
 
@@ -6480,7 +6480,7 @@ optimizer = torch.optim.Adam([prompt_model.prompt_embeddings], lr=0.3)
 - Simple concatenation at input
 - Extremely parameter-efficient
 
-**See `25_adapters_lora/prompt_prefix_code.py` for complete implementation!**
+**See [`25_adapters_lora/prompt_prefix_code.py`](../25_adapters_lora/prompt_prefix_code_py.md) for complete implementation!**
 
 **Walking Through the Code:**
 
@@ -6515,7 +6515,7 @@ print(logits[:, P:, :].shape)  # torch.Size([4, 16, 50257]) -- slice before loss
 ---
 
 See [`25_adapters_lora/prompt_prefix_tuning.md`](../25_adapters_lora/prompt_prefix_tuning.md) for detailed theory!
-See `25_adapters_lora/prompt_prefix_code.py` for complete code!
+See [`25_adapters_lora/prompt_prefix_code.py`](../25_adapters_lora/prompt_prefix_code_py.md) for complete code!
 See [`25_adapters_lora/prompt_prefix_qa.md`](../25_adapters_lora/prompt_prefix_qa.md) for comprehensive Q&A!
 
 ---
@@ -6966,10 +6966,10 @@ Within one denoising step, all positions are predicted independently given the c
 ---
 
 See [`40_diffusion_models/diffusion_theory.md`](../40_diffusion_models/diffusion_theory.md) for complete theory!
-See `40_diffusion_models/diffusion_code.py` for continuous diffusion!
-See `40_diffusion_models/nlp_diffusion.py` for discrete diffusion!
-See `40_diffusion_models/training_diffusion.py` for training procedures!
-See `40_diffusion_models/evaluation_diffusion.py` for evaluation methods!
+See [`40_diffusion_models/diffusion_code.py`](../40_diffusion_models/diffusion_code_py.md) for continuous diffusion!
+See [`40_diffusion_models/nlp_diffusion.py`](../40_diffusion_models/nlp_diffusion_py.md) for discrete diffusion!
+See [`40_diffusion_models/training_diffusion.py`](../40_diffusion_models/training_diffusion_py.md) for training procedures!
+See [`40_diffusion_models/evaluation_diffusion.py`](../40_diffusion_models/evaluation_diffusion_py.md) for evaluation methods!
 See [`40_diffusion_models/diffusion_qa.md`](../40_diffusion_models/diffusion_qa.md) for comprehensive Q&A!
 
 ---
@@ -7335,7 +7335,7 @@ def language_model_perplexity(model, dataloader, device='cpu'):
     return avg_pp
 ```
 
-**See `03_evaluation_metrics/perplexity_code.py` for complete implementation!**
+**See [`03_evaluation_metrics/perplexity_code.py`](../03_evaluation_metrics/perplexity_code_py.md) for complete implementation!**
 
 **Runnable Check (executed):**
 
@@ -7488,8 +7488,8 @@ If you care about factuality, perplexity cannot help — use task accuracy or a 
 ---
 
 See [`03_evaluation_metrics/perplexity_detailed.md`](../03_evaluation_metrics/perplexity_detailed.md) for complete theory!
-See `03_evaluation_metrics/perplexity_code.py` for complete code!
-See `33_information_theory/information_theory.py` for entropy implementation!
+See [`03_evaluation_metrics/perplexity_code.py`](../03_evaluation_metrics/perplexity_code_py.md) for complete code!
+See [`33_information_theory/information_theory.py`](../33_information_theory/information_theory_py.md) for entropy implementation!
 
 ---
 
@@ -7792,7 +7792,7 @@ Row $i$ of the attention matrix has $i+1$ non-zero entries, so the number of liv
 ---
 
 See [`05_attention_mechanisms/causal_attention_detailed.md`](../05_attention_mechanisms/causal_attention_detailed.md) for complete theory!
-See `05_attention_mechanisms/causal_attention_code.py` for visualization!
+See [`05_attention_mechanisms/causal_attention_code.py`](../05_attention_mechanisms/causal_attention_code_py.md) for visualization!
 
 ---
 
@@ -8177,7 +8177,7 @@ The table's suggestion that MHA is for training is a bit misleading. GQA is used
 ---
 
 See [`05_attention_mechanisms/advanced_attention_mechanisms.md`](../05_attention_mechanisms/advanced_attention_mechanisms.md) for complete theory!
-See `05_attention_mechanisms/advanced_attention_code.py` for complete code!
+See [`05_attention_mechanisms/advanced_attention_code.py`](../05_attention_mechanisms/advanced_attention_code_py.md) for complete code!
 
 ---
 
@@ -8395,7 +8395,7 @@ Router z-loss, $L_z = \frac{1}{N}\sum_n (\log \sum_i e^{s_{ni}})^2$, penalizes l
 ---
 
 See [`41_mixture_of_experts/moe_theory.md`](../41_mixture_of_experts/moe_theory.md) for complete theory!
-See `41_mixture_of_experts/moe_code.py` for complete code!
+See [`41_mixture_of_experts/moe_code.py`](../41_mixture_of_experts/moe_code_py.md) for complete code!
 See [`41_mixture_of_experts/moe_qa.md`](../41_mixture_of_experts/moe_qa.md) for comprehensive Q&A!
 
 ---
@@ -8621,7 +8621,7 @@ Because the state is a fixed-size compression, SSMs are measurably worse at task
 ---
 
 See [`42_state_space_models/ssm_theory.md`](../42_state_space_models/ssm_theory.md) for complete theory!
-See `42_state_space_models/ssm_code.py` for complete code!
+See [`42_state_space_models/ssm_code.py`](../42_state_space_models/ssm_code_py.md) for complete code!
 See [`42_state_space_models/ssm_qa.md`](../42_state_space_models/ssm_qa.md) for comprehensive Q&A!
 
 ## Classical ML: Trees, Ensembles, and Dimensionality

@@ -24,7 +24,7 @@ Format:
 - [The Governed Scientific AI Workflow](https://studio.aneeshsathe.com/posts/governed-scientific-ai-workflow/) —
   Aneesh Sathe, Aug 2026. Fourteen responsibilities for wrapping probabilistic AI in deterministic
   governance: typed tools, deterministic validators, provenance, approval gates, budgets as a correctness
-  control. → became `75_governed_ai_workflows`.
+  control. → became [`75_governed_ai_workflows`](../75_governed_ai_workflows/README.md).
 - [How to Optimize RAG for Latency in Production](https://www.linkedin.com/pulse/how-optimize-rag-latency-production-ayush-singh-vrezc/) —
   Ayush Singh, Aug 2026. Fifty sections on RAG latency; the five-level optimization hierarchy and the
   worked 5s→2s example are the durable parts. → [`74_ai_engineer_interview_prep/RAG_LATENCY_IN_PRODUCTION.md`](../74_ai_engineer_interview_prep/RAG_LATENCY_IN_PRODUCTION.md),

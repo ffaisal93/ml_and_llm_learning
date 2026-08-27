@@ -5,8 +5,8 @@ able to write cold. This page compresses the *applied* layer: RAG, agents, evalu
 It exists because an AI engineer loop tests different things than an ML loop, and the night before is a
 bad time to discover which one you're in.
 
-For staring at, not reading. Depth is in `74_ai_engineer_interview_prep` and
-`39_rag_retrieval_augmented_generation`.
+For staring at, not reading. Depth is in [`74_ai_engineer_interview_prep`](../74_ai_engineer_interview_prep/README.md) and
+[`39_rag_retrieval_augmented_generation`](../39_rag_retrieval_augmented_generation/README.md).
 
 ---
 

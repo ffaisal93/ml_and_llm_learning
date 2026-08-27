@@ -349,5 +349,5 @@ Memorizing five answers fails, because the interviewer changes one detail. The t
 shape: what changed, bisect rather than scan, make the hypothesis falsifiable, say how you would prove
 it, and separate the fix that stops the bleeding from the fix that stops the recurrence.
 
-Mechanics are in `39_rag_retrieval_augmented_generation`; the component-level questions these build on
+Mechanics are in [`39_rag_retrieval_augmented_generation`](../39_rag_retrieval_augmented_generation/README.md); the component-level questions these build on
 are in [`MODERN_QUESTION_BANK.md`](MODERN_QUESTION_BANK.md) §2 and §5.

@@ -50,7 +50,7 @@ figure quoted as current when it is a year stale is an easy thing to get caught 
 
 ## Next
 
-- `06_llm_inference` — the serving mechanics behind the KV-cache and prefix-caching arithmetic here.
-- `39_rag_retrieval_augmented_generation` — the retrieval half of the long-context-versus-RAG question.
-- `65_llm_security` — single-turn safety, which this chapter's Part 2 contrasts against.
-- `74_ai_engineer_interview_prep` — the interview layer, including agent and context-engineering questions.
+- [`06_llm_inference`](../06_llm_inference/README.md) — the serving mechanics behind the KV-cache and prefix-caching arithmetic here.
+- [`39_rag_retrieval_augmented_generation`](../39_rag_retrieval_augmented_generation/README.md) — the retrieval half of the long-context-versus-RAG question.
+- [`65_llm_security`](../65_llm_security/README.md) — single-turn safety, which this chapter's Part 2 contrasts against.
+- [`74_ai_engineer_interview_prep`](../74_ai_engineer_interview_prep/README.md) — the interview layer, including agent and context-engineering questions.

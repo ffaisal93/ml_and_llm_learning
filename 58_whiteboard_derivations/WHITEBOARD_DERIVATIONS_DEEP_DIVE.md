@@ -409,12 +409,12 @@ For each: 5 minutes on a whiteboard. Until automatic.
 
 This deep dive is a meta-collection. The full derivations live in:
 
-- `31_neural_networks` for backprop.
-- `04_transformers` and `05_attention_mechanisms` for attention.
-- `01_classical_ml` for OLS and logistic.
-- `19_advanced_clustering` for EM.
-- `08_training_techniques` for DPO.
-- `21_dimensionality_reduction` for ELBO/VAE.
-- `27_advanced_theory` for bias-variance.
+- [`31_neural_networks`](../31_neural_networks/README.md) for backprop.
+- [`04_transformers`](../04_transformers/README.md) and [`05_attention_mechanisms`](../05_attention_mechanisms/README.md) for attention.
+- [`01_classical_ml`](../01_classical_ml/README.md) for OLS and logistic.
+- [`19_advanced_clustering`](../19_advanced_clustering/README.md) for EM.
+- [`08_training_techniques`](../08_training_techniques/README.md) for DPO.
+- [`21_dimensionality_reduction`](../21_dimensionality_reduction/README.md) for ELBO/VAE.
+- [`27_advanced_theory`](../27_advanced_theory/README.md) for bias-variance.
 
 Drill the derivations in those locations and you'll be ready for the whiteboard rounds.

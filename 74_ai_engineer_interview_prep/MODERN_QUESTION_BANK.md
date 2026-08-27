@@ -2,7 +2,7 @@
 
 Scope: the applied GenAI layer — the job of *building with* models rather than training them. RAG, agents, prompting and context engineering, evaluation, LLMOps, cost and latency, deployment, safety.
 
-This chapter deliberately does **not** cover classical ML theory, transformer internals, backprop, or optimizer math. Those live in `13_interview_qa` (classical ML Q&A), `64_integrated_ai_ml_interview_synthesis` (cross-cutting synthesis), and `73_night_before_review` (the compressed pass). Retrieval mechanics in depth — index structures, ANN algorithms, embedding geometry — are in `39_rag_retrieval_augmented_generation`. Read those first if you are shaky on fundamentals; an AI engineer loop will still drop a bias-variance or attention question on you, it just is not the discriminating part.
+This chapter deliberately does **not** cover classical ML theory, transformer internals, backprop, or optimizer math. Those live in [`13_interview_qa`](../13_interview_qa/README.md) (classical ML Q&A), [`64_integrated_ai_ml_interview_synthesis`](../64_integrated_ai_ml_interview_synthesis/README.md) (cross-cutting synthesis), and [`73_night_before_review`](../73_night_before_review/README.md) (the compressed pass). Retrieval mechanics in depth — index structures, ANN algorithms, embedding geometry — are in [`39_rag_retrieval_augmented_generation`](../39_rag_retrieval_augmented_generation/README.md). Read those first if you are shaky on fundamentals; an AI engineer loop will still drop a bias-variance or attention question on you, it just is not the discriminating part.
 
 **A note on how to use this.** The questions here are aggregated from public sources plus what the shape of the role actually demands (sourcing note in §11). The questions are the cheap part — they are on twenty websites. The answers are the point. Every answer below is written as what a strong candidate would actually say out loud: specific, honest about the tradeoff, usually naming the failure mode. Where an answer depends on facts that move — model capabilities, pricing, context limits, tooling — it is marked **[verify before quoting]**.
 
@@ -59,7 +59,7 @@ Note what that answer does: names a constraint, gives numbers, defends a fork, a
 
 The questions here are component questions — what a thing is, when you would use it, what it costs. The *symptom* questions that build on them (something suddenly broke; retrieval looks fine and answers do not; prove that change helped; five documents; a million documents) are worked end to end in [`RAG_FAILURE_DIAGNOSIS.md`](RAG_FAILURE_DIAGNOSIS.md), because they are a different skill and a harder one.
 
-The most heavily-asked cluster in the entire loop, at essentially every company. See `39_rag_retrieval_augmented_generation` for the mechanics of indexing, ANN search, and embedding models; this section is the interview layer.
+The most heavily-asked cluster in the entire loop, at essentially every company. See [`39_rag_retrieval_augmented_generation`](../39_rag_retrieval_augmented_generation/README.md) for the mechanics of indexing, ANN search, and embedding models; this section is the interview layer.
 
 ### "Why RAG instead of fine-tuning?"
 
@@ -554,7 +554,7 @@ Then: retention and deletion. If a user invokes deletion rights you need to remo
 
 When prompting has genuinely plateaued and the gap is *behavioral* rather than *informational* — output format, domain style, a task the model consistently misunderstands, or you want a small cheap model to match a big one on one narrow task (distillation, which is the most economically compelling case in practice).
 
-Method by budget: prompt optimization first, then few-shot, then LoRA/PEFT (which is what almost everyone should actually do — small adapters, cheap, fast to iterate, easy to roll back), then full fine-tuning only with strong justification, then preference tuning (DPO and relatives) when the objective is subjective quality that you can express as pairwise preferences but not as a rubric. The underlying optimization math is in `13_interview_qa` and `64_integrated_ai_ml_interview_synthesis`; here the question is about the decision, not the gradients.
+Method by budget: prompt optimization first, then few-shot, then LoRA/PEFT (which is what almost everyone should actually do — small adapters, cheap, fast to iterate, easy to roll back), then full fine-tuning only with strong justification, then preference tuning (DPO and relatives) when the objective is subjective quality that you can express as pairwise preferences but not as a rubric. The underlying optimization math is in [`13_interview_qa`](../13_interview_qa/README.md) and [`64_integrated_ai_ml_interview_synthesis`](../64_integrated_ai_ml_interview_synthesis/README.md); here the question is about the decision, not the gradients.
 
 The unglamorous truth to say out loud: **data quality dominates method.** A few hundred to a few thousand carefully curated, consistent examples beat a hundred thousand scraped ones, and the most common failure is inconsistent labeling — if two of your examples handle the same situation differently, you are training in ambiguity. Also: hold out an eval set before you start, check for catastrophic forgetting on general capability, and have the base model routable for rollback. And plan for the fact that the base model will be deprecated and you will do this again.
 
@@ -653,7 +653,7 @@ different layers, and **the ones that survive a determined attacker are the ones
 than in the prompt.** Retrieval-time permission filtering is a control. A tool gateway that authorizes
 each call is a control. "The system prompt says not to reveal other customers' data" is a wish.
 
-Depth on all of this is in `65_llm_security`.
+Depth on all of this is in [`65_llm_security`](../65_llm_security/README.md).
 
 ### "How do you defend against prompt injection?"
 
@@ -776,7 +776,7 @@ Short answers, one to three sentences. These get asked as warm-ups, as filler be
 
 **TTFT vs TPOT?** Time to first token, dominated by prefill and therefore by prompt length; time per output token, dominated by decode and memory bandwidth. Streaming makes TTFT the number the user feels.
 
-**What is the KV cache?** Cached key and value tensors for previous tokens so each new token does not recompute attention over the whole prefix. It is the main memory consumer in long-context serving. Mechanics in `13_interview_qa`.
+**What is the KV cache?** Cached key and value tensors for previous tokens so each new token does not recompute attention over the whole prefix. It is the main memory consumer in long-context serving. Mechanics in [`13_interview_qa`](../13_interview_qa/README.md).
 
 **Continuous batching?** The scheduler swaps finished sequences out of a batch and new ones in per-step rather than waiting for the whole batch to finish. Large throughput win because generation lengths vary.
 
@@ -788,13 +788,13 @@ Short answers, one to three sentences. These get asked as warm-ups, as filler be
 
 **LoRA?** Train small low-rank adapter matrices instead of full weights. Cheap, fast, swappable, easy to roll back. What most teams should use.
 
-**RLHF vs DPO?** RLHF trains a reward model then optimizes against it with RL; DPO optimizes preference pairs directly with a classification-style loss, skipping the reward model. DPO is simpler and cheaper; RLHF is more flexible. Math in `64_integrated_ai_ml_interview_synthesis`.
+**RLHF vs DPO?** RLHF trains a reward model then optimizes against it with RL; DPO optimizes preference pairs directly with a classification-style loss, skipping the reward model. DPO is simpler and cheaper; RLHF is more flexible. Math in [`64_integrated_ai_ml_interview_synthesis`](../64_integrated_ai_ml_interview_synthesis/README.md).
 
 **What is a reasoning model?** One trained to spend inference-time compute on extended internal reasoning before answering. Better on hard multi-step problems, worse on latency and cost, and often no better on simple extraction. Route to it selectively.
 
 **Cosine similarity vs dot product for embeddings?** Identical if vectors are L2-normalized, which most embedding models produce. If not normalized, dot product is length-sensitive and will favor longer texts.
 
-**What is ANN and why?** Approximate nearest neighbor. Exact search is $O(n)$ per query; HNSW and IVF trade a small recall loss for orders-of-magnitude speedup. Details in `39_rag_retrieval_augmented_generation`.
+**What is ANN and why?** Approximate nearest neighbor. Exact search is $O(n)$ per query; HNSW and IVF trade a small recall loss for orders-of-magnitude speedup. Details in [`39_rag_retrieval_augmented_generation`](../39_rag_retrieval_augmented_generation/README.md).
 
 **HNSW vs IVF, one line?** HNSW: better recall/latency, higher memory, expensive to build. IVF: lower memory, faster build, needs tuning of probe count. HNSW is the common default.
 
@@ -929,8 +929,8 @@ An honest note, because the sourcing on this topic is worse than it looks.
 
 **Deliberately excluded as filler**, with reasons:
 
-- *"What is AI / ML / deep learning?"*, *"what is overfitting?"*, *"bias-variance tradeoff"*, *"why split train/val/test?"*, *"what is feature engineering?"*, *"classification vs regression"* — roughly a third of the KodeKloud list. Real questions, wrong chapter: covered in `13_interview_qa` and `73_night_before_review`.
-- *"What is a transformer / attention / what are embeddings?"* — covered in `64_integrated_ai_ml_interview_synthesis`. Kept only the KV-cache and inference-cost angles, which are applied-layer.
+- *"What is AI / ML / deep learning?"*, *"what is overfitting?"*, *"bias-variance tradeoff"*, *"why split train/val/test?"*, *"what is feature engineering?"*, *"classification vs regression"* — roughly a third of the KodeKloud list. Real questions, wrong chapter: covered in [`13_interview_qa`](../13_interview_qa/README.md) and [`73_night_before_review`](../73_night_before_review/README.md).
+- *"What is a transformer / attention / what are embeddings?"* — covered in [`64_integrated_ai_ml_interview_synthesis`](../64_integrated_ai_ml_interview_synthesis/README.md). Kept only the KV-cache and inference-cost angles, which are applied-layer.
 - *"What are the main risks and ethical concerns with AI?"* — asked, but as a values screen, not a technical discriminator, and any answer is unfalsifiable. §8's incident-response question tests the same territory with actual signal.
 - *"What does parameter count tell you about a model?"* — increasingly meaningless post-MoE and post-distillation, and interviewers who ask it are usually reading from a list.
 - *"Explain how RAG works"* — appears in every source. Kept implicitly (§2 assumes it) but not as its own entry, because if you cannot answer it the rest of §2 is unreachable anyway.
