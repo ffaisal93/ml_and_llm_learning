@@ -1,6 +1,6 @@
 # Topic 77: The Two-Week Workbook
 
-Seventeen pages, one per topic, holding what you need to say and write in an interview. Each page has the
+Twenty pages, one per topic, holding what you need to say and write in an interview. Each page has the
 equations with a plain-language gloss, code short enough to type from memory, and the questions with a
 spoken answer for each. Every code block on every page was executed before it was published, and where a
 result can be checked against a library — sklearn, PyTorch — it was checked and the agreement is stated
@@ -31,6 +31,9 @@ evening is the rest of [topic 73](../73_night_before_review/README.md).
 | [The algorithms round](15_leetcode.md) | Binary search, sliding window, BFS and DFS, dynamic programming, heaps, graphs, and how to talk while coding. |
 | [Linear algebra](16_linear_algebra.md) | Rank, SVD, eigendecomposition, PCA, condition number, and the matrix gradients backprop is built on. |
 | [Conditional probability: worked problems](17_conditional_probability_problems.md) | Seventeen scenario problems worked end to end, every answer confirmed by simulation. |
+| [The breadth round: machine learning](18_breadth_ml.md) | 68 rapid-fire questions — generative versus discriminative, the L1 and L2 priors, bias-variance, ensembles, gradient boosting. |
+| [The breadth round: NLP and deep learning](19_breadth_nlp.md) | 79 questions — activations, normalisation, sequence models, embeddings, metrics, and the "why not just do the simple thing" family. |
+| [The breadth round: LLMs and modern systems](20_breadth_llm.md) | 70 questions — scaling, RLHF and GRPO, LoRA parameters, inference, retrieval, agents, safety. |
 
 ## How to use a page
 
@@ -41,3 +44,13 @@ you did not name, and the tradeoff you did not state.
 
 Recognition and recall are different skills, and only recall gets tested. Reading a page twice feels
 like progress and is not.
+
+## The breadth round is a different exam
+
+Pages 18 to 20 are shaped differently from the rest, because a breadth round is. The interviewer asks
+twenty short questions in forty minutes and wants about a minute on each: the direct answer, then the
+equation or the mechanism, then one sentence of consequence. Therefore those answers carry no separate
+spoken block — the answer is already written the way you would say it.
+
+The habit that carries that round is to stop talking. Answer, then wait. A candidate who talks for four
+minutes on question one fails even when every sentence is correct.

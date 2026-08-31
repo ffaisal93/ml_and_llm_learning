@@ -17,6 +17,14 @@ You either say the answers out loud, at speaking speed, with nobody prompting yo
 If a day runs short of time, drop the reading and keep the recall.
 The reverse trade fails, because reading builds recognition and interviews test production.
 
+Three of the workbook pages are not tied to a day. The breadth pages —
+[machine learning](../77_two_week_workbook/18_breadth_ml.md),
+[NLP and deep learning](../77_two_week_workbook/19_breadth_nlp.md), and
+[LLMs and modern systems](../77_two_week_workbook/20_breadth_llm.md) — hold 217 rapid-fire questions,
+each answered in about a minute of speech. Use them as a daily warm-up: ten questions out loud before
+you start, taken from whichever page matches the day. A breadth round is its own exam, and it rewards
+answering in a minute and then stopping.
+
 Every day opens with a **Workbook** line pointing at the matching page in
 [the two-week workbook](../77_two_week_workbook/README.md). That page holds the equations, the code to
 write from memory, and the questions with a spoken answer for each, so you can work a day without
