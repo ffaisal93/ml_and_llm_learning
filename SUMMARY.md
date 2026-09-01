@@ -681,3 +681,4 @@
   - [The Breadth Round: Machine Learning](77_two_week_workbook/18_breadth_ml.md)
   - [The Breadth Round: NLP and Deep Learning](77_two_week_workbook/19_breadth_nlp.md)
   - [The Breadth Round: LLMs and Modern Systems](77_two_week_workbook/20_breadth_llm.md)
+  - [Sliding Window: Every Variation](77_two_week_workbook/21_sliding_window.md)

@@ -344,7 +344,7 @@ Given a fixed compute budget, do you train a larger model or use more tokens, an
 
 ### Day 13 — ML coding and LeetCode patterns
 
-**Workbook.** [The ML coding round](../77_two_week_workbook/14_ml_coding.md) and [The algorithms round](../77_two_week_workbook/15_leetcode.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
+**Workbook.** [The ML coding round](../77_two_week_workbook/14_ml_coding.md), [The algorithms round](../77_two_week_workbook/15_leetcode.md), and [Sliding window: every variation](../77_two_week_workbook/21_sliding_window.md) — write every block from a blank file, not from the page. Sliding window is the pattern that shows up most often and in the most disguises, so give it the larger half of the day.
 
 Weekend. This is a keyboard day. Read little, type all day.
 

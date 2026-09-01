@@ -1,6 +1,6 @@
 # Topic 77: The Two-Week Workbook
 
-Twenty pages, one per topic, holding what you need to say and write in an interview. Each page has the
+Twenty-one pages, one per topic, holding what you need to say and write in an interview. Each page has the
 equations with a plain-language gloss, code short enough to type from memory, and the questions with a
 spoken answer for each. Every code block on every page was executed before it was published, and where a
 result can be checked against a library — sklearn, PyTorch — it was checked and the agreement is stated
@@ -34,6 +34,7 @@ evening is the rest of [topic 73](../73_night_before_review/README.md).
 | [The breadth round: machine learning](18_breadth_ml.md) | 68 rapid-fire questions — generative versus discriminative, the L1 and L2 priors, bias-variance, ensembles, gradient boosting. |
 | [The breadth round: NLP and deep learning](19_breadth_nlp.md) | 79 questions — activations, normalisation, sequence models, embeddings, metrics, and the "why not just do the simple thing" family. |
 | [The breadth round: LLMs and modern systems](20_breadth_llm.md) | 70 questions — scaling, RLHF and GRPO, LoRA parameters, inference, retrieval, agents, safety. |
+| [Sliding window: every variation](21_sliding_window.md) | The four templates, the at-most-k trick, 21 worked problems, and the one case where a window is the wrong pattern. |
 
 ## How to use a page
 
