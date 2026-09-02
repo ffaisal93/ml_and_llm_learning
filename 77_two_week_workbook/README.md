@@ -55,3 +55,10 @@ spoken block — the answer is already written the way you would say it.
 
 The habit that carries that round is to stop talking. Answer, then wait. A candidate who talks for four
 minutes on question one fails even when every sentence is correct.
+
+Where a question has a real derivation or turns on a number, the answer carries two extra blocks.
+**Walk the derivation** gives the reasoning as two to four named steps, in the order you would speak
+them. **With numbers** works one small case with real arithmetic and ends with the single sentence the
+numbers reveal. Every figure in those blocks was computed, not recalled.
+
+Q6 on the machine-learning page, on logistic regression, is the shape the rest follow.

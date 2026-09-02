@@ -22,6 +22,12 @@ over the vocabulary at every position. Causal masking lets me score all $T$ posi
 pass, so each sequence gives $T$ training signals instead of one. That density is why the objective
 scales so well. It needs no labels, so the training set is only limited by how much clean text I have.
 
+**Walk the derivation.** Three steps, and I say them in this order.
+
+1. **The chain rule.** The probability of a whole sequence factorises exactly, with no approximation: $p(x_1 \ldots x_T) = \prod_{t=1}^{T} p(x_t \mid x_{<t})$. That is the definition of conditional probability applied $T$ times.
+2. **The log.** A product of thousands of probabilities underflows to zero in floating point. So I take the log, and the product becomes a sum, $\sum_{t} \log p(x_t \mid x_{<t})$.
+3. **The loss.** I flip the sign, so maximising likelihood becomes minimising loss, and I divide by $T$ so the number compares across sequence lengths. Each term is the cross-entropy between the true one-hot token and the model's distribution over the vocabulary.
+
 ### Q2. What is a token budget?
 
 The total number of tokens I will train on, counting repeats. It is the second axis of a training run
@@ -40,6 +46,15 @@ showed that a smaller model on more tokens beats a larger model on fewer tokens 
 Treat the twenty-to-one number as an empirical fit from one set of experiments, not a law. It shifts with
 data quality, architecture and tokeniser.
 
+**With numbers.** Two shapes at the same training compute, using $6ND$.
+
+| Shape | Tokens per parameter | Training FLOPs |
+|---|---|---|
+| Seven billion parameters, one hundred and forty billion tokens | $20$ | $5.88 \times 10^{21}$ |
+| Seventy billion parameters, fourteen billion tokens | $0.2$ | $5.88 \times 10^{21}$ |
+
+Both runs cost the identical compute, and Chinchilla says the first one wins. The result is not about size or data alone; it is about the ratio between them at a fixed bill.
+
 ### Q4. Why do people train past the Chinchilla point?
 
 Because Chinchilla optimises training compute only, and I pay for inference forever. A smaller model
@@ -57,6 +72,8 @@ multiply-add is two FLOPs. Training adds a backward pass costing roughly twice t
 total. So a full run is about $6ND$ FLOPs for $N$ parameters and $D$ tokens. It ignores attention over
 long sequences and embedding lookups, so it drifts at very long context, but it is accurate enough to
 size a cluster on a whiteboard.
+
+**With numbers.** Take an eight-billion-parameter dense model and a fifteen-trillion-token budget. Training costs about $6 \times 8 \times 10^{9} \times 1.5 \times 10^{13} = 7.2 \times 10^{23}$ FLOPs. Inference costs $2N = 1.6 \times 10^{10}$ FLOPs per token, so about sixteen GFLOPs to emit one token. Dividing gives forty-five trillion tokens of output for the price of the training run. That is why a heavily served model earns back an expensive overtrained pretraining run.
 
 ### Q6. What are emergent abilities, and do you believe in them?
 
@@ -125,6 +142,12 @@ typically around $0.1$ to $0.2$. The clip removes any incentive to move the rati
 once it passes the bound the gradient goes flat. So one batch of collected data can be reused for several
 gradient steps without the policy collapsing.
 
+**Walk the derivation.** Three steps, and I say them in this order.
+
+1. **The ratio.** I collect data with the old policy, then take several gradient steps on it. To reuse off-policy data I reweight each sample by $r_t(\theta)$, the ratio of new to old probability for the action I actually took.
+2. **Why an unclipped ratio is dangerous.** If the advantage is large and positive, raising $r_t$ raises the objective without limit. One step then pushes the policy far from where the data was collected, and the advantage estimates that justified the step are no longer valid there. The policy collapses.
+3. **What clipping does.** I take the minimum of the raw and the clipped term, so moving the ratio past the bound earns no extra credit. The gradient goes flat, which caps the size of one update without any second-order machinery.
+
 ### Q13. How many models does PPO-based RLHF hold in memory?
 
 Four. The policy being trained, the reference model that is a frozen copy of the SFT policy for the KL
@@ -134,6 +157,15 @@ main practical objection to PPO for RLHF — memory and orchestration cost, plus
 sensitivity to hyperparameters. It is why the field moved toward methods that delete one or more of
 these models.
 
+**With numbers.** Say each of the four is a seven-billion-parameter model in 16-bit.
+
+| Item | Bytes per parameter | Total |
+|---|---|---|
+| Four sets of weights | $2$ | $56$ GB |
+| Adam moments for policy and value | $8$ | $112$ GB |
+
+That is about one hundred and sixty-eight gigabytes before a single activation is stored. Deleting the value model, as GRPO does, or the reward and value models, as DPO does, is not a trim; it changes how many accelerators the job needs.
+
 ### Q14. Why is there a KL penalty against the reference model?
 
 Because the reward model is a proxy, and an unconstrained policy will find inputs where the proxy is wrong
@@ -142,6 +174,12 @@ $-\beta \, \mathrm{KL}(\pi_\theta \,\|\, \pi_\text{ref})$, where $\pi_\text{ref}
 and $\beta$ sets the strength. It keeps the policy in the region where the reward model was trained and
 is therefore still valid. It also preserves fluency and diversity. Set $\beta$ too low and I get reward
 hacking and degenerate text; too high and the model barely changes.
+
+**Walk the derivation.** Three steps, and I say them in this order.
+
+1. **The reward model is a proxy.** It was fitted on comparisons between responses that the SFT model produced. Off that distribution its score is an extrapolation, and nobody checked it there.
+2. **Optimisation searches for the gap.** RL maximises the number it is given, not the quality the number was meant to stand for. So it drifts toward text where the proxy is wrong and scores high. That is reward hacking.
+3. **The leash.** The penalty $-\beta \, \mathrm{KL}$ costs the policy for leaving the region where the proxy is valid. Without it the policy also collapses onto one high-scoring phrasing, because diversity earns nothing, and I get mode collapse on top of the hacking.
 
 ### Q15. What is GRPO and what does it remove?
 
@@ -155,6 +193,23 @@ So a completion is reinforced if it beat its siblings on that prompt. "Group" me
 SAME prompt, normalised within that prompt only. That drops one large trained model from memory and works
 well when rewards are verifiable, like maths or code tests.
 
+**Walk the derivation.** Three steps, and I say them in this order.
+
+1. **What a baseline is for.** The policy gradient is unbiased if I subtract any quantity that does not depend on the action. Subtracting a good baseline cuts the variance sharply, so the run converges instead of thrashing.
+2. **A critic is one way to get one.** PPO learns a value network to predict the expected return for the state. That works, however it is another large model to hold, train and tune.
+3. **The group is another way.** If I sample $G$ completions for the same prompt, their mean reward already estimates the expected reward for that prompt. So I use it directly as the baseline and divide by the group's spread to fix the scale. The critic is now redundant.
+
+**With numbers.** Four completions for one prompt, scored by a verifier.
+
+| Reward $r_i$ | $r_i - \text{mean}$ | Advantage $\hat{A}_i$ |
+|---|---|---|
+| $1.0$ | $+0.4$ | $+1.265$ |
+| $0.8$ | $+0.2$ | $+0.632$ |
+| $0.4$ | $-0.2$ | $-0.632$ |
+| $0.2$ | $-0.4$ | $-1.265$ |
+
+The mean is $0.6$ and the spread is $0.316$. Only the ranking inside the prompt survives: add one to all four rewards and every advantage is unchanged, which is exactly the property a baseline is supposed to have.
+
 ### Q16. Explain DPO and its tradeoff against PPO.
 
 DPO skips the reward model and the RL loop. It uses the fact that the optimal KL-constrained policy has a
@@ -163,6 +218,12 @@ classification loss: raise the log-probability of the chosen response and lower 
 measured relative to the frozen reference model. It is stable, cheap, and needs only two models. The
 tradeoff is that it learns only from the fixed offline preference set. PPO and GRPO sample fresh
 completions from the current policy, so they can explore and usually reach a higher ceiling.
+
+**Walk the derivation.** Three steps, and I say them in this order.
+
+1. **The closed form.** The policy that maximises reward under a KL penalty to the reference is known in closed form: $\pi^{*}(y \mid x) \propto \pi_\text{ref}(y \mid x)\exp\!\big(r(x,y)/\beta\big)$.
+2. **Invert it.** Solving that for the reward gives $r(x,y) = \beta \log \frac{\pi^{*}(y \mid x)}{\pi_\text{ref}(y \mid x)} + \beta \log Z(x)$. So any policy already implies a reward function; I do not have to train a separate one.
+3. **The normaliser cancels.** The Bradley-Terry preference loss depends only on the difference between the two responses' rewards, and both share the same prompt $x$. So the $\beta \log Z(x)$ term drops out, and what is left is a logistic loss on log-probability ratios that I can train by gradient descent.
 
 ### Q17. How is a reward model trained?
 
@@ -174,6 +235,16 @@ $$\mathcal{L} = -\log \sigma\big(r_\phi(x, y_w) - r_\phi(x, y_l)\big)$$
 where $y_w$ is the preferred response, $y_l$ the rejected one, $x$ the prompt, and $\sigma$ the sigmoid.
 Only the difference in scores matters, so the scale is arbitrary. That is why reward values are not
 comparable across reward models, and why I always normalise before using them in RL.
+
+**With numbers.** The loss depends on nothing but the score gap.
+
+| Margin $r_w - r_l$ | $\sigma(\text{margin})$ | Loss |
+|---|---|---|
+| $+2.0$ | $0.881$ | $0.127$ |
+| $0.0$ | $0.500$ | $0.693$ |
+| $-1.0$ | $0.269$ | $1.313$ |
+
+A tie costs $\log 2$, and getting the pair backwards costs an order more. Because only the difference enters, adding any constant to every score leaves the loss untouched, which is precisely why a reward value has no meaning on its own.
 
 ### Q18. What is reward hacking? Give a concrete example.
 
@@ -214,6 +285,22 @@ $A \in \mathbb{R}^{r \times k}$ trainable, and $r \ll \min(d, k)$. So the traina
 matrix is $r(d + k)$. Typical settings are $r$ of 8 to 64 and $\alpha$ of 16 to 32, attached to the
 attention projections, sometimes the MLP too.
 
+**Walk the derivation.** Why a low-rank update is enough. Three steps, and I say them in this order.
+
+1. **I am not learning the weight, I am learning the change.** The base matrix is already pretrained. Fine-tuning to one task moves it a short distance, so the object I must represent is the delta $\Delta W$, not $W$.
+2. **That delta is close to low rank.** Adapting to a narrow task changes a few directions in the representation rather than all of them. The LoRA authors report that the delta's singular values decay fast, so a rank-$r$ matrix keeps most of it. This is an empirical observation, not a theorem, and it is why the method can fail on tasks that need broad change.
+3. **So factorise it.** Write $\Delta W = BA$ with inner dimension $r$. The cost drops from $dk$ numbers to $r(d + k)$, and the forward pass stays exact because I add $BA$ to $W$ rather than approximating $W$ itself.
+
+**With numbers.** One attention projection, $4096 \times 4096$.
+
+| Setting | Trainable parameters | Percent of full fine-tuning |
+|---|---|---|
+| Full fine-tuning | $16{,}777{,}216$ | $100$ |
+| LoRA, $r = 8$ | $8 \times 8192 = 65{,}536$ | $0.39$ |
+| LoRA, $r = 64$ | $64 \times 8192 = 524{,}288$ | $3.13$ |
+
+An eightfold rank increase is still only about three percent of the matrix. The trainable count grows linearly in $r$ while the full matrix stays quadratic in $d$, so rank is a cheap knob to turn.
+
 ### Q22. What does the LoRA $\alpha$ actually do?
 
 It scales the update. The adapter contributes $\frac{\alpha}{r} BA$, so $\alpha/r$ is the effective step
@@ -223,6 +310,15 @@ learning rate every time. In practice people fix the ratio — a common conventi
 change $r$ freely. If I double $r$ and keep $\alpha$ fixed, I have quietly halved the effective update
 scale, which is a real and easily missed bug.
 
+**With numbers.** Hold $\alpha = 32$ and change the rank.
+
+| Rank $r$ | Effective scale $\alpha / r$ |
+|---|---|
+| $8$ | $4.0$ |
+| $16$ | $2.0$ |
+
+Nothing in the configuration file looks wrong, and yet the update is applied at half the strength. That is why I state the ratio, not $\alpha$, when I report a LoRA setting.
+
 ### Q23. Why is $B$ initialised to zero in LoRA?
 
 So the adapter starts as an exact no-op. $A$ is initialised randomly, usually Kaiming or normal, and $B$
@@ -230,6 +326,12 @@ is all zeros, so $BA = 0$ at step zero and $W' = W$ exactly. Training therefore 
 model's behaviour with no perturbation, and the fine-tune departs from it smoothly. If both were random
 the model would start damaged and the first steps would be spent repairing it. Both zero would be worse:
 the gradient through the product would be zero and nothing would ever learn.
+
+**Walk the derivation.** Three cases, and the third is the only one that works.
+
+1. **Both random.** Then $BA \neq 0$ at step zero, so the model starts as a randomly perturbed version of a good model. The first steps go on undoing damage I chose to add.
+2. **Both zero.** The gradient into $B$ is proportional to $A^{\top}$ and the gradient into $A$ is proportional to $B^{\top}$. Both are zero, so both stay zero forever. The adapter is a dead branch.
+3. **One of each.** With $A$ random and $B$ zero, the product is zero so the start is exact, and yet the gradient into $B$ is non-zero because $A$ is not. After the first step $B$ is non-zero, so $A$ starts moving too.
 
 ### Q24. How much memory does LoRA actually save, and where?
 
@@ -239,6 +341,15 @@ the weights — it is in the optimiser. Adam keeps two moments per trainable par
 the state that scaled with the full weight count now scales with the adapter count. Activations for the
 backward pass still have to be stored, and the frozen base weights still sit in memory, so the total
 saving is large but not the thousand-fold the parameter ratio suggests.
+
+**With numbers.** Adam holds two moments per trainable parameter, four bytes each.
+
+| What is stored | Full fine-tuning | LoRA, $r = 16$ |
+|---|---|---|
+| Optimiser moments | $128$ MiB | $1$ MiB |
+| Frozen base weights, 16-bit | $32$ MiB | $32$ MiB |
+
+The optimiser state falls by a factor of one hundred and twenty-eight, and the base weights do not move at all. So the total saving on this matrix is about four-fold, not a hundred-fold, which is the number people get wrong.
 
 ### Q25. What is QLoRA?
 
@@ -303,6 +414,15 @@ limit. Decode is memory-bandwidth-bound: it is a matrix-vector multiply per step
 weight set and KV cache from memory to produce a single token, and arithmetic intensity is terrible. That
 split explains almost every serving decision, including why batching helps decode so much.
 
+**With numbers.** An eight-billion-parameter model, a two-thousand-token prompt, at $2N$ FLOPs per token.
+
+| Stage | Arithmetic |
+|---|---|
+| Prefill, two thousand tokens | $2 \times 8 \times 10^{9} \times 2000 = 3.2 \times 10^{13}$ FLOPs |
+| One decode step | $2 \times 8 \times 10^{9} = 1.6 \times 10^{10}$ FLOPs |
+
+Prefill does two thousand times the arithmetic of one decode step, about three orders of magnitude. Decode still dominates the wall clock, and that gap is the proof that decode is limited by memory traffic and not by the arithmetic units.
+
 ### Q32. What is the KV cache and how big is it?
 
 It stores the key and value vectors already computed for previous positions, so each decode step attends
@@ -315,6 +435,14 @@ values. Take 32 layers, 8 KV heads, head dimension 128, FP16: that is $131{,}072
 token, and 1 GiB at 8192 tokens for a single sequence. It grows linearly with sequence and batch, so it,
 not the weights, usually caps concurrency.
 
+**Walk the derivation.** Three steps, and I say them in this order.
+
+1. **One position, one layer.** Attention needs a key and a value for every past position. Each is a vector of length $d_h$ per key-value head, so one token costs $2 \times n_{kv} \times d_h$ numbers in that layer.
+2. **Up the stack.** Every layer computes and keeps its own keys and values, so I multiply by the layer count $L$. Nothing is shared between layers.
+3. **Into bytes and out to the batch.** Multiply by the bytes per element, two for FP16. Then multiply by sequence length and by batch size, because both enter linearly and neither is amortised.
+
+**With numbers.** At 128 KiB per token, a batch of thirty-two sequences at eight thousand one hundred and ninety-two tokens holds $32$ GiB of cache. The same model's weights, at eight billion parameters in FP16, are $16$ GB. The cache is larger than the model it serves, and unlike the weights it is paid for per concurrent user.
+
 ### Q33. What are MQA and GQA?
 
 Ways to shrink the KV cache. Standard multi-head attention gives every query head its own key and value
@@ -323,6 +451,15 @@ cutting the cache by the head count. Grouped-query attention is the middle setti
 groups, and each group shares one key-value head, so eight KV heads for sixty-four query heads is an
 eight-fold reduction. MQA saves the most but costs some quality. GQA keeps almost all the quality, which
 is why it is the common default in modern models.
+
+**With numbers.** Same 32 layers, head dimension 128, FP16; only the key-value head count changes.
+
+| Key-value heads | Bytes per token | Cache at eight thousand tokens |
+|---|---|---|
+| $32$, full multi-head | $512$ KiB | $4$ GiB |
+| $8$, grouped-query | $128$ KiB | $1$ GiB |
+
+A ratio of four. Since the cache is what caps concurrency, that same memory now holds four times as many sequences, so GQA buys throughput rather than latency.
 
 ### Q34. Walk me through quantisation levels and what each costs.
 
@@ -338,6 +475,16 @@ Weight-only quantisation is easier than activation quantisation because activati
 that matters is INT4 weight-only: it is the point where memory savings are large enough to change what
 hardware I need, and quality is still good if I use a modern method with per-group scales.
 
+**With numbers.** Weight memory for a seventy-billion-parameter dense model.
+
+| Precision | Weight memory |
+|---|---|
+| 16-bit | $140$ GB |
+| 8-bit | $70$ GB |
+| 4-bit | $35$ GB |
+
+Each halving is exact, because it is only bytes per weight times weight count. The reason INT4 matters is not the percentage; it is that thirty-five gigabytes fits on one accelerator while one hundred and forty does not, so the quantisation decides the hardware class.
+
 ### Q35. Explain speculative decoding, and why it is lossless.
 
 A small draft model proposes several tokens ahead. The large model then verifies all of them in one forward
@@ -346,6 +493,14 @@ memory-bound, so extra arithmetic is free. Accepted tokens are kept, and generat
 rejection. It is lossless because the acceptance test is a rejection-sampling rule: a draft token is
 accepted with probability capped by the ratio of target to draft probability, and on rejection I sample
 from the adjusted residual distribution. The output distribution is exactly the target model's.
+
+**Walk the derivation.** Why the output distribution is unchanged. Three steps, and I say them in this order.
+
+1. **Two distributions.** The draft model gives $q(x)$ for the next token and the target gives $p(x)$. I sample the candidate from $q$, which is the wrong distribution, so I have to correct it.
+2. **Accept with the right probability.** I keep the candidate with probability $\min\!\big(1, p(x)/q(x)\big)$. A token the draft over-proposes is kept less often, in exact proportion to how much it was over-proposed.
+3. **Repair the remainder.** On a rejection I sample from the normalised residual $\max\!\big(0,\, p(x) - q(x)\big)$. The accepted mass plus the residual mass sums to $p$ for every token, so the emitted token is distributed exactly as the target model would emit it. Speed changes; the distribution does not.
+
+**With numbers.** Draft four tokens ahead with a per-token acceptance rate of $0.8$. The expected tokens per target forward pass is $\big(1 - 0.8^{5}\big) / \big(1 - 0.8\big) = 3.36$, against $1$ without speculation. The gain is capped at five, and it collapses toward one as the draft model disagrees, so acceptance rate matters more than draft speed.
 
 ### Q36. What is continuous batching?
 
@@ -356,6 +511,8 @@ that slot on the next step. Throughput improves a great deal on realistic traffi
 vary. It pairs with paged KV cache management, which allocates cache in fixed blocks so memory does not
 fragment as sequences come and go.
 
+**With numbers.** Little's law says concurrency equals throughput times latency, so throughput is concurrency divided by latency. Sixty-four cache slots with an average four seconds in the slot gives sixteen requests per second. If continuous batching stops short requests from waiting on long ones and the average occupancy falls to two seconds, the same sixty-four slots serve thirty-two per second. The model did not get faster. Throughput doubled purely because slots stopped being held by finished work.
+
 ### Q37. Time to first token versus inter-token latency — why track both?
 
 They measure different stages and are fixed by different things. Time to first token is prefill: it scales
@@ -364,6 +521,8 @@ step time: it sets how fast text streams and, multiplied by output length, domin
 They also trade off. Larger batches raise throughput and improve cost per token but lengthen both
 latencies. A chat product optimises time to first token; a batch summarisation job ignores it entirely and
 optimises tokens per second per unit of hardware.
+
+**With numbers.** A two-thousand-token prompt, a five-hundred-token answer, time to first token of $0.4$ seconds and inter-token latency of $25$ milliseconds. Decode costs $500 \times 0.025 = 12.5$ seconds, so the total is $12.9$ seconds and decode is about ninety-seven percent of it. A dashboard that tracks only time to first token is reporting on three percent of the wait.
 
 ### Q38. Why is temperature zero not determinism?
 
@@ -386,6 +545,16 @@ identical output is not guaranteed.
 
 Top-$p$ is the one to default to, typically around $0.9$ to $0.95$, because the cutoff adapts to how
 confident the model is at that step.
+
+**With numbers.** One step with logits $2.0$, $1.0$, $0.0$, under three temperatures.
+
+| Temperature | Probabilities |
+|---|---|
+| $0.5$ | $0.867$, $0.117$, $0.016$ |
+| $1.0$ | $0.665$, $0.245$, $0.090$ |
+| $2.0$ | $0.506$, $0.307$, $0.186$ |
+
+Halving the temperature nearly triples how far the leader is ahead of second place; doubling it lifts the least likely token from nine percent to nineteen. Note that the order never changes, so temperature controls how often the model leaves the mode, never which token the mode is.
 
 ### Q40. How do you choose sampling settings for a task?
 
@@ -416,6 +585,8 @@ leaving neither neighbour complete. Overlap makes it likely some chunk contains 
 cost is duplicated text in the index and near-duplicate hits, which I handle by deduplicating results. I
 also attach the document title and section path to each chunk so it is interpretable alone.
 
+**With numbers.** A twelve-thousand-token document, five-hundred-token chunks, fifty tokens of overlap. The stride is $450$, so I get $27$ chunks holding $13{,}500$ tokens, against $24$ chunks with no overlap. That is twelve and a half percent more text in the index. Ten percent overlap costs about ten percent more storage and embedding calls, which is a small price for not cutting the one answering sentence in half.
+
 ### Q43. Dense versus sparse versus hybrid retrieval?
 
 Sparse, like BM25, matches terms and weights them by rarity. It is exact, needs no training, and handles
@@ -433,6 +604,8 @@ document is not in the top hits. Same failure for a rare proper noun or an inter
 BM25 nails all of these instantly, because the term is rare and therefore highly weighted. That asymmetry
 is the whole argument for hybrid search: dense for meaning, sparse for exact rare tokens.
 
+**With numbers.** In a corpus of one million documents, BM25 gives a term appearing in one document an inverse document frequency of about $13.4$, and a term appearing in five hundred thousand about $0.69$. The rare term is weighted roughly nineteen times more heavily. A dense embedding does the opposite: it maps an unseen code to whatever its subword fragments resemble, which smooths away the very rarity that makes the term informative.
+
 ### Q45. What is reranking and why does it pay?
 
 A cross-encoder that scores each query-document pair jointly and reorders the candidates. It is far more
@@ -441,6 +614,8 @@ being embedded independently. It is also far too slow to run over the whole corp
 retrieve maybe fifty to a hundred candidates cheaply with high recall, then rerank them accurately and keep
 the top handful for the prompt. The reranker fixes precision, retrieval provides recall, and the model gets
 a short, dense context.
+
+**With numbers.** Suppose one cross-encoder pass takes ten milliseconds; the figure is illustrative, and the ratio is the point. Scoring fifty candidates costs half a second, which is fine inside a request. Scoring a corpus of one million costs ten thousand seconds, about two and three-quarter hours, per query. The bi-encoder avoids this because documents are embedded once offline and the query is embedded once, so search is a nearest-neighbour lookup. The funnel exists because the cost per pair is fixed, so the only lever I have is how many pairs I score.
 
 ### Q46. Context window versus effective context.
 
@@ -467,6 +642,8 @@ exact token-for-token match from position zero, because the KV entries depend on
 I put the stable material first — system prompt, tool definitions, few-shot examples, long shared documents
 — and the variable material last. Anything that changes per request near the top, like a timestamp or the
 user's name, invalidates the whole cache.
+
+**With numbers.** A three-thousand-token stable prefix and a two-hundred-token variable tail. On a cache hit I prefill two hundred tokens instead of three thousand two hundred, so I skip about ninety-four percent of the prefill work. Move one timestamp to the top and the hit rate goes to zero and the saving with it. The benefit is set entirely by where the boundary between stable and variable text sits.
 
 ### Q49. When is RAG the wrong tool?
 
@@ -514,6 +691,12 @@ as a tool-result message keyed to that call, and send the whole thing back. The 
 another tool or answers. The key point for interviews: the model never executes anything, and it can
 usually request several calls in one turn.
 
+**Walk the derivation.** Three steps, and the middle one is where candidates go wrong.
+
+1. **Definitions go in.** I send the tool name, the description and a JSON Schema for the parameters, alongside the conversation. They occupy context like any other tokens.
+2. **A structured block comes out.** The model emits a tool-call block instead of prose: a name and a JSON argument object. It has not run anything. It has only written down a request.
+3. **My application executes and reports back.** I validate the arguments, run the tool, and append the result as a tool-result message keyed to that call identifier. Then I send the whole conversation back, and the model either calls again or answers.
+
 ### Q54. What is MCP, in two sentences?
 
 The Model Context Protocol is an open standard for connecting models to external tools, data and prompts,
@@ -529,6 +712,15 @@ with an explicit incomplete status. On top of that I add loop detection, because
 same tool called with the same arguments repeatedly; I detect the repeat and either inject a corrective
 message or stop. I also cap retries per tool and require human approval for irreversible actions like
 sending, paying or deleting.
+
+**With numbers.** If each step succeeds independently with probability $p$, a clean run of $n$ steps has probability $p^{n}$.
+
+| Per-step reliability | Twenty steps |
+|---|---|
+| $0.95$ | $0.36$ |
+| $0.99$ | $0.82$ |
+
+A ninety-five percent tool is a coin flip over a twenty-step task. Since the exponent is unforgiving, the two real levers are raising per-step reliability and shortening the loop, not adding retries after the fact.
 
 ### Q56. When is multi-agent worth it, and what is the correlated-verifier problem?
 
@@ -552,6 +744,8 @@ deciding between at each token, so lower is better. What it does not tell me: an
 factuality, instruction-following or safety. It is also not comparable across tokenisers or across
 datasets, since the token count and the text change under it. It is a useful training-health signal and a
 bad way to choose between two finished models.
+
+**With numbers.** A cross-entropy of $2.0$ nats is a perplexity of $\exp(2.0) = 7.39$. Improve it to $1.9$ nats and perplexity falls to $6.69$, a drop of $0.70$. Because perplexity is an exponential, one tenth of a nat is always the same multiplicative factor, $\exp(0.1) = 1.105$, so it is about a nine and a half percent reduction wherever I start. Perplexity differences are ratios, which is why an absolute value means nothing without the tokeniser and the dataset attached.
 
 ### Q58. What is benchmark contamination and how do you detect it?
 
@@ -598,6 +792,12 @@ page, a PDF, an email, a code comment — and fires when the agent reads it. Tha
 defences are architectural: treat all retrieved content as untrusted, keep tool permissions least-privilege,
 require confirmation for irreversible actions, and never let a retrieved string decide what tool runs.
 
+**Walk the derivation.** Three steps, and the third is the one that costs money.
+
+1. **One flat stream.** The system prompt, the user's message and a retrieved web page all arrive at the model as tokens. Nothing in the sequence marks which span is trusted.
+2. **Instruction-following does its job.** The model was post-trained to obey instructions found in its context. Text inside the retrieved page is in its context, so it gets obeyed.
+3. **Data acquires the agent's permissions.** If the loop can call tools, the retrieved string can choose the next tool call. A document the user never wrote now acts with the user's credentials, which is why the fix has to be permission design and not prompt wording.
+
 ### Q63. How is jailbreaking a different problem from injection?
 
 Different attacker and different trust boundary. Jailbreaking is the user trying to make the model violate
@@ -635,6 +835,15 @@ experts compute. That decouples capacity from cost: total parameters can be very
 parameters per token stay small, and both FLOPs and latency track the active count. The router is trained
 jointly and needs an auxiliary load-balancing loss, otherwise it collapses onto a few favourite experts.
 The catch is memory — every expert must be resident even though most are idle.
+
+**With numbers.** An illustrative shape: eight billion shared parameters plus sixty-four experts of two billion each, with top-2 routing.
+
+| Count | Value |
+|---|---|
+| Total parameters | $136$ billion |
+| Active per token | $8 + 2 \times 2 = 12$ billion |
+
+That is about eleven times more parameters held than used. I pay for one hundred and thirty-six billion in memory and for twelve billion in FLOPs, which is the whole trade: the design buys capacity with memory rather than with compute.
 
 ### Q67. Active versus total parameters — why does the distinction matter?
 
