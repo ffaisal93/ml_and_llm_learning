@@ -1,6 +1,6 @@
 # Topic 77: The Two-Week Workbook
 
-Twenty-one pages, one per topic, holding what you need to say and write in an interview. Each page has the
+Twenty-six pages, one per topic, holding what you need to say and write in an interview. Each page has the
 equations with a plain-language gloss, code short enough to type from memory, and the questions with a
 spoken answer for each. Every code block on every page was executed before it was published, and where a
 result can be checked against a library — sklearn, PyTorch — it was checked and the agreement is stated
@@ -35,6 +35,11 @@ evening is the rest of [topic 73](../73_night_before_review/README.md).
 | [The breadth round: NLP and deep learning](19_breadth_nlp.md) | 79 questions — activations, normalisation, sequence models, embeddings, metrics, and the "why not just do the simple thing" family. |
 | [The breadth round: LLMs and modern systems](20_breadth_llm.md) | 70 questions — scaling, RLHF and GRPO, LoRA parameters, inference, retrieval, agents, safety. |
 | [Sliding window: every variation](21_sliding_window.md) | The four templates, the at-most-k trick, 21 worked problems, and the one case where a window is the wrong pattern. |
+| [Arrays and hash tables](22_arrays_hashing.md) | Deciding what to key on, prefix sums in a hash map, and 22 problems from two-sum to first missing positive. |
+| [Two pointers](23_two_pointers.md) | Converging, fast-and-slow, and cycle detection; k-sum reduction with the duplicate skipping worked out. |
+| [Binary search](24_binary_search.md) | One half-open invariant used everywhere, boundary searches derived from it, and binary search on the answer. |
+| [Trees](25_trees.md) | Choosing the traversal by what the node needs, and the return-one-thing-record-another shape behind four hard problems. |
+| [Graphs](26_graphs.md) | Naming the nodes and edges before the algorithm, the grid as a graph, multi-source BFS, topological sort, union-find, Dijkstra. |
 
 ## How to use a page
 

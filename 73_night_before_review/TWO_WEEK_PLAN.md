@@ -344,7 +344,7 @@ Given a fixed compute budget, do you train a larger model or use more tokens, an
 
 ### Day 13 — ML coding and LeetCode patterns
 
-**Workbook.** [The ML coding round](../77_two_week_workbook/14_ml_coding.md), [The algorithms round](../77_two_week_workbook/15_leetcode.md), and [Sliding window: every variation](../77_two_week_workbook/21_sliding_window.md) — write every block from a blank file, not from the page. Sliding window is the pattern that shows up most often and in the most disguises, so give it the larger half of the day.
+**Workbook.** [The ML coding round](../77_two_week_workbook/14_ml_coding.md) and [The algorithms round](../77_two_week_workbook/15_leetcode.md) for the map, then the six pattern chapters for the depth: [sliding window](../77_two_week_workbook/21_sliding_window.md), [arrays and hash tables](../77_two_week_workbook/22_arrays_hashing.md), [two pointers](../77_two_week_workbook/23_two_pointers.md), [binary search](../77_two_week_workbook/24_binary_search.md), [trees](../77_two_week_workbook/25_trees.md), and [graphs](../77_two_week_workbook/26_graphs.md). That is 139 problems, which is more than one day holds, so treat the six as a standing rotation rather than a single sitting: one pattern a day from here to the interview, writing every block from a blank file. If you only have one day, do the recognition table and the templates of each, and skip the problem sets.
 
 Weekend. This is a keyboard day. Read little, type all day.
 

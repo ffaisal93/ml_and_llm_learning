@@ -682,3 +682,8 @@
   - [The Breadth Round: NLP and Deep Learning](77_two_week_workbook/19_breadth_nlp.md)
   - [The Breadth Round: LLMs and Modern Systems](77_two_week_workbook/20_breadth_llm.md)
   - [Sliding Window: Every Variation](77_two_week_workbook/21_sliding_window.md)
+  - [Arrays and Hash Tables: Every Variation](77_two_week_workbook/22_arrays_hashing.md)
+  - [Two Pointers: Every Variation](77_two_week_workbook/23_two_pointers.md)
+  - [Binary Search: Every Variation](77_two_week_workbook/24_binary_search.md)
+  - [Trees: Every Variation](77_two_week_workbook/25_trees.md)
+  - [Graphs: Every Variation](77_two_week_workbook/26_graphs.md)
