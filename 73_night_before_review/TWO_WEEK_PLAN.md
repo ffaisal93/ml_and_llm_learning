@@ -299,7 +299,7 @@ What do you monitor in production that an offline eval cannot catch?
 
 ### Day 11 — ML system design
 
-**Workbook.** [ML system design](../77_two_week_workbook/12_system_design.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
+**Workbook.** [ML system design](../77_two_week_workbook/12_system_design.md) and [ML system design case studies](../77_two_week_workbook/27_system_design_case_studies.md) — the equations, the code to type from memory, and the questions with a spoken answer for each. Work the page before you open anything else.
 
 **Read.** Start with the [ML system design deep dive](../29_system_design_for_ml/ML_SYSTEM_DESIGN_DEEP_DIVE.md) for the framework: requirements, data, features, model, serving, evaluation, monitoring.
 Then read the [Large-scale LLM systems deep dive](../61_large_scale_llm_systems/LARGE_SCALE_LLM_DEEP_DIVE.md) for the version of that framework that involves GPUs.

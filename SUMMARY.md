@@ -687,3 +687,4 @@
   - [Binary Search: Every Variation](77_two_week_workbook/24_binary_search.md)
   - [Trees: Every Variation](77_two_week_workbook/25_trees.md)
   - [Graphs: Every Variation](77_two_week_workbook/26_graphs.md)
+  - [ML System Design Case Studies](77_two_week_workbook/27_system_design_case_studies.md)

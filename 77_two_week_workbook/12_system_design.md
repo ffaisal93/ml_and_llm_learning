@@ -145,11 +145,75 @@ Convert every adjective into a measurable quantity with a threshold. "Fast" beco
 
 Because the good scoring function is too expensive to run on the whole corpus. With $M$ items, cost is $M c_r + K c_k$ for a retriever at $c_r$ per item and a ranker at $c_k$ over only $K$ candidates. If $c_k$ is a thousand times $c_r$, scoring everything with the ranker is impossible within a latency budget of a few hundred milliseconds. So stage one, candidate generation, is cheap, high recall, and low precision: approximate nearest neighbour over embeddings, inverted-index lookup, popularity, and simple co-occurrence, often several sources merged. Its job is to get the right item somewhere in the top few hundred, so recall at $K$ is the metric. Stage two, ranking, is expensive, precise, and uses rich cross features and a heavy model over those few hundred. Its metric is NDCG or click-through. Often there is a third stage that re-ranks for diversity and business rules.
 
+**The shape.**
+
+```
+   +--------------------------------------+
+   |  item corpus                         |   10,000,000 items
+   +-------------------+------------------+
+                       |
+                       v
+   +--------------------------------------+
+   | candidate generation                 |   ANN visits ~10,000 nodes
+   | ANN + inverted index + popularity    |   0.002 ms per node -> 20 ms
+   +-------------------+------------------+
+                       |  500 candidates
+                       v
+   +--------------------------------------+
+   | ranker                               |   0.08 ms per item
+   | GBDT over user x item cross features |   500 items -> 40 ms
+   +-------------------+------------------+
+                       |  50 items
+                       v
+   +--------------------------------------+
+   | re-rank: diversity + business rules  |   0.2 ms per item -> 10 ms
+   +-------------------+------------------+
+                       |  10 items
+                       v
+                  final list                  total 70 ms
+```
+
+The diagram shows the cost of each stage next to the item count it works on. The ranker at 0.08 ms
+per item over the whole corpus would take 800 seconds. Therefore the funnel is not an optimisation,
+it is the only way the accurate model can run at all.
+
 > **Say it.** Because the accurate scorer is too expensive to run over the whole corpus inside a few hundred milliseconds. Stage one is cheap and high recall: approximate nearest neighbour, inverted index, popularity, co-occurrence, usually several sources merged, cutting millions of items to a few hundred. Its metric is recall at K, because a missed item can never be recovered downstream. Stage two is expensive and precise, with rich cross features over those few hundred, scored by NDCG or click-through. A third pass often handles diversity and business rules.
 
 ### Q4. What is a feature store and what is training-serving skew?
 
 A feature store is a system that computes feature values once and serves them to both training and inference, with a registry of definitions, an offline store for historical values used in training, and an online store for low-latency lookups at serving time. The online store is usually Redis, an in-memory key-value database that answers reads in about a millisecond. Training-serving skew is any difference between the feature values a model saw in training and the values it sees in production. It has three main causes. Implementation skew: the feature was computed by a Spark job for training and reimplemented in Python for serving, and the two disagree. Time-travel leakage: the training feature used data from after the prediction time, which serving cannot have. Distribution skew: the live inputs differ from the training snapshot. A feature store fixes the first two by having one definition and point-in-time correct joins.
+
+**The shape.**
+
+```
+                    +----------------------------------+
+                    | transformation code              |  ONE definition
+                    | (Spark job + feature registry)   |
+                    +--------+----------------+--------+
+             backfill        |                |  streaming write
+                             v                v
+              +----------------------+  +----------------------+
+              | offline store        |  | online store         |
+              | Parquet on S3        |  | Redis                |  ~1 ms read
+              | years of history     |  | latest value only    |
+              +----------+-----------+  +----------+-----------+
+                         |                         |
+                         v                         v
+              +----------------------+  +----------------------+
+              | training job         |  | model server         |
+              | point-in-time join   |  | request-time lookup  |
+              +----------+-----------+  +----------+-----------+
+                         |                         |
+                         +--------[ SKEW ]---------+
+                          training-serving skew enters HERE, and only
+                          here, if the two paths compute a feature
+                          differently or join it at a different time
+```
+
+The diagram shows one arrow leaving the transformation code and two arrows arriving at the models.
+Skew enters at the single marked point where those two paths meet again. If a second team writes a
+separate serving implementation, that arrow no longer starts at the same box, and the mark becomes a
+real defect.
 
 > **Say it.** A feature store computes each feature once from one definition and serves it to both training and inference. It has a registry of definitions, an offline store of historical values for training, and an online store, usually Redis, an in-memory key-value database with sub-millisecond reads. Training-serving skew is any mismatch between what the model saw in training and what it sees live. Causes are reimplementing the feature twice, leaking future data through a bad join, and genuine distribution shift. The store fixes the first two by single definition and point-in-time correct joins.
 
@@ -163,11 +227,91 @@ Split it into three cases and treat each separately. New user: you have no inter
 
 Decide on three things: whether the input is known in advance, how fresh the output must be, and how many predictions you need. Batch inference precomputes predictions on a schedule and stores them for lookup. Use it when the input set is enumerable, such as one prediction per user per day, and staleness of hours is acceptable. It is cheap, because you get GPU efficiency from large batches, and serving is a key-value read from Redis. Online inference computes at request time. Use it when the input depends on the immediate request, such as a search query or a fraud check on this transaction, or when freshness matters in seconds. It costs more and puts a model in your latency path. The common answer is a hybrid: precompute the expensive user and item embeddings in batch, and do only the light scoring or nearest-neighbour lookup online.
 
+**The shape.**
+
+```
+        BATCH PATH                              ONLINE PATH
+   +-------------------------+           +----------------------------+
+   | Airflow schedule 02:00  |           | request arrives            |
+   +-----------+-------------+           +-------------+--------------+
+               |                                       |
+               v                                       v
+   +-------------------------+           +----------------------------+
+   | Spark scoring job       |  hours    | feature fetch (Redis)      |  5 ms
+   | all users, big batches  |           +-------------+--------------+
+   +-----------+-------------+                         |
+               |                                       v
+               v                           +----------------------------+
+   +-------------------------+             | model forward pass         |  30 ms
+   | write results to Redis  |             +-------------+--------------+
+   +-----------+-------------+                           |
+               |                                         v
+               v                                     response              35 ms
+   +-------------------------+
+   | serving = key-value read|  1 ms
+   | freshness: up to 24 h   |
+   +-------------------------+
+```
+
+The diagram puts freshness and latency on the same picture. The batch path is fast to serve and slow
+to update; the online path is the reverse. Therefore the choice is not cost against quality, it is
+which of the two numbers the product can accept.
+
 > **Say it.** Three questions. Is the input known in advance, how fresh must the answer be, and how many predictions do I need. If I can enumerate the inputs and hours of staleness is fine, I batch: precompute on a schedule, store the result, and serve it as a Redis lookup, which is cheap and takes the model out of the latency path. If the input arrives with the request, like a query or a card transaction, I go online. Usually I do both: heavy embeddings in batch, light scoring online.
 
 ### Q7. Sketch a recommender in five minutes.
 
 Metric: online, session watch time or add-to-cart rate; offline, NDCG at ten as its proxy; guardrails on p99 latency and diversity. Scale: ten million DAU at five requests gives about 579 average and 1736 peak QPS. Architecture is the funnel. Candidate generation merges three sources: two-tower embedding retrieval with approximate nearest neighbour over a vector index, meaning a database of embeddings that returns the nearest to a query vector; item-to-item co-occurrence from recent behaviour; and popularity for cold users. That yields about five hundred candidates. Ranking is a gradient-boosted tree or a small neural network over user, item, and cross features, plus context. Then a re-rank pass for diversity and business rules. User and item embeddings are computed in batch nightly and cached; only the nearest-neighbour lookup and the ranker run online. Train on implicit feedback with sampled negatives, and correct for position bias.
+
+**The shape.**
+
+```
+                              request (user id, context)
+                                          |
+                                          v
+                          +------------------------------+
+                          | feature service (Redis)      |   15 ms
+                          +---------------+--------------+
+                                          |
+              +---------------------------+---------------------------+
+              v                           v                           v
+   +--------------------+     +--------------------+     +--------------------+
+   | two-tower ANN      |     | item-to-item       |     | popularity /       |
+   | over vector index  |     | co-occurrence      |     | trending           |
+   +---------+----------+     +---------+----------+     +---------+----------+
+             |                          |                          |
+             +------------+-------------+-------------+------------+   30 ms (parallel)
+                          v
+              +--------------------------------+
+              | dedupe + filter (seen, policy) |   5 ms      ~500 candidates
+              +---------------+----------------+
+                              v
+              +--------------------------------+
+              | ranker: GBDT, cross features   |   40 ms
+              +---------------+----------------+
+                              v
+              +--------------------------------+
+              | re-rank: diversity + rules     |   10 ms     ~10 items
+              +---------------+----------------+
+                              v
+                          response                network 20 ms -> total 120 ms
+                              |
+                              v
+      +--------------------------------------------------------------+
+      | log: impressions, ranks, scores, propensities -> Kafka -> S3 |
+      +--------------------------------------------------------------+
+
+   OFFLINE (nightly, Airflow)
+   +------------------------------------------------------------------------+
+   | Spark: two-tower training -> user + item embeddings -> ANN index build  |
+   | logged impressions + clicks -> training set with sampled negatives      |
+   +------------------------------------------------------------------------+
+```
+
+The diagram shows the three candidate sources side by side, so they cost 30 ms together, not 90 ms.
+The budget sums to 120 ms against a 300 ms p99 target, which leaves room for a retry. The offline
+block builds the index that the online ANN box reads, so the two blocks share data but never share a
+latency budget.
 
 > **Say it.** Metric first: watch time or add-to-cart online, NDCG at ten offline, with latency and diversity guardrails. Ten million actives at five requests is about six hundred average QPS, roughly seventeen hundred at peak. Then the funnel. Candidate generation merges two-tower nearest-neighbour retrieval over a vector index, item-to-item co-occurrence, and popularity for cold users, down to about five hundred. A boosted-tree ranker with cross features orders them, then a diversity re-rank. Embeddings batch nightly, only lookup and ranking online. Implicit feedback with sampled negatives, corrected for position bias.
 
@@ -175,17 +319,184 @@ Metric: online, session watch time or add-to-cart rate; offline, NDCG at ten as 
 
 Metric: online, click-through at position one and session success rate, meaning the user did not reformulate; offline, NDCG at ten against graded relevance labels. Latency target is a p99 around two hundred milliseconds. Pipeline: query understanding first, which is spelling correction, intent classification, and entity extraction. Then retrieval as a hybrid of lexical BM25 over an inverted index and dense retrieval over a vector index, merged by reciprocal rank fusion, because lexical handles rare terms and exact identifiers while dense handles paraphrase. That gives a few hundred candidates. Then a learning-to-rank model, typically LambdaMART or a cross-encoder, trained on click logs with position-bias correction, using query-document features, document quality, and freshness. Then business rules and diversity. Cache aggressively, because query traffic is heavily skewed and the top queries repeat constantly, so a query result cache with a short time to live removes most of the load.
 
+**The shape.**
+
+```
+                                  query in
+                                     |
+                                     v
+                     +---------------------------------+
+                     | query result cache (Redis)      |  2 ms
+                     | head queries repeat constantly  |
+                     +--------+---------------+--------+
+                       hit    |               |  miss
+                              v               v
+                          response   +---------------------------+
+                                     | query understanding:      |  10 ms
+                                     | spelling, intent, entity  |
+                                     +-------------+-------------+
+                                                   |
+                              +--------------------+-------------------+
+                              v                                        v
+                  +------------------------+              +------------------------+
+                  | lexical leg: BM25 over |  25 ms       | dense leg: ANN over    |  35 ms
+                  | inverted index         |              | vector index           |
+                  +-----------+------------+              +-----------+------------+
+                              |                                       |
+                              +------------------+--------------------+  35 ms (parallel)
+                                                 v
+                                  +------------------------------+
+                                  | reciprocal rank fusion       |  3 ms
+                                  +--------------+---------------+
+                                                 v
+                                  +------------------------------+
+                                  | learning to rank (LambdaMART)|  45 ms
+                                  +--------------+---------------+
+                                                 v
+                                  +------------------------------+
+                                  | business rules + diversity   |  10 ms
+                                  +--------------+---------------+
+                                                 v
+                                             response          network 20 ms
+                                                 |             total 125 ms
+                                                 v
+                                  +------------------------------+
+                                  | log: query, results, clicks, |
+                                  | positions -> Kafka -> S3     |
+                                  +------------------------------+
+```
+
+The cache sits in front of everything, because most requests never reach the rest of the
+diagram. The two retrieval legs run in parallel, so the pair costs 35 ms and not 60 ms. The
+budget sums to 125 ms against the 200 ms p99 target.
+
 > **Say it.** Online metric is click-through at position one plus session success, meaning no reformulation; offline it is NDCG at ten on graded labels, with a p99 near two hundred milliseconds. Query understanding first: spelling, intent, entities. Then hybrid retrieval, BM25 over an inverted index plus dense retrieval over a vector index, fused by reciprocal rank, because lexical wins on rare terms and dense wins on paraphrase. Then a learning-to-rank model on click logs with position-bias correction. Then rules and diversity. And a query cache, because head traffic repeats.
 
 ### Q9. Sketch a fraud detector in five minutes.
 
 The defining features are extreme class imbalance, an adversary, and asymmetric costs. Metric: not accuracy. Use precision-recall area under the curve, and operate at a threshold set by the cost ratio, for example recall at a fixed false-positive rate the review team can absorb. Scale is per transaction, so it must be online with a p99 under about one hundred milliseconds. Architecture: real-time features from a streaming aggregator, such as count and amount in the last minute, hour, and day per card, per device, and per merchant, served from Redis. Then a gradient-boosted tree, because tabular features dominate, plus rules for known patterns and a graph or anomaly component for rings. Two thresholds: block above the high one, send to human review between them, allow below. Labels are delayed by chargebacks, often sixty days or more, so hold out a recent window and monitor proxies. Retrain often, because the adversary adapts.
 
+**The shape.**
+
+```
+   transaction in
+        |
+        v                              STREAMING FEATURES
+   +---------------+          +-------------------------------------+
+   | API gateway   |--event-->| Kafka topic: authorisations         |
+   +-------+-------+          +------------------+------------------+
+           |                                     v
+           |                  +-------------------------------------+
+           |                  | Flink aggregator: count and amount  |
+           |                  | per card, device, merchant over     |
+           |                  | 1 min / 1 h / 24 h windows          |
+           |                  +------------------+------------------+
+           |                                     v
+           |                  +-------------------------------------+
+           +----lookup------->| Redis: aggregate feature values     |  5 ms
+                              +------------------+------------------+
+                                                 v
+                              +-------------------------------------+
+                              | GBDT score + rules + graph ring     |  15 ms
+                              | component                           |
+                              +------------------+------------------+
+                                                 v
+                              +-------------------------------------+
+                              | two thresholds t_high, t_low        |  5 ms
+                              +---+--------------+--------------+---+
+             score >= t_high      |              |              |     score < t_low
+                                  v              v              v
+                          +-------------+ +-------------+ +-------------+
+                          | BLOCK       | | REVIEW      | | ALLOW       |   2 ms
+                          | decline now | | human queue | | settle      |
+                          +------+------+ +------+------+ +------+------+
+                                 |               |               |
+                                 +-------+-------+-------+-------+  network 15 ms
+                                         |               |          total 42 ms
+                                         v               v
+                              +---------------------+  +---------------------+
+                              | decision log -> S3  |  | analyst label (same |
+                              +----------+----------+  | day)                |
+                                         |             +----------+----------+
+                                         v                        |
+                              +-------------------------------------------+
+                              | chargeback labels arrive: 60 DAY LAG      |
+                              +---------------------+---------------------+
+                                                    v
+                              +-------------------------------------------+
+                              | training set: mature window only           |--> retrain
+                              +-------------------------------------------+
+```
+
+The model has three outputs and not two, so the diagram draws three boxes. The review branch is
+a queue with a finite capacity, therefore the review threshold is set by the analyst team size
+and not by the model. The label arrow returns after sixty days, so the newest sixty days of
+traffic can never appear in a training set.
+
 > **Say it.** Imbalance, an adversary, and asymmetric costs. So not accuracy: precision-recall AUC, with the operating threshold set by the cost of a missed fraud against the cost of a false decline and the review team's capacity. It must be online, under about a hundred milliseconds. Streaming aggregate features per card, device, and merchant over the last minute, hour, and day, served from Redis, into a boosted tree, plus rules and a graph component for rings. Two thresholds: block, review, allow. Chargeback labels come back in sixty days, so I monitor proxies and retrain frequently.
 
 ### Q10. Sketch a support copilot in five minutes.
 
 Metric: online, resolution rate without escalation and handle time; offline, faithfulness to the retrieved sources and answer accuracy on a golden set, with a hard guardrail that it never invents policy. Architecture: retrieval-augmented generation over the help centre and past resolved tickets, chunked and embedded into a vector index, with hybrid lexical plus dense retrieval and a re-ranker. The generator is a mid-size model with a strict prompt: answer only from the retrieved passages, cite them, and say you do not know otherwise. Add tools for account lookups so live state is fetched, not recalled. Place a human gate on anything irreversible, such as refunds. Serving: streaming responses so perceived latency is low, plus a cache on repeated questions. Evaluate at retrieval and generation separately, log full traces, and convert every escalation into an eval case. Start assistive, with an agent approving each draft, then automate the safe classes.
+
+**The shape.**
+
+```
+   customer question in
+            |
+            v
+   +--------------------------+
+   | embed query              |  30 ms
+   +------------+-------------+
+                |
+        +-------+-------+
+        v               v
+   +---------+     +---------+
+   | BM25    |     | ANN over|          120 ms (parallel)
+   | index   |     | vectors |
+   +----+----+     +----+----+
+        +-------+-------+
+                v
+   +--------------------------+
+   | cross-encoder reranker   |  60 ms      -> top 8 passages
+   +------------+-------------+
+                v
+   +--------------------------+     +----------------------------+
+   | prompt assembly          |<----| tools: account lookup,     |
+   | system rules + passages  |     | order status (live state)  |
+   +------------+-------------+     +----------------------------+
+                |  10 ms
+                v
+   +--------------------------+
+   | generator (mid-size LLM) |  400 ms to first token, streamed
+   +------------+-------------+                total time to first token 620 ms
+                v
+   +--------------------------+
+   | guardrail + citation     |   every claim must map to a retrieved passage
+   | check                    |   fail -> "I do not know" + escalate
+   +------------+-------------+
+                v
+   +--------------------------+
+   | human gate: refunds and  |   agent approves before the action runs
+   | other irreversible acts  |
+   +------+-------------+-----+
+          |             |
+          v             v
+      answer to     +--------------------------+
+      customer      | trace log: query,        |
+                    | passages, prompt, output |
+                    +------------+-------------+
+                                 v
+                    +--------------------------+
+                    | escalation becomes an    |----> golden eval set
+                    | eval case                |      (retrieval + generation)
+                    +--------------------------+
+```
+
+The guardrail sits after the generator and before the customer, so a failed citation check never
+reaches a person. The human gate is a separate box from the guardrail, because one checks text and
+the other authorises an action. The escalation arrow closes the loop, so every failure adds one test
+case.
 
 > **Say it.** Resolution without escalation online, faithfulness and accuracy on a golden set offline, with a hard rule that it never invents policy. Retrieval-augmented generation over the help centre and past resolved tickets in a vector index, hybrid retrieval with a re-ranker, and a generator instructed to answer only from the passages, cite them, or say it does not know. Tools for live account state. Human gate on refunds and anything irreversible. Streaming output for perceived latency. I ship it assistive first, with agents approving drafts, then automate the safe classes.
 
@@ -198,6 +509,42 @@ Monitor four layers. Operational: QPS, latency percentiles, error rate, saturati
 ### Q12. Explain shadow deployment, canary, and rollback.
 
 A shadow deployment runs the new model on real production traffic in parallel with the current one, but its outputs are logged and discarded rather than served. It gives you real-distribution behaviour, latency, and error rates at zero user risk, and it is the only way to test infrastructure under real load before anyone sees the result. It cannot measure user reaction, because nobody sees the output. A canary sends a small fraction of real traffic, typically one to five percent, to the new model and serves its results, then compares metrics between the canary and control group. It does measure user reaction, at bounded blast radius, and you ramp up in stages, for example one, five, twenty-five, then a hundred percent, holding at each stage long enough for the metric to be readable. Rollback is the ability to return to the previous version in one action, which requires the old version still running, versioned artefacts, and automatic triggers on guardrail breach.
+
+**The shape.**
+
+```
+                         production traffic (100 percent)
+                                      |
+              +-----------------------+----------------------+
+              |                       |                      |
+      copy of traffic          95 to 99 percent         1 to 5 percent
+      (mirrored, not split)      (real slice)            (real slice)
+              |                       |                      |
+              v                       v                      v
+   +--------------------+   +--------------------+   +--------------------+
+   | SHADOW: model v2   |   | CONTROL: model v1  |   | CANARY: model v2   |
+   +---------+----------+   +---------+----------+   +---------+----------+
+             |                        |                        |
+             v                        v                        v
+   +--------------------+       served to user          served to user
+   | output DISCARDED   |             |                        |
+   | latency + errors   |             +-----------+------------+
+   | logged only        |                         v
+   +---------+----------+              +----------------------+
+             |                         | metric comparison    |
+             v                         | canary vs control    |
+      no user ever sees this           +----------+-----------+
+                                                  v
+                                       +----------------------+
+                                       | guardrail breach ->  |
+                                       | rollback in 1 action |
+                                       +----------------------+
+```
+
+The shadow branch takes a copy, therefore the sum of the served slices is still one hundred percent.
+The shadow output ends at a log and no arrow leaves it toward a user. The canary output reaches a
+user, so it is the only branch that can measure user reaction, and it is the only branch that needs
+a rollback path.
 
 > **Say it.** Shadow runs the new model on real traffic in parallel and throws the output away. It gives me real-distribution behaviour, latency, and errors with zero user risk, but it cannot tell me how users react, because nobody sees it. A canary serves the new model to one to five percent of traffic and compares against control, so it does measure user reaction with a bounded blast radius, ramped in stages. Rollback is a one-action return to the previous version, which needs the old one still running, versioned artefacts, and automatic triggers on guardrail breach.
 
