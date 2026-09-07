@@ -1,6 +1,6 @@
 # Topic 77: The Two-Week Workbook
 
-Twenty-seven pages, one per topic, holding what you need to say and write in an interview. Each page has the
+Thirty-five pages, one per topic, holding what you need to say and write in an interview. Each page has the
 equations with a plain-language gloss, code short enough to type from memory, and the questions with a
 spoken answer for each. Every code block on every page was executed before it was published, and where a
 result can be checked against a library — sklearn, PyTorch — it was checked and the agreement is stated
@@ -41,6 +41,14 @@ evening is the rest of [topic 73](../73_night_before_review/README.md).
 | [Trees](25_trees.md) | Choosing the traversal by what the node needs, and the return-one-thing-record-another shape behind four hard problems. |
 | [Graphs](26_graphs.md) | Naming the nodes and edges before the algorithm, the grid as a graph, multi-source BFS, topological sort, union-find, Dijkstra. |
 | [ML system design case studies](27_system_design_case_studies.md) | Ten designs worked end to end with a whiteboard diagram each: survey text at scale, driver analysis, response quality, feedback summarisation, metric alerting, and the classics. |
+| [Stack and monotonic stack](28_stack.md) | Next-greater in disguise, the sentinel trick, largest rectangle, 20 problems. |
+| [Heap and priority queue](29_heap.md) | Why the k largest needs a min-heap, the two-heap median, 16 problems. |
+| [Linked lists](30_linked_list.md) | Dummy heads, pointer discipline, reversing a sublist, LRU cache, 18 problems. |
+| [Backtracking and tries](31_backtracking.md) | The shape of the choice, the duplicate-skip guard, pruning that actually matters, 19 problems. |
+| [Dynamic programming I](32_dp_one_dimension.md) | Defining the state in one sentence, space reduction, 19 problems including Kadane and both coin changes. |
+| [Dynamic programming II](33_dp_two_dimensions.md) | One two-string table read three ways, grids, intervals, 18 problems. |
+| [Intervals and greedy](34_intervals_greedy.md) | Sort by start or by end, the sweep line, the exchange argument, 20 problems. |
+| [Matrices, maths and bit tricks](35_matrix_math_bits.md) | The tricks you memorise rather than derive, 22 short problems. |
 
 ## How to use a page
 
