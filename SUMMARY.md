@@ -664,6 +664,7 @@
   - [Classical ML](77_two_week_workbook/01_classical_ml.md)
   - [Optimization and Training Dynamics](77_two_week_workbook/02_optimization.md)
   - [Optimizer Evolution: From SGD to AdamW](77_two_week_workbook/36_optimizer_evolution.md)
+  - [Activation-Function Evolution: From Sigmoid to SwiGLU](77_two_week_workbook/37_activation_evolution.md)
   - [Evaluation Metrics and A/B Testing](77_two_week_workbook/03_evaluation.md)
   - [Probability and Statistics](77_two_week_workbook/04_probability_stats.md)
   - [Transformers and Attention](77_two_week_workbook/05_transformers.md)
