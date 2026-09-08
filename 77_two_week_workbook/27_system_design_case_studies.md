@@ -2118,9 +2118,1511 @@ and the effect present six months later are different quantities, and without th
 no way to notice when the accumulated set of shipped changes stops adding up to the sum of their
 measured effects, which in my experience it usually does.
 
+
 ---
 
-## The pattern across all ten
+## The internal systems
+
+The ten cases above are product-shaped: a customer sees the output. The six below are the other half of
+the work, and they are what an applied scientist at a company like this often actually builds — the
+platform systems the internal teams need so the product ones can exist at all. Benchmarks that cannot
+leak a customer's data. A way to re-score billions of historical rows when a model improves. The
+annotation platform every text model depends on. Redaction before anything is stored. A way for an
+analyst to ask the warehouse a question in plain language. A check on a survey before it ships.
+
+These are designs proposed in an interview, not descriptions of any company's real internal systems, and
+every rate and price in them is an illustrative assumption rather than a measurement.
+
+They reward a different instinct from the product cases. A product case is judged on the model choice.
+A platform case is judged on what happens when it fails halfway, who is allowed to see what, and whether
+the numbers stay comparable after you change something. Therefore the questions to ask first are about
+correctness under change, not about accuracy.
+
+## Case 11 — Cross-customer benchmarking without leaking any customer's data
+
+**The ask.** Internal teams want to tell each customer how their experience score compares against
+their industry. The comparison must come from other customers' data, and no customer has agreed to
+share anything identifiable.
+
+One framing note before the design, and it applies to the three cases in this section. These are
+internal platform systems, meaning the machinery a company builds for its own teams rather than a
+feature a customer clicks. I am not describing any company's real internals and I do not claim to
+know them. I am designing what any company sitting on a very large corpus of survey responses would
+have to build. I say that once and then design.
+
+**Clarify first.** I ask five things. First, what is the legal basis for using one customer's
+responses in another customer's benchmark, because the answer decides whether this is an
+opt-in programme with a few hundred participants or a platform-wide aggregate, and those are
+different systems. Second, what is the unit of comparison, because "your score against retail" and
+"your score against retail companies of your size in your region" differ by a factor of twelve in
+the number of cohorts and therefore in how many cohorts are too small to publish. Third, how often
+does the benchmark refresh, because a number that updates every month gives an attacker twelve
+observations a year of a slowly changing population, and that is what makes differencing possible.
+Fourth, does the customer see the cohort size, because publishing "your industry, forty-one
+companies" is itself information and I would rather publish it deliberately than leak it. Fifth,
+what does the customer do with the number, because a benchmark used to set an executive bonus needs
+a stated accuracy and a benchmark used for orientation does not.
+
+**Metrics.** The online metric is the fraction of benchmark requests that return a published number
+rather than a suppression message, which I call coverage. The offline metric is accuracy against
+the true cohort mean computed without any privacy protection, measured on historical data, reported
+as the mean absolute error in score points. The guardrails are the privacy guarantees themselves:
+minimum cohort size, maximum single-customer weight share, and cumulative privacy budget spent per
+cohort per year. I am judged on coverage, because an accurate benchmark that is suppressed for two
+thirds of customers is not a product, and because accuracy is easy to buy with a weaker privacy
+setting so it must not be the number I optimise.
+
+**Scale.** Take eighteen thousand customers, each collecting an illustrative forty-two thousand
+responses a year, which is 756 million responses a year in total. The taxonomy is forty-two
+industries crossed with four size bands and three regions, which is 504 cohort cells, and eighteen
+thousand customers spread over 504 cells averages 35.7 customers per cell. That average hides
+everything, because industries follow a steep distribution: on an illustrative rank-based
+allocation the largest industry holds about 3516 customers and the smallest about 122, and inside
+each industry the size-and-region split is skewed again. Applying a minimum of eight customers per
+cell, 343 of the 504 cells pass, which is 68.1 percent of cells, and those cells hold 95.2 percent
+of customers. Raising the minimum to twelve drops it to 268 cells and 91.1 percent of customers, and
+to thirty drops it to 132 cells and 76.8 percent. Rolling up to industry alone, all forty-two
+industries pass at any of those minimums. That arithmetic is the whole coverage story: the fine
+taxonomy is what customers want and the coarse taxonomy is what I can publish, so the design is a
+fallback ladder rather than a single cohort definition.
+
+**The shape.**
+
+```
+   ============ offline, nightly and quarterly ==============================
+   +-----------------------------+
+   | response store              |  756M responses/year, 18000 customers
+   | partitioned by customer     |
+   +-----------------------------+
+                |
+                v
+   +-----------------------------+
+   | per-customer aggregation    |  one row per customer per cohort per
+   | mean, count, trailing 12 mo |  period; raw responses never leave here
+   +-----------------------------+
+                |
+                v
+   +-----------------------------+
+   | eligibility filter          |  drop customers with < 100 responses
+   | min responses per customer  |  in the window
+   +-----------------------------+
+                |
+                v
+   +-----------------------------+     +----------------------------+
+   | cohort assembly             |<----| taxonomy registry vN       |
+   | 504 cells, frozen membership|     | industry x size x region   |
+   | for the release year        |     | versioned, effective dates |
+   +-----------------------------+     +----------------------------+
+                |
+                v
+   +-----------------------------+
+   | THRESHOLD GATE              |  k >= 8 customers AND n >= 1000 responses
+   | k, n, dominance check       |  AND max customer weight <= 0.25
+   +-----------------------------+
+          |              |
+     pass |              | fail
+          v              v
+   +---------------+  +--------------------------+
+   | estimator     |  | fallback ladder          |  size+region -> industry
+   | customer-     |  | coarsen one level, retry |  -> all-industry
+   | weighted mean |  | else suppress            |
+   | + noise       |  +--------------------------+
+   +---------------+
+          |
+          v
+   +-----------------------------+
+   | published benchmark table   |  ~2000 rows per release, immutable
+   | value, cohort id, k band,   |  released quarterly
+   | window, method version      |
+   +-----------------------------+
+                |
+   =============|============ online ======================================
+                v
+   +-----------------------------+          +---------------------------+
+   | benchmark lookup service    |--------->| ACCESS LOG -> Kafka       |
+   | cohort id -> cached row     |  3 ms    | who asked, which cohort,  |
+   | no computation at request   |          | which release, timestamp  |
+   +-----------------------------+          +---------------------------+
+                |                                        |
+                v                                        v
+   +-----------------------------+          +---------------------------+
+   | customer dashboard          |          | privacy audit job         |
+   | your score vs cohort        |          | budget spent per cohort,  |
+   | cohort size band shown      |          | query patterns per caller |
+   +-----------------------------+          +---------------------------+
+```
+
+**The design, component by component.** The first stage reduces every customer to one row per
+cohort per period: a mean, a response count, and the trailing window it covers. Raw responses never
+travel past this stage, and that is a structural choice rather than a policy choice. Everything
+downstream operates on per-customer summaries, so a bug in the cohort code cannot expose a
+response, and an engineer with access to the benchmark pipeline does not thereby have access to
+text. The eligibility filter drops any customer with fewer than one hundred responses in the
+window, because a customer with eleven responses contributes a mean with enormous variance and,
+worse, contributes a mean that is close to being an individual person's answer.
+
+Cohort assembly reads a versioned taxonomy. Versioning matters more than it looks. A customer that
+moves from the mid size band to the large band because it grew changes two cohorts at once, and if
+the taxonomy is not versioned nobody can reconstruct why last quarter's number differed. I freeze
+cohort membership for a release year, which is also the main defence discussed below.
+
+The threshold gate is the component that decides publication. It applies three rules together. At
+least eight customers must sit behind the number. At least one thousand responses must sit behind
+it. And no single customer may hold more than twenty-five percent of the cohort weight. If any rule
+fails, the request coarsens one level up the ladder, from industry-size-region to industry-region,
+then to industry, then to all-industry, and if the top level still fails the answer is a
+suppression message that says the cohort is too small rather than a number.
+
+The estimator computes a customer-weighted mean and optionally adds calibrated noise. The published
+table is small, roughly two thousand rows per release, so the online path is a cache lookup with no
+computation. That is deliberate. A benchmark computed at request time is a benchmark an attacker can
+steer by choosing the query, and a precomputed immutable table is one they cannot.
+
+**Why k alone is not enough.** A minimum-cohort rule with only a customer count still leaks. Take a
+cohort of twelve customers where one of them submits 4.2 million responses in the window and the
+other eleven submit thirty-five thousand each. Total responses are 4585000 and the large customer
+holds 91.6 percent of them. A response-weighted mean of that cohort is 23.6 when the large customer
+sits at 22.0 and the others sit at 41.0, while the customer-weighted mean is 39.42. The published
+number differs from the honest industry average by 15.82 points, and it is within 1.6 points of one
+identifiable company's own score. That company has effectively published its own number under the
+label "industry benchmark", and every competitor in the cohort can read it. So the dominance rule is
+not a refinement of the count rule, it is a separate necessary rule, and the weighting decision
+below is the other half of the same problem.
+
+**Weighting.** I weight by customer, not by response. An industry benchmark is a statement about
+companies in that industry, so each company should count once. Response weighting turns the
+benchmark into a statement about the largest survey programme in the cohort, which is both wrong as
+a statistic and dangerous as a disclosure. The cost of customer weighting is variance: a customer
+with one hundred responses gets the same weight as one with four million, so the estimate is noisier
+than a response-weighted one. I accept that and control it with the per-customer minimum of one
+hundred responses, and I report the cohort size band so the reader knows how much to trust it.
+
+**The differencing attack.** This is the heart of the case. Suppose a cohort is published one month
+with twelve customers at a mean of 31.4, and the next month with thirteen customers at a mean of
+32.6. The newcomer's own score follows directly: thirteen times 32.6 minus twelve times 31.4 is
+47.0. The minimum-cohort rule was satisfied at every publication and the attack still succeeded,
+because the rule protects each release in isolation and the attacker looks across releases. The same
+attack works on departures, on a customer crossing a size-band boundary, and on the intersection of
+two overlapping cohorts published in the same release.
+
+There are three defences and I use the first two together. The first is frozen cohorts: membership
+is fixed at the start of the release year, so all four quarterly releases describe the same set of
+customers and successive releases differ only because scores moved. New customers join at the next
+annual boundary, in a batch, which means a single release never adds exactly one member. The second
+is an overlap rule across cohort definitions: I never publish two cohorts whose membership differs
+by fewer than three customers, which kills the intersection version of the attack. The third is
+noise, and that is the differential privacy discussion below.
+
+Frozen cohorts cost freshness. A customer that joined in February does not appear in a benchmark
+until the following January, and a customer that churned still sits in the denominator. I take that
+cost because the alternative is a leak I cannot bound.
+
+**Differential privacy, and what it costs.** Differential privacy is the principled answer. It adds
+noise calibrated so that the published number is almost the same whether or not any one customer is
+in the data, which makes the differencing attack useless by construction rather than by procedure.
+The Laplace mechanism adds noise with scale equal to the sensitivity divided by the privacy budget
+epsilon, where sensitivity is the largest change one customer can cause in the output. For a
+customer-weighted mean over k customers with scores clamped to a range R, one customer can move the
+mean by at most R divided by k, so the sensitivity is R over k.
+
+Now the arithmetic, on an NPS-style scale from minus one hundred to one hundred, so R is 200. At k
+equal to twelve and epsilon equal to one, the sensitivity is 16.67, the Laplace scale is 16.67, and
+the standard deviation of the noise is 23.57 score points. At k equal to thirty it is 9.43 points.
+At k equal to one hundred it is 2.83 points. Compare those against the sampling error already in
+the estimate: with a between-customer standard deviation of twelve points, the standard error of the
+cohort mean is 3.46 points at k equal to twelve, 2.19 at k equal to thirty, and 1.20 at k equal to
+one hundred. So the privacy noise is 6.8 times the sampling error at k equal to twelve, 4.3 times at
+thirty, and 2.36 times at one hundred. On a five-point satisfaction scale where R is four, the same
+setting at k equal to twelve gives a noise standard deviation of 0.47 points, which on a scale whose
+whole useful range is about one and a half points is not a benchmark, it is a random number.
+
+Composition makes it worse. The privacy budget adds across releases: four quarterly releases at
+epsilon one each is a total epsilon of four for the year, and three years of history is twelve.
+Either I spend a much smaller epsilon per release, which multiplies the noise, or I accept that the
+formal guarantee degrades over time to something that no longer means much.
+
+That is the honest statement. Differential privacy is correct and it is expensive, and at the cohort
+sizes that actually occur it destroys the usefulness of the number. So my default is k-anonymity
+with suppression plus the dominance rule plus frozen cohorts, which is a procedural guarantee rather
+than a mathematical one, and I say plainly that it is procedural. I reserve differential privacy for
+the case where cohorts cannot be frozen, for example a benchmark that must refresh monthly on live
+membership, and there I would push cohorts up to k of at least one hundred so the noise is 2.83
+points and the guarantee is worth its price. The decision rule I state is: if I can freeze
+membership, freeze it and suppress; if I cannot, add noise and force large cohorts.
+
+**Refresh cadence and the trailing window.** Each release uses a trailing twelve-month window and
+releases quarterly, so consecutive releases share nine of their twelve months, which is 75 percent
+overlap. That smooths the series, which is what a benchmark should do, and it also means a single
+quarter's movement in one customer cannot swing the published number. The window and the release
+date are published with the number, because a customer comparing their October score against a
+benchmark covering the previous twelve months is making a comparison they need to understand.
+
+**Evaluation.** Offline I compute every cohort both ways, once with the full protection stack and
+once without any, on historical data, and report the mean absolute error in score points per cohort
+size band. That is the accuracy cost of the privacy machinery, stated as a number, and it is what I
+bring to the argument about thresholds. I also run the attacks myself: a simulated adversary that
+sees every release for three years and tries to recover individual customer means, scored by how
+many customers it recovers to within five points. If that number is above zero the thresholds are
+wrong. Online I track coverage per size band and the suppression reason distribution, because a
+suppression rate that is high for one industry is a taxonomy problem rather than a privacy problem.
+
+**What breaks.** A customer's segment has too few peers, which is the common case and not an edge
+case: 31.9 percent of the fine cells fail at k equal to eight. The ladder handles it, but the
+customer sees a coarser comparison than they asked for, so I show the cohort definition next to the
+number and never silently substitute a broader one. A taxonomy change moves many customers at once
+and breaks the frozen-cohort guarantee; I gate taxonomy changes to the annual boundary and treat an
+off-cycle change as a new release year. A customer requests deletion of their data, which changes
+cohort membership mid-year and re-creates the differencing attack against them; I handle it by
+holding the published table immutable and applying the removal at the next annual boundary, and by
+never republishing a corrected value for a past release. One customer queries every cohort
+systematically to reconstruct the taxonomy; the access log and the privacy audit job exist for that,
+and I rate-limit cohort lookups per caller. Score-scale drift, where a customer changes their survey
+question wording and their mean shifts for reasons unrelated to experience; I detect it as a
+per-customer step change and exclude that customer from the window that contains it.
+
+**The tradeoff they will probe.** They will ask why I do not just use differential privacy, since it
+is the accepted answer and k-anonymity is known to be weak. My answer is that I agree it is the
+accepted answer and I have priced it. At the cohort sizes that actually exist in this taxonomy, a
+privacy budget strong enough to be meaningful adds noise several times larger than the signal the
+customer is trying to read, and a benchmark whose error bar is 23.57 points on a scale where a
+meaningful competitive gap is five points does not inform any decision. Shipping it would be a
+privacy theatre in the other direction: formally defensible, practically useless, and quietly
+ignored by every team that then builds their own unprotected version in a spreadsheet. So I ship
+frozen cohorts, a minimum of eight customers and one thousand responses, a twenty-five percent
+dominance cap, customer weighting, an overlap rule between cohort definitions, and an immutable
+published table, and I document that the guarantee is procedural. Then I raise the price of the
+attack rather than eliminating it: the attacker needs cohort membership, which is not published, and
+must wait a year for membership to change. Where the data is more sensitive than a satisfaction
+score, or where membership must be live, I move to differential privacy and to cohorts of one
+hundred, and I accept that coverage falls from 95.2 percent of customers to 76.8 percent at k of
+thirty and further at one hundred. The point I want them to take is that the choice between the two
+is decided by the cohort-size distribution, not by which method is more respectable.
+
+## Case 12 — Re-scoring the historical corpus when a text model is upgraded
+
+**The ask.** A new sentiment and topic model beats the one in production. Twelve billion historical
+open-text responses carry scores from the old model, and dashboards, alerts and benchmarks all read
+those scores. Ship the new model.
+
+**Clarify first.** I ask five things. First, do customers see a time series built on these scores,
+because if they do then the switchover date becomes a visible discontinuity and that is the whole
+problem, while if the scores only feed a search index then I can swap in place tonight. Second, how
+far back does anyone actually read, because if ninety percent of dashboard queries cover the last
+two years then a full backfill of fifteen years is mostly money spent on data nobody reads. Third,
+are the label sets identical, because a new model with the same five sentiment classes is a
+re-scoring problem and a new model with nineteen topics where the old had eleven is a migration
+problem with no clean mapping. Fourth, do downstream systems read the scores directly from the
+table, or through a view I control, because that decides whether I can version silently or must
+coordinate with every consumer. Fifth, what is the rollback expectation, because "revert within an
+hour" and "revert within a week" buy very different storage designs.
+
+**Metrics.** The offline metric is macro F1 of the new model against a held-out human-labelled set,
+compared against the old model on the identical set. The online metric is the change in the rate at
+which customers correct or dispute a score, which I want flat or falling. The guardrails are
+score-distribution stability per customer, meaning the shift in the share of responses in each class
+between old and new, and dashboard query latency during the backfill, and the count of rows written
+twice. I am judged on the distribution-stability guardrail during rollout, because the model being
+better is already established offline, and the risk here is not accuracy, it is
+disruption.
+
+**Scale.** Twelve billion open-text responses. The new model is a distilled one-billion-parameter
+model that produces sentiment and topics in one pass, at an illustrative 120 texts per second per
+GPU. Twelve billion divided by 120 is 1.0e8 GPU-seconds, which is 27778 GPU-hours. At an
+illustrative two US dollars per GPU-hour that is 55556 US dollars, and on interruptible capacity at
+seventy cents an hour it is 19444. Wall-clock time depends only on fleet size: one hundred GPUs
+takes 277.8 hours, which is 11.57 days; three hundred takes 92.6 hours, which is 3.86 days; one
+thousand takes 27.8 hours. The old model was a 110-million-parameter encoder at 2000 texts per
+second, so re-running it over the same corpus would be 1667 GPU-hours and 3333 US dollars, and that
+factor of 16.7 in cost is the price of the accuracy gain, which is worth stating out loud because it
+is also the price of every future backfill. Reading the corpus is 9.6 TB of text at eight hundred
+bytes a response, so the input-output path is not the bottleneck at these rates. Each score row is
+about 120 bytes, so one version of the scores is 1.44 TB and keeping two versions is 2.88 TB, which
+is cheap and settles the versioning argument on its own. The partial option: if the most recent two
+years hold 2.4 billion responses, which is twenty percent of the corpus, that backfill is 5556
+GPU-hours, 11111 US dollars, and 18.5 hours on three hundred GPUs.
+
+**The shape.**
+
+```
+   ============ offline backfill, days-long batch job =======================
+   +-----------------------------+
+   | work planner                |  12B rows -> 24000 shards of 500k
+   | shard by customer + month   |  each shard ~1.16 h on one GPU
+   +-----------------------------+
+                |
+                v
+   +-----------------------------+     +----------------------------+
+   | shard queue (durable)       |<--->| shard state table          |
+   | pending / leased / done     |     | shard_id, attempt, worker, |
+   | lease expiry 2 h            |     | status, output checksum    |
+   +-----------------------------+     +----------------------------+
+                |
+                v
+   +-----------------------------+
+   | GPU worker pool             |  300 GPUs, 120 texts/s each
+   | read shard -> score -> write|  36000 texts/s aggregate
+   | write is idempotent upsert  |  3.86 days wall clock
+   +-----------------------------+
+                |
+                v
+   +-----------------------------+
+   | scores table                |  PRIMARY KEY (response_id, model_version)
+   | model_version column        |  v1 1.44 TB + v2 1.44 TB = 2.88 TB
+   | never an in-place update    |
+   +-----------------------------+
+                |
+   =============|============ online, unchanged during backfill ============
+                v
+   +-----------------------------+          +---------------------------+
+   | score read view             |--------->| READ LOG -> Kafka         |
+   | pinned to model_version per |  4 ms    | customer, version served, |
+   | customer, default v1        |          | date range, consumer      |
+   +-----------------------------+          +---------------------------+
+                |                                        |
+        +-------+--------+                               v
+        v                v                  +---------------------------+
+   +-----------+   +-----------+            | backfill monitor          |
+   | dashboards|   | benchmarks|            | shards done/h, cost/h,    |
+   | + alerts  |   | (Case 11) |            | double-write count,       |
+   +-----------+   +-----------+            | per-class share v1 vs v2  |
+                                            +---------------------------+
+
+   ============ validation, before any customer is switched ================
+   +------------------+   +---------------------+   +---------------------+
+   | held-out labelled|-->| agreement analysis  |-->| human review of     |
+   | set, 4000 items  |   | v1 vs v2 on 50M     |   | 6000 sampled        |
+   | scored by v1, v2 |   | sampled rows        |   | disagreements       |
+   +------------------+   +---------------------+   +---------------------+
+```
+
+**Why you cannot simply swap the model.** A customer looks at a twelve-quarter trend of the share of
+their feedback that is positive about a given topic. Suppose the old model puts that share at 0.612
+and the new model, on identical text, puts it at 0.658. On the switchover date the line jumps 4.6
+points. A real quarter-over-quarter movement for that customer is around 0.8 points, so the model
+change looks like 5.7 quarters of change happening in one day. The customer's team will explain it,
+in a meeting, as something they did. Then they will find out it was a model update. That is not a
+bug in any code, it is a correctness failure of the product, and it costs credibility that takes
+much longer to rebuild than the backfill takes to run. So the rule is that a score is part of a time
+series, and you never change the definition of a series without either rebuilding the whole series
+or marking the break.
+
+**The three options.** Re-score everything: run the new model over all twelve billion responses,
+switch every consumer to the new version, and delete the old scores after a retention period. The
+series is internally consistent for its whole length, so trends are honest. It costs 55556 US
+dollars and 3.86 days on three hundred GPUs, and it also means that any customer who exported a
+number last month and compares it against the same number today sees a difference, so the change
+must be announced. Re-score nothing and version the scores: keep the old scores, write the new ones
+alongside, and let each customer choose when to move. This costs nothing up front, but it only
+defers the problem, because whenever a customer moves they get the step change anyway, and it leaves
+you running two models forever. Re-score forward only with a marked discontinuity: apply the new
+model to everything from a cut date onward, leave history on the old model, and draw a visible break
+in every chart at that date with an annotation. This is the cheapest and it is honest, and it is
+correct for a series nobody aggregates across the break, but it is wrong for anything that computes
+a single number over a window spanning the cut, which includes year-over-year comparisons and
+includes the benchmark in Case 11.
+
+My default is re-score everything, for one reason that is not about correctness: 55556 US dollars is
+small against the cost of the alternative in support load and in engineering time spent explaining
+discontinuities for the next three years. If the corpus were a hundred times bigger, or the model a
+hundred times more expensive, I would take the hybrid: re-score the recent two years fully, which is
+5556 GPU-hours and 18.5 hours of wall clock, and mark the break at the two-year boundary, because
+the query log tells me almost nobody reads past it.
+
+**The backfill as a batch job.** The planner splits the corpus into 24000 shards of five hundred
+thousand rows, sharded by customer and month. Each shard takes about 1.16 hours on one GPU, which is
+the right size: short enough that losing one to a preemption costs little, long enough that the
+per-shard overhead is negligible. Sharding by customer and month is not arbitrary either, because it
+means a shard maps to exactly the slice a customer dashboard reads, so I can complete one customer
+entirely and switch them over while the rest of the corpus is still on the old version.
+
+Workers lease a shard from a durable queue with a two-hour lease. If a worker dies, the lease
+expires and another worker takes the shard. This is the point where most backfills go wrong, so the
+write must be idempotent: the scores table has a primary key of response identifier plus model
+version, and the write is an upsert, so re-running a shard produces the same rows rather than
+duplicates. I record a checksum of each shard's output in the shard state table and compare it on
+re-run, because a shard that produces different output on a retry means the model is not
+deterministic, and non-determinism in a backfill makes the whole result unreproducible. I pin the
+model weights by hash, disable any sampling, and fix the batch size, because batch size can change
+floating-point reduction order and move a borderline score across a class boundary.
+
+Checkpointing lives at shard granularity, not inside a shard. A shard is either done or not done,
+and the job's progress is the count of done shards, which is a number a monitor can read and a human
+can trust. The job resumes by asking the state table for pending shards, so a restart after a
+three-day failure resumes in seconds.
+
+**Throughput against cost.** The fleet size is the only real knob and it is a straight trade. Three
+hundred GPUs for 3.86 days and one thousand GPUs for 27.8 hours cost the same in GPU-hours, so the
+choice is about risk and about capacity. I take the smaller fleet on interruptible capacity, which
+cuts the bill from 55556 to 19444 US dollars, because a job built to resume from shard state loses
+nothing to a preemption. The one argument for the large fleet is that a shorter backfill means a
+shorter window in which the corpus is half old and half new, and if that window is operationally
+painful then paying for a shorter one is rational.
+
+**Serving during the backfill.** Nothing switches until the backfill for a customer is complete. The
+scores table carries the model version in the key and the read view is pinned per customer, so the
+online path serves version one throughout and the backfill writes version two into the same table
+without touching a row anyone is reading. That is why an in-place update is wrong here even though
+it would halve the storage: an in-place update makes a customer's dashboard read a mixture of old
+and new scores for however many hours the backfill takes on their data, which is worse than either
+version alone and impossible to explain. The extra 1.44 TB is a rounding error against that risk. I
+also keep dual writes live: any new response arriving during the backfill is scored by both models
+and written under both versions, so the two versions stay complete and the cut-over is a change of
+one row in a config table.
+
+**Validation.** Before committing I need evidence the new scores are better, not just different.
+There are two parts. The first is a held-out labelled set of four thousand items that neither model
+saw, scored by both, compared on macro F1 and on per-class precision and recall. That gives the
+headline claim. The second part is the one that finds real problems: an agreement analysis. I score
+a sample of fifty million rows with both models and partition by whether they agree. Where they
+agree, I have nothing to check. Where they disagree, which at an illustrative eight percent rate is
+960 million rows in the full corpus, sits everything the change actually does. I sample six thousand
+of those disagreements, stratified by customer industry and by class pair, and send them for human
+review, which is 133 annotator-hours at forty-five items an hour. That is the cheapest possible
+purchase of information, because a random sample of six thousand rows would spend ninety-two percent
+of its budget on rows where the two models already agree and I would learn nothing from them.
+
+The review answers the only question that matters: on the rows where they differ, which model is
+right, and does the answer vary by customer or by class pair? A new model that is better overall but
+worse on one class for one industry is a real outcome, and it changes the rollout rather than
+stopping it. I also compute, per customer, the shift in class shares between the two versions, and I
+publish that per-customer number to the account team before the switch, so nobody is surprised by
+their own trend line.
+
+**Rollback.** Rollback is a config change, not a data operation. The read view is pinned per
+customer to a model version, so reverting a customer is one row and takes effect on the next query.
+That works only because I never deleted version one, so the retention rule is that the old version
+survives for a full quarter after the last customer moves. Deleting it earlier converts a
+one-row rollback into another 3.86-day backfill, and that is the actual reason for the version
+column, more than any storage argument.
+
+**What breaks.** A shard fails repeatedly on one poisoned input, for example a response of two
+hundred thousand characters that exhausts memory; I cap input length, record the failure per row
+rather than per shard, and let the shard complete with a small number of rows marked unscored. Non-
+deterministic scoring makes retries produce different values; the checksum comparison catches it and
+I fail the job rather than continue. The backfill saturates the storage layer and slows customer
+queries; I rate-limit the writers on a read-latency signal and accept a longer job. Topic label sets
+differ between versions and a dashboard joins on label name; I version the label vocabulary with the
+model and refuse to serve a mixed join. Dual writes drift, meaning new responses get version two but
+not version one because someone removed the old model to save money; I monitor row counts per
+version per day and alert on divergence. A customer exports a report during the transition and its
+numbers do not match the next export; I stamp every export with the model version and the run date.
+
+**The tradeoff they will probe.** They will ask why I spend 55556 US dollars re-scoring twelve
+billion rows when almost nobody reads beyond two years, since the query log says so and the hybrid
+option is one fifth the price. My answer is that the query log measures what customers read on
+dashboards, and it does not measure the benchmark pipeline, the training data for the next model, or
+the year-over-year comparisons that a small number of customers care about enormously. A mixed
+corpus is a permanent tax: every future analysis has to ask which model scored which rows, every new
+hire trips over it once, and the answer to "why does this number look odd" always has to start with
+a date. Buying that away for 55556 US dollars, or 19444 on interruptible capacity, is the cheapest
+correctness I will ever buy. The version I would defend is that the decision scales with corpus size
+rather than being a principle: at a hundred times this corpus the full backfill is five and a half
+million US dollars and the hybrid becomes correct, and at that point I would put the cut date in the
+data model as a first-class object, expose it in the API, and make every aggregate that spans it
+return a warning rather than a silent number. The mistake I would not make in either version is the
+in-place update, because it produces a mixed series inside a single customer's own history, and that
+is the one outcome from which there is no rollback.
+
+## Case 13 — The annotation and gold-set platform that feeds every text model
+
+**The ask.** Every text model in the company needs labelled data, and nobody has a system for
+producing it. Build the platform that creates labels, measures their quality, and keeps a gold set
+that model evaluation can trust.
+
+**Clarify first.** I ask five things. First, how many distinct label schemas does this serve,
+because one sentiment scheme for the whole company is a very different platform from four hundred
+customer-specific topic taxonomies that change monthly. Second, who annotates, because an internal
+team of eight domain experts and a vendor pool of two hundred contractors have different failure
+modes and need different quality controls. Third, can the text leave the company, because if
+customer feedback cannot go to an external vendor then the annotator pool is small and expensive and
+the whole budget arithmetic changes. Fourth, what is the annual budget, because that is the actual
+constraint and it fixes how many items I can label, which fixes how much I can spend on redundancy.
+Fifth, is there an existing labelled set, because the first job of the platform is usually to audit
+what already exists and most of it turns out to have no guideline version attached and therefore no
+known meaning.
+
+**Metrics.** The platform's offline metric is inter-annotator agreement per label, measured as
+Cohen's kappa on an overlap set. The online metric is the downstream one: the accuracy of models
+trained on the platform's output, measured on the gold set, which is the only reason the platform
+exists. The guardrails are cost per accepted label, annotator throughput, and gold-set
+contamination, meaning the count of gold items found in any training set. I am judged on downstream
+model accuracy per dollar spent on labelling, because the platform's job is to convert budget into
+model quality and every other number is an intermediate.
+
+**Scale.** An annotator handles an illustrative forty-five short-text items an hour on a task with a
+sentiment label plus up to three topics. At a fully loaded cost of twenty-two US dollars an hour,
+one thousand items labelled once costs 488.89 US dollars. Labelled by three annotators it costs
+1466.67. Disagreements run at an illustrative eighteen percent, so 180 items per thousand go to an
+adjudicator working at thirty items an hour at thirty-five US dollars an hour, which adds 210 US
+dollars. Total for one thousand triple-labelled and adjudicated items is 1676.67, which is 1.677 US
+dollars per item. An annual budget of one hundred and eighty thousand US dollars buys 107355 such
+items, or 368182 items if labelled only once. That single number decides the whole design: I have
+about one hundred thousand high-confidence items a year across every model in the company, so I
+cannot afford to spend them on examples the model already gets right.
+
+The evaluation arithmetic sets the other constraint. A randomly sampled evaluation set of two
+thousand items measures an accuracy of 0.85 to plus or minus 1.56 points at ninety-five percent
+confidence; five thousand items tightens it to 0.99 points. But a label with a two percent base rate
+appears forty times in a two-thousand-item random sample, and recall of 0.70 measured on forty
+positives has a confidence interval of plus or minus 14.2 points, which is useless. Oversampling
+that label to four hundred positives brings it to plus or minus 4.5 points. So the evaluation set is
+not one set, it is a random set that estimates overall performance honestly plus stratified
+supplements for rare labels, each with its own known sampling weight so I can reweight back.
+
+**The shape.**
+
+```
+   ============ sampling, the part that decides the budget ==================
+   +-----------------------------+          +---------------------------+
+   | unlabelled pool             |          | production model vN        |
+   | hundreds of millions        |--------->| scores pool, keeps full   |
+   | of open-text responses      |          | probability vector        |
+   +-----------------------------+          +---------------------------+
+          |                                             |
+          | RANDOM sample                               | UNCERTAINTY + DIVERSITY
+          | (evaluation only)                           | (training only)
+          v                                             v
+   +---------------------------+          +-----------------------------+
+   | eval candidate queue      |          | train candidate queue       |
+   | unbiased, weights stored  |          | low margin, clustered,      |
+   | 2000/quarter + strata     |          | deduplicated  8000/quarter  |
+   +---------------------------+          +-----------------------------+
+          |                                             |
+          +----------------------+----------------------+
+                                 v
+   +----------------------------------------------------+
+   | TASK SERVER                                        |  ~45 items/h
+   | assigns items to annotators, 3-way overlap on      |  22 USD/h
+   | 20% of items, injects 5% seeded known-answer items |
+   | pins guideline_version to every assignment         |
+   +----------------------------------------------------+
+                                 |
+                                 v
+   +----------------------------------------------------+
+   | label store                                        |  one row per
+   | (item, annotator, label, guideline_version,        |  annotator per
+   |  timestamp, time_spent, was_prelabelled)           |  item
+   +----------------------------------------------------+
+          |                |                    |
+          v                v                    v
+   +-------------+  +---------------+  +---------------------------+
+   | agreement   |  | adjudication  |  | ANNOTATOR QUALITY MONITOR |
+   | Cohen kappa |  | queue, 18% of |  | accuracy on seeded items, |
+   | per label   |  | overlap items |  | drift vs own history,     |
+   | gate 0.60   |  | expert, 30/h  |  | time_spent outliers       |
+   +-------------+  +---------------+  +---------------------------+
+          |                |
+          +-------+--------+
+                  v
+   +----------------------------+     +------------------------------+
+   | resolved label set vG      |     | GOLD SET, 5000 items         |
+   | training data, versioned   |     | adjudicated, never trained on|
+   | by guideline_version       |     | hash-blocklisted from train  |
+   +----------------------------+     | 8383 USD to build            |
+                  |                    +------------------------------+
+                  v                                  |
+   +----------------------------+                    v
+   | model training             |<--- blocklist ---> +---------------------+
+   | vN+1                       |     check on every | leakage audit job   |
+   +----------------------------+     training run   | gold hashes in train|
+                                                     +---------------------+
+```
+
+**The sampling problem.** This is where the round is won or lost. Random sampling spends the budget
+in proportion to how common an example is, and common examples are the ones the model already
+handles. If the model is right on eighty-five percent of the pool, then eighty-five percent of a
+random labelling batch teaches it nothing. Uncertainty sampling instead picks items where the model
+is least confident, measured as the smallest margin between the top two class probabilities, and on
+an illustrative comparison reaches an F1 of 0.80 with twelve thousand labelled items where random
+sampling needs thirty thousand, a factor of 2.5. Pure uncertainty sampling fails in its own way,
+because the low-margin region is often a small cluster of near-identical texts, so I add a diversity
+term: cluster the candidate embeddings and cap how many items come from each cluster, so the batch
+covers the space rather than one confusing corner of it.
+
+Now the part people miss, and I say it plainly. Active learning is for the TRAINING set only. The
+EVALUATION set must stay randomly sampled from the production distribution. The reason is that an
+uncertainty-sampled set is deliberately enriched with hard cases, so accuracy measured on it is far
+below true production accuracy and, worse, it is below it by an unknown amount that changes every
+time the model changes, because the model itself chose the sample. A team that evaluates on their
+active-learning pool will watch their measured accuracy fall while the model improves, and will draw
+exactly the wrong conclusion. So the platform enforces the split structurally: the random sampler
+and the active sampler are separate code paths feeding separate queues, an item drawn for evaluation
+can never enter the training set, and the sampling weights are stored with every evaluation item so
+that stratified supplements can be reweighted back to the production distribution.
+
+The bias also affects training, and I control it rather than ignore it. A training set built purely
+from uncertain items has a class balance and a difficulty profile unlike production. That shifts
+the model's calibration even when accuracy improves. I mix the batches: an illustrative
+seventy percent active and thirty percent random, which keeps a spine of representative data in
+the training set, and I recalibrate probabilities on a held-out random set after training.
+
+**Inter-annotator agreement.** Two annotators can agree by luck, so raw agreement overstates
+quality, and Cohen's kappa corrects for that: kappa is observed agreement minus chance agreement,
+divided by one minus chance agreement. With observed agreement of 0.85 and chance agreement of 0.55,
+kappa is 0.667. With observed agreement of 0.78 and the same chance agreement, kappa is 0.511, so a
+seven-point drop in raw agreement is a fifteen-point drop in kappa, which is why I report kappa and
+not raw agreement. My gate is 0.60 per label: below that the label does not go into training.
+
+A low kappa almost never means bad annotators. It means an ambiguous guideline. If three careful
+people read the same definition and disagree on a third of the cases, the definition does not
+separate those cases, and no amount of retraining the annotators or the model will fix it. So the
+response to a failing kappa is to pull twenty disagreement cases, read them together, and find the
+boundary the guideline did not state. Usually there is a specific unhandled situation: sarcasm,
+mixed sentiment in one sentence, a complaint about a competitor, feedback about the survey itself
+rather than the product. The fix is a new guideline clause with worked examples, and then a new
+guideline version.
+
+**Adjudication.** Every disagreement inside the overlap set goes to an adjudicator, who is a senior
+annotator or the scientist who owns the label schema. The adjudicator sees the item, the competing
+labels, and the relevant guideline clause, and produces the resolved label plus, when the case was
+genuinely unclear, a note that becomes a candidate example for the next guideline version. That
+second output is worth as much as the first, because adjudication is the cheapest source of
+guideline improvements available. I cap adjudication at the eighteen percent disagreement rate in
+the budget, and a label whose disagreement rate exceeds thirty percent is suspended rather than
+adjudicated, because at that rate I am paying an expert to invent a definition one case at a time.
+
+**The gold set.** The gold set is five thousand items, triple-labelled and fully adjudicated, and it
+costs about 8383 US dollars to build. Its only job is evaluation, and its value comes entirely from
+never being trained on, because a model that has seen a gold item will score it correctly for the
+wrong reason and the gold set will report an accuracy the model does not have in production.
+
+Protecting it needs mechanism, not policy. I store a hash of every gold item's normalised text, and
+every training job calls a blocklist check that removes any training row whose hash matches, and
+fails loudly with a count rather than silently dropping rows. Exact hashing is not enough on its
+own, because the same feedback text can appear twice with different whitespace or a different
+response identifier, so I normalise before hashing and I additionally run a near-duplicate check
+using embedding similarity above a threshold, flagging rather than deleting so a human decides. The
+leakage audit runs after every training job and reports the number of gold items found, and the
+expected value is zero. I also refresh a portion of the gold set every year, because a gold set that
+never changes gets memorised through indirect routes: people look at its errors, fix those specific
+cases, and slowly overfit the whole company to five thousand examples.
+
+**Annotator quality monitoring.** Five percent of every batch is seeded with items whose correct
+label is already known from the gold set, indistinguishable from real work. In a thousand-item batch
+that is fifty seeded items. An annotator's accuracy on those items is the quality signal. The
+statistics are worth knowing: fifty seeds give a ninety-five percent confidence interval of plus or
+minus 8.3 points around an accuracy of 0.90, and plus or minus 12.0 points around 0.75, so those two
+intervals overlap and fifty seeds cannot reliably separate a weak annotator from a good one. At one
+hundred and fifty seeds the half-widths are 4.8 and 6.9 points and the separation is clean. So
+detection takes about three batches, which is the honest answer to how fast the platform catches a
+bad annotator, and it argues for keeping seeded items accumulating per annotator over time rather
+than judging each batch alone.
+
+I watch three other signals. Time spent per item, where a sudden drop usually means someone is
+clicking through. Label distribution per annotator against the cohort, where an annotator using one
+class far more than everyone else has misread a clause. And drift against the annotator's own
+history, using a fixed re-served set every month, because the same person labels differently in
+month six than in month one and that is a normal human effect rather than misconduct.
+
+**Guideline versioning.** When the definition of a label changes, every label produced under the old
+definition is suspect. Therefore every assignment records the guideline version it was produced
+under, and the training data selector filters by version. When a guideline changes materially I have
+three choices per label: relabel the affected history, which costs the full per-item price again;
+keep the old labels and accept a mixed definition, which is the option that quietly poisons the
+model; or drop the old labels for that one label class and keep the rest. I decide with a cheap
+experiment. Take three hundred items labelled under version one, relabel them under version two, and
+measure the change rate. If it is under five percent the change was a clarification and the old
+labels stand. If it is over twenty percent it is a new label wearing an old name, and the old labels
+are dropped. Between those, I relabel the disagreement-prone subset only. This is the same
+disagreement-set logic as the model migration in Case 12, applied to humans.
+
+**Where model-assisted pre-labelling helps and where it hurts.** Showing the annotator the model's
+prediction and asking them to confirm or correct raises throughput from an illustrative forty-five
+items an hour to seventy, which cuts the cost of one thousand single-labelled items from 488.89 to
+314.29 US dollars, a saving of thirty-six percent. That is real money and on high-volume,
+low-ambiguity tasks I take it.
+
+The cost is anchoring, and it is under-discussed because it does not show up in any of the obvious
+metrics. Annotators shown a pre-label accept it more often than they would have chosen it
+independently, so agreement with the model rises without accuracy rising, and the errors that
+survive are exactly the model's own errors, now stamped as human-verified. The training set that
+results teaches the next model to reproduce the current model's mistakes, and the measured
+agreement between model and human goes up every cycle, which looks like progress. Worse, if
+pre-labelling ever touches the evaluation set, the evaluation is destroyed, because the labels are
+partly the model's own output.
+
+So the rules are hard. Never pre-label the evaluation set or the gold set, under any budget
+pressure. Never pre-label the overlap items used for kappa, because a shared anchor inflates
+agreement between annotators who never actually agreed. Record a was-prelabelled flag on every
+label, so the effect can be measured afterwards. And measure it deliberately: keep a control arm
+where an illustrative ten percent of items are labelled with no pre-label shown, and compare the
+accept rate against the model's true accuracy on those items. If annotators accept the model on
+ninety-four percent of pre-labelled items while the model is only correct on eighty-eight percent of
+the control items, the six-point gap is anchoring, and it is the number I take to the decision about
+whether the thirty-six percent saving is worth it.
+
+**Evaluation of the platform itself.** The platform is judged by whether models trained on its
+output improve, so I run a data-scaling curve every quarter: train the same architecture on
+increasing amounts of the platform's data and plot gold-set F1 against label count. A curve that has
+flattened means more labels of this kind are no longer the constraint, and the budget should move to
+a different label, to better guidelines, or to a different model. That curve is also the honest
+answer to how much labelling to buy next year, and it is more useful than any argument about it.
+
+**What breaks.** A vendor pool changes staff and kappa drops with no guideline change; the seeded
+items and the per-annotator distribution monitor catch it within about three batches. The
+unlabelled pool goes stale because it was sampled once, so active learning keeps selecting from a
+distribution that no longer matches production; I re-draw the candidate pool every cycle from recent
+data. A rare label never appears in the random evaluation sample, so it is never measured; the
+stratified supplement exists for that and I audit label coverage of the evaluation set every
+quarter. Gold items leak in through a customer-provided dataset that happens to contain the same
+public text; the near-duplicate check catches it and a human confirms. An annotator learns the
+seeded items because the same gold items are re-served for months; I rotate the seed pool and draw
+seeds from a reserve that is larger than the seed rate needs. Guidelines are edited without a
+version bump, which destroys the ability to interpret every label after that point; the platform
+makes the guideline document immutable and a change creates a new version by construction.
+
+**The tradeoff they will probe.** They will ask why I spend three annotators on every overlap item
+and adjudicate on top, when single labelling gives 368182 items a year instead of 107355, which is
+3.4 times the data, and modern training is famously tolerant of label noise. My answer separates two
+uses. For training data, they are largely right, and I do not triple-label training items. I
+triple-label an overlap of about twenty percent purely to measure kappa, and I label the rest once,
+which is why the budget line above is a blend rather than three times everything. For evaluation
+data they are wrong, and the reason is that noise in a training label averages out over many
+examples while noise in an evaluation label does not average out at all, it puts a ceiling on the
+measured score and it puts a floor under the measured error. If the gold labels are ninety percent
+right, then a perfect model measures ninety percent, and two models at eighty-eight and ninety-one
+percent cannot be told apart by a set whose own labels are worse than both. So the gold set gets
+three annotators and an adjudicator, and I would rather have three thousand items I trust than
+thirty thousand I do not. The related probe is why the kappa gate is 0.60 rather than higher. The
+answer is that human agreement is the ceiling: if three careful annotators agree at kappa 0.65 on a
+label, a model scoring near that level on the same label is finished, not failing, and demanding a
+gate of 0.80 on a genuinely ambiguous construct such as sarcasm would mean shipping no model at all
+for the thing customers most want detected. The correct response to a low but real kappa is to
+report the ceiling alongside the model score, so nobody spends a quarter chasing an accuracy that
+the labels cannot express.
+
+---
+
+## Case 14 — PII detection and redaction on open-text responses
+
+**The ask.** Respondents type names, phone numbers, account numbers and health details into
+free-text boxes, and they often do it in a box that asked something else entirely. Build the
+system that finds that content and removes it before the text reaches storage, a model, or a human
+reviewer.
+
+**Clarify first.** I ask five questions. First: what is the cost of a miss against the cost of an
+over-redaction? A missed identifier is a compliance incident with a regulator and a customer; an
+over-redaction only damages the text. Those costs are not within an order of magnitude of each
+other, so the answer sets the whole operating point. Second: does redaction happen at ingest,
+before anything is persisted, or at read time when a person opens the response? Ingest is safer
+and irreversible; read time keeps the original and moves the risk into access control. Third:
+which identifier classes are in scope, and does the list differ per region? A national identifier
+in one country is not an identifier in another, and health content carries a stricter regime than
+a phone number. Fourth: does anyone ever need the original text back? Support investigations and
+legal holds sometimes do, and that decides between reversible tokenisation and irreversible
+masking. Fifth: how many languages and scripts? Name detection is the hard part of this problem,
+and a model trained on Latin-script English names is close to useless on transliterated Arabic or
+on Japanese.
+
+**Metrics.** The offline metric is recall per identifier class on a held-out labelled set,
+reported per class and never averaged, because a system with 99.9 percent recall on phone numbers
+and 90 percent on names is a system with a names problem. I would hold 99.5 percent recall on
+structured identifiers such as card numbers and national identifiers, because those are checkable
+and a miss is unambiguous, and 98 percent on person names, because names are genuinely ambiguous
+and a higher target only produces mass over-redaction. Precision is the secondary metric and I
+report it, however I do not optimise for it. The online metric is the rate at which human
+reviewers report a leaked identifier that the system missed, because that is the real-world recall
+estimate. The guardrail is the over-redaction rate measured as the share of tokens masked in text
+that a human judges to contain no identifier, because at some level of over-redaction the
+downstream topic model stops working. I would be judged on per-class recall.
+
+**Scale.** Assume twenty million free-text responses per day, the same volume as the topic
+pipeline. That is $20{,}000{,}000 / 86400 = 231$ responses per second on average and 926 per
+second at a peak-to-average factor of four. Assume 3 percent of responses contain a person name,
+which is 600,000 responses per day. At 98 percent recall the system misses 12,000 names per day.
+At 99.5 percent it misses 3,000, and at 99.9 percent it misses 600. Those three numbers are the
+argument for the layered design, because no single model moves between them. Assume 8 percent of
+responses contain at least one identifier of any class, which is 1.6 million responses per day,
+and assume 1.4 detected spans each, which is 2.24 million spans. One audit row per span at about
+120 bytes is 269 MB per day and 98 GB per year. The detector itself is a small transformer that
+handles about two thousand short texts per second on one GPU, which is an illustrative figure, so
+peak load needs 0.46 of a GPU.
+
+**The shape.**
+
+```
+              survey responses (free text, any language)
+              20 M/day = 231/s avg, 926/s peak
+                              |
+                              v
+                    +----------------------+
+                    | normalise + script   |   0.5 ms
+                    | and language detect  |
+                    +----------------------+
+                              |
+                              v
+                    +----------------------+
+                    | LAYER 1  patterns    |   0.3 ms, CPU
+                    | regex + Luhn + ISO   |   card, phone, IBAN,
+                    | checksums            |   national IDs
+                    +----------------------+
+                              |
+                              v
+                    +----------------------+
+                    | LAYER 2  NER model   |   8 ms batched
+                    | person, org, place,  |   0.46 GPU at peak
+                    | date of birth        |
+                    +----------------------+
+                              |
+                              v
+                    +----------------------+
+                    | LAYER 3  classifier  |   2 ms
+                    | free-form sensitive  |   health, finance,
+                    | content span tagger  |   self-harm
+                    +----------------------+
+                              |
+                              v
+                    +----------------------+
+                    | span merge + policy  |   1 ms
+                    | mask or tokenise     |   per class, per region
+                    +----------------------+
+                        |              |
+          +-------------+              +--------------+
+          v                                           v
+  +-------------------+                     +--------------------+
+  | redacted text     |   the only copy     | token vault        |
+  | -> warehouse,     |   that is persisted | encrypted, separate|
+  |    models, review |                     | key, break-glass   |
+  +-------------------+                     +--------------------+
+                              |
+                              v
+              ==================================    LOGGING PATH
+              | response id, class, offsets,   |    2.24 M spans/day
+              | detector layer, model version, |    269 MB/day
+              | policy applied, NOT the text   |    98 GB/year
+              ==================================
+                              |
+      ============================================  OFFLINE PATH
+      | weekly: sample 2,000 responses into a      |  restricted enclave
+      | restricted enclave, dual annotation,       |  named annotators
+      | measure per-class recall                   |
+      | monthly: retrain NER on new labels         |
+      | continuous: adversarial red-team set       |
+      ============================================
+```
+
+**The design, component by component.** Normalisation runs first and it matters more than it
+looks. People write phone numbers with spaces, dots and country prefixes, and they write card
+numbers in four groups. So I strip separators into a parallel index that maps back to the original
+offsets, and I detect the script and the language, because layer two routes on that. The tradeoff
+is that aggressive normalisation creates matches that are not there, for example a long product
+code that becomes a plausible card number once the hyphens are removed.
+
+Layer one is deterministic and it carries the structured identifier classes. A card number is
+sixteen digits with a Luhn check digit, so a random sixteen-digit string passes Luhn with
+probability 0.1, which removes nine tenths of the false candidates for one line of arithmetic.
+National identifiers mostly carry their own checksums, and IBANs carry a mod-97 check. This layer
+is where recall is nearly free, therefore I set it wide: I match loose patterns and let the
+checksum do the filtering. Deterministic rules are also the only part of the system I can prove to
+an auditor, which matters when the question is not "is it accurate" but "show me why this passed".
+
+Layer two is a named-entity recognition model, meaning a token-level tagger that marks spans as
+person, organisation, place or date. This is the layer that finds names, and names are the hard
+part. The same token can be a person or a product: "I spoke to Alexa" and "I asked Alexa" differ
+only by context, and "Ford was rude to me" is a person while "the Ford broke down" is not. A
+gazetteer, meaning a list of known names, does not solve this, because the ambiguity is exactly on
+the tokens that appear in the list. So I need context, therefore I need a model. Multilingual and
+transliterated names make it worse: one person writes Mohammed, another writes Muhammad, another
+writes it in Arabic script, and a model that learned Latin-script English names has never seen the
+third form. I handle that with a multilingual encoder, per-language evaluation, and deliberate
+transliteration augmentation in training.
+
+Layer three is a span classifier for the free-form cases that have no shape at all. "I have been
+off work since my diagnosis in March" contains no identifier and is health information about an
+identifiable person. This layer is a classifier rather than a pattern because there is nothing to
+match on. Its precision is the worst of the three, so I apply it with a narrower policy: it
+triggers a review flag and a sensitivity label rather than a hard mask, except in regions where
+the regime requires the mask.
+
+Policy sits after the layers because the same span gets different treatment in different places. I
+merge overlapping spans, take the widest, and then apply the per-class action. The key point is
+where all of this runs: at ingest, before persistence. If redaction happens at read time, the raw
+text is in the warehouse, in the backups, in the search index and in every training set built from
+it, and removing it later means finding every copy. I would rather lose some fidelity at ingest
+than run a deletion project across a warehouse.
+
+**Modelling choices.** The honest baseline I ship first is layer one alone plus an off-the-shelf
+NER model, with everything routed to irreversible masking. That is live in two weeks and it
+catches the identifier classes that produce most incidents. Then I add the fine-tuned multilingual
+tagger, then layer three. The alternative design is one large language model that reads each
+response and returns the spans. It is better at layer three and at unusual phrasings, and it costs
+too much at this volume: twenty million responses at about 300 tokens is six billion tokens per
+day, which at an illustrative two tenths of a cent per thousand tokens is twelve thousand US
+dollars per day. So I use the model where it earns its price, which is generating hard training
+examples and adjudicating the cases where the three layers disagree.
+
+The reversible-against-irreversible choice is a real decision and I would not dodge it. Reversible
+tokenisation replaces the span with a stable token and stores the original in a separate vault
+under a separate key, so support can recover it with an approval and an audit record, and so the
+same person's identifier maps to the same token across responses, which keeps joins working.
+Irreversible masking replaces the span with a class marker and destroys the original. I use
+reversible tokenisation for operational identifiers such as an account number, where a support
+case genuinely needs the value, and irreversible masking for special-category content such as
+health, where the safest state is that no copy exists. The cost of the vault is honest: it is a
+new high-value target, and stable tokens are themselves a linkage key, because the same token
+appearing in two datasets links them.
+
+**Redaction is not anonymisation, and I would say that sentence out loud in the interview.**
+Removing direct identifiers leaves quasi-identifiers, and quasi-identifiers combine. Take an
+account with 200,000 responses carrying region, age band and job title, at 200 regions, 8 age
+bands and 40 job titles. That is $200 \times 8 \times 40 = 64{,}000$ cells and 3.1 respondents per
+cell on average. Under a Poisson approximation about 8,800 cells hold exactly one person, so
+roughly 4.4 percent of respondents are unique on three coarse attributes that nobody would call
+personal data. The free text itself carries more: "I am the only left-handed pharmacist in our
+Leeds branch" identifies a person with no name in it. So I state the limit plainly: redaction
+reduces direct identifiability and it does not produce an anonymous dataset. If a team wants to
+publish or share externally, that needs k-anonymity checks on the quasi-identifier combination, or
+differential privacy on the aggregates, and those are different systems.
+
+**Evaluation.** The evaluation set is the hard part, because a labelled PII set is by construction
+a concentrated collection of real personal data, so building it creates the risk the system exists
+to remove. I handle that four ways. First, the labelled set lives in a restricted enclave with
+named annotators, access logging and no export. Second, I keep it small and stratified rather than
+large and random: 2,000 responses per class-weighted sample, oversampled towards responses the
+layers disagree on, because random sampling at an 8 percent positive rate wastes most of the
+annotation budget. With 2,000 positives, the standard error on a 99.5 percent recall estimate is
+0.16 points, so the confidence interval is about plus or minus 0.31 points, which is tight enough
+to manage a target. Third, I generate synthetic responses with known planted identifiers for the
+classes where synthesis is realistic, which covers structured identifiers well and names poorly.
+Fourth, I keep a permanent adversarial set: identifiers split across lines, digits written as
+words, names in unusual scripts, and text that looks like an identifier and is not. Every incident
+becomes a new case in that set. Online, the review tool has a one-click "this leaked" button, and
+that stream is my true recall signal.
+
+**What breaks.** A new identifier format appears, for example a national scheme changes its check
+digit rule, and layer one silently stops matching. I monitor detection rate per class per region
+as a time series and alert on step changes, because a drop to zero is obvious and a drop of 20
+percent is not. Language mix shifts and the NER model degrades on a language nobody evaluated; I
+monitor per-language detection rate and per-language volume together. Over-redaction creeps up
+after a retrain and the topic model quality falls a week later with no obvious cause; I monitor
+mean masked-token share per account and treat a rise as a release regression. Latency: layer two
+is the only GPU hop, and when it saturates the tempting fix is to skip it under load, which
+converts a latency incident into a compliance incident. So the queue blocks rather than bypasses,
+and ingest applies backpressure. The audit log must never contain the raw span, and the easiest
+way to leak everything is a debug log added during an incident; I test for that with a scanner
+that runs against the logs themselves.
+
+**The tradeoff they will probe.** They will ask why I accept an over-redaction rate that damages
+the downstream analytics, and whether recall at 99.5 percent is worth a topic model that has lost
+its product names. My answer is that the two errors are not comparable, so I do not trade them on
+one axis. A missed identifier is an incident with a regulator, a notification duty and a
+per-record cost; an over-redaction is a slightly worse topic score. Therefore I set the operating
+point by the compliance target and then spend engineering effort on precision at fixed recall,
+which is a different and much more productive problem. Concretely: the checksum in layer one buys
+precision at no recall cost, context in layer two buys precision at no recall cost, and an
+allow-list of the account's own product names buys precision at no recall cost. The second half of
+my answer is that redaction is not the only control. If a specific internal team genuinely needs
+unredacted text, the right answer is not weaker redaction for everyone; it is a separate
+restricted path with its own access control, its own audit and its own retention limit, and the
+wide pipeline stays aggressive.
+
+## Case 15 — Natural-language question answering over the survey response warehouse
+
+**The ask.** An internal analyst types "which regions saw satisfaction drop most last quarter and
+what did people say" in plain language, and the system answers it from the warehouse. Build that.
+
+**Clarify first.** I ask five questions. First: is the answer a number, a set of quotes, or both?
+That question decides the architecture, because a number comes from a database query and a quote
+comes from retrieval over text, and one mechanism cannot produce both well. Second: who is asking,
+and what may they see? An internal analyst is usually scoped to a set of accounts and regions, and
+the answer must never span data outside that scope. Third: how uniform is the schema? If every
+customer defines their own survey with their own question wording, then there is not one schema,
+there are thousands. Fourth: what happens when the question is ambiguous? "Last quarter" can mean
+the last calendar quarter or the last ninety days, and those give different answers. Fifth: does
+the analyst see the query the system wrote? That sounds like a user-interface question and it is
+actually a trust question, therefore it is a design question.
+
+**Metrics.** The offline metric is execution accuracy on a labelled set of question-and-query
+pairs: I run the generated query and the reference query against the same warehouse snapshot and
+compare the result sets. I do not compare the SQL as strings, because many different queries
+return the same correct answer and a string match would mark most correct answers wrong. The
+online metric is the share of sessions where the analyst accepts the answer, meaning they copy the
+number, export it, or build a chart from it, rather than rephrasing the question or abandoning.
+The guardrail is a pair: the rate of queries rejected by the safety layer, and the rate of answers
+that cross an access boundary, which must be zero and which I test rather than hope for. I would
+be judged on execution accuracy in a review, and the acceptance rate is what decides whether
+analysts keep using it.
+
+**Scale.** Assume twenty thousand internal analysts, each asking five questions per day. That is
+100,000 questions per day, which is $100{,}000 / 86400 = 1.16$ questions per second on average.
+Analyst traffic is concentrated in working hours, so with a peak-to-average factor of five the
+peak is 5.8 per second. That is a small load in requests and an expensive one per request. The
+latency budget: schema retrieval 50 ms, query generation by a large model about 2 seconds, safety
+and cost checks 100 ms, warehouse execution 1.5 seconds at the median, verbatim retrieval 200 ms,
+answer composition 1.5 seconds. So a median answer is about 5.4 seconds, and I would target a p95
+of 15 seconds and hard-cancel anything past 60.
+
+The schema is where the real number is. Assume fifteen thousand accounts, forty survey definitions
+each, and twenty-five questions per survey. That is fifteen thousand times forty times
+twenty-five, which is $15{,}000{,}000$ answerable fields. At about twelve tokens to describe one
+field, the full schema is 180 million tokens, which is 900 times a 200,000-token context window.
+So putting the schema in the prompt is not an option that gets smaller with a better model, and
+schema retrieval is not an optimisation. It is the system.
+
+Token cost: 100,000 questions per day at about 6,000 prompt-plus-completion tokens is 600 million
+tokens per day, which at an illustrative two tenths of a cent per thousand tokens is 1,200 US
+dollars per day. A 30 percent cache hit rate on repeated questions removes 360 dollars per day of
+that, and it removes more warehouse compute than it removes model cost.
+
+**The shape.**
+
+```
+              analyst question (natural language) + identity
+              100 k/day = 1.16/s avg, 5.8/s peak
+                              |
+                              v
+                    +----------------------+
+                    | intent split         |   80 ms
+                    | numeric / verbatim / |   small classifier
+                    | both                 |
+                    +----------------------+
+                       |                 |
+      +----------------+                 +----------------+
+      v                                                   v
++--------------------------+                   +------------------------+
+| SCHEMA LINKING           |  50 ms            | verbatim retrieval     |  200 ms
+| embed question, retrieve |  15 M fields ->   | hybrid BM25 + vector,  |
+| top 30 fields + enums    |  top 30           | filtered by same scope |
++--------------------------+                   +------------------------+
+      |                                                   |
+      v                                                   |
++--------------------------+                              |
+| constrained generation   |  2.0 s                       |
+| grammar-restricted SQL   |  read-only role              |
++--------------------------+                              |
+      |                                                   |
+      v                                                   |
++--------------------------+                              |
+| SAFETY GATE              |  100 ms                      |
+| parse, allow-list, row   |  reject or ask a             |
+| cap, dry-run cost check  |  clarifying question         |
+| inject row-level scope   |                              |
++--------------------------+                              |
+      |                                                   |
+      v                                                   |
++--------------------------+                              |
+| warehouse execution      |  1.5 s p50                   |
+| read-only, 60 s timeout  |  50 k row cap                |
++--------------------------+                              |
+      |                                                   |
+      +--------------------+---------------------------+--+
+                           v
+                 +------------------------+
+                 | answer composition     |   1.5 s
+                 | number + chart + the   |   SQL ALWAYS shown
+                 | SQL + quotes + scope   |
+                 +------------------------+
+                           |
+                           v
+              ==================================    LOGGING PATH
+              | question, retrieved fields,    |    every request
+              | generated SQL, bytes scanned,  |    feeds the eval set
+              | edits the analyst made, accept |    and the cache
+              ==================================
+                           |
+      ============================================  OFFLINE PATH
+      | nightly: mine accepted question->SQL      |  new eval cases
+      | pairs, human review, add to eval set      |
+      | weekly: re-embed changed schema fields    |
+      | weekly: replay eval set on new prompt or  |  execution accuracy
+      |         model version before rollout      |  regression gate
+      ============================================
+```
+
+**The design, component by component.** The intent split is first and it is cheap. "Which regions
+dropped most" is a numeric question and needs an aggregate over millions of rows. "What did people
+say" is a retrieval question and needs the actual sentences. Most real questions are both, which
+is why the example in the ask contains both. I want to name why one mechanism does not cover both.
+Retrieval over raw text finds the twenty passages most similar to the question, and no set of
+twenty passages tells you that satisfaction in one region fell 4.2 points, because that fact is
+not written in any passage. It is the result of a group-by over a million rows. Conversely, a SQL
+query returns a number and cannot tell you that the drop is about a delivery change, because that
+is in the text. So the numeric half goes to SQL and the verbatim half goes to retrieval, and
+composition puts them together with the constraint that every quote shown must come from the rows
+the numeric half selected. Otherwise the quotes illustrate a different population than the number,
+which is a subtle and serious error.
+
+Schema linking is the hard part, and I would spend most of my time here in the interview. The task
+is to map the analyst's words to tables, columns and enum values. "Satisfaction" might be a column
+named CSAT in one account, a question with the text "How satisfied were you overall?" in another,
+and a numeric scale question with no name at all in a third. "Region" might be a warehouse
+dimension, a survey metadata field, or a free-text answer. I handle it as a retrieval problem over
+a field catalogue. Each field gets a document containing its table, its column name, its question
+text, its data type, its enum values and their frequencies, and a few sample values, and I embed
+that. At query time I retrieve the top thirty fields with a hybrid of keyword and vector search,
+then pass only those into the prompt. Enum values matter as much as columns: a model that writes
+`WHERE region = 'EMEA'` against a column whose values are `emea_west` and `emea_north` produces a
+syntactically perfect query that returns zero rows, and zero rows looks like an answer. So I
+retrieve the actual enum values and I validate literals against them before execution. The
+remaining errors are the interesting ones, and they cluster on joins: the model picks the right
+columns from the wrong pair of tables, and the aggregate double-counts.
+
+Constrained generation and the safety gate are what make this shippable rather than a demo. Three
+controls, layered. First, the model generates against a restricted grammar, so the only
+productions available are SELECT with a fixed set of clauses; there is no INSERT, no UPDATE, no
+DELETE, no DDL and no multi-statement text, because those tokens cannot be produced at all.
+Second, the query runs under a read-only warehouse role that has no write permission on anything,
+so a grammar escape still cannot write. Third, the generated query is parsed into a syntax tree
+and checked: every table is on an allow-list, a row limit is appended, and the warehouse dry-run
+gives an estimate of bytes scanned, which I reject above a threshold. A model that writes a cross
+join over two large tables is not malicious and it will still cost a great deal and block the
+cluster. These three controls are deliberately redundant, because the grammar is my code and my
+code has bugs, and the read-only role is enforced by a system that is not mine.
+
+Access control is enforced inside the query, not after it. The analyst's scope, meaning the
+accounts, regions and survey types they may see, is injected as a predicate into the syntax tree
+after generation and before execution, or better, the read-only role is bound to row-level
+security policies in the warehouse itself so the predicate is applied by the database. Filtering
+after execution is wrong for two reasons. The obvious one is that an aggregate computed over rows
+the analyst may not see is already a leak, even if I hide the rows: a mean over a forbidden
+segment discloses information about that segment. The less obvious one is that post-filtering
+makes the number silently wrong, because the analyst reads a count that included rows the filter
+then removed. So the scope is part of the query.
+
+**Modelling choices.** The honest baseline I ship first is not text-to-SQL at all. It is a set of
+parameterised query templates, perhaps forty of them, covering the questions analysts actually
+repeat: metric by dimension over a period, change against a prior period, top and bottom segments,
+and the verbatims behind a segment. A classifier picks the template and a slot filler fills the
+parameters. That covers a surprising share of real traffic, it never writes a wrong join, and it
+gives me a live baseline and a stream of the questions it cannot answer, which is exactly the
+training and evaluation data the general system needs. Then I add generation for the tail, and I
+keep the templates as the fast path, because a template is cheaper, faster and provably correct.
+
+For generation I use a large model with retrieved schema and a few retrieved examples of similar
+question-and-query pairs from the same account, because in-context examples from the same schema
+help more than any prompt instruction. I would fine-tune only after I have a few thousand verified
+pairs from production, and I would expect the gain to be on joins and on dialect quirks rather
+than on understanding.
+
+Ambiguity gets its own treatment, and this is where I would push back on a naive design. If "last
+quarter" has two readings and "satisfaction" maps to two candidate fields with similar retrieval
+scores, the system must ask rather than pick. The rule I use is: when the top two interpretations
+are close, or when a required field is missing, return a clarifying question with the two options
+as buttons instead of an answer. This feels like a worse product and it is a better one, because a
+confidently wrong number that an analyst puts in a board deck is far more expensive than one extra
+click. I measure the clarify rate and I watch it, because a system that clarifies on half of all
+questions has a schema-linking problem it is hiding behind a dialog.
+
+Showing the query is not optional. The analyst sees the generated SQL, the fields it used, the row
+count, the time range and the scope that was applied, and they can edit the SQL and re-run. The
+reason is simple: an analyst who cannot see the query cannot check the number, therefore they
+cannot defend it, therefore they will not use it for anything that matters. The visible query also
+produces my best training signal, because an analyst editing the SQL is telling me exactly what
+the model got wrong, which is a far better label than a thumbs-down.
+
+Caching has two layers. A semantic cache on the question keyed by the normalised question text
+plus the analyst's scope plus the schema version returns a previous answer, and it must include
+the scope in the key or it becomes a data-leak mechanism. A result cache on the exact query text
+plus the warehouse snapshot avoids re-executing an identical aggregate. I expire on the
+data-freshness boundary rather than on a fixed timer, because an analyst who reruns a question
+after a nightly load must see the new number.
+
+**Evaluation.** The core set is a few thousand question-and-query pairs, built three ways: written
+by analysts, mined from the query logs and back-translated into questions by a model then verified
+by a human, and hand-written adversarial cases for the known failure modes such as ambiguous time
+ranges and near-duplicate columns. I score execution accuracy on a frozen snapshot, and I report
+it broken down by question type, because aggregate-with-filter and period-over-period comparison
+have very different difficulty and one number hides that. I also report the clarify rate and the
+safety-gate rejection rate, because a model can reach high execution accuracy by refusing
+everything hard. For the verbatim half I score whether the retrieved quotes come from the rows the
+numeric half selected, which is a mechanical check, and I have humans judge whether the quotes
+support the stated pattern, which is not. Online I run a shadow deployment for prompt or model
+changes: the new version generates a query, the query is not executed against production for the
+user, and I compare its result set against the current version on replayed traffic, then
+adjudicate the disagreements only.
+
+**What breaks.** A schema change renames a column and every cached embedding for that field is
+stale, so retrieval keeps proposing a field that no longer exists and generation keeps writing
+queries that fail. I version the field catalogue, re-embed on change, and monitor the query
+failure rate per account. A model upgrade silently changes the SQL dialect it prefers and the
+failure rate jumps; the eval-set replay is a release gate for exactly this. Cost runaway: one
+analyst discovers that vague questions produce large scans, and the warehouse bill moves; I cap
+bytes scanned per query and per analyst per day, and I alert on the daily total. The most
+dangerous failure is not an error at all. It is a query that runs, returns a number, and answers a
+different question than the one asked, usually through a wrong join that double-counts or a filter
+that silently matched nothing. Zero rows and suspiciously round results get an explicit warning in
+the answer, and I monitor the share of answers returning zero rows, because a rise there means
+schema linking is drifting.
+
+**The tradeoff they will probe.** They will ask why I do not simply put everything in a retrieval-
+augmented pipeline over the text, since that is one system rather than two, and it degrades
+gracefully. My answer is arithmetic. The question asks which region dropped most last quarter.
+That answer is a ranking over aggregates across millions of rows, and similarity search returns
+the twenty passages most like the question, which is a biased sample of the corpus by
+construction, because similarity to a question is not a random sample. Counting over a biased
+sample gives a wrong number with no error bar, and it gives it confidently. There is no retrieval
+depth that fixes this, because the fact is not in the text at any depth. So the numeric half is
+SQL. The second half of my answer is the honest cost of the split: two systems means two failure
+modes, two sets of latency, and a composition step that can attach the right quotes to the wrong
+number. I control that by making the numeric half authoritative, deriving the quote filter from
+the same predicate as the aggregate, and showing the analyst the query, so a mismatch is visible
+rather than hidden.
+
+## Case 16 — Survey quality: predicting dropoff and flagging bad questions before a survey ships
+
+**The ask.** Internal teams want a tool that reviews a survey while it is still being written. It
+should predict where respondents will abandon it, and it should flag questions that are badly
+written.
+
+**Clarify first.** I ask five questions. First: is the output a prediction or a recommendation?
+"Sixty percent of respondents will leave by question twelve" is a prediction I can validate
+against history. "Cutting question twelve will raise completion by four points" is a causal claim
+about a survey that does not exist, and I cannot get it from historical data alone. Second: who is
+the user and when do they see this? An author mid-draft can act on a flag; a reviewer at sign-off
+cannot rewrite twenty questions. Third: do I have the dropoff position for every historical
+survey, or only the completion rate? Per- question dropoff is the whole training signal for the
+first model, and if I only have completion rates the design changes completely. Fourth: how many
+labelled examples of bad questions exist? I expect the answer to be almost none, which decides
+that the second model starts small. Fifth: what does the author control? If the audience, the
+incentive and the channel are fixed by someone else, then a model that attributes dropoff to those
+is correct and useless.
+
+**Metrics.** There are two models, so there are two offline metrics. For dropoff I use the
+calibration of the predicted per-question abandonment probability and the area under the ROC curve
+for "this respondent leaves at this question", plus a curve-level metric: the mean absolute error
+between the predicted and observed completion rate for a held-out survey. Calibration matters more
+than ranking here, because the author sees a number and will treat it as a number. For question
+quality I use precision and recall per problem type on an annotated set, and precision leads,
+because a tool that flags good questions gets switched off. The online metric is the share of
+flags the author acts on, meaning they edit the question or delete it, measured within the
+authoring session. The guardrail is the completion rate of surveys that went through the tool
+against those that did not, watched for the case where the tool makes surveys worse. I would be
+judged on the flag action rate, because it is the only one that shows the tool changed anything.
+
+**Scale.** This is a small system by volume and a subtle one by statistics. Assume forty thousand
+new surveys per day, which is $40{,}000 / 86400 = 0.46$ surveys per second, so throughput is not a
+problem. Latency is an authoring-time budget: an author edits a question and wants the flag within
+a second, so I target a p95 of 2 seconds for a whole survey and I score incrementally, one
+question at a time, at about 3 milliseconds each, which is 90 milliseconds for a thirty-question
+survey.
+
+The training data is the opposite. Assume three million historical surveys at an average of twenty
+questions, which is $3{,}000{,}000 \times 20 = 60{,}000{,}000$ question instances, each with an
+observed abandonment count. That is abundant, and it is the reason the dropoff model can be a real
+model.
+
+The arithmetic that matters is the survival curve. If a twenty-question survey completes at 65
+percent and the per-question hazard is constant, then the per-question survival is the twentieth
+root of 0.65, which is $0.9787$, so the hazard is 2.13 percent per question. Apply that same
+hazard to different lengths: ten questions gives 80.6 percent completion, twenty gives 65.0, forty
+gives 42.3, sixty gives 27.5. So length alone moves completion by 53 points across that range with
+no change in question quality whatsoever. Any model that does not control for length will learn
+length and call it quality.
+
+For the annotation budget on the second model: twelve thousand questions, each labelled by three
+annotators, at forty questions per annotator-hour, is 900 annotator-hours. That is a real cost and
+it is why this model starts as rules.
+
+For validating a recommendation: to detect a lift from 65 percent to 69 percent completion at 80
+percent power and 5 percent significance needs about 2,163 respondents per arm. To detect a
+one-point lift from 65 to 66 needs about 35,429 per arm. So a four-point claim is testable inside
+one medium survey and a one-point claim is not.
+
+**The shape.**
+
+```
+        author writes / edits a question in the survey builder
+        40 k new surveys/day = 0.46/s
+                              |
+                              v
+                    +--------------------------+
+                    | feature build            |   5 ms
+                    | position, length so far, |   per question
+                    | type, matrix size, text  |
+                    +--------------------------+
+                       |                    |
+        +--------------+                    +-----------------+
+        v                                                     v
++----------------------------+                    +--------------------------+
+| MODEL A  dropoff hazard    |  3 ms/question     | MODEL B  wording flags   |  3 ms/q
+| gradient-boosted trees on  |  60 M training     | rules + small classifier |  12 k
+| position + length + type   |  instances         | leading, double-barrel,  |  labels
+| + audience + text features |                    | ambiguous, bad options   |
++----------------------------+                    +--------------------------+
+        |                                                     |
+        v                                                     |
++----------------------------+                                |
+| survival curve assembly    |  hazard -> curve               |
+| + counterfactual "what if" |  MARKED AS ESTIMATE            |
++----------------------------+                                |
+        |                                                     |
+        +--------------------------+--------------------------+
+                                   v
+                        +---------------------------+
+                        | authoring UI              |   p95 < 2 s
+                        | curve + per-question flag |   inline, not a report
+                        | + one concrete rewrite    |
+                        +---------------------------+
+                                   |
+                                   v
+              ==================================    LOGGING PATH
+              | survey id, question hash, flag |    every flag shown
+              | type, score, shown, acted on,  |    -> action rate
+              | edit made, final text          |    -> weak labels
+              ==================================
+                                   |
+      ============================================  OFFLINE PATH
+      | nightly: join shipped surveys to their    |  observed curves
+      | realised dropoff curves -> training set   |
+      | weekly: refit Model A with position,      |  confounder control
+      |         length, audience controls         |
+      | monthly: annotation round for Model B     |  900 annot-hours
+      | quarterly: randomised trial on flags      |  causal validation
+      ============================================
+```
+
+**The design, component by component.** Model A predicts a hazard, not a completion rate. For each
+question in the draft it outputs the probability that a respondent who reached that question
+abandons there. The survival curve is then the running product of one minus the hazard, and the
+predicted completion rate falls out of it. I build it this way because the hazard is the
+per-question quantity the author can act on, and because it makes the position effect explicit
+rather than buried in a single number.
+
+The label design is where this model is won or lost. The naive label is "the respondent abandoned
+at question seven", and the naive conclusion is that question seven is the problem. That is
+usually wrong. Fatigue accumulates, so question seven inherits the cost of questions one to six. A
+respondent often reads question six, sees a matrix of thirty items, decides the survey is not
+worth it, and leaves on the next screen. And page grouping breaks the mapping entirely, because
+abandoning a page that holds four questions does not identify which of the four caused it. So I
+define the label as abandonment at a position, and I attribute it to a window rather than a point:
+the features for the event include the current question and the preceding two, plus the cumulative
+burden so far, meaning the count of questions, the count of required questions, the total answer
+options presented and the estimated reading time. Then I report the flag on the window and I say
+so in the interface: "respondents commonly leave around questions six to eight" is honest, and
+"question seven is bad" is a claim my label cannot support.
+
+Model B classifies wording problems, and its training signal is the opposite of abundant. There is
+no natural label for "this question is leading", because nothing in the response data records it.
+So it needs annotation, and annotation on this task is expensive and disagreement-prone, since two
+survey methodologists will disagree about whether a question is ambiguous. Therefore Model B
+starts as a rule set plus a small classifier, not as a large model. The rules cover the problems
+that have a syntactic signature, and there are more of them than people expect. Double-barrelled
+questions contain a conjunction joining two evaluable clauses: "how satisfied were you with the
+speed and the accuracy". A leading question contains an evaluative premise before the question:
+"how much did you enjoy our improved checkout". Answer options that overlap are detectable by
+parsing numeric ranges and testing for intersection: "0 to 10, 10 to 20". Options that do not
+cover the range are the same check for gaps, and a missing neutral or missing "does not apply"
+option is a structural check on the option list. Absolute frequency words such as "always" and
+"never" without a defined period are a lexical check. Each rule gives a precise explanation the
+author can act on, which a classifier score does not.
+
+The classifier handles what the rules miss, and it is small: a logistic regression or a small
+fine-tuned encoder over the question text, one binary head per problem type, trained on the twelve
+thousand annotated questions. I would also use a large language model here, and specifically as an
+annotator rather than as the serving model, because the volume is low and the task is exactly the
+kind of judgement a large model does reasonably. So the model proposes labels, humans adjudicate a
+sample, and the adjudicated labels train the small classifier that actually serves. That keeps the
+serving path cheap and inspectable and puts the expensive model where it produces training data.
+
+**The confounding problem, which is the real content of this case.** Long surveys have higher
+dropoff. Long surveys also tend to have worse questions, because a team that writes sixty
+questions is a team that did not edit. Those two facts are correlated in the training data,
+therefore a model trained naively on "predict dropoff from question text" learns that questions
+appearing late in long surveys are bad questions. It will flag a perfectly written question at
+position forty and pass a leading question at position two, and it will look accurate while doing
+it, because its predictions of dropoff are right. That is the trap: the model is a good dropoff
+predictor and a bad quality detector, and the metric on Model A cannot tell you.
+
+I control for it structurally rather than hoping regularisation handles it. First, position,
+cumulative length, question type and audience go into Model A as explicit features, so the
+residual is what is left after those are accounted for, and it is the residual that carries any
+quality signal. Second, Model B never sees position or survey length at all. It sees the question
+text and the answer options and nothing else, so it structurally cannot learn position. That is a
+deliberate loss of accuracy in exchange for a model that means what it says. Third, where the data
+allows it, I compare within stratum: the same question text used at similar positions in surveys
+of similar length and similar audience, which turns a cross-survey comparison into something
+closer to a matched one. Boilerplate demographic questions appear in thousands of surveys at many
+positions, and they are the cleanest natural source of that variation. Fourth, audience matters as
+much as length: an incentivised panel and a post-purchase email to real customers have different
+baseline completion rates, and mixing them makes every comparison meaningless.
+
+**The counterfactual problem, which I would raise before the interviewer does.** "Shortening this
+survey from forty questions to twenty will raise completion by four points" is a causal claim. My
+data is observational: nobody randomised survey length. Short surveys differ from long ones in the
+team that wrote them, the audience, the incentive and the topic, and every one of those
+differences also affects completion. So the honest output is a prediction with its basis stated,
+not a promise. I ship the recommendation as a flag with a comparison: "surveys of this length, in
+this industry, with this audience, complete at 42 percent on average; surveys of half this length
+complete at 81 percent". That is a true statement about the reference class, and it is not a
+promise about this survey.
+
+Then I go and get the causal answer properly, because it is obtainable. The tool itself is the
+randomisation mechanism: for a period, I show the flag to a random half of authors and withhold it
+from the other half, and I measure the completion rate of the surveys that ship. That measures the
+effect of the tool, which is the thing the business actually wants to know. For the effect of a
+specific change, teams that are willing can run a split on their own survey: two versions,
+respondents randomised, completion compared. The sample-size arithmetic above says a four-point
+effect needs about 2,163 respondents per arm and a one-point effect needs about 35,429, so I only
+offer the experiment for changes whose predicted effect is large enough to detect. Where surveys
+are re-fielded on a schedule and were edited between waves, I have a natural before-and-after
+comparison, and I would use a difference-in- differences design against unedited surveys fielded
+in the same period, stating the parallel-trends assumption rather than hiding it.
+
+**Cold start.** A new survey type, a new industry or a new channel has no history, so Model A has
+no reference class. I handle it in three steps. The features are deliberately general, meaning
+position, length, question type, matrix size, required flags and estimated reading time, and those
+transfer across domains far better than any topic feature. I shrink the prediction towards the
+global curve in proportion to how little data the stratum has, so a thin stratum gets a wide
+interval and a visibly hedged number rather than a confident wrong one. And I show the interval:
+an author who sees "45 to 70 percent completion, based on few similar surveys" understands the
+state of the evidence, and an author who sees "58 percent" does not. Model B has no cold-start
+problem at all, which is a real advantage of the rule set, because a rule about a double-barrelled
+question holds in a domain the system has never seen.
+
+**Evaluation.** For Model A, offline I hold out whole surveys, never individual questions, because
+questions from the same survey share the audience and the fatigue state and splitting within a
+survey leaks. I report calibration and the completion-rate error, and I break it down by survey
+length band and audience type, because a model can look calibrated overall while being badly wrong
+at both ends. For Model B, I report precision and recall per problem type against the annotated
+set, and I report annotator agreement alongside them, because a problem type where three
+annotators agree only 55 percent of the time has an upper bound on achievable accuracy and I
+should not report a number above it without saying so. Online, the flag action rate is the primary
+measure, split by problem type, since a rule that is never acted on should be removed rather than
+tuned. The randomised trial described above is the only real evaluation of whether the tool
+improves surveys.
+
+**What breaks.** Survey platforms change, page grouping changes, and the mapping from an
+abandonment event to a question position shifts under the model without any code change; I monitor
+the distribution of abandonment positions and alert on step changes. Seasonality: completion rates
+move with the period and the channel, and a model trained on one year predicts the wrong baseline
+in the next; I include the period as a feature and refit weekly. Feedback loop: once the tool is
+used widely, surveys change because of it, so the training data now reflects the model's own
+advice, and the observed dropoff curve is no longer a sample of unadvised behaviour. I keep a
+holdout of authors who never see flags, precisely so there is always an unadvised reference
+population. Rule rot: a rule that was 80 percent precise on last year's phrasing drifts as writing
+styles change; I track precision per rule using author actions as a weak label and I retire rules
+that fall below a floor.
+
+**The failure that is not a model failure.** The most likely way this system fails is that authors
+ignore it, and an applied scientist should name that rather than treat it as someone else's
+problem. A panel of flags shown at sign-off, after the survey is written and the launch date is
+fixed, gets dismissed every time. So three design decisions follow from it. The flags appear
+inline while the author writes each question, not in a report at the end, because the cost of
+acting is lowest at that moment. Every flag carries one concrete rewrite the author can accept
+with a click, because "this question is double-barrelled" makes work and a suggested split removes
+work. And precision leads recall for Model B, with a threshold set high enough that most flags are
+right, because three wrong flags in a row teach an author to ignore the fourth, and that lesson
+does not wear off.
+
+**The tradeoff they will probe.** They will ask why I do not simply train one model on question
+text to predict dropoff and use its per-question contribution as the quality score, since that
+would give me the scarce second label for free from the abundant first signal. My answer is the
+confounding argument, made concrete. That model would learn position and length, because position
+and length are the strongest predictors in the data and they are correlated with quality. Its
+attributions would then rank a well-written question at position forty above a leading question at
+position two, and I could not detect that with any offline metric computed on dropoff, because on
+dropoff the model is right. The only way to catch it would be an annotated quality set, and if I
+have to build that set anyway then I should train the quality model on it directly rather than
+infer quality from a proxy that is confounded. The second half of my answer is what I would
+concede: the dropoff model's residual, meaning the part of abandonment it cannot explain from
+position, length, type and audience, is a genuinely useful signal, and I would use it exactly
+once, to rank which questions get sent for annotation. That is the right use of a confounded
+signal. It selects work for humans, and it does not go in front of the author with a quality label
+attached.
+
+---
+
+## The pattern across all sixteen
 
 Look at what actually separates the strong answers here.
 
@@ -2141,3 +3643,11 @@ architecture diagram.
 So the habit to build is this. Before drawing anything, say the metric out loud, say the label
 definition out loud, and produce one number. Those three moves take ninety seconds and they change what
 you design.
+
+The six platform cases reward a different reflex, and it is worth naming separately. In a product case
+the interviewer probes your model choice. In a platform case they probe what happens when the system
+changes: what a customer's trend line does when you upgrade a model, what a benchmark reveals when one
+customer joins a cohort, what a half-finished backfill leaves behind, and who is allowed to see the row
+your query just returned. Therefore the first question to ask on a platform case is not "how accurate is
+it" but "what breaks when this changes, and who notices". Ask that out loud and the rest of the design
+follows.

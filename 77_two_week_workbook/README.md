@@ -40,7 +40,7 @@ evening is the rest of [topic 73](../73_night_before_review/README.md).
 | [Binary search](24_binary_search.md) | One half-open invariant used everywhere, boundary searches derived from it, and binary search on the answer. |
 | [Trees](25_trees.md) | Choosing the traversal by what the node needs, and the return-one-thing-record-another shape behind four hard problems. |
 | [Graphs](26_graphs.md) | Naming the nodes and edges before the algorithm, the grid as a graph, multi-source BFS, topological sort, union-find, Dijkstra. |
-| [ML system design case studies](27_system_design_case_studies.md) | Ten designs worked end to end with a whiteboard diagram each: survey text at scale, driver analysis, response quality, feedback summarisation, metric alerting, and the classics. |
+| [ML system design case studies](27_system_design_case_studies.md) | Sixteen designs worked end to end with a whiteboard diagram each: survey text, driver analysis, response quality, summarisation and alerting; the classics; and six internal platform systems — benchmarking under privacy, historical re-scoring, annotation, redaction, natural-language query, survey quality. |
 | [Stack and monotonic stack](28_stack.md) | Next-greater in disguise, the sentinel trick, largest rectangle, 20 problems. |
 | [Heap and priority queue](29_heap.md) | Why the k largest needs a min-heap, the two-heap median, 16 problems. |
 | [Linked lists](30_linked_list.md) | Dummy heads, pointer discipline, reversing a sublist, LRU cache, 18 problems. |
