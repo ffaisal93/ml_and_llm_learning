@@ -1,6 +1,6 @@
 # Topic 77: The Two-Week Workbook
 
-Thirty-seven pages, one per topic, holding what you need to say and write in an interview. Each page has the
+Thirty-eight pages, one per topic, holding what you need to say and write in an interview. Each page has the
 equations with a plain-language gloss, code short enough to type from memory, and the questions with a
 spoken answer for each. Every code block on every page was executed before it was published, and where a
 result can be checked against a library — sklearn, PyTorch — it was checked and the agreement is stated
@@ -18,6 +18,7 @@ evening is the rest of [topic 73](../73_night_before_review/README.md).
 | [Optimization and training dynamics](02_optimization.md) | SGD through Adam and AdamW, normalisation, warmup, mixed precision, and how to read a broken loss curve. |
 | [Optimizer evolution: from SGD to AdamW](36_optimizer_evolution.md) | The optimizer family as a sequence of fixes: direction, per-parameter scale, memory, bias correction, and decoupled weight decay. |
 | [Activation-function evolution: from sigmoid to SwiGLU](37_activation_evolution.md) | The activation family as a sequence of gradient fixes: saturation, centring, dead units, smooth self-gating, and learned gates. |
+| [Attention mechanisms: from alignment to efficient long context](38_attention_evolution.md) | Twenty mechanisms organized by role, KV sharing, sparsity, approximation, exact kernels, and serving memory—with intuition, tradeoffs, complexity, and interview code. |
 | [Evaluation metrics and A/B testing](03_evaluation.md) | Precision and recall through calibration and proper scoring rules, ranking metrics, and experiment design. |
 | [Probability and statistics](04_probability_stats.md) | Bayes, expectation, MLE and MAP, KL divergence, and the scenario problems, each verified by simulation. |
 | [Transformers and attention](05_transformers.md) | Scaled dot-product attention, multi-head shapes, the KV cache, and where the parameters live. |
