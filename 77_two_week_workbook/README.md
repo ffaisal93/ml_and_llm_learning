@@ -19,6 +19,7 @@ evening is the rest of [topic 73](../73_night_before_review/README.md).
 | [Optimizer evolution: from SGD to AdamW](36_optimizer_evolution.md) | The optimizer family as a sequence of fixes: direction, per-parameter scale, memory, bias correction, and decoupled weight decay. |
 | [Activation-function evolution: from sigmoid to SwiGLU](37_activation_evolution.md) | The activation family as a sequence of gradient fixes: saturation, centring, dead units, smooth self-gating, and learned gates. |
 | [Attention mechanisms: from alignment to efficient long context](38_attention_evolution.md) | Twenty mechanisms organized by role, KV sharing, sparsity, approximation, exact kernels, and serving memory—with intuition, tradeoffs, complexity, and interview code. |
+| [The grind list: 122 questions answered](39_grind_list.md) | Every question from the 123ofAI AI/ML Grind List, answered in about a minute each. Roughly two hours spoken, so it fits a two- or three-day pass. |
 | [Evaluation metrics and A/B testing](03_evaluation.md) | Precision and recall through calibration and proper scoring rules, ranking metrics, and experiment design. |
 | [Probability and statistics](04_probability_stats.md) | Bayes, expectation, MLE and MAP, KL divergence, and the scenario problems, each verified by simulation. |
 | [Transformers and attention](05_transformers.md) | Scaled dot-product attention, multi-head shapes, the KV cache, and where the parameters live. |
