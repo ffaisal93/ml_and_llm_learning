@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="850" viewBox="0 0 1040 850" role="img" aria-labelledby="title description">
+<title id="title">Shopping cart architecture: fast carts and safe checkout</title><desc id="description">A shopper reaches an API gateway. Cart operations use the Cart Service and durable Cart Store. Checkout calls Pricing, Order and Inventory, and the Payment Provider. The Order and Inventory service owns a transactional Commerce SQL store. A durable outbox publishes confirmed-order events to receipt, fulfillment and cart-cleanup workers.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker></defs>
+<rect width="1040" height="850" rx="16" fill="#ffffff"/>
+<g font-family="Arial, Helvetica, sans-serif" fill="#0f172a">
+<text x="25" y="36" font-size="27" font-weight="700" text-anchor="start" fill="#0f172a">W408 · Fast carts, safe checkout</text>
+<text x="25" y="62" font-size="16" font-weight="400" text-anchor="start" fill="#475569">Solid arrows: requests or database calls. Dashed arrows: asynchronous events.</text>
+<polyline points="175,125 235,125" fill="none" stroke="#475569" stroke-width="2.5" stroke-dasharray="0" marker-end="url(#arrow)"/>
+<polyline points="385,125 455,125" fill="none" stroke="#475569" stroke-width="2.5" stroke-dasharray="0" marker-end="url(#arrow)"/>
+<polyline points="665,125 775,125" fill="none" stroke="#475569" stroke-width="2.5" stroke-dasharray="0" marker-end="url(#arrow)"/>
+<polyline points="310,165 310,330" fill="none" stroke="#475569" stroke-width="2.5" stroke-dasharray="0" marker-end="url(#arrow)"/>
+<text x="325" y="248" font-size="17" font-weight="400" text-anchor="start" fill="#0f172a">checkout</text>
+<polyline points="400,330 400,195 540,195 540,170" fill="none" stroke="#475569" stroke-width="2.5" stroke-dasharray="0" marker-end="url(#arrow)"/>
+<text x="412" y="250" font-size="16" font-weight="400" text-anchor="start" fill="#0f172a">cart snapshot</text>
+<polyline points="425,380 495,380" fill="none" stroke="#475569" stroke-width="2.5" stroke-dasharray="0" marker-end="url(#arrow)"/>
+<polyline points="705,380 775,380" fill="none" stroke="#475569" stroke-width="2.5" stroke-dasharray="0" marker-end="url(#arrow)"/>
+<polyline points="235,380 115,380 115,520" fill="none" stroke="#475569" stroke-width="2.5" stroke-dasharray="0" marker-end="url(#arrow)"/>
+<text x="130" y="450" font-size="16" font-weight="400" text-anchor="start" fill="#0f172a">revalidate</text>
+<polyline points="330,430 330,520" fill="none" stroke="#475569" stroke-width="2.5" stroke-dasharray="0" marker-end="url(#arrow)"/>
+<text x="345" y="482" font-size="16" font-weight="400" text-anchor="start" fill="#0f172a">pay once</text>
+<polyline points="890,445 890,520" fill="none" stroke="#475569" stroke-width="2.5" stroke-dasharray="8" marker-end="url(#arrow)"/>
+<polyline points="775,562 600,562 600,670" fill="none" stroke="#475569" stroke-width="2.5" stroke-dasharray="8" marker-end="url(#arrow)"/>
+<polyline points="705,712 775,712" fill="none" stroke="#475569" stroke-width="2.5" stroke-dasharray="8" marker-end="url(#arrow)"/>
+<rect x="25" y="90" width="150" height="70" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+<text x="100.0" y="119.0" font-size="18" font-weight="700" text-anchor="middle" fill="#0f172a">Shopper</text>
+<text x="100.0" y="143.0" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">web / mobile</text>
+<rect x="235" y="90" width="150" height="75" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+<text x="310.0" y="121.5" font-size="18" font-weight="700" text-anchor="middle" fill="#0f172a">API gateway</text>
+<text x="310.0" y="145.5" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">auth + limits</text>
+<rect x="455" y="80" width="210" height="90" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+<text x="560.0" y="107.0" font-size="18" font-weight="700" text-anchor="middle" fill="#0f172a">Cart Service</text>
+<text x="560.0" y="131.0" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">add / edit / read</text>
+<text x="560.0" y="155.0" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">merge guest cart</text>
+<rect x="775" y="80" width="230" height="90" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+<text x="890.0" y="107.0" font-size="18" font-weight="700" text-anchor="middle" fill="#0f172a">Durable Cart Store</text>
+<text x="890.0" y="131.0" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">cart_id + version</text>
+<text x="890.0" y="155.0" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">No stock reservation</text>
+<text x="455" y="222" font-size="18" font-weight="700" text-anchor="start" fill="#0f172a">CART: save intent; no stock held.</text>
+<line x1="25" y1="275" x2="1005" y2="275" stroke="#cbd5e1" stroke-dasharray="5 6"/>
+<text x="455" y="294" font-size="18" font-weight="700" text-anchor="start" fill="#0f172a">CHECKOUT: reserve → pay → confirm.</text>
+<rect x="235" y="330" width="190" height="100" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+<text x="330.0" y="362.0" font-size="18" font-weight="700" text-anchor="middle" fill="#0f172a">Checkout Service</text>
+<text x="330.0" y="386.0" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">snapshot + retry key</text>
+<text x="330.0" y="410.0" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">coordinates the steps</text>
+<rect x="495" y="330" width="210" height="100" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+<text x="600.0" y="362.0" font-size="18" font-weight="700" text-anchor="middle" fill="#0f172a">Order / Inventory</text>
+<text x="600.0" y="386.0" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">atomic holds</text>
+<text x="600.0" y="410.0" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">confirm or release</text>
+<rect x="775" y="315" width="230" height="130" rx="10" fill="#fff7ed" stroke="#fb923c" stroke-width="2"/>
+<text x="890.0" y="350.0" font-size="18" font-weight="700" text-anchor="middle" fill="#0f172a">Commerce SQL</text>
+<text x="890.0" y="374.0" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">orders + inventory</text>
+<text x="890.0" y="398.0" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">holds + outbox</text>
+<text x="890.0" y="422.0" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">One transaction boundary</text>
+<rect x="25" y="520" width="180" height="85" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+<text x="115.0" y="544.5" font-size="18" font-weight="700" text-anchor="middle" fill="#0f172a">Pricing / Catalog</text>
+<text x="115.0" y="568.5" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">current price</text>
+<text x="115.0" y="592.5" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">promotions + rules</text>
+<rect x="235" y="520" width="190" height="85" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+<text x="330.0" y="544.5" font-size="18" font-weight="700" text-anchor="middle" fill="#0f172a">Payment provider</text>
+<text x="330.0" y="568.5" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">external system</text>
+<text x="330.0" y="592.5" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">stable payment key</text>
+<rect x="775" y="520" width="230" height="85" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
+<text x="890.0" y="544.5" font-size="18" font-weight="700" text-anchor="middle" fill="#0f172a">Outbox publisher</text>
+<text x="890.0" y="568.5" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">retries after commit</text>
+<text x="890.0" y="592.5" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">safe to deliver again</text>
+<rect x="495" y="670" width="210" height="85" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
+<text x="600.0" y="706.5" font-size="18" font-weight="700" text-anchor="middle" fill="#0f172a">Event bus</text>
+<text x="600.0" y="730.5" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">OrderConfirmed</text>
+<rect x="775" y="660" width="230" height="105" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
+<text x="890.0" y="694.5" font-size="18" font-weight="700" text-anchor="middle" fill="#0f172a">Idempotent workers</text>
+<text x="890.0" y="718.5" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">receipt + fulfillment</text>
+<text x="890.0" y="742.5" font-size="16" font-weight="400" text-anchor="middle" fill="#0f172a">version-safe cart cleanup</text>
+<text x="25" y="797" font-size="18" font-weight="700" text-anchor="start" fill="#0f172a">Stock authority: Commerce SQL. A cart cache or availability display cannot allocate units.</text>
+<text x="25" y="827" font-size="17" font-weight="400" text-anchor="start" fill="#475569">Payment is outside the SQL transaction; pending states and reconciliation connect the two.</text>
+</g></svg>
