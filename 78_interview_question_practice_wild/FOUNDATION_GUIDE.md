@@ -1,5 +1,7 @@
 # Supporting explanations: F001–F200
 
+<span class="practice-page"></span>
+
 These explanations support the 547-question bank. They are not counted as extra entries in the six priority groups. Each W-numbered question contains its own solution; these pages provide additional mechanisms and coding references.
 
 - [LLM internals](01_llm_internals.md)

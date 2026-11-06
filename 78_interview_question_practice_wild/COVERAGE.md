@@ -1,5 +1,7 @@
 # Coverage check
 
+<span class="practice-page"></span>
+
 - 547 question entries.
 - Six priority groups: 100, 100, 100, 100, 100, 47.
 - Every entry has question text and a worked solution.

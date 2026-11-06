@@ -1,5 +1,7 @@
 # Chapter 78: Interview Question Practice — Wild
 
+<span class="practice-page"></span>
+
 All **547 question entries**, each with its question text and a worked solution, organized into six priority groups. Multi-part questions stay together; related variants and repeated titles remain separate entries.
 
 ## Start with a priority group
@@ -19,10 +21,12 @@ The priorities are editorial study guidance for general ML/LLM interviews, not m
 
 [All categories](ALL_CATEGORIES.md) shows the same 547 entries arranged by category, with their priority group. Use it when you want to study LLM internals, probability, SQL, system design or another topic together.
 
+See [how the solutions are presented](READABILITY.md) for the new explanation, equation and code layout.
+
 ## What every entry contains
 
 - The full exercise statement, with administrative clutter removed.
-- A worked solution with concrete steps and explicit assumptions.
+- A worked solution with a teaching explanation or derivation, concrete steps and explicit assumptions.
 - An example or sanity check and a common trap.
 - Further supporting explanations where useful.
 

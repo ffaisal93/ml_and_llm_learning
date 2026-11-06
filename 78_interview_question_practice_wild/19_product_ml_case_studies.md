@@ -1,5 +1,7 @@
 # Additional product ML case studies
 
+<span class="practice-page"></span>
+
 **Foundation explainer:** Further depth · **Priority:** Important — second pass
 
 Important: practice adapting the core design framework to a concrete product.

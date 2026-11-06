@@ -1,5 +1,7 @@
 # Clustering and retrieval depth
 
+<span class="practice-page"></span>
+
 **Foundation explainer:** Further depth · **Priority:** Important — second pass
 
 Important: choose geometry, supervision and evaluation together.

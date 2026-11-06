@@ -1,5 +1,7 @@
 # LLM internals
 
+<span class="practice-page"></span>
+
 **Foundation explainer:** Core material · **Priority:** Very important
 
 Very important: explain the computation before naming an architecture.

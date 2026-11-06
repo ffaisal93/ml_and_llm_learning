@@ -1,5 +1,7 @@
 # Coding lab
 
+<span class="practice-page"></span>
+
 Write your own solution first. These are small readable references that prioritize an explicit contract over peak performance. They are not complete production services or optimized GPU kernels. The NumPy contrastive loss is a forward numerical reference; an actual training implementation needs equivalent differentiable tensor operations.
 
 ## Run the checks

@@ -1,5 +1,7 @@
 # All 547 questions by category
 
+<span class="practice-page"></span>
+
 The same complete question bank, arranged by topic. Priority group and question ids link to the six ordered lists.
 
 [Chapter guide](README.md)

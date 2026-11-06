@@ -5,3 +5,61 @@
 .content main {
     max-width: 1000px;
 }
+
+/* Chapter 78: readable teaching text, code, tables, and displayed mathematics. */
+main:has(.practice-page) {
+    line-height: 1.75;
+}
+main:has(.practice-page) h2 {
+    margin-top: 2.4em;
+    padding-top: 0.4em;
+    border-top: 1px solid var(--table-border-color);
+}
+main:has(.practice-page) h3 {
+    margin-top: 1.8em;
+    line-height: 1.4;
+}
+main:has(.practice-page) pre {
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--table-border-color);
+    border-radius: 8px;
+    overflow-x: auto;
+    line-height: 1.65;
+    font-size: 1.5rem;
+    tab-size: 4;
+}
+main:has(.practice-page) pre code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: inherit;
+    line-height: inherit;
+    white-space: pre;
+    word-break: normal;
+    overflow-wrap: normal;
+}
+main:has(.practice-page) :not(pre) > code {
+    font-size: 0.9em;
+    padding: 0.12em 0.3em;
+    border-radius: 3px;
+}
+main:has(.practice-page) .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.6rem 0.2rem;
+    margin: 1.3rem 0;
+}
+main:has(.practice-page) table {
+    display: block;
+    overflow-x: auto;
+    margin: 1.4rem 0;
+}
+main:has(.practice-page) th,
+main:has(.practice-page) td {
+    padding: 0.6rem 0.8rem;
+    vertical-align: top;
+}
+@media (max-width: 640px) {
+    main:has(.practice-page) pre {
+        padding: 0.8rem;
+        font-size: 1.4rem;
+    }
+}

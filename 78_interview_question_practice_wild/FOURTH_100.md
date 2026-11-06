@@ -1,5 +1,7 @@
 # Fourth 100 — role-dependent depth
 
+<span class="practice-page"></span>
+
 **100 questions with full question text and worked solutions.** Positions 301–400 of 547.
 
 Each listed item is one question entry, including multi-part exercises. Related entries and repeated titles remain separate. The priority reflects general ML/LLM interview usefulness; it is not a measured interview frequency.

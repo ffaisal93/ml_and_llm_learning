@@ -1,5 +1,7 @@
 # Attention and decoding code
 
+<span class="practice-page"></span>
+
 **Foundation explainer:** Core material · **Priority:** Very important
 
 Very important: implement the primitives and defend their shapes and edge cases.
@@ -26,6 +28,32 @@ Very important: implement the primitives and defend their shapes and edge cases.
 
 ---
 
+### Detailed derivation and worked reasoning
+
+### Derivation and a complete small example
+
+For one token matrix $X\in\mathbb R^{n\times d_{\rm model}}$, learn projections
+
+$$
+Q=XW_Q,\qquad K=XW_K,\qquad V=XW_V,
+$$
+
+with $W_Q,W_K\in\mathbb R^{d_{\rm model}\times d_k}$ and $W_V\in\mathbb R^{d_{\rm model}\times d_v}$. The output has shape $n\times d_v$. Row $i$ asks which keys help query $i$; therefore softmax normalizes **across columns**, not across queries.
+
+Let $X=W_Q=W_K=I_2$ and $V=\begin{bmatrix}1&2\\3&4\end{bmatrix}$. The score matrix is $I_2/\sqrt2$. The first row's probabilities are
+
+$$
+p_{11}=\frac{e^{1/\sqrt2}}{e^{1/\sqrt2}+1}\approx0.669762,
+\qquad p_{12}\approx0.330238.
+$$
+
+Its output is $0.669762[1,2]+0.330238[3,4]\approx[1.660477,2.660477]$. This explicitly shows that the output is a weighted value mixture, not the selected key or a vocabulary probability.
+
+For a boolean allowed-mask, set forbidden scores to $-\infty$ **before** softmax. Subtract each valid row maximum before exponentiation; this prevents overflow without changing the distribution. An all-forbidden row needs a declared policy because subtracting $-\infty$ from $-\infty$ creates NaN. This exercise guarantees at least one allowed key, and the reference rejects a violated contract.
+
+**Cost.** Pairwise attention uses $O(n^2(d_k+d_v))$ arithmetic and $O(n^2)$ score storage in this straightforward implementation, in addition to the linear projections. **Checks.** Identity-only masking returns $V$ exactly; changing a forbidden future input must not change an earlier causal output.
+
+
 <a id="f012"></a>
 
 ## F012. Implement grouped-query attention without losing the head mapping.
@@ -45,6 +73,26 @@ Very important: implement the primitives and defend their shapes and edge cases.
 **Follow-up.** What are MHA and MQA here? Hkv=Hq gives MHA; Hkv=1 gives MQA.
 
 ---
+
+### Detailed derivation and worked reasoning
+
+### Derive the shared-head mapping
+
+Let $H_q$ query heads share $H_{\rm KV}$ key/value heads, with $g=H_q/H_{\rm KV}$ an integer. For query head $h$, the contiguous grouping contract is
+
+$$
+k(h)=\left\lfloor\frac hg\right\rfloor,\qquad
+O_h=\operatorname{softmax}\!\left(\frac{Q_hK_{k(h)}^\top}{\sqrt d}\right)V_{k(h)}.
+$$
+
+For eight query heads and two KV heads, heads $0,1,2,3$ use KV head zero and heads $4,5,6,7$ use KV head one. Mapping by $h\bmod H_{\rm KV}$ alternates heads and implements a different convention.
+
+A clear reference loops over batch and query head, using the mapped KV head. Repeating KV tensors along the head axis can verify the result independently, but materializing repeats loses part of the memory advantage. The output still has $H_q$ heads; sharing keys does not average away query outputs.
+
+The ideal cache storage ratio relative to otherwise equivalent ordinary MHA is $H_{\rm KV}/H_q$. With 32 query heads and eight KV heads, raw cached K/V elements drop fourfold. Query attention still computes a distribution for every query head, so do not claim all attention arithmetic also drops by four.
+
+During backward, all query heads sharing a KV tensor contribute derivatives to it. Those contributions **sum**; retaining only the final head or averaging without an objective-based factor changes training. Test the mapping using KV values that differ unmistakably between groups.
+
 
 <a id="f013"></a>
 
@@ -66,6 +114,26 @@ Very important: implement the primitives and defend their shapes and edge cases.
 
 ---
 
+### Detailed derivation and worked reasoning
+
+### Why the cache preserves the computation
+
+Causality means a previously computed token representation cannot depend on newly appended future tokens. Therefore its layerwise key and value remain reusable in evaluation mode. Cache them separately for every layer, request and compatible model/configuration.
+
+At step $t$, compute only the new query, key and value, append the new K/V, and evaluate
+
+$$
+o_t=\operatorname{softmax}\!\left(\frac{q_t[K_1;\ldots;K_t]^\top}{\sqrt d}\right)
+[V_1;\ldots;V_t].
+$$
+
+The single new query can see **all** cached prefix positions. A naive top-left triangular mask of shape $1\times t$ permits only the first key; if multiple new tokens are processed together, offset query positions by the existing cache length.
+
+For RoPE, apply the correct absolute position to the new Q/K and do not rotate stored keys again. Compare cached last-position logits against a full-prefix run with dropout disabled. Test every prefix length before comparing sampled sequences, because tiny numerical changes near a sampling threshold can cause later samples to diverge.
+
+For the attention interaction alone, cached one-token steps total $O(T^2d)$ across a generated length $T$, versus $O(T^3d)$ if a full growing-prefix attention calculation is redundantly recomputed each step. This excludes architecture-specific projection and prefill costs. The teaching code concatenates arrays and therefore copies memory; production caches normally use preallocation or blocks. Cache correctness is not, by itself, evidence of a particular speedup on a given machine.
+
+
 <a id="f014"></a>
 
 ## F014. Implement top-k sampling from logits.
@@ -85,6 +153,29 @@ Very important: implement the primitives and defend their shapes and edge cases.
 **Follow-up.** What happens at k=1? Greedy decoding, apart from the specified handling of exact ties.
 
 ---
+
+### Detailed derivation and worked reasoning
+
+### Define the candidate set before sampling
+
+Sampling has three operations: choose retained tokens, normalize their scores, and draw a vocabulary id. With temperature $\tau>0$ and retained set $S$,
+
+$$
+P(i\mid i\in S)=\frac{\exp(z_i/\tau)}{\sum_{j\in S}\exp(z_j/\tau)}.
+$$
+
+Top-$k$ defines $S$ as the $k$ largest logits. Temperature changes the distribution within that fixed set but does not change its ordering for positive $\tau$. With logits $[1,2,0.5,4]$ and $k=2$, only original ids 1 and 3 may be returned. A local index zero in the two-element candidate array is not necessarily vocabulary id zero.
+
+For top-$p$, first sort probabilities $p_{(1)}\ge\cdots\ge p_{(V)}$ and choose
+
+$$
+k^*=\min\left\{k:\sum_{j=1}^k p_{(j)}\ge p\right\}.
+$$
+
+Include the token that crosses the threshold, then renormalize. For $[0.6,0.25,0.15]$ and threshold $0.8$, retain the first two tokens, whose mass is $0.85$. Keeping only the first would fail the requested coverage.
+
+A readable reference sorts in $O(V\log V)$; partial selection can improve top-$k$ selection cost but needs a deliberate equal-score rule. Use an explicit random generator to reproduce experiments. Test $k=1$, $k=V$, $p=1$, very small positive $p$ and tied logits. A fixed seed does not guarantee identical sequences after a change in floating-point reduction or the number/order of random draws.
+
 
 <a id="f015"></a>
 
@@ -106,6 +197,29 @@ Very important: implement the primitives and defend their shapes and edge cases.
 
 ---
 
+### Detailed derivation and worked reasoning
+
+### Define the candidate set before sampling
+
+Sampling has three operations: choose retained tokens, normalize their scores, and draw a vocabulary id. With temperature $\tau>0$ and retained set $S$,
+
+$$
+P(i\mid i\in S)=\frac{\exp(z_i/\tau)}{\sum_{j\in S}\exp(z_j/\tau)}.
+$$
+
+Top-$k$ defines $S$ as the $k$ largest logits. Temperature changes the distribution within that fixed set but does not change its ordering for positive $\tau$. With logits $[1,2,0.5,4]$ and $k=2$, only original ids 1 and 3 may be returned. A local index zero in the two-element candidate array is not necessarily vocabulary id zero.
+
+For top-$p$, first sort probabilities $p_{(1)}\ge\cdots\ge p_{(V)}$ and choose
+
+$$
+k^*=\min\left\{k:\sum_{j=1}^k p_{(j)}\ge p\right\}.
+$$
+
+Include the token that crosses the threshold, then renormalize. For $[0.6,0.25,0.15]$ and threshold $0.8$, retain the first two tokens, whose mass is $0.85$. Keeping only the first would fail the requested coverage.
+
+A readable reference sorts in $O(V\log V)$; partial selection can improve top-$k$ selection cost but needs a deliberate equal-score rule. Use an explicit random generator to reproduce experiments. Test $k=1$, $k=V$, $p=1$, very small positive $p$ and tied logits. A fixed seed does not guarantee identical sequences after a change in floating-point reduction or the number/order of random draws.
+
+
 <a id="f016"></a>
 
 ## F016. Implement beam search with correct scores and end-of-sequence handling.
@@ -126,6 +240,25 @@ Very important: implement the primitives and defend their shapes and edge cases.
 
 ---
 
+### Detailed derivation and worked reasoning
+
+### Track complete hypothesis state
+
+A beam consists of token ids, accumulated log probability and completion status. Its raw score is
+
+$$
+s(y_{1:t})=\sum_{j=1}^t\log P(y_j\mid x,y_{<j}).
+$$
+
+Expand only unfinished hypotheses. Combine their continuations, compare them under the declared score and retain at most the beam width. A finished hypothesis must not acquire arbitrary tokens after EOS; it can be carried unchanged or stored in a separate completed set under a compatible stopping rule.
+
+Multiplying probabilities directly underflows for long sequences; sums of logs avoid this problem. Raw likelihood often favors shorter completions because each added log probability is nonpositive. Length penalties change the ranking and stopping logic, so specify their formula rather than quietly dividing scores by length.
+
+For example, two tokens with conditional probabilities $0.5$ and $0.5$ have joint probability $0.25$ and log score $\log0.25\approx-1.3863$. Their average probability is not a valid sequence likelihood. A width-one beam behaves like greedy search under the same constraints; a finite wider beam still is not exhaustive maximum-probability search.
+
+Use a tiny callback model with known probabilities, enumerate its short possible completions, and compare behavior. Test immediate EOS, no EOS within the limit, equal scores and a prefix that initially looks weaker but later produces a stronger completion. This last case illustrates why pruning is approximate and why a larger beam is not a universal guarantee of better subjective answers.
+
+
 <a id="f017"></a>
 
 ## F017. Compute softmax entropy with constant auxiliary memory.
@@ -145,6 +278,26 @@ Very important: implement the primitives and defend their shapes and edge cases.
 **Follow-up.** Why skip negative infinity explicitly? Zero times negative infinity is NaN in floating-point arithmetic.
 
 ---
+
+### Detailed derivation and worked reasoning
+
+### Eliminate the probability vector algebraically
+
+Choose $m=\max_i z_i$ and define shifted weights $w_i=e^{z_i-m}$ and $Z=\sum_iw_i$. Then $p_i=w_i/Z$ and
+
+$$
+H(p)=-\sum_i p_i\log p_i
+=\log Z-\frac{\sum_iw_i(z_i-m)}{Z}.
+$$
+
+This identity requires only a maximum and two scalar sums. First scan the indexed input to validate values and find $m$; scan again to accumulate $Z$ and the weighted shifted sum. A block controls each inner loop's index range; no slice or block array is needed, so auxiliary memory remains $O(1)$.
+
+For logits $[1000,999]$, shifting gives $[0,-1]$, $Z=1+e^{-1}$, and the weighted sum is $-e^{-1}$. The entropy is approximately $0.582203109$ nats. Computing huge unshifted exponentials would overflow even though the answer is ordinary-sized.
+
+A negative-infinity logit has zero probability and should be skipped in the weighted sum: evaluating $0\cdot(-\infty)$ gives NaN. Empty input, nonpositive block size, NaN, positive infinity and an all-negative-infinity sequence violate the stated contract. Validate before publishing a result.
+
+Test an object that supports only integer indexing and `len`: this catches accidental slicing or iteration hidden in convenient NumPy conversion. Changing block size must not change the mathematical result apart from harmless floating-point accumulation effects.
+
 
 <a id="f018"></a>
 

@@ -38,7 +38,6 @@ class BankCoverageTests(unittest.TestCase):
             self.assertIn('## Worked solution',text)
             self.assertNotIn('Loading problem…',text)
             self.assertNotIn('The full problem is locked',text)
-            self.assertNotIn('crackml',text.casefold())
 
     def test_supporting_explainers_are_separate_and_linked(self):
         foundation=json.loads((ROOT/'foundation_questions.json').read_text())

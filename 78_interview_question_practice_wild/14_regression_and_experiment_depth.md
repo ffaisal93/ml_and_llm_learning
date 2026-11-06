@@ -1,5 +1,7 @@
 # Regression and experiment depth
 
+<span class="practice-page"></span>
+
 **Foundation explainer:** Further depth · **Priority:** Important — second pass
 
 Important: understand what least-squares and experiment estimates actually establish.

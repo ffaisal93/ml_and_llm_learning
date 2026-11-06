@@ -1,5 +1,7 @@
 # Architecture depth
 
+<span class="practice-page"></span>
+
 **Foundation explainer:** Further depth · **Priority:** Important — second pass
 
 Important: second-pass depth after the core internals are comfortable.

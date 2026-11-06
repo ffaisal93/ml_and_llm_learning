@@ -1,5 +1,7 @@
 # Debugging and interview reasoning
 
+<span class="practice-page"></span>
+
 **Foundation explainer:** Core material · **Priority:** Very important
 
 Very important: demonstrate that you can isolate failures and defend decisions.

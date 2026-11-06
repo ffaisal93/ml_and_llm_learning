@@ -1,5 +1,7 @@
 # Research and behavioral depth
 
+<span class="practice-page"></span>
+
 **Foundation explainer:** Further depth · **Priority:** Important — second pass
 
 Important: prepare evidence-based stories and research judgments rather than scripts.

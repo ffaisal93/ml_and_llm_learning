@@ -1,5 +1,7 @@
 # Core ML coding
 
+<span class="practice-page"></span>
+
 **Foundation explainer:** Core material · **Priority:** Very important
 
 Very important: these reusable numerical patterns support many interview questions.
@@ -46,6 +48,41 @@ Very important: these reusable numerical patterns support many interview questio
 
 ---
 
+### Detailed derivation and worked reasoning
+
+### Derive the normalization and its gradient
+
+For row $x_i\in\mathbb R^D$, compute population statistics across **features**, independently of the other rows:
+
+$$
+\mu_i=\frac1D\sum_jx_{ij},\quad
+v_i=\frac1D\sum_j(x_{ij}-\mu_i)^2,\quad
+s_i=(v_i+\epsilon)^{-1/2},\quad
+\hat x_{ij}=(x_{ij}-\mu_i)s_i.
+$$
+
+Then $y_{ij}=\gamma_j\hat x_{ij}+\beta_j$. The epsilon goes inside the square root. Compute variance from centered deviations, not $E[x^2]-E[x]^2$: the latter subtracts two huge nearly equal numbers when inputs share a large offset.
+
+Let $G_{ij}=\partial L/\partial y_{ij}$ and $U_{ij}=G_{ij}\gamma_j$. The chain rule has three paths: a direct input path, the row mean path and the row variance path. Combining them gives
+
+$$
+\frac{\partial L}{\partial x_{ij}}=
+ s_i\left(U_{ij}-\overline U_i-
+ \hat x_{ij}\,\overline{U_i\hat x_i}\right),
+$$
+
+where each overline averages across the $D$ features of that row. The parameter gradients sum over rows:
+
+$$
+\frac{\partial L}{\partial\gamma_j}=\sum_iG_{ij}\hat x_{ij},\qquad
+\frac{\partial L}{\partial\beta_j}=\sum_iG_{ij}.
+$$
+
+For $[1,2,3,4]$, the mean is $2.5$ and variance $1.25$. With unit scale and zero bias, the result is approximately $[-1.3416,-0.4472,0.4472,1.3416]$. A constant row normalizes to zero, so its output equals the bias. Its input derivative is not universally zero: it depends on the upstream pattern and epsilon.
+
+The forward cache stores normalized inputs, inverse standard deviations and scale. Do not mutate these before backward. Validate $x$, $\gamma$ and $\beta$ derivatives independently with float64 central differences; checking only output shape cannot catch omitted statistic paths. Both passes cost $O(ND)$.
+
+
 <a id="f043"></a>
 
 ## F043. Write a two-hidden-layer MLP and derive backpropagation.
@@ -65,6 +102,40 @@ Very important: these reusable numerical patterns support many interview questio
 **Follow-up.** Why avoid finite-difference points at ReLU zero? The derivative is not uniquely defined there.
 
 ---
+
+### Detailed derivation and worked reasoning
+
+### Walk backward through the exact scalar objective
+
+Use row-major examples and explicitly name every activation:
+
+$$
+Z_1=XW_1+b_1,\ A_1=\operatorname{ReLU}(Z_1),\quad
+Z_2=A_1W_2+b_2,\ A_2=\operatorname{ReLU}(Z_2),\quad
+\hat Y=A_2W_3+b_3.
+$$
+
+For $N$ examples and $C$ target coordinates, define $L=\|\hat Y-Y\|_F^2/(NC)$. The output derivative is therefore
+
+$$
+G_3=\frac{2}{NC}(\hat Y-Y),\qquad
+\nabla_{W_3}L=A_2^\top G_3,\quad
+\nabla_{b_3}L=\sum_iG_{3,i,:}.
+$$
+
+Propagate through the matrix and activation in reverse order:
+
+$$
+G_2=(G_3W_3^\top)\odot\mathbf1[Z_2>0],\qquad
+\nabla_{W_2}L=A_1^\top G_2,
+$$
+
+then repeat for layer one. The ReLU mask belongs to the **preactivation** of the corresponding layer. Bias derivatives sum across reused batch positions, and no additional mean should be introduced after the $1/(NC)$ already in $G_3$.
+
+For $X$ shaped $(4,3)$ and $W_1$ shaped $(3,5)$, $Z_1$ is $(4,5)$, $\nabla W_1$ is $(3,5)$ and $\nabla X$ is $(4,3)$. Check these shapes before compacting expressions.
+
+Compute all gradients before updating weights, and compare each parameter tensor with a central-difference reference on a tiny non-boundary example. Shape agreement alone misses wrong transpose/reduction choices. A constant or symmetric initialization can also prevent useful hidden-unit differentiation; a correct backward pass does not guarantee an effective training configuration.
+
 
 <a id="f044"></a>
 
@@ -146,6 +217,26 @@ Very important: these reusable numerical patterns support many interview questio
 
 ---
 
+### Detailed derivation and worked reasoning
+
+### Derive the diagonal contrastive targets
+
+For matched query/key rows $(q_i,k_i)$, normalize each nonzero vector and form a batch similarity matrix
+
+$$
+S_{ij}=\frac{\tilde q_i^\top\tilde k_j}{\tau},\qquad
+L_{q\to k}=-\frac1B\sum_i\log\frac{e^{S_{ii}}}{\sum_j e^{S_{ij}}}.
+$$
+
+The key-to-query loss uses $S^\top$; the symmetric objective is $(L_{q\to k}+L_{k\to q})/2$. Temperature controls logit sharpness and gradient scale. Normalizing first makes this interpretation independent of arbitrary positive embedding scale.
+
+A batch of one has zero loss because the only key is the positive. That is a warning about absent negatives, not evidence of perfect semantic retrieval. Likewise, repeated or alternative true matches can be wrongly penalized as negatives by a diagonal-only target.
+
+Use stable log-softmax/cross-entropy rather than manually exponentiating large scores. A NumPy implementation is a forward numerical reference; training needs the equivalent differentiable operations so gradients flow into both intended branches. A deliberately detached momentum branch is a different architecture decision, not an accidental conversion to NumPy.
+
+Test swapping $q$ and $k$, positive row scaling, small temperature and zero-norm input policy. If negatives are gathered across workers, adjust each positive index and specify whether gradients cross that collective. More negatives can help discrimination, but label correctness and negative distribution are at least as important as the raw batch count.
+
+
 <a id="f048"></a>
 
 ## F048. Implement numerically stable binary focal loss.
@@ -185,6 +276,26 @@ Very important: these reusable numerical patterns support many interview questio
 **Follow-up.** Why can ACE be noisy? Small changes can move examples across bin boundaries; inspect bin counts and reliability plots.
 
 ---
+
+### Detailed derivation and worked reasoning
+
+### Specify which calibration error you mean
+
+Confidence here is the probability of the **predicted** class, not necessarily the true class. If its stored value is log confidence $\ell_i$, recover $c_i=e^{\ell_i}$ and let $a_i\in\{0,1\}$ indicate correctness.
+
+Split $[0,1]$ into $M$ equal-width bins, placing exactly $1$ in the final bin. For nonempty bins $\mathcal B_+$, this exercise defines
+
+$$
+\operatorname{ACE}=\frac1{|\mathcal B_+|}\sum_{b\in\mathcal B_+}
+\left|\frac{\sum_{i\in b}a_i}{n_b}-\frac{\sum_{i\in b}c_i}{n_b}\right|.
+$$
+
+Every nonempty bin receives equal weight. A population-weighted ECE instead weights each gap by $n_b/N$ and is a different statistic. Empty bins are omitted rather than counted as zero-error bins.
+
+For confidence values $[0.9,0.95,1,0.5,0.55]$ and correctness $[1,1,1,0,1]$ at five bins, the first group has accuracy $1$ and mean confidence $0.95$, gap $0.05$; the second has accuracy $0.5$ and confidence $0.525$, gap $0.025$. ACE is $(0.05+0.025)/2=0.0375$.
+
+Show bin counts alongside the number. Small bins and examples crossing a boundary can make the curve spiky even without a large change in the model. Use independent calibration/evaluation data and inspect proper scores such as log loss too; one binned metric is not a complete account of probability quality.
+
 
 <a id="f050"></a>
 

@@ -1,5 +1,7 @@
 # RAG and agent systems
 
+<span class="practice-page"></span>
+
 **Foundation explainer:** Core material · **Priority:** Very important
 
 Very important for applied LLM interviews: separate retrieval, generation and actions.

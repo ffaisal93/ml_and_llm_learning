@@ -1,5 +1,7 @@
 # SQL lab
 
+<span class="practice-page"></span>
+
 These small examples complement F171–F179. They use SQLite syntax so the checks can run with Python's standard library; date arithmetic and interval literals differ in other databases. Fix an explicit as-of boundary instead of relying on the computer's current date.
 
 ## Tables and conventions

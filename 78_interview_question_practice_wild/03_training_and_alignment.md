@@ -1,5 +1,7 @@
 # Training and alignment
 
+<span class="practice-page"></span>
+
 **Foundation explainer:** Core material · **Priority:** Very important
 
 Very important: connect objectives, gradients, data and verification.
@@ -46,6 +48,35 @@ Very important: connect objectives, gradients, data and verification.
 
 ---
 
+### Detailed derivation and worked reasoning
+
+### Derive a stable masked, smoothed objective
+
+For logits $z_{ic}$, labels $y_i$ and smoothing coefficient $\varepsilon$, the stated target convention is
+
+$$
+q_{ic}=(1-\varepsilon)\mathbf1[c=y_i]+\frac{\varepsilon}{C}.
+$$
+
+The true class therefore receives $1-\varepsilon+\varepsilon/C$, not just $1-\varepsilon$. Compute stable log probabilities with $a_i=\max_c z_{ic}$:
+
+$$
+\log p_{ic}=z_{ic}-a_i-\log\sum_j e^{z_{ij}-a_i}.
+$$
+
+Expanding the cross-entropy avoids constructing every target vector:
+
+$$
+\ell_i=-(1-\varepsilon)\log p_{i,y_i}
+-\frac{\varepsilon}{C}\sum_c\log p_{ic},\qquad
+L=\frac{\sum_i m_i\ell_i}{\sum_i m_i}.
+$$
+
+The denominator counts included examples; dividing by the original batch size changes the loss when masking changes. If no example is selected, this exercise returns zero. For a selected row, the derivative with respect to its logit is $(p_{ic}-q_{ic})/\sum_i m_i$; masked rows contribute zero.
+
+For uniform predictions on four classes, every $\log p=-\log4$ and the loss is $\log4\approx1.386294$ at any smoothing coefficient. This is a useful independent check. Also test logits around $1000$, a single active row and all rows masked. Avoid computing `log(softmax(...))` when probabilities can underflow; calculate log-softmax directly.
+
+
 <a id="f023"></a>
 
 ## F023. Pack SFT examples without corrupting targets.
@@ -86,6 +117,24 @@ Very important: connect objectives, gradients, data and verification.
 
 ---
 
+### Detailed derivation and worked reasoning
+
+### Derive the low-rank update and count what is trained
+
+For a frozen base matrix $W\in\mathbb R^{d_{\rm out}\times d_{\rm in}}$, LoRA uses
+
+$$
+W'=W+\frac\alpha r BA,\qquad
+A\in\mathbb R^{r\times d_{\rm in}},\quad B\in\mathbb R^{d_{\rm out}\times r}.
+$$
+
+Only $A$ and $B$ need optimizer updates for this adaptation. Their parameter count is $r(d_{\rm in}+d_{\rm out})$, compared with $d_{\rm in}d_{\rm out}$ base weights. A $4096\times4096$ matrix at rank eight has $65536$ adapter parameters versus $16777216$ full weights.
+
+A common initialization sets one factor to zero and the other random, so the initial update is zero while learning can start. If $G$ is the derivative with respect to $BA$, then $\partial L/\partial B=GA^\top$ and $\partial L/\partial A=B^\top G$. Setting both factors to zero makes both derivatives zero; setting only $B=0$ still permits a first update to $B$ when $A$ is nonzero.
+
+Sum adapters over all targeted matrices, include scaling and any trainable biases, and distinguish trainable-state savings from activation memory. The frozen base still participates in the forward computation. Merging a compatible adapter into a dense layer can remove a separate adapter path at inference; quantized storage and multiple active adapters complicate that operation. Compare adaptation quality and inference constraints rather than assuming the smallest rank is always best.
+
+
 <a id="f025"></a>
 
 ## F025. Why use AdamW, warmup and gradient clipping?
@@ -125,6 +174,45 @@ Very important: connect objectives, gradients, data and verification.
 **Follow-up.** When could PPO still fit? When online exploration and learned state-dependent value estimates are useful and resources permit them.
 
 ---
+
+### Detailed derivation and worked reasoning
+
+### Compare the actual data and losses
+
+Start with what feedback is available. SFT uses demonstrations; DPO uses preferred/rejected pairs; common PPO/GRPO settings generate rollouts and score them. “Uses reinforcement learning” is not enough to specify an implementation.
+
+For PPO let $r_t=\pi_\theta(a_t\mid s_t)/\pi_{\rm old}(a_t\mid s_t)$ and let $\hat A_t$ be a rollout-derived advantage treated as fixed during the policy update. A common minimized objective is
+
+$$
+L_{\rm policy}=-\mathbb E_t\min\!\left(r_t\hat A_t,
+\operatorname{clip}(r_t,1-\epsilon,1+\epsilon)\hat A_t\right),
+$$
+$$
+L=L_{\rm policy}+c_v\mathbb E_t(V_\theta(s_t)-\hat R_t)^2
+-c_H\mathbb E_t H(\pi_\theta(\cdot\mid s_t))
++\beta\mathbb E_t D_{\rm KL}(\pi_\theta\Vert\pi_{\rm ref}).
+$$
+
+Specific implementations differ in return/advantage estimation, token reduction and where the KL penalty enters. The old rollout policy in the importance ratio is **not** necessarily the frozen reference used to preserve behavior. Clipping is a surrogate; it does not impose a hard global KL bound.
+
+DPO's reference-relative winner/loser margin yields a logistic loss, avoiding an explicitly trained reward model in that objective. Under a KL-regularized reward problem, the optimal policy satisfies $\pi^*(y\mid x)\propto\pi_{\rm ref}(y\mid x)e^{r(x,y)/\beta}$. Solving for reward gives $r=\beta\log(\pi^*/\pi_{\rm ref})+\beta\log Z(x)$; the shared prompt-dependent constant cancels in a reward difference, producing the DPO margin under a Bradley–Terry preference model.
+
+GRPO replaces a learned value baseline with relative rewards within a sampled prompt group, in its common form:
+
+$$
+\hat A_i=\frac{R_i-\bar R}{s_R+\varepsilon}.
+$$
+
+For rewards $[0,0,1,1]$ and population standard deviation, advantages are approximately $[-1,-1,1,1]$. If all rewards are equal, the centered reward contribution is zero; any separate regularization can still produce an update. Define the exact normalization and objective variant rather than treating all named variants as identical.
+
+| Situation | Reasonable baseline | Main cost or failure to check |
+|---|---|---|
+| Fixed preference pairs, constrained compute | DPO | Pair quality, length effects, reference mismatch |
+| Programmatically verifiable sampled answers | Group-relative policy optimization | Reward reliability, sampling cost, low-variance groups |
+| Online control with a useful learned value baseline | PPO-style actor–critic | Critic fit, rollout cost, update stability |
+
+A lower optimization loss is not independent evidence of better task behavior. Reserve evaluation data and inspect reward exploitation and regressions.
+
 
 <a id="f027"></a>
 

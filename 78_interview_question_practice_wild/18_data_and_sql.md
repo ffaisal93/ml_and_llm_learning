@@ -1,5 +1,7 @@
 # Data and SQL practice
 
+<span class="practice-page"></span>
+
 **Foundation explainer:** Further depth · **Priority:** Important — second pass
 
 Important for data-heavy MLE roles: clarify grain, time and tie rules.

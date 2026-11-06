@@ -1,5 +1,7 @@
 # Additional algorithms and worked arithmetic
 
+<span class="practice-page"></span>
+
 These references support the extended question bank. They specify a small exercise contract rather than pretending to be production kernels or complete distributed services.
 
 Run all checks from the repository root, with NumPy available:

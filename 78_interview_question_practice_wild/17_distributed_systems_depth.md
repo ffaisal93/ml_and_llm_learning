@@ -1,5 +1,7 @@
 # Distributed systems depth
 
+<span class="practice-page"></span>
+
 **Foundation explainer:** Further depth · **Priority:** Important — second pass
 
 Important for infrastructure-heavy interviews; study after the ML core.

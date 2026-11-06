@@ -1,5 +1,7 @@
 # Study plan for all 547 questions
 
+<span class="practice-page"></span>
+
 ## Priority passes
 
 1. [First 100](FIRST_100.md): study core ML/LLM questions first.

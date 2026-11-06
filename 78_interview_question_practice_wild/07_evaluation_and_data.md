@@ -1,5 +1,7 @@
 # Evaluation and data quality
 
+<span class="practice-page"></span>
+
 **Foundation explainer:** Core material · **Priority:** Very important
 
 Very important: distinguish a good benchmark number from a dependable decision.

@@ -1,5 +1,7 @@
 # Serving and training systems
 
+<span class="practice-page"></span>
+
 **Foundation explainer:** Core material · **Priority:** Very important
 
 Very important for MLE and LLM roles: explain the resource bottleneck and the resulting design.

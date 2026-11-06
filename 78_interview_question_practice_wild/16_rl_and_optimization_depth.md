@@ -1,5 +1,7 @@
 # Reinforcement learning and optimization depth
 
+<span class="practice-page"></span>
+
 **Foundation explainer:** Further depth · **Priority:** Important — second pass
 
 Important: move from algorithm names to states, objectives and observable feedback.

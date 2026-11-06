@@ -1,5 +1,7 @@
 # Final 47 — complete coverage
 
+<span class="practice-page"></span>
+
 **47 questions with full question text and worked solutions.** Positions 501–547 of 547.
 
 Each listed item is one question entry, including multi-part exercises. Related entries and repeated titles remain separate. The priority reflects general ML/LLM interview usefulness; it is not a measured interview frequency.

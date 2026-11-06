@@ -1,5 +1,7 @@
 # Classical ML foundations
 
+<span class="practice-page"></span>
+
 **Foundation explainer:** Core material · **Priority:** Very important
 
 Very important: these concepts are common follow-ups even in LLM-focused interviews.
@@ -65,6 +67,34 @@ Very important: these concepts are common follow-ups even in LLM-focused intervi
 **Follow-up.** What is elastic net? A combination that can encourage sparsity while stabilizing correlated groups.
 
 ---
+
+### Detailed derivation and worked reasoning
+
+### Why one penalty creates zeros and the other usually does not
+
+State the loss convention before comparing penalty coefficients. With a mean data loss, one possible pair of objectives is
+
+$$
+J_1(w)=\frac1N\sum_i\ell_i(w)+\lambda\|w\|_1,
+\qquad
+J_2(w)=\frac1N\sum_i\ell_i(w)+\frac\lambda2\|w\|_2^2.
+$$
+
+L2 contributes derivative $\lambda w$, continuously shrinking larger coefficients. L1 has subgradient $\lambda\operatorname{sign}(w_j)$ away from zero and an interval $[-\lambda,\lambda]$ at zero. That interval can balance the data gradient while the coefficient remains **exactly zero**.
+
+A one-coordinate example makes the distinction concrete. For the quadratic data term $\tfrac12(w-z)^2$, the solutions are
+
+$$
+w_{\rm L1}=\operatorname{sign}(z)\max(|z|-\lambda,0),\qquad
+w_{\rm L2}=\frac{z}{1+\lambda}.
+$$
+
+With $z=0.8$ and $\lambda=1$, L1 gives zero and L2 gives $0.4$. These closed forms describe this specific separable objective; arbitrary correlated-design regression is not solved by independently applying them to the raw targets.
+
+Scale features using training-only statistics, otherwise coefficient magnitude reflects units as well as influence. Usually state separately whether the intercept is penalized. For correlated predictors, L1 can choose one somewhat arbitrarily, whereas L2 often distributes weight and stabilizes predictions. Neither sparse selection nor a large coefficient establishes causality.
+
+**When to use.** L1 is useful when sparsity itself helps interpretation or deployment; L2 is a strong stability baseline. Tune the penalty within the validation procedure and compare the actual predictive/operational objective. Elastic net combines both penalties rather than claiming one is universally superior.
+
 
 <a id="f054"></a>
 
