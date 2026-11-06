@@ -199,7 +199,7 @@ class CoreMLTests(unittest.TestCase):
         namespace = {}
         for index, code in enumerate(re.findall(r"```python\n(.*?)```", page.read_text(), re.S)):
             ast.parse(code)
-            if code.startswith("import torch") and torch is None:
+            if (code.startswith("import torch") or code.startswith("# PyTorch example")) and torch is None:
                 continue
             with self.subTest(block=index):
                 with contextlib.redirect_stdout(io.StringIO()):

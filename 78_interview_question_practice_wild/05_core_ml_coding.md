@@ -16,7 +16,17 @@ import numpy as np
 
 Rows represent examples; columns represent features or classes. The implementations use `float64` for clear numerical checks. Inputs are finite unless a section explicitly allows another value. Shapes, label rules and tie policies are stated with each task.
 
-All functions are also available in [one runnable Python file](core_ml_readable.py). Most examples need only NumPy. F047 includes a separate PyTorch version for training with automatic differentiation. Nothing downloads a dataset.
+All functions are also available in [one runnable Python file](core_ml_readable.py). The [PyTorch companion file](core_ml_pytorch.py) contains the softmax, LayerNorm, MLP, pairwise-distance and focal-loss implementations shown below. InfoNCE's PyTorch version appears in F047. The PyTorch blocks use these imports:
+
+```python
+# PyTorch example: shared imports
+import math
+import torch
+from torch import nn
+from torch.nn import functional as F
+```
+
+For a trainable tensor, `requires_grad=True` asks PyTorch to track operations. Calling `loss.backward()` computes gradients; an optimizer updates the parameters. Keep tensors and model parameters on the same device and in the same floating dtype. Nothing downloads a dataset.
 
 ## Jump to a question
 
@@ -97,6 +107,56 @@ print(log_softmax(np.array([-1000.0, 0.0])))  # [-1000.     0.]
 **What to watch for:** these functions expect finite scores and at least one class. Attention masks require a separate policy for negative-infinity scores, especially an all-masked row. Do not silently treat such a row as a valid distribution.
 
 **Interview follow-up:** the softmax Jacobian is $\operatorname{diag}(p)-pp^\top$. With ordinary one-hot cross-entropy, the logit gradient simplifies to $p-y$ before any batch averaging.
+
+### PyTorch: implement the same math, then use the library versions
+
+The tensor operations below match the NumPy steps. `dim=-1` means that the final dimension contains classes. They preserve the computation graph, so they can participate in backpropagation.
+
+```python
+# PyTorch example
+def softmax_torch(logits, dim=-1):
+    # Subtract one maximum per class row before exponentiating.
+    shifted = logits - logits.amax(dim=dim, keepdim=True)
+    exponentials = shifted.exp()
+    return exponentials / exponentials.sum(dim=dim, keepdim=True)
+
+
+def log_softmax_torch(logits, dim=-1):
+    shifted = logits - logits.amax(dim=dim, keepdim=True)
+    log_total = shifted.exp().sum(dim=dim, keepdim=True).log()
+    return shifted - log_total
+```
+
+For ordinary application code, PyTorch also provides `F.softmax` and `F.log_softmax`. Use `log_softmax` directly when you need log probabilities; taking `log` after softmax can lose very small probabilities to underflow.
+
+```python
+# PyTorch example
+scores = torch.tensor([[1000.0, 1001.0]], requires_grad=True)
+probabilities = softmax_torch(scores)
+log_probabilities = log_softmax_torch(scores)
+print(probabilities.detach())  # approximately tensor([[0.2689, 0.7311]])
+assert torch.allclose(probabilities, F.softmax(scores, dim=-1))
+assert torch.allclose(log_probabilities, F.log_softmax(scores, dim=-1))
+
+# Treat class 1 as correct: loss = negative log probability of class 1.
+loss = -log_probabilities[0, 1]
+loss.backward()
+print(scores.grad)  # approximately tensor([[0.2689, -0.2689]])
+```
+
+The positive gradient on class 0 and negative gradient on class 1 mean that gradient descent lowers the wrong-class score and raises the correct-class score. The gradient is $p-y$ for this one-example objective. `detach()` is used only for printing; `loss` uses the original tensor with its graph intact.
+
+For multiclass training with integer class labels, use the combined loss on **raw logits**:
+
+```python
+# PyTorch example
+raw_logits = torch.tensor([[2.0, -1.0, 0.5]], requires_grad=True)
+class_labels = torch.tensor([0], dtype=torch.long)
+loss = F.cross_entropy(raw_logits, class_labels)
+loss.backward()
+```
+
+Do not insert softmax before `F.cross_entropy`; it already performs the necessary log-probability computation internally.
 
 <a id="f042"></a>
 
@@ -211,6 +271,57 @@ $$
 
 The accompanying tests do this independently for `x`, `gamma` and `beta`. A constant row normalizes to zero, so its output equals `beta`; its input gradient need not be zero for an arbitrary upstream gradient. Use centered deviations to calculate variance, and keep epsilon **inside** the square root.
 
+### PyTorch: a trainable LayerNorm with automatic backward
+
+`nn.Parameter` registers scale and bias as learnable model parameters. The forward calculation stays explicit, but PyTorch tracks its mean, variance and scaling operations. There is no separate hand-written backward function in this version.
+
+```python
+# PyTorch example
+class ReadableLayerNorm(nn.Module):
+    def __init__(self, feature_count, epsilon=1e-5):
+        super().__init__()
+        if feature_count < 1 or epsilon <= 0:
+            raise ValueError("need positive feature_count and epsilon")
+        self.epsilon = epsilon
+        # nn.Parameter registers these tensors so optimizers can find them.
+        self.gamma = nn.Parameter(torch.ones(feature_count))
+        self.beta = nn.Parameter(torch.zeros(feature_count))
+
+    def forward(self, x):
+        row_mean = x.mean(dim=-1, keepdim=True)
+        centered = x - row_mean
+        row_variance = centered.square().mean(dim=-1, keepdim=True)
+        normalized = centered / torch.sqrt(row_variance + self.epsilon)
+        return self.gamma * normalized + self.beta
+```
+
+```python
+# PyTorch example
+normalizer = ReadableLayerNorm(feature_count=4)
+features = torch.tensor([[1.0, 2.0, 3.0, 4.0]], requires_grad=True)
+normalized_output = normalizer(features)
+print(normalized_output.detach())  # about [-1.3416, -0.4472, 0.4472, 1.3416]
+
+# Only the first output coordinate contributes directly to this objective.
+loss = normalized_output[0, 0]
+loss.backward()
+print(features.grad)          # gradient with respect to the input row
+print(normalizer.gamma.grad) # gradient with respect to the four scales
+print(normalizer.beta.grad)  # tensor([1., 0., 0., 0.])
+```
+
+These three gradients correspond to `dx`, `dgamma` and `dbeta` in the NumPy backward function. The input gradient still includes the mean and variance paths; autograd computes them for you.
+
+The standard module for this feature layout is `nn.LayerNorm(4, eps=1e-5)`. It starts with unit scale and zero bias, just like the readable version:
+
+```python
+# PyTorch example
+standard_normalizer = nn.LayerNorm(4, eps=1e-5)
+assert torch.allclose(normalized_output, standard_normalizer(features), atol=1e-6)
+```
+
+`LayerNorm` uses population variance across the normalized features. Computing this by hand with an unbiased sample-variance estimate would change the result.
+
 <a id="f043"></a>
 
 ## F043. Write a two-hidden-layer MLP and backpropagation
@@ -322,6 +433,90 @@ assert new_loss < loss
 ```
 
 **What to watch for:** never update `W3` before computing the gradient sent through `W3.T`. Bias gradients sum over the batch because every example uses the same bias. Verify all six parameter gradients with finite differences, using points away from a ReLU kink at zero. For classification, change the output objective and its derivative; do not assume this regression loss is cross-entropy.
+
+### PyTorch: the same MLP as an `nn.Module`
+
+The architecture stays the same: linear layer, ReLU, linear layer, ReLU, linear regression output. `nn.Linear` owns its weight and bias parameters. Writing the layers explicitly makes it easy to inspect their shapes and gradients.
+
+```python
+# PyTorch example
+class TwoHiddenLayerMLP(nn.Module):
+    def __init__(self, input_size, hidden1, hidden2, output_size):
+        super().__init__()
+        self.layer1 = nn.Linear(input_size, hidden1)
+        self.layer2 = nn.Linear(hidden1, hidden2)
+        self.output = nn.Linear(hidden2, output_size)
+
+    def forward(self, x):
+        first_hidden = torch.relu(self.layer1(x))
+        second_hidden = torch.relu(self.layer2(first_hidden))
+        # Regression: leave the final output linear.
+        return self.output(second_hidden)
+```
+
+One layout detail matters when comparing implementations: the NumPy code stores `W1` as `(input_size, hidden1)` and computes `x @ W1`. PyTorch's `nn.Linear` stores its weight as `(hidden1, input_size)` and computes `x @ weight.T + bias`. The numerical operation is the same after transposing the stored weights.
+
+### Trace the same scalar example through autograd
+
+Set every weight to 1 and every bias to 0, just as in the NumPy example. The input 2 produces prediction 2, the target is 1, and MSE is 1. The first-layer weight gradient must be 4.
+
+```python
+# PyTorch example
+scalar_model = TwoHiddenLayerMLP(1, 1, 1, 1)
+with torch.no_grad():
+    for layer in (scalar_model.layer1, scalar_model.layer2, scalar_model.output):
+        layer.weight.fill_(1.0)
+        layer.bias.zero_()
+
+scalar_input = torch.tensor([[2.0]], requires_grad=True)
+scalar_target = torch.tensor([[1.0]])
+scalar_prediction = scalar_model(scalar_input)
+scalar_loss = F.mse_loss(scalar_prediction, scalar_target)
+scalar_loss.backward()
+print(scalar_prediction.detach())              # tensor([[2.]])
+print(scalar_loss.item())                      # 1.0
+print(scalar_model.layer1.weight.grad)          # tensor([[4.]])
+assert torch.allclose(scalar_model.layer1.weight.grad, torch.tensor([[4.0]]))
+```
+
+`backward()` traverses the graph in reverse and fills each parameter's `.grad`. It does not change the weights. `F.mse_loss` averages over all output entries by default, matching the NumPy loss and its $1/(NC)$ normalization.
+
+### A complete training loop
+
+This tiny regression dataset asks the network to add two input coordinates. The same loop works for a larger dataset when you supply batches.
+
+```python
+# PyTorch example
+torch.manual_seed(0)
+training_inputs = torch.tensor([[0.0, 0.0], [0.0, 1.0],
+                               [1.0, 0.0], [1.0, 1.0]])
+training_targets = training_inputs.sum(dim=1, keepdim=True)  # shape (4, 1)
+model = TwoHiddenLayerMLP(input_size=2, hidden1=8, hidden2=8, output_size=1)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.03)
+model.train()
+
+with torch.no_grad():
+    initial_loss = F.mse_loss(model(training_inputs), training_targets).item()
+
+for step in range(200):
+    optimizer.zero_grad(set_to_none=True)          # clear old gradients
+    predictions = model(training_inputs)          # forward pass: (4, 1)
+    loss = F.mse_loss(predictions, training_targets)
+    loss.backward()                               # calculate fresh gradients
+    optimizer.step()                              # update registered parameters
+
+model.eval()
+with torch.no_grad():
+    final_predictions = model(training_inputs)
+    final_loss = F.mse_loss(final_predictions, training_targets).item()
+print("Before:", initial_loss, "After:", final_loss)
+print(final_predictions)  # close to [[0.], [1.], [1.], [2.]]
+assert final_loss < initial_loss
+```
+
+`zero_grad` belongs inside the loop because PyTorch accumulates gradients by default. Calculate the loss with gradients enabled, call `backward`, then call `step`. Use `no_grad` when evaluating predictions without constructing another gradient graph. Keep predictions and targets the same shape; a target shaped `(N,)` can accidentally broadcast against predictions shaped `(N, 1)`.
+
+For a GPU run, move both the model and the input/target tensors to the chosen device before training. For classification, change the final output size to the class count, use integer labels shaped `(N,)`, and use `F.cross_entropy` on the raw output logits. This example remains a regression model, so it uses a linear output and MSE.
 
 <a id="f044"></a>
 
@@ -534,6 +729,28 @@ assert np.allclose(pairwise_euclidean_fast(x, y), pairwise_euclidean(x, y))
 
 **What to watch for:** roundoff can make a mathematically zero squared distance slightly negative, so clamp before taking the square root. However, clamping does not repair all cancellation error for nearly identical, large-offset vectors; direct differences can be more accurate there. For large inputs, compute blocks, or retain only the nearest candidates if the full distance matrix is unnecessary. Both formulas use $O(NMD)$ arithmetic; the direct temporary uses $O(NMD)$ memory, while the algebraic pairwise arrays use $O(NM)$.
 
+### PyTorch: pairwise distances between tensors
+
+`torch.cdist` directly expresses the requested operation and keeps it differentiable. Its output is `(N, M)` for inputs `(N, D)` and `(M, D)`.
+
+```python
+# PyTorch example
+def pairwise_euclidean_torch(x, y):
+    # x: (N, D), y: (M, D), result: (N, M).
+    return torch.cdist(x, y, p=2)
+```
+
+```python
+# PyTorch example
+first_points = torch.tensor([[0.0, 0.0], [3.0, 4.0]])
+second_points = torch.tensor([[0.0, 0.0], [0.0, 4.0]])
+distances = pairwise_euclidean_torch(first_points, second_points)
+expected_distances = torch.tensor([[0.0, 4.0], [5.0, 3.0]])
+assert torch.allclose(distances, expected_distances)
+```
+
+If an interview asks you to derive the operation, the broadcasting and squared-norm versions above explain the calculation. When using tensors in a model, the built-in operation handles the distance computation without converting data to NumPy.
+
 <a id="f047"></a>
 
 ## F047. Implement symmetric InfoNCE loss
@@ -691,6 +908,47 @@ assert np.isclose(ordinary_bce, np.log(2))
 For logit zero, the true-class probability is 0.5. BCE is $\log2\approx0.6931$ and the focal factor is $(1-0.5)^2=0.25$, giving about 0.1733. For logit 5 with a positive label, the example is already easy, so focal weighting reduces its contribution much further.
 
 **What to watch for:** pass logits, not sigmoid probabilities. `gamma=0` with a non-`None` alpha still applies class weighting. This is a NumPy forward reference; a training implementation must use differentiable tensor operations. Hard mislabeled examples can receive disproportionate emphasis, so focal loss does not automatically improve accuracy or calibration.
+
+### PyTorch: a focal loss you can backpropagate through
+
+Use unreduced binary cross-entropy so each example receives its own focal weight. Average only after applying the focal factor and optional class weights. The inputs are logits and binary labels of the same shape.
+
+```python
+# PyTorch example
+def binary_focal_loss_torch(logits, labels, gamma=2.0, alpha=None):
+    if logits.shape != labels.shape or logits.numel() == 0:
+        raise ValueError("logits and labels need matching nonempty shapes")
+    if not math.isfinite(gamma) or gamma < 0:
+        raise ValueError("gamma must be finite and nonnegative")
+    if alpha is not None and not 0 <= alpha <= 1:
+        raise ValueError("alpha must be between 0 and 1, or None")
+    if not ((labels == 0) | (labels == 1)).all():
+        raise ValueError("labels must be binary")
+    labels = labels.to(device=logits.device, dtype=logits.dtype)
+    bce = F.binary_cross_entropy_with_logits(logits, labels, reduction="none")
+    one_minus_p_true = -torch.expm1(-bce)
+    losses = one_minus_p_true.pow(gamma) * bce
+    if alpha is not None:
+        class_weights = labels * alpha + (1 - labels) * (1 - alpha)
+        losses = class_weights * losses
+    return losses.mean()
+```
+
+```python
+# PyTorch example
+binary_logits = torch.tensor([0.0, 5.0, -5.0], requires_grad=True)
+binary_labels = torch.tensor([1.0, 1.0, 0.0])
+loss = binary_focal_loss_torch(binary_logits, binary_labels, gamma=2.0)
+loss.backward()
+print(loss.item())          # about 0.057762
+print(binary_logits.grad)  # finite; the uncertain first example dominates
+assert torch.isfinite(binary_logits.grad).all()
+
+ordinary_bce = binary_focal_loss_torch(binary_logits, binary_labels, gamma=0, alpha=None)
+assert torch.allclose(ordinary_bce, F.binary_cross_entropy_with_logits(binary_logits, binary_labels))
+```
+
+The focal weight is part of the loss graph too: its dependence on the logit contributes to the derivative. Do not detach that factor. Passing the raw logits to `binary_cross_entropy_with_logits` also avoids manually taking the logarithm of a rounded sigmoid probability.
 
 <a id="f049"></a>
 
@@ -863,12 +1121,12 @@ For `item1`, Alice is compared with `[1, 1, 0]`, whose majority is 1, so she agr
 
 ## Run the checks
 
-The [test file](test_core_ml_readable.py) checks numerical examples, softmax invariance, LayerNorm and MLP gradients, deterministic neighbor ties, empty clusters, contrastive symmetry, focal-loss limits, calibration bins and annotation ties. It also executes the examples on this page. The differentiable InfoNCE check needs PyTorch.
+The [test file](test_core_ml_readable.py) checks numerical examples, softmax invariance, LayerNorm and MLP gradients, deterministic neighbor ties, empty clusters, contrastive symmetry, focal-loss limits, calibration bins and annotation ties. It also executes the examples on this page. The [PyTorch tests](test_core_ml_pytorch.py) additionally compare tensor outputs and gradients with NumPy and PyTorch built-ins, and run the MLP training loop.
 
 From this chapter's directory, with NumPy installed:
 
 ```bash
-python -m unittest test_core_ml_readable -v
+python -m unittest test_core_ml_readable test_core_ml_pytorch -v
 ```
 
-If PyTorch is absent, only the PyTorch-specific checks and example are skipped. The remaining examples run locally without an internet connection.
+If PyTorch is absent, the PyTorch-specific checks and examples are skipped. The remaining examples run locally without an internet connection.
