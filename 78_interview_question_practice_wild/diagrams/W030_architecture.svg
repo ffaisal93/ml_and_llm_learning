@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1120" height="770" viewBox="0 0 1120 770" role="img" aria-labelledby="title desc">
 <title id="title">W030 · Design ChatGPT: A Conversational LLM Serving Platform</title>
-<desc id="desc">Application — model + request id; Inference gateway — validate + route; Model registry — versioned weights; Bounded batch queue — deadlines + token budget; GPU model workers — prefill + decode; Streamed response — usage + cancellation. Pin a compatible model version; admit work within memory limits and cancel expired requests.</desc>
+<desc id="desc">Application — model + request id; Inference gateway — validate + route; History + model registry — messages + model versions; Bounded batch queue — deadlines + token budget; GPU model workers — prefill + decode; Streamed response — usage + cancellation. Pin a compatible model version; admit work within memory limits and cancel expired requests.</desc>
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#475569"/></marker></defs>
 <rect width="1120" height="770" rx="16" fill="white"/>
 <g font-family="Arial, Helvetica, sans-serif" fill="#0f172a">
@@ -21,8 +21,8 @@
 <text x="560" y="186" font-size="18" font-weight="700" text-anchor="middle">Inference gateway</text>
 <text x="560" y="210" font-size="16" font-weight="400" text-anchor="middle">validate + route</text>
 <rect x="788" y="140" width="300" height="104" rx="10" fill="#fff7ed" stroke="#fb923c" stroke-width="2"/>
-<text x="938" y="186" font-size="18" font-weight="700" text-anchor="middle">Model registry</text>
-<text x="938" y="210" font-size="16" font-weight="400" text-anchor="middle">versioned weights</text>
+<text x="938" y="186" font-size="18" font-weight="700" text-anchor="middle">History + model registry</text>
+<text x="938" y="210" font-size="16" font-weight="400" text-anchor="middle">messages + model versions</text>
 <rect x="410" y="370" width="300" height="104" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
 <text x="560" y="416" font-size="18" font-weight="700" text-anchor="middle">Bounded batch queue</text>
 <text x="560" y="440" font-size="16" font-weight="400" text-anchor="middle">deadlines + token budget</text>

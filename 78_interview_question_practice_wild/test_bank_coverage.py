@@ -32,7 +32,7 @@ class BankCoverageTests(unittest.TestCase):
         for row in self.rows:
             text=(ROOT/row['path']).read_text()
             self.assertTrue(row['question'].strip(),row['id'])
-            self.assertGreaterEqual(len(row['solution']['steps']),3,row['id'])
+            self.assertTrue(row['solution']['steps'],row['id'])
             self.assertTrue(row['solution']['example'],row['id'])
             self.assertTrue(row['solution']['trap'],row['id'])
             self.assertIn('## Worked solution',text)

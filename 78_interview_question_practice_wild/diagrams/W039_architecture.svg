@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1120" height="770" viewBox="0 0 1120 770" role="img" aria-labelledby="title desc">
 <title id="title">W039 · Build an LLM Evaluation Harness with Ollama Integration</title>
-<desc id="desc">Versioned task set — rubric + model config; Evaluation coordinator — reproducible runs; Immutable outputs — labels + rubric versions; Judge or review queue — blind assignment; Scoring and adjudication — slice + disagreement checks; Regression report — quality + cost + uncertainty. Do not change the rubric mid-comparison or hide invalid outputs from the denominator.</desc>
+<desc id="desc">JSONL sample set — prompt + optional reference; CLI evaluation runner — fixed model + settings; Per-sample output store — scores + explicit errors; Local Ollama HTTP adapter — timeout + response checks; Deterministic metric scorer — exact match + Jaccard; JSON evaluation report — scores + pass rate + failures. Do not change the rubric mid-comparison or hide invalid outputs from the denominator.</desc>
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#475569"/></marker></defs>
 <rect width="1120" height="770" rx="16" fill="white"/>
 <g font-family="Arial, Helvetica, sans-serif" fill="#0f172a">
@@ -15,23 +15,23 @@
 <text x="950" y="317" font-size="15" font-weight="400" text-anchor="start">state</text>
 <polyline points="938,474 938,535 182,535 182,474" stroke="#475569" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
 <rect x="32" y="140" width="300" height="104" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
-<text x="182" y="186" font-size="18" font-weight="700" text-anchor="middle">Versioned task set</text>
-<text x="182" y="210" font-size="16" font-weight="400" text-anchor="middle">rubric + model config</text>
+<text x="182" y="186" font-size="18" font-weight="700" text-anchor="middle">JSONL sample set</text>
+<text x="182" y="210" font-size="16" font-weight="400" text-anchor="middle">prompt + optional reference</text>
 <rect x="410" y="140" width="300" height="104" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
-<text x="560" y="186" font-size="18" font-weight="700" text-anchor="middle">Evaluation coordinator</text>
-<text x="560" y="210" font-size="16" font-weight="400" text-anchor="middle">reproducible runs</text>
+<text x="560" y="186" font-size="18" font-weight="700" text-anchor="middle">CLI evaluation runner</text>
+<text x="560" y="210" font-size="16" font-weight="400" text-anchor="middle">fixed model + settings</text>
 <rect x="788" y="140" width="300" height="104" rx="10" fill="#fff7ed" stroke="#fb923c" stroke-width="2"/>
-<text x="938" y="186" font-size="18" font-weight="700" text-anchor="middle">Immutable outputs</text>
-<text x="938" y="210" font-size="16" font-weight="400" text-anchor="middle">labels + rubric versions</text>
+<text x="938" y="186" font-size="18" font-weight="700" text-anchor="middle">Per-sample output store</text>
+<text x="938" y="210" font-size="16" font-weight="400" text-anchor="middle">scores + explicit errors</text>
 <rect x="410" y="370" width="300" height="104" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
-<text x="560" y="416" font-size="18" font-weight="700" text-anchor="middle">Judge or review queue</text>
-<text x="560" y="440" font-size="16" font-weight="400" text-anchor="middle">blind assignment</text>
+<text x="560" y="416" font-size="18" font-weight="700" text-anchor="middle">Local Ollama HTTP adapter</text>
+<text x="560" y="440" font-size="16" font-weight="400" text-anchor="middle">timeout + response checks</text>
 <rect x="788" y="370" width="300" height="104" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
-<text x="938" y="416" font-size="18" font-weight="700" text-anchor="middle">Scoring and adjudication</text>
-<text x="938" y="440" font-size="16" font-weight="400" text-anchor="middle">slice + disagreement checks</text>
+<text x="938" y="416" font-size="18" font-weight="700" text-anchor="middle">Deterministic metric scorer</text>
+<text x="938" y="440" font-size="16" font-weight="400" text-anchor="middle">exact match + Jaccard</text>
 <rect x="32" y="370" width="300" height="104" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
-<text x="182" y="416" font-size="18" font-weight="700" text-anchor="middle">Regression report</text>
-<text x="182" y="440" font-size="16" font-weight="400" text-anchor="middle">quality + cost + uncertainty</text>
+<text x="182" y="416" font-size="18" font-weight="700" text-anchor="middle">JSON evaluation report</text>
+<text x="182" y="440" font-size="16" font-weight="400" text-anchor="middle">scores + pass rate + failures</text>
 <text x="32" y="590" font-size="18" font-weight="700" text-anchor="start">Key constraint</text>
 <text x="32" y="620" font-size="17" font-weight="400" text-anchor="start">Do not change the rubric mid-comparison or hide invalid outputs from the denominator.</text>
 </g></svg>

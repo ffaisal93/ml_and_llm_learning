@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="922" height="182" viewBox="0 0 922 182" role="img" aria-labelledby="title desc">
+<title id="title">W546. Runnable Stack Overflow / Quora REST Service — architecture</title>
+<desc id="desc">HTTP request → route / parse / validate → lock-protected Store
+                                              ↓
+                                        JSON response
+Production extension: authenticated API → transactional DB → read cache/search
+</desc>
+<rect width="922" height="182" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">HTTP request → route / parse / validate → lock-protected Store</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                              ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                        JSON response</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Production extension: authenticated API → transactional DB → read cache/search</text>
+</svg>

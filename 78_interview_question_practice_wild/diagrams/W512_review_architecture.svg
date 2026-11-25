@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="856" height="266" viewBox="0 0 856 266" role="img" aria-labelledby="title desc">
+<title id="title">W512. Frontend System Design: Infinite-Scroll Image Feed — architecture</title>
+<desc id="desc">Scroll sentinel → IntersectionObserver → guarded page loader → fixed API
+                                                ↓
+                                      merge/deduplicate by ID
+                                         ↓              ↓
+                                   image grid     IndexedDB metadata
+                                         ↓              ↑ offline reload
+                                 browser image cache / service worker
+</desc>
+<rect width="856" height="266" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Scroll sentinel → IntersectionObserver → guarded page loader → fixed API</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      merge/deduplicate by ID</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                         ↓              ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                   image grid     IndexedDB metadata</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                         ↓              ↑ offline reload</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                 browser image cache / service worker</text>
+</svg>

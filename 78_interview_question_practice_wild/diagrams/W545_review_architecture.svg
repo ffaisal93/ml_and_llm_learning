@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="210" viewBox="0 0 720 210" role="img" aria-labelledby="title desc">
+<title id="title">W545. Object-Oriented Design Round — architecture</title>
+<desc id="desc">ParkingLot → owns Spots and active Tickets
+     ↓                  ↓
+PricingPolicy         Ticket → Vehicle
+     ↓
+Receipt on validated exit
+</desc>
+<rect width="720" height="210" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">ParkingLot → owns Spots and active Tickets</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">     ↓                  ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">PricingPolicy         Ticket → Vehicle</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">     ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Receipt on validated exit</text>
+</svg>

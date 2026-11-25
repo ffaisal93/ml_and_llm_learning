@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1021" height="266" viewBox="0 0 1021 266" role="img" aria-labelledby="title desc">
+<title id="title">W542. Design a Pizza Ordering and Fulfillment System (OOD) — architecture</title>
+<desc id="desc">Customer → menu/pricing → OrderService → order DB + outbox
+                              ↓ payment       ↓ accepted kitchen ticket
+                       PaymentGateway    KitchenScheduler
+                                              ↓ prep → bake → ready
+                                         DispatchService
+                                              ↓ driver assigned → picked up → delivered
+                              Customer status ← versioned order events
+</desc>
+<rect width="1021" height="266" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Customer → menu/pricing → OrderService → order DB + outbox</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                              ↓ payment       ↓ accepted kitchen ticket</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                       PaymentGateway    KitchenScheduler</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                              ↓ prep → bake → ready</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                         DispatchService</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                              ↓ driver assigned → picked up → delivered</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                              Customer status ← versioned order events</text>
+</svg>

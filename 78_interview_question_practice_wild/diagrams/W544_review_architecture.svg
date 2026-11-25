@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="867" height="210" viewBox="0 0 867 210" role="img" aria-labelledby="title desc">
+<title id="title">W544. Library Book Management System Design and API Architecture — architecture</title>
+<desc id="desc">Patron/staff → auth + library API → transactional catalog/copies/loans DB
+                       ↓                        ↓
+                 title/author search index ← versioned catalog changes
+                                                ↓
+                                    due reminders / reports outbox
+</desc>
+<rect width="867" height="210" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Patron/staff → auth + library API → transactional catalog/copies/loans DB</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                       ↓                        ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                 title/author search index ← versioned catalog changes</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                    due reminders / reports outbox</text>
+</svg>

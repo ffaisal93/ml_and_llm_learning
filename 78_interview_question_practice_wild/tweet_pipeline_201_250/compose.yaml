@@ -1,0 +1,29 @@
+x-common: &common
+  build: .
+  volumes:
+    - tweets-db:/data
+    - ./demo.json:/input/tweets.json:ro
+  environment:
+    DB_PATH: /data/tweets.db
+    MOCK_LLM: ${MOCK_LLM:-1}
+    LLM_URL: ${LLM_URL:-}
+    LLM_API_KEY: ${LLM_API_KEY:-}
+services:
+  database:
+    <<: *common
+    command: ["init"]
+  ingester:
+    <<: *common
+    depends_on:
+      database:
+        condition: service_completed_successfully
+    command: ["ingest", "/input/tweets.json"]
+  worker:
+    <<: *common
+    depends_on:
+      database:
+        condition: service_completed_successfully
+    command: ["worker"]
+    restart: unless-stopped
+volumes:
+  tweets-db:

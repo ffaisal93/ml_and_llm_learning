@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="922" height="378" viewBox="0 0 922 378" role="img" aria-labelledby="title desc">
+<title id="title">W538. Stock Trading Agent Service with Order Deadlines — architecture</title>
+<desc id="desc">Client → order API → durable orders + outbox → placement workers → broker POST
+                           ↓                                      ↓
+                  due-poll / deadline index ← broker ID mapping / state
+                           ↓
+                  partitioned scheduler / leased claims
+                       ↙                    ↘
+                  status pollers       priority cancel workers
+                       ↓                    ↓
+                    broker GET          broker DELETE
+                       ↘                    ↙
+                       durable state / fills / reconciliation
+</desc>
+<rect width="922" height="378" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Client → order API → durable orders + outbox → placement workers → broker POST</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                           ↓                                      ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                  due-poll / deadline index ← broker ID mapping / state</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                           ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                  partitioned scheduler / leased claims</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                       ↙                    ↘</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                  status pollers       priority cancel workers</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                       ↓                    ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                    broker GET          broker DELETE</text>
+<text x="32" y="292" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                       ↘                    ↙</text>
+<text x="32" y="320" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                       durable state / fills / reconciliation</text>
+</svg>

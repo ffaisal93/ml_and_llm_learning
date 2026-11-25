@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="823" height="266" viewBox="0 0 823 266" role="img" aria-labelledby="title desc">
+<title id="title">W511. Frontend System Design: Autocomplete Search Input — architecture</title>
+<desc id="desc">Consumer: controlled text / selected option
+                ↓ props and callbacks
+Autocomplete controller (open, active ID, pages, request/cache state)
+       ↓                     ↓
+Field wrapper + label     Overlay/portal manager
+       ↓                     ↓
+Combobox input           Popup listbox + option rows
+</desc>
+<rect width="823" height="266" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Consumer: controlled text / selected option</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                ↓ props and callbacks</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Autocomplete controller (open, active ID, pages, request/cache state)</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">       ↓                     ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Field wrapper + label     Overlay/portal manager</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">       ↓                     ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Combobox input           Popup listbox + option rows</text>
+</svg>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="889" height="266" viewBox="0 0 889 266" role="img" aria-labelledby="title desc">
+<title id="title">W533. Low-Latency Multi-Exchange Buy/Sell System Design — architecture</title>
+<desc id="desc">Venue price streams → normalized fresh quote/depth cache
+                                         ↓
+Immediate API → durable intent/outbox → execution router → venue adapters
+                                         ↑                    ↓
+Schedule DB → due-time dispatcher → unique occurrence      execution events
+                                         ↓                    ↓
+                               balance reservation ← ledger/reconciler
+</desc>
+<rect width="889" height="266" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Venue price streams → normalized fresh quote/depth cache</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                         ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Immediate API → durable intent/outbox → execution router → venue adapters</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                         ↑                    ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Schedule DB → due-time dispatcher → unique occurrence      execution events</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                         ↓                    ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                               balance reservation ← ledger/reconciler</text>
+</svg>

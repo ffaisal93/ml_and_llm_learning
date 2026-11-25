@@ -1,0 +1,5 @@
+[
+  {"id":"1","text":"Great launch","author":"demo","created_at":"2024-01-01T00:00:00Z"},
+  {"id":"2","text":"","author":"demo","created_at":"2024-01-01T00:00:00Z"},
+  {"id":"3","text":"A second valid record","author":"demo","created_at":"2024-01-02T00:00:00Z"}
+]

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="856" height="210" viewBox="0 0 856 210" role="img" aria-labelledby="title desc">
+<title id="title">W513. Frontend System Design: Signup Form with A/B Testing — architecture</title>
+<desc id="desc">Form fields → local validation → submit (idempotency key) → signup API
+                  ↓                         ↓
+            inline feedback         field/global errors or success
+                  ↓                         ↓
+          preserved safe state     analytics events without field values
+</desc>
+<rect width="856" height="210" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Form fields → local validation → submit (idempotency key) → signup API</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                  ↓                         ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">            inline feedback         field/global errors or success</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                  ↓                         ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">          preserved safe state     analytics events without field values</text>
+</svg>

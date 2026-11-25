@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="834" height="322" viewBox="0 0 834 322" role="img" aria-labelledby="title desc">
+<title id="title">W531. Design a Crypto Brokerage Order System — architecture</title>
+<desc id="desc">Client → authenticated order API → order + funds reservation + outbox
+                                            ↓
+Market feeds → normalized quote cache → smart router → venue adapters
+                                            ↑                 ↓
+                            execution reconciler ← fills/status stream
+                                            ↓
+                              transactional ledger / positions
+                                            ↓
+                                    order status / notification
+</desc>
+<rect width="834" height="322" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Client → authenticated order API → order + funds reservation + outbox</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                            ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Market feeds → normalized quote cache → smart router → venue adapters</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                            ↑                 ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                            execution reconciler ← fills/status stream</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                            ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                              transactional ledger / positions</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                            ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                    order status / notification</text>
+</svg>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="878" height="350" viewBox="0 0 878 350" role="img" aria-labelledby="title desc">
+<title id="title">W520. Design a 3-Day Donation Service — architecture</title>
+<desc id="desc">App → cached charity list
+App → donation API → intent DB + outbox → rate-limited payment worker
+                        ↑                              ↓
+                  status API                  existing payment integration
+                        ↑                              ↓
+               reconciler ← verified durable webhook inbox
+                        ↓
+             success/refund ledger + notification outbox
+                  ↓                         ↓
+          daily aggregate jobs       in-app + email delivery
+</desc>
+<rect width="878" height="350" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">App → cached charity list</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">App → donation API → intent DB + outbox → rate-limited payment worker</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                        ↑                              ↓</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                  status API                  existing payment integration</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                        ↑                              ↓</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">               reconciler ← verified durable webhook inbox</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                        ↓</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">             success/refund ledger + notification outbox</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                  ↓                         ↓</text>
+<text x="32" y="292" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">          daily aggregate jobs       in-app + email delivery</text>
+</svg>

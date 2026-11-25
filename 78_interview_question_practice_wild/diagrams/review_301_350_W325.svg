@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="310" viewBox="0 0 1320 310" role="img" aria-labelledby="title desc">
+<title id="title">W325 solution flow</title><desc id="desc">Bounded async telemetry → Durable events + raw data → Distinct / views / funnel → Small dashboard query API. Critical conversion facts need durable emission; sampled views do not give exact uniques.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#475569"/></marker></defs>
+<rect width="1320" height="310" fill="#ffffff"/>
+<text x="24" y="38" font-family="Arial,sans-serif" font-size="24" fill="#0f172a">W325 · Solution flow</text>
+<path d="M309 139H345" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="24" y="90" width="285" height="98" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+<text x="166" y="126" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">Bounded async telemetry</text>
+<path d="M634 139H670" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="349" y="90" width="285" height="98" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+<text x="491" y="126" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">Durable events + raw data</text>
+<path d="M959 139H995" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="674" y="90" width="285" height="98" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+<text x="816" y="126" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">Distinct / views / funnel</text>
+<rect x="999" y="90" width="285" height="98" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+<text x="1141" y="126" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">Small dashboard query API</text>
+<text x="24" y="239" font-family="Arial,sans-serif" font-size="17" fill="#334155">Critical conversion facts need durable emission; sampled views do not give exact uniques.</text>
+</svg>

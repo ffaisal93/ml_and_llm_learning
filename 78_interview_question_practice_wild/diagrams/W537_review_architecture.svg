@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="933" height="322" viewBox="0 0 933 322" role="img" aria-labelledby="title desc">
+<title id="title">W537. Stock Trading / Real-Time Quote System Design — architecture</title>
+<desc id="desc">User order → auth/risk → order DB + funds reservation/outbox → exchange adapter
+                              ↑                                  ↓
+                         ledger + status ← execution reconciler / fills
+
+Exchange feeds → sequenced normalization → durable raw market events
+                              ↓                        ↓
+                      latest-quote cache       time-series aggregates
+                              ↓                        ↓
+                   websocket quote fan-out    bounded chart API → client
+</desc>
+<rect width="933" height="322" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">User order → auth/risk → order DB + funds reservation/outbox → exchange adapter</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                              ↑                                  ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         ledger + status ← execution reconciler / fills</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17"></text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Exchange feeds → sequenced normalization → durable raw market events</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                              ↓                        ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                      latest-quote cache       time-series aggregates</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                              ↓                        ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                   websocket quote fan-out    bounded chart API → client</text>
+</svg>

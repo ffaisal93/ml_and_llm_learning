@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="911" height="266" viewBox="0 0 911 266" role="img" aria-labelledby="title desc">
+<title id="title">W532. Design Pre-Trade Risk Checking for an Electronic Trading System — architecture</title>
+<desc id="desc">Strategy → order manager / sequenced risk shard → exchange gateway → exchange
+              ↓                 ↑                       ↓
+       reject + reason      ack/fill/cancel ← normalized execution events
+              ↑
+       limit/kill-switch epoch ← operator control plane
+              ↓
+      append-only audit + standby replay
+</desc>
+<rect width="911" height="266" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Strategy → order manager / sequenced risk shard → exchange gateway → exchange</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">              ↓                 ↑                       ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">       reject + reason      ack/fill/cancel ← normalized execution events</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">              ↑</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">       limit/kill-switch epoch ← operator control plane</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">              ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">      append-only audit + standby replay</text>
+</svg>

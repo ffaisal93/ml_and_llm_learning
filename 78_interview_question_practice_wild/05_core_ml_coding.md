@@ -762,7 +762,7 @@ You have matching query/key pairs—for example, image embeddings and their corr
 Normalize each embedding to unit length, calculate cosine similarities, and divide by a positive temperature $\tau$:
 
 $$
-S_{ij}=\frac{\tilde q_i^\top\tilde k_j}{\tau},\qquad
+S_{ij}=\frac{(q_i^{\mathrm{norm}})^\top k_j^{\mathrm{norm}}}{\tau},\qquad
 L_{q\to k}=-\frac1B\sum_i\log\frac{e^{S_{ii}}}{\sum_j e^{S_{ij}}}.
 $$
 

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="266" viewBox="0 0 720 266" role="img" aria-labelledby="title desc">
+<title id="title">W509. Design a Website for 100,000 Concurrent Users with Live Comments — architecture</title>
+<desc id="desc">Browser → CDN (static assets)
+   ↓ POST comment                    ↑ live events / replay
+Load balancer → stateless comment API    realtime gateways
+                          ↓                  ↑
+                  comments DB + outbox → room event bus
+                          ↓                  ↓
+                    recent-history cache    fan-out workers
+</desc>
+<rect width="720" height="266" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Browser → CDN (static assets)</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">   ↓ POST comment                    ↑ live events / replay</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Load balancer → stateless comment API    realtime gateways</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                          ↓                  ↑</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                  comments DB + outbox → room event bus</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                          ↓                  ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                    recent-history cache    fan-out workers</text>
+</svg>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="801" height="322" viewBox="0 0 801 322" role="img" aria-labelledby="title desc">
+<title id="title">W540. Coffee Ordering System Design — architecture</title>
+<desc id="desc">Customer app → catalog cache / store menus
+       ↓
+Order API → order DB + payment reservation/outbox → payment adapter
+                ↓ confirmed payment / accepted store policy
+           store POS / kitchen queue
+                ↓ status command + expected version
+      order state transaction + status-event/outbox
+                ↓                       ↓
+        customer live status       push/email worker
+</desc>
+<rect width="801" height="322" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Customer app → catalog cache / store menus</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">       ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Order API → order DB + payment reservation/outbox → payment adapter</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                ↓ confirmed payment / accepted store policy</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">           store POS / kitchen queue</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                ↓ status command + expected version</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">      order state transaction + status-event/outbox</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                ↓                       ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">        customer live status       push/email worker</text>
+</svg>

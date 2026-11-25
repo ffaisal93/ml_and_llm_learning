@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="322" viewBox="0 0 900 322" role="img" aria-labelledby="title desc">
+<title id="title">W518. System Design: Chess Game — architecture</title>
+<desc id="desc">Players ↔ websocket gateways → game-ID router → authoritative chess owner
+                  ↓                                  ↓
+             rating queue                   rule engine + server clocks
+                  ↓                                  ↓
+               matcher                       ordered durable move log
+                                                     ↓
+                              Redis live snapshot / history DB / PGN archive
+                                                     ↓
+                                        result + rating outbox jobs
+</desc>
+<rect width="900" height="322" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Players ↔ websocket gateways → game-ID router → authoritative chess owner</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                  ↓                                  ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">             rating queue                   rule engine + server clocks</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                  ↓                                  ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">               matcher                       ordered durable move log</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                     ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                              Redis live snapshot / history DB / PGN archive</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                     ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                        result + rating outbox jobs</text>
+</svg>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="845" height="322" viewBox="0 0 845 322" role="img" aria-labelledby="title desc">
+<title id="title">W516. Design an Online Chess Platform (Matchmaking, Live Games, Clocks) — architecture</title>
+<desc id="desc">Players → websocket gateways → game router → leased chess game owner
+             ↓                                   ↓
+        matchmaking                       validate move + settle clock
+             ↓                                   ↓
+          allocator                        durable ordered event log
+                                                 ↓
+                                    broadcast players / spectator bus
+                                                 ↓
+                              finished history + idempotent rating jobs
+</desc>
+<rect width="845" height="322" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Players → websocket gateways → game router → leased chess game owner</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">             ↓                                   ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">        matchmaking                       validate move + settle clock</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">             ↓                                   ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">          allocator                        durable ordered event log</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                 ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                    broadcast players / spectator bus</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                 ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                              finished history + idempotent rating jobs</text>
+</svg>

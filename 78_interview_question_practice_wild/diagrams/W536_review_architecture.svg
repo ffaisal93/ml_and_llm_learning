@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="845" height="322" viewBox="0 0 845 322" role="img" aria-labelledby="title desc">
+<title id="title">W536. Real-time Market Data Distribution System — architecture</title>
+<desc id="desc">Upstream A → Loader A ─UDP copies─┐
+Upstream B → Loader B ─UDP copies─┼→ every Processor
+Upstream C → Loader C ─UDP copies─┘       ↓
+                              per-source reorder / dedup / gap recovery
+                                        ↓
+                              normalized durable event store
+                                        ↓
+                               subscriber distribution tier
+Loaders: bounded replay log ← replay/snapshot requests from processors
+</desc>
+<rect width="845" height="322" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Upstream A → Loader A ─UDP copies─┐</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Upstream B → Loader B ─UDP copies─┼→ every Processor</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Upstream C → Loader C ─UDP copies─┘       ↓</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                              per-source reorder / dedup / gap recovery</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                        ↓</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                              normalized durable event store</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                        ↓</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                               subscriber distribution tier</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Loaders: bounded replay log ← replay/snapshot requests from processors</text>
+</svg>

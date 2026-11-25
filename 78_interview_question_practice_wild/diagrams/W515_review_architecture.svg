@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="779" height="378" viewBox="0 0 779 378" role="img" aria-labelledby="title desc">
+<title id="title">W515. Design a Real-Time Multiplayer Game Backend — architecture</title>
+<desc id="desc">Client → nearest healthy region / auth → matchmaking queues
+                                             ↓
+                                     match + server allocator
+                                             ↓
+Client input / snapshots ↔ authoritative match owner (20 Hz)
+                                             ↓
+                             durable checkpoints / result outbox
+                                             ↓
+                                account/progress result service
+                                             ↓
+                              home-account DB → regional replicas
+</desc>
+<rect width="779" height="378" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Client → nearest healthy region / auth → matchmaking queues</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                             ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                     match + server allocator</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                             ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Client input / snapshots ↔ authoritative match owner (20 Hz)</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                             ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                             durable checkpoints / result outbox</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                             ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                account/progress result service</text>
+<text x="32" y="292" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                             ↓</text>
+<text x="32" y="320" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                              home-account DB → regional replicas</text>
+</svg>
