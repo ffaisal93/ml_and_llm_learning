@@ -4,6 +4,12 @@
 
 All **547 question entries**, each with its question text and a worked solution, organized into six priority groups. Multi-part questions stay together; related variants and repeated titles remain separate entries.
 
+## Expanded explanations and diagrams
+
+- [RAG and agent systems](08_rag_and_agents.md): ten complete answers with offline Python examples, equations, architecture diagrams and failure analysis.
+- [ML system design](09_ml_system_design.md): ten complete answers connecting the product decision to data, models, serving, monitoring and recovery.
+- [Architecture diagram index](SYSTEM_DESIGN_DIAGRAMS.md): diagrams accompanying 317 design-oriented question entries. System, object and workflow diagrams are chosen for the question's scope.
+
 ## Start with a priority group
 
 | Group | Study positions | Count | Open |

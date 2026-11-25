@@ -1285,3 +1285,4 @@
   - [Study Plan](78_interview_question_practice_wild/STUDY_PLAN.md)
   - [Coverage Check](78_interview_question_practice_wild/COVERAGE.md)
   - [Reading the Worked Solutions](78_interview_question_practice_wild/READABILITY.md)
+  - [Architecture Diagram Index](78_interview_question_practice_wild/SYSTEM_DESIGN_DIAGRAMS.md)

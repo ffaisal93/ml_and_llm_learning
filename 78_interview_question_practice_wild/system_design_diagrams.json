@@ -1,0 +1,2322 @@
+[
+  {
+    "id": "F071",
+    "title": "RAG architecture: indexing, retrieval and grounded answers",
+    "diagram": "diagrams/F071_rag_architecture.svg",
+    "architecture_family": "rag",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F073",
+    "title": "Hybrid search: lexical and semantic candidates, fusion and reranking",
+    "diagram": "diagrams/F073_hybrid_retrieval.svg",
+    "architecture_family": "search",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F076",
+    "title": "Bounded agent loop: proposals, authorized tools and verified results",
+    "diagram": "diagrams/F076_agent_loop.svg",
+    "architecture_family": "agent",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F079",
+    "title": "Trust boundary: retrieved text does not grant capabilities",
+    "diagram": "diagrams/F079_trust_boundary.svg",
+    "architecture_family": "injection",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F081",
+    "title": "How to structure an ML system-design answer",
+    "diagram": "diagrams/F081_ml_design_process.svg",
+    "architecture_family": "planning",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F082",
+    "title": "Recommendation: candidates, ranking and feedback",
+    "diagram": "diagrams/F082_recommendation.svg",
+    "architecture_family": "ranking",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F083",
+    "title": "Multimodal moderation: decisions and human review",
+    "diagram": "diagrams/F083_moderation.svg",
+    "architecture_family": "moderation",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F084",
+    "title": "Risk detection: event-time features and action policy",
+    "diagram": "diagrams/F084_risk_detection.svg",
+    "architecture_family": "fraud",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F085",
+    "title": "Image-text retrieval: compatible embeddings and ranked results",
+    "diagram": "diagrams/F085_image_text.svg",
+    "architecture_family": "search",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F086",
+    "title": "Feature platform: historical truth and online availability",
+    "diagram": "diagrams/F086_features.svg",
+    "architecture_family": "feature",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F087",
+    "title": "Model rollout: shadow, canary, promotion and rollback",
+    "diagram": "diagrams/F087_rollout.svg",
+    "architecture_family": "rollout",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F088",
+    "title": "Evaluation platform: immutable runs, judgments and reports",
+    "diagram": "diagrams/F088_evaluation.svg",
+    "architecture_family": "evaluation",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F089",
+    "title": "Training-data mining: permitted logs, validation and clean labels",
+    "diagram": "diagrams/F089_trajectory_data.svg",
+    "architecture_family": "feature",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F090",
+    "title": "Rate-limited classification: durable work and validated results",
+    "diagram": "diagrams/F090_classification.svg",
+    "architecture_family": "llm_batch",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "W026",
+    "title": "Design a GPU Inference Serving System",
+    "diagram": "diagrams/W026_architecture.svg",
+    "architecture_family": "serving",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W029",
+    "title": "Design a GPU Scheduling Platform",
+    "diagram": "diagrams/W029_architecture.svg",
+    "architecture_family": "scheduler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W030",
+    "title": "Design ChatGPT: A Conversational LLM Serving Platform",
+    "diagram": "diagrams/W030_architecture.svg",
+    "architecture_family": "serving",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W031",
+    "title": "ML System Design: Inference Serving with Back-of-Envelope Capacity Planning",
+    "diagram": "diagrams/W031_architecture.svg",
+    "architecture_family": "serving",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W033",
+    "title": "Design a Distributed Training Platform for Foundation Models",
+    "diagram": "diagrams/W033_architecture.svg",
+    "architecture_family": "training",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W034",
+    "title": "Distributed LLM Training Data Pipeline",
+    "diagram": "diagrams/W034_architecture.svg",
+    "architecture_family": "training",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W037",
+    "title": "Design Model Weight Distribution",
+    "diagram": "diagrams/W037_architecture.svg",
+    "architecture_family": "weights",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W038",
+    "title": "Design a Distributed AI Model Downloader",
+    "diagram": "diagrams/W038_architecture.svg",
+    "architecture_family": "weights",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W039",
+    "title": "Build an LLM Evaluation Harness with Ollama Integration",
+    "diagram": "diagrams/W039_architecture.svg",
+    "architecture_family": "evaluation",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W042",
+    "title": "RAG Notebook (ML Coding)",
+    "diagram": "diagrams/W042_architecture.svg",
+    "architecture_family": "rag",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W043",
+    "title": "RAG Search Augmentation and Internal Chatbot",
+    "diagram": "diagrams/W043_architecture.svg",
+    "architecture_family": "rag",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W044",
+    "title": "RAG Q&A Chatbot — ML / AI Technical Deep Dive",
+    "diagram": "diagrams/W044_architecture.svg",
+    "architecture_family": "rag",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W045",
+    "title": "Design a Grounded AI Chatbot App",
+    "diagram": "diagrams/W045_architecture.svg",
+    "architecture_family": "rag",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W046",
+    "title": "Design Siri's Grounded Response Generation",
+    "diagram": "diagrams/W046_architecture.svg",
+    "architecture_family": "rag",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W047",
+    "title": "Layered Defenses Against LLM Jailbreaks",
+    "diagram": "diagrams/W047_architecture.svg",
+    "architecture_family": "injection",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W048",
+    "title": "LLM SQL Chatbot Access Control and Query Safety",
+    "diagram": "diagrams/W048_architecture.svg",
+    "architecture_family": "acl",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W049",
+    "title": "Design a Chatbot Personalization / Memory System",
+    "diagram": "diagrams/W049_architecture.svg",
+    "architecture_family": "memory",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W050",
+    "title": "Design Prompt Playground",
+    "diagram": "diagrams/W050_architecture.svg",
+    "architecture_family": "playground",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W051",
+    "title": "Live Coding: Replace a Heuristic Terminal Game with an LLM-Driven Agent",
+    "diagram": "diagrams/W051_architecture.svg",
+    "architecture_family": "agent",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W052",
+    "title": "Agents / Coding with LLMs",
+    "diagram": "diagrams/W052_architecture.svg",
+    "architecture_family": "agent",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W053",
+    "title": "Design an LLM-Agent System for Automation (Ticket Triage / Code Review)",
+    "diagram": "diagrams/W053_architecture.svg",
+    "architecture_family": "agent",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W054",
+    "title": "Evaluating an LLM Agent with Subjective, Nondeterministic Outputs",
+    "diagram": "diagrams/W054_architecture.svg",
+    "architecture_family": "evaluation",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W055",
+    "title": "Design Durable Execution for Long-Running Agent Queries",
+    "diagram": "diagrams/W055_architecture.svg",
+    "architecture_family": "durable_agent",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W056",
+    "title": "ML Model Design — Prompt-to-Design Generation",
+    "diagram": "diagrams/W056_architecture.svg",
+    "architecture_family": "media",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W057",
+    "title": "ML Design: Recruiter Hiring Pipeline Assistant",
+    "diagram": "diagrams/W057_architecture.svg",
+    "architecture_family": "recruiting",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W058",
+    "title": "Design an LLM-Backed Customer-Service Chat System with Failure Handling",
+    "diagram": "diagrams/W058_architecture.svg",
+    "architecture_family": "support",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W059",
+    "title": "ML System to Detect Harmful LLM Content",
+    "diagram": "diagrams/W059_architecture.svg",
+    "architecture_family": "moderation",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W060",
+    "title": "Designing a Harmful Content Detection System",
+    "diagram": "diagrams/W060_architecture.svg",
+    "architecture_family": "moderation",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W061",
+    "title": "Design an ML Fraud Detection System",
+    "diagram": "diagrams/W061_architecture.svg",
+    "architecture_family": "fraud",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W062",
+    "title": "Design an Account Takeover Prediction System",
+    "diagram": "diagrams/W062_architecture.svg",
+    "architecture_family": "fraud",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W063",
+    "title": "ML System Design: Search & Ranking",
+    "diagram": "diagrams/W063_architecture.svg",
+    "architecture_family": "search",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W064",
+    "title": "ML System Design: Dynamic K in Retrieval Stage",
+    "diagram": "diagrams/W064_architecture.svg",
+    "architecture_family": "search",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W065",
+    "title": "Video Recommendation",
+    "diagram": "diagrams/W065_architecture.svg",
+    "architecture_family": "ranking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W066",
+    "title": "Homepage Video Recommendation System",
+    "diagram": "diagrams/W066_architecture.svg",
+    "architecture_family": "ranking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W067",
+    "title": "Design Meta Ads Ranking",
+    "diagram": "diagrams/W067_architecture.svg",
+    "architecture_family": "ads",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W068",
+    "title": "Design App Store Search and Ranking",
+    "diagram": "diagrams/W068_architecture.svg",
+    "architecture_family": "search",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W069",
+    "title": "Airbnb Experiences — Search Ranking (ML Design)",
+    "diagram": "diagrams/W069_architecture.svg",
+    "architecture_family": "search",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W070",
+    "title": "ML System Design: Restaurant / Store Recommendation",
+    "diagram": "diagrams/W070_architecture.svg",
+    "architecture_family": "ranking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W100",
+    "title": "MLE Deployment, Monitoring & Latency Optimisation",
+    "diagram": "diagrams/W100_architecture.svg",
+    "architecture_family": "rollout",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W111",
+    "title": "Design a ChatGPT-like Conversational AI System",
+    "diagram": "diagrams/W111_architecture.svg",
+    "architecture_family": "serving",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W113",
+    "title": "Agent Tool-Use System Design (AML Volcano Engine)",
+    "diagram": "diagrams/W113_architecture.svg",
+    "architecture_family": "agent",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W114",
+    "title": "Agentic Workflow for 1-Hour Movie Generation",
+    "diagram": "diagrams/W114_architecture.svg",
+    "architecture_family": "media",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W115",
+    "title": "Design a Campaign Outreach Workflow Engine",
+    "diagram": "diagrams/W115_architecture.svg",
+    "architecture_family": "durable_agent",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W116",
+    "title": "Design a Customer-Service Chatbot for Capital One",
+    "diagram": "diagrams/W116_architecture.svg",
+    "architecture_family": "support",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W117",
+    "title": "Jira AI Auto-Fix Pipeline",
+    "diagram": "diagrams/W117_architecture.svg",
+    "architecture_family": "code_review",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W118",
+    "title": "ML Feature Store",
+    "diagram": "diagrams/W118_architecture.svg",
+    "architecture_family": "feature",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W139",
+    "title": "Design an A/B Testing / Experimentation Platform",
+    "diagram": "diagrams/W139_architecture.svg",
+    "architecture_family": "experiment",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W144",
+    "title": "Design an API for Embedding and Classification Results",
+    "diagram": "diagrams/W144_architecture.svg",
+    "architecture_family": "serving",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W145",
+    "title": "Design Sora Video Generation Scheduling with Preemption",
+    "diagram": "diagrams/W145_architecture.svg",
+    "architecture_family": "scheduler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W150",
+    "title": "CI/CD Job Scheduler Design using Kubernetes and Docker",
+    "diagram": "diagrams/W150_architecture.svg",
+    "architecture_family": "scheduler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W151",
+    "title": "Cloud IDE",
+    "diagram": "diagrams/W151_architecture.svg",
+    "architecture_family": "notebook",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W152",
+    "title": "Compute Resource Scheduling for ML Jobs",
+    "diagram": "diagrams/W152_architecture.svg",
+    "architecture_family": "scheduler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W153",
+    "title": "Design a Hosted ML Notebook Platform",
+    "diagram": "diagrams/W153_architecture.svg",
+    "architecture_family": "notebook",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W154",
+    "title": "Design a Job Scheduler / ETL Pipeline",
+    "diagram": "diagrams/W154_architecture.svg",
+    "architecture_family": "scheduler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W155",
+    "title": "Design a Lab-Wide Experiment Platform for Embodied AI",
+    "diagram": "diagrams/W155_architecture.svg",
+    "architecture_family": "lab",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W156",
+    "title": "Design a Multistage CPU and GPU Job Scheduler",
+    "diagram": "diagrams/W156_architecture.svg",
+    "architecture_family": "scheduler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W157",
+    "title": "GPU Cloud VM Manager - Provider-Agnostic CLI and Fleet Manager",
+    "diagram": "diagrams/W157_architecture.svg",
+    "architecture_family": "fleet",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W158",
+    "title": "HPC Host Control Plane and Job Coordination",
+    "diagram": "diagrams/W158_architecture.svg",
+    "architecture_family": "fleet",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W159",
+    "title": "ML Platform Portal Full-Stack Design",
+    "diagram": "diagrams/W159_architecture.svg",
+    "architecture_family": "notebook",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W162",
+    "title": "Content Moderation System Design",
+    "diagram": "diagrams/W162_architecture.svg",
+    "architecture_family": "moderation",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W163",
+    "title": "Design a Game Recommendation System",
+    "diagram": "diagrams/W163_architecture.svg",
+    "architecture_family": "ranking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W164",
+    "title": "Design a Nearby-Place Recommender (Location-Aware)",
+    "diagram": "diagrams/W164_architecture.svg",
+    "architecture_family": "ranking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W165",
+    "title": "Design a Recommendation System for a New Product (the Cold-Start Problem)",
+    "diagram": "diagrams/W165_architecture.svg",
+    "architecture_family": "ranking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W166",
+    "title": "Design a Recommendation System for a New Product (the Cold-Start Problem)",
+    "diagram": "diagrams/W166_architecture.svg",
+    "architecture_family": "ranking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W167",
+    "title": "Design a Reels Short-Video Recommender",
+    "diagram": "diagrams/W167_architecture.svg",
+    "architecture_family": "ranking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W168",
+    "title": "Design a Restaurant Recommendation and Ranking System for a Food Delivery App",
+    "diagram": "diagrams/W168_architecture.svg",
+    "architecture_family": "ranking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W169",
+    "title": "Design an Online Fraud Detection Pipeline",
+    "diagram": "diagrams/W169_architecture.svg",
+    "architecture_family": "fraud",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W170",
+    "title": "Design Harmful-Content Detection (Weapon Sales) at Scale",
+    "diagram": "diagrams/W170_architecture.svg",
+    "architecture_family": "moderation",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W171",
+    "title": "Design Multi-Source Notification Ranking",
+    "diagram": "diagrams/W171_architecture.svg",
+    "architecture_family": "ranking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W172",
+    "title": "Design the Uber Eats Search System",
+    "diagram": "diagrams/W172_architecture.svg",
+    "architecture_family": "search",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W173",
+    "title": "Home Page — Search + Availability + Ranking",
+    "diagram": "diagrams/W173_architecture.svg",
+    "architecture_family": "search",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W174",
+    "title": "Improve Booking via Cover Photo Selection (ML Design)",
+    "diagram": "diagrams/W174_architecture.svg",
+    "architecture_family": "ranking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W175",
+    "title": "Learning / Job Recommendation Ranking",
+    "diagram": "diagrams/W175_architecture.svg",
+    "architecture_family": "ranking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W176",
+    "title": "Listing Lifetime Value — Estimation (ML Design)",
+    "diagram": "diagrams/W176_architecture.svg",
+    "architecture_family": "forecast",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W177",
+    "title": "ML News Recommendation System Design",
+    "diagram": "diagrams/W177_architecture.svg",
+    "architecture_family": "ranking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W178",
+    "title": "ML System Design - Predict Item Category",
+    "diagram": "diagrams/W178_architecture.svg",
+    "architecture_family": "classifier",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W179",
+    "title": "ML System Design — Asset / Template Recommendation & Feed",
+    "diagram": "diagrams/W179_architecture.svg",
+    "architecture_family": "ranking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W180",
+    "title": "ML System Design: Bad / Unsafe Content Detection",
+    "diagram": "diagrams/W180_architecture.svg",
+    "architecture_family": "moderation",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W181",
+    "title": "ML System Design: Behavior Prediction from Sensor + Camera Data",
+    "diagram": "diagrams/W181_architecture.svg",
+    "architecture_family": "robot",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W182",
+    "title": "ML System Design: Notification Ranking & Ads CTR",
+    "diagram": "diagrams/W182_architecture.svg",
+    "architecture_family": "ads",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W183",
+    "title": "ML System Design: Product Categorization / Taxonomy",
+    "diagram": "diagrams/W183_architecture.svg",
+    "architecture_family": "classifier",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W184",
+    "title": "ML System Design: Recsys, Chatbot, Image Classifier",
+    "diagram": "diagrams/W184_architecture.svg",
+    "architecture_family": "mixed_ml",
+    "scope": "answer planning"
+  },
+  {
+    "id": "W185",
+    "title": "ML System Design: Search, Ranking, Experimentation",
+    "diagram": "diagrams/W185_architecture.svg",
+    "architecture_family": "search",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W186",
+    "title": "Model Delivery-Time Prediction for Online Orders",
+    "diagram": "diagrams/W186_architecture.svg",
+    "architecture_family": "forecast",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W187",
+    "title": "Post-Comment Ranking System",
+    "diagram": "diagrams/W187_architecture.svg",
+    "architecture_family": "ranking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W188",
+    "title": "Premium Product Recommendation System",
+    "diagram": "diagrams/W188_architecture.svg",
+    "architecture_family": "ranking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W189",
+    "title": "Property Rental Search System",
+    "diagram": "diagrams/W189_architecture.svg",
+    "architecture_family": "search",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W190",
+    "title": "Real-Time Fraud Detection System",
+    "diagram": "diagrams/W190_architecture.svg",
+    "architecture_family": "fraud",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W191",
+    "title": "Ride Request Demand Prediction by Geohash and Premium Multiplier",
+    "diagram": "diagrams/W191_architecture.svg",
+    "architecture_family": "forecast",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W192",
+    "title": "Short Video Recommendation & Ranking",
+    "diagram": "diagrams/W192_architecture.svg",
+    "architecture_family": "ranking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W193",
+    "title": "Snap Ads Ranking",
+    "diagram": "diagrams/W193_architecture.svg",
+    "architecture_family": "ads",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W194",
+    "title": "Spam Email Detection: Signals, Model, and Metrics",
+    "diagram": "diagrams/W194_architecture.svg",
+    "architecture_family": "classifier",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W195",
+    "title": "Support Ticket Routing & Claiming System",
+    "diagram": "diagrams/W195_architecture.svg",
+    "architecture_family": "ticket_routing",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W213",
+    "title": "AI Personalized Recruiter Message Generation",
+    "diagram": "diagrams/W213_architecture.svg",
+    "architecture_family": "recruiting",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W214",
+    "title": "Design a Customer Review Page with AI Summarization",
+    "diagram": "diagrams/W214_architecture.svg",
+    "architecture_family": "rag",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W215",
+    "title": "Design an AI Prompt Playground",
+    "diagram": "diagrams/W215_architecture.svg",
+    "architecture_family": "playground",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W216",
+    "title": "Design an LLM Flight Search and Booking Agent",
+    "diagram": "diagrams/W216_architecture.svg",
+    "architecture_family": "agent",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W217",
+    "title": "Design LinkedIn's Skills Extraction & Taxonomy Pipeline",
+    "diagram": "diagrams/W217_architecture.svg",
+    "architecture_family": "classifier",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W218",
+    "title": "Tweet Insight Pipeline with Rate-Limited LLM Classification",
+    "diagram": "diagrams/W218_architecture.svg",
+    "architecture_family": "llm_batch",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W219",
+    "title": "Twitter Insight Platform with Rate Limiting and Dockerization",
+    "diagram": "diagrams/W219_architecture.svg",
+    "architecture_family": "llm_batch",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W231",
+    "title": "Design a Distributed Rate Limiter with Redis Lua",
+    "diagram": "diagrams/W231_architecture.svg",
+    "architecture_family": "rate",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W232",
+    "title": "Design a Network Throttling / Rate-Limiting System",
+    "diagram": "diagrams/W232_architecture.svg",
+    "architecture_family": "rate",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W233",
+    "title": "Design a Quota System",
+    "diagram": "diagrams/W233_architecture.svg",
+    "architecture_family": "rate",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W234",
+    "title": "Design an API Rate Limiter",
+    "diagram": "diagrams/W234_architecture.svg",
+    "architecture_family": "rate",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W235",
+    "title": "Design and Implement a Rate Limiter",
+    "diagram": "diagrams/W235_architecture.svg",
+    "architecture_family": "rate",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W236",
+    "title": "Rate Limiter Algorithm Design",
+    "diagram": "diagrams/W236_architecture.svg",
+    "architecture_family": "rate",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W237",
+    "title": "Rate Limiter Design (OOD)",
+    "diagram": "diagrams/W237_architecture.svg",
+    "architecture_family": "rate",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W238",
+    "title": "Rate Limiter for Expensive API with User-Configurable Monthly Quota",
+    "diagram": "diagrams/W238_architecture.svg",
+    "architecture_family": "rate",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W239",
+    "title": "Rate Limiter — Inbound + Outbound",
+    "diagram": "diagrams/W239_architecture.svg",
+    "architecture_family": "rate",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W243",
+    "title": "Versioned Social Network with Snapshots",
+    "diagram": "diagrams/W243_architecture.svg",
+    "architecture_family": "versioned_graph",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W247",
+    "title": "Thread-Safe Cache with Lock and Condition Variable",
+    "diagram": "diagrams/W247_architecture.svg",
+    "architecture_family": "thread_cache",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W248",
+    "title": "Thread-Safe Job Scheduler with Cancellation",
+    "diagram": "diagrams/W248_architecture.svg",
+    "architecture_family": "thread_scheduler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W249",
+    "title": "Design a File-Sharing Permission Control System",
+    "diagram": "diagrams/W249_architecture.svg",
+    "architecture_family": "acl",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W250",
+    "title": "Design an ACL Authorization Service",
+    "diagram": "diagrams/W250_architecture.svg",
+    "architecture_family": "acl",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W251",
+    "title": "Design an IP Blocking Policy Decision Service",
+    "diagram": "diagrams/W251_architecture.svg",
+    "architecture_family": "ip_policy",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W254",
+    "title": "Implement a Leader-Follower Distributed System with Membership, Failover Detection, and Leader Election (Practical pair-programming)",
+    "diagram": "diagrams/W254_architecture.svg",
+    "architecture_family": "replication",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W257",
+    "title": "Video-Keyword Association Review System",
+    "diagram": "diagrams/W257_architecture.svg",
+    "architecture_family": "evaluation",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W258",
+    "title": "Design a Large-Scale News Feed",
+    "diagram": "diagrams/W258_architecture.svg",
+    "architecture_family": "feed",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W259",
+    "title": "Design a Status/Feed App",
+    "diagram": "diagrams/W259_architecture.svg",
+    "architecture_family": "feed",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W260",
+    "title": "Design Instagram",
+    "diagram": "diagrams/W260_architecture.svg",
+    "architecture_family": "feed",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W261",
+    "title": "Design Instagram / Facebook News Feed",
+    "diagram": "diagrams/W261_architecture.svg",
+    "architecture_family": "feed",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W262",
+    "title": "Design Twitter: Posting, Retrieval and Search",
+    "diagram": "diagrams/W262_architecture.svg",
+    "architecture_family": "feed",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W263",
+    "title": "Designing Nextdoor Newsfeed User Interaction and Real-Time Feed System",
+    "diagram": "diagrams/W263_architecture.svg",
+    "architecture_family": "feed",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W264",
+    "title": "Designing YouTube",
+    "diagram": "diagrams/W264_architecture.svg",
+    "architecture_family": "video",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W265",
+    "title": "Product Feed and Shopping Recommendation System",
+    "diagram": "diagrams/W265_architecture.svg",
+    "architecture_family": "ranking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W266",
+    "title": "Snap Story or Spotlight Feed Backend",
+    "diagram": "diagrams/W266_architecture.svg",
+    "architecture_family": "ranking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W267",
+    "title": "Distributed Device Control",
+    "diagram": "diagrams/W267_architecture.svg",
+    "architecture_family": "device",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W268",
+    "title": "Async Job Scheduler",
+    "diagram": "diagrams/W268_architecture.svg",
+    "architecture_family": "scheduler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W269",
+    "title": "Design a Distributed Job Scheduler with Cron, Pause, Resume",
+    "diagram": "diagrams/W269_architecture.svg",
+    "architecture_family": "scheduler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W270",
+    "title": "Design a Distributed Task Scheduler",
+    "diagram": "diagrams/W270_architecture.svg",
+    "architecture_family": "scheduler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W271",
+    "title": "Design a Multi-Resource Loader/Scheduler",
+    "diagram": "diagrams/W271_architecture.svg",
+    "architecture_family": "scheduler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W272",
+    "title": "Design an Async Job / Task System",
+    "diagram": "diagrams/W272_architecture.svg",
+    "architecture_family": "scheduler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W273",
+    "title": "Distributed Job Scheduler / Calendar Service",
+    "diagram": "diagrams/W273_architecture.svg",
+    "architecture_family": "scheduler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W274",
+    "title": "Job Scheduler System Design",
+    "diagram": "diagrams/W274_architecture.svg",
+    "architecture_family": "scheduler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W275",
+    "title": "Job Scheduler with Task Dependencies (DAG Executor)",
+    "diagram": "diagrams/W275_architecture.svg",
+    "architecture_family": "scheduler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W276",
+    "title": "Design a Distributed Metrics System",
+    "diagram": "diagrams/W276_architecture.svg",
+    "architecture_family": "metrics",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W277",
+    "title": "Design a Metric Counter Library",
+    "diagram": "diagrams/W277_architecture.svg",
+    "architecture_family": "counter_library",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W278",
+    "title": "Design a Real-Time Log Processing System",
+    "diagram": "diagrams/W278_architecture.svg",
+    "architecture_family": "logs",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W279",
+    "title": "Design a Real-Time Metrics Monitoring System",
+    "diagram": "diagrams/W279_architecture.svg",
+    "architecture_family": "metrics",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W280",
+    "title": "Design a User Behavior / Metrics Monitoring Aggregator",
+    "diagram": "diagrams/W280_architecture.svg",
+    "architecture_family": "metrics",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W281",
+    "title": "Design an Observability Logging System (Emit and Query)",
+    "diagram": "diagrams/W281_architecture.svg",
+    "architecture_family": "logs",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W282",
+    "title": "Metrics and Monitoring Platform",
+    "diagram": "diagrams/W282_architecture.svg",
+    "architecture_family": "metrics",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W283",
+    "title": "Metrics Collection, Alerting & Click Counters",
+    "diagram": "diagrams/W283_architecture.svg",
+    "architecture_family": "metrics",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W286",
+    "title": "Telemetry Collector and GPU Utilization Dashboard",
+    "diagram": "diagrams/W286_architecture.svg",
+    "architecture_family": "metrics",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W288",
+    "title": "Parallel Batch Image Transformation Pipeline",
+    "diagram": "diagrams/W288_architecture.svg",
+    "architecture_family": "media",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W289",
+    "title": "Design a Release Deployment Workflow with Staged Rollout",
+    "diagram": "diagrams/W289_architecture.svg",
+    "architecture_family": "rollout",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W290",
+    "title": "Kubernetes Controller for Pod Balance",
+    "diagram": "diagrams/W290_architecture.svg",
+    "architecture_family": "fleet",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W293",
+    "title": "Design a ROS-like Pub/Sub System",
+    "diagram": "diagrams/W293_architecture.svg",
+    "architecture_family": "pubsub",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W294",
+    "title": "Design an In-Process Pub-Sub Messaging Broker (OOD)",
+    "diagram": "diagrams/W294_architecture.svg",
+    "architecture_family": "pubsub",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W304",
+    "title": "Ads Audience Targeting / Custom Audience System",
+    "diagram": "diagrams/W304_architecture.svg",
+    "architecture_family": "ads",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W306",
+    "title": "Comment-Prediction ML System",
+    "diagram": "diagrams/W306_architecture.svg",
+    "architecture_family": "classifier",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W307",
+    "title": "Design a Credit-Approval Risk Engine",
+    "diagram": "diagrams/W307_architecture.svg",
+    "architecture_family": "credit_workflow",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W308",
+    "title": "Design a Scalable Ad Marketplace System",
+    "diagram": "diagrams/W308_architecture.svg",
+    "architecture_family": "ads",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W309",
+    "title": "Design Image Copyright-Violation Detection",
+    "diagram": "diagrams/W309_architecture.svg",
+    "architecture_family": "copyright",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W310",
+    "title": "Design Robot Human-Avoidance (Open-Ended)",
+    "diagram": "diagrams/W310_architecture.svg",
+    "architecture_family": "robot",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W311",
+    "title": "ML System Design: Game Genre Classification From Scratch",
+    "diagram": "diagrams/W311_architecture.svg",
+    "architecture_family": "classifier",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W325",
+    "title": "DAU / MAU Internal Analytics System",
+    "diagram": "diagrams/W325_architecture.svg",
+    "architecture_family": "dashboard",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W326",
+    "title": "Design a Financial Dashboard Backend",
+    "diagram": "diagrams/W326_architecture.svg",
+    "architecture_family": "dashboard",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W327",
+    "title": "Design an Ad Click Aggregation Pipeline",
+    "diagram": "diagrams/W327_architecture.svg",
+    "architecture_family": "dashboard",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W328",
+    "title": "Design an Analytics Metrics Dashboard for ChatGPT / LLM Service",
+    "diagram": "diagrams/W328_architecture.svg",
+    "architecture_family": "dashboard",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W329",
+    "title": "Design Coinbase Explore Real-Time Price Dashboard",
+    "diagram": "diagrams/W329_architecture.svg",
+    "architecture_family": "market_data",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W344",
+    "title": "WAL Log Enrichment CDC Pipeline at 1M writes/sec",
+    "diagram": "diagrams/W344_architecture.svg",
+    "architecture_family": "cdc",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W345",
+    "title": "Design a Post Search Engine (Mini Elasticsearch)",
+    "diagram": "diagrams/W345_architecture.svg",
+    "architecture_family": "search",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W346",
+    "title": "Design Apple News Search (No ML, V1)",
+    "diagram": "diagrams/W346_architecture.svg",
+    "architecture_family": "search",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W347",
+    "title": "Design Post Search with Keyword Exclusion and Frequency Ranking",
+    "diagram": "diagrams/W347_architecture.svg",
+    "architecture_family": "search",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W348",
+    "title": "Design Search Autocomplete / Typeahead",
+    "diagram": "diagrams/W348_architecture.svg",
+    "architecture_family": "autocomplete",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W349",
+    "title": "Type-Ahead / Autocomplete Suggestions",
+    "diagram": "diagrams/W349_architecture.svg",
+    "architecture_family": "autocomplete",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W350",
+    "title": "Ads Frequency Cap and Limiter System",
+    "diagram": "diagrams/W350_architecture.svg",
+    "architecture_family": "rate",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W351",
+    "title": "Design a Like / Unlike Counter Service at Scale",
+    "diagram": "diagrams/W351_architecture.svg",
+    "architecture_family": "counter",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W352",
+    "title": "Design a Top-K trending items service",
+    "diagram": "diagrams/W352_architecture.svg",
+    "architecture_family": "topk",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W353",
+    "title": "Design a Trending-Hashtags Detection System",
+    "diagram": "diagrams/W353_architecture.svg",
+    "architecture_family": "topk",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W354",
+    "title": "Design State-Wide Temperature Sensor Ingestion",
+    "diagram": "diagrams/W354_architecture.svg",
+    "architecture_family": "metrics",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W355",
+    "title": "Near-Real-Time Friend-Played-Game Counter",
+    "diagram": "diagrams/W355_architecture.svg",
+    "architecture_family": "counter",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W356",
+    "title": "Real-time status counting system design",
+    "diagram": "diagrams/W356_architecture.svg",
+    "architecture_family": "status_count",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W357",
+    "title": "Recent Like Count and Top Posts in a Sliding Window",
+    "diagram": "diagrams/W357_architecture.svg",
+    "architecture_family": "topk",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W358",
+    "title": "Social Media Sentiment Tracking System",
+    "diagram": "diagrams/W358_architecture.svg",
+    "architecture_family": "sentiment",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W359",
+    "title": "Streaming Social-Media Mentions and Aggregation",
+    "diagram": "diagrams/W359_architecture.svg",
+    "architecture_family": "sentiment",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W360",
+    "title": "System Design — Event Ingestion + Top-K Aggregation",
+    "diagram": "diagrams/W360_architecture.svg",
+    "architecture_family": "topk",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W361",
+    "title": "Top-K Popular Items Over a Rolling Window",
+    "diagram": "diagrams/W361_architecture.svg",
+    "architecture_family": "topk",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W362",
+    "title": "Trending System / Top-K Hot Files",
+    "diagram": "diagrams/W362_architecture.svg",
+    "architecture_family": "topk",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W363",
+    "title": "L6 Staff System Design Loop",
+    "diagram": "diagrams/W363_architecture.svg",
+    "architecture_family": "planning",
+    "scope": "answer planning"
+  },
+  {
+    "id": "W364",
+    "title": "System Design for Full Stack Applications",
+    "diagram": "diagrams/W364_architecture.svg",
+    "architecture_family": "planning",
+    "scope": "answer planning"
+  },
+  {
+    "id": "W368",
+    "title": "Python Data Structure Design for Game Metadata and Related Discord Servers",
+    "diagram": "diagrams/W368_architecture.svg",
+    "architecture_family": "game_metadata",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W369",
+    "title": "Simulation-style coding problem with scaling follow-up (mini system design)",
+    "diagram": "diagrams/W369_architecture.svg",
+    "architecture_family": "planning",
+    "scope": "answer planning"
+  },
+  {
+    "id": "W370",
+    "title": "Design a Food Review System with Reward Bonus",
+    "diagram": "diagrams/W370_architecture.svg",
+    "architecture_family": "review_reward",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W372",
+    "title": "Design a Polling Schedule with a Boot State and a Live State",
+    "diagram": "diagrams/W372_architecture.svg",
+    "architecture_family": "poller",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W373",
+    "title": "Cross-Domain SSO After an Acquisition, and OIDC Across Sites",
+    "diagram": "diagrams/W373_architecture.svg",
+    "architecture_family": "sso",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W374",
+    "title": "Deep Dive — What Happens When You Access a URL",
+    "diagram": "diagrams/W374_architecture.svg",
+    "architecture_family": "web_request",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W375",
+    "title": "Design a Feature Flag System",
+    "diagram": "diagrams/W375_architecture.svg",
+    "architecture_family": "flags",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W376",
+    "title": "Design a Settings Store with User and Team Sync",
+    "diagram": "diagrams/W376_architecture.svg",
+    "architecture_family": "settings",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W377",
+    "title": "Designing HTTPS Load Balancer with SSL, HA, and Scaling",
+    "diagram": "diagrams/W377_architecture.svg",
+    "architecture_family": "load_balancer",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W378",
+    "title": "Global Config Deployment System",
+    "diagram": "diagrams/W378_architecture.svg",
+    "architecture_family": "flags",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W379",
+    "title": "Understanding Cross-Origin Issues and Their Solutions",
+    "diagram": "diagrams/W379_architecture.svg",
+    "architecture_family": "web_request",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W380",
+    "title": "Website Access: DNS, CDN, Protocols, Service Discovery, Authentication",
+    "diagram": "diagrams/W380_architecture.svg",
+    "architecture_family": "web_request",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W381",
+    "title": "Book Seller External Fan-Out Broker Service",
+    "diagram": "diagrams/W381_architecture.svg",
+    "architecture_family": "fanout",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W382",
+    "title": "Design a Distributed Web Crawler",
+    "diagram": "diagrams/W382_architecture.svg",
+    "architecture_family": "crawler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W383",
+    "title": "Design a Distributed Web Crawler",
+    "diagram": "diagrams/W383_architecture.svg",
+    "architecture_family": "crawler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W384",
+    "title": "Design a Web URL Crawler at Scale",
+    "diagram": "diagrams/W384_architecture.svg",
+    "architecture_family": "crawler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W385",
+    "title": "Image Link Crawler Service",
+    "diagram": "diagrams/W385_architecture.svg",
+    "architecture_family": "crawler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W386",
+    "title": "Priority-Based Rate-Limited Web Crawler Design",
+    "diagram": "diagrams/W386_architecture.svg",
+    "architecture_family": "crawler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W387",
+    "title": "Wikipedia Internet Archive / Web Crawler",
+    "diagram": "diagrams/W387_architecture.svg",
+    "architecture_family": "crawler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W388",
+    "title": "Design a Read-Once Password Sharing Service",
+    "diagram": "diagrams/W388_architecture.svg",
+    "architecture_family": "secret",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W389",
+    "title": "Design a Notification / Alert Fan-Out System",
+    "diagram": "diagrams/W389_architecture.svg",
+    "architecture_family": "notification",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W390",
+    "title": "Design a Notification System with Preferences and Fan-out",
+    "diagram": "diagrams/W390_architecture.svg",
+    "architecture_family": "notification",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W391",
+    "title": "Notification System",
+    "diagram": "diagrams/W391_architecture.svg",
+    "architecture_family": "notification",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W392",
+    "title": "Notification System (Event + Batch)",
+    "diagram": "diagrams/W392_architecture.svg",
+    "architecture_family": "notification",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W393",
+    "title": "Notification System — Push to Followers on New Post",
+    "diagram": "diagrams/W393_architecture.svg",
+    "architecture_family": "notification",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W394",
+    "title": "Stock Price Alert Notification System",
+    "diagram": "diagrams/W394_architecture.svg",
+    "architecture_family": "price_alert",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W395",
+    "title": "Daily Puzzle Submission and Leaderboard System",
+    "diagram": "diagrams/W395_architecture.svg",
+    "architecture_family": "leaderboard",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W396",
+    "title": "Game Leaderboard System Design",
+    "diagram": "diagrams/W396_architecture.svg",
+    "architecture_family": "leaderboard",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W397",
+    "title": "Design a Pickup Area Driver Queue",
+    "diagram": "diagrams/W397_architecture.svg",
+    "architecture_family": "pickup_queue",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W398",
+    "title": "Design a Waymo-like Autonomous-Vehicle Ride-Hailing App",
+    "diagram": "diagrams/W398_architecture.svg",
+    "architecture_family": "dispatch",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W399",
+    "title": "Design Multi-Carrier Package Delivery Routing System",
+    "diagram": "diagrams/W399_architecture.svg",
+    "architecture_family": "routing",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W400",
+    "title": "ML System Design: Choose Passenger Drop-off Location",
+    "diagram": "diagrams/W400_architecture.svg",
+    "architecture_family": "dropoff",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W401",
+    "title": "Perishable-Goods Tracking & Location System",
+    "diagram": "diagrams/W401_architecture.svg",
+    "architecture_family": "cold_chain",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W402",
+    "title": "Query System — Time + Geo Filtered User Activity",
+    "diagram": "diagrams/W402_architecture.svg",
+    "architecture_family": "geo",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W403",
+    "title": "Ride-Hailing System Design (Uber)",
+    "diagram": "diagrams/W403_architecture.svg",
+    "architecture_family": "dispatch",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W404",
+    "title": "Rider-Driver Matching System",
+    "diagram": "diagrams/W404_architecture.svg",
+    "architecture_family": "dispatch",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W405",
+    "title": "Airbnb Booking System Design",
+    "diagram": "diagrams/W405_architecture.svg",
+    "architecture_family": "reservation",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W406",
+    "title": "Airline Booking System: Search, Seat Hold, Purchase and Cancel",
+    "diagram": "diagrams/W406_architecture.svg",
+    "architecture_family": "reservation",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W407",
+    "title": "Design a Hotel Booking System with External Inventory",
+    "diagram": "diagrams/W407_architecture.svg",
+    "architecture_family": "external_booking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W408",
+    "title": "Design a Shopping Cart Service With Inventory Consistency",
+    "diagram": "diagrams/W408_architecture.svg",
+    "sequence": "diagrams/W408_checkout.svg",
+    "scope": "bespoke shopping-cart design"
+  },
+  {
+    "id": "W409",
+    "title": "Design a Ticketing System with Flash-Sale Concurrency",
+    "diagram": "diagrams/W409_architecture.svg",
+    "architecture_family": "reservation",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W410",
+    "title": "Design an Event Ticket Marketplace: Seat Holds and On-Sale Traffic",
+    "diagram": "diagrams/W410_architecture.svg",
+    "architecture_family": "reservation",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W411",
+    "title": "Design an Expedia-Style Hotel Reservation System",
+    "diagram": "diagrams/W411_architecture.svg",
+    "architecture_family": "external_booking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W412",
+    "title": "Design an Online Auction System with Concurrent Bidding",
+    "diagram": "diagrams/W412_architecture.svg",
+    "architecture_family": "auction",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W413",
+    "title": "Design Ticket Booking (Ticketmaster)",
+    "diagram": "diagrams/W413_architecture.svg",
+    "architecture_family": "reservation",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W414",
+    "title": "Design Ticketmaster - Event Booking and Seat Reservation",
+    "diagram": "diagrams/W414_architecture.svg",
+    "architecture_family": "reservation",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W415",
+    "title": "Million-User Flash Sale System",
+    "diagram": "diagrams/W415_architecture.svg",
+    "architecture_family": "reservation",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W416",
+    "title": "Online Shopping Cart System",
+    "diagram": "diagrams/W416_architecture.svg",
+    "architecture_family": "cart",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W417",
+    "title": "Realtime Auction Bidding System",
+    "diagram": "diagrams/W417_architecture.svg",
+    "architecture_family": "auction",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W418",
+    "title": "Shopping Cart Latency and Inventory",
+    "diagram": "diagrams/W418_architecture.svg",
+    "architecture_family": "cart",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W419",
+    "title": "Ticketmaster-Style Seat Booking Design",
+    "diagram": "diagrams/W419_architecture.svg",
+    "architecture_family": "reservation",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W420",
+    "title": "Waitlist System Design",
+    "diagram": "diagrams/W420_architecture.svg",
+    "architecture_family": "waitlist",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W421",
+    "title": "Core Dump Collection System Design",
+    "diagram": "diagrams/W421_architecture.svg",
+    "architecture_family": "core_dump",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W422",
+    "title": "Cross-Platform Client Logging Library",
+    "diagram": "diagrams/W422_architecture.svg",
+    "architecture_family": "logger",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W423",
+    "title": "Design an Audit Logs Service",
+    "diagram": "diagrams/W423_architecture.svg",
+    "architecture_family": "logs",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W424",
+    "title": "Environment-specific Logging Without Code Modifications",
+    "diagram": "diagrams/W424_architecture.svg",
+    "architecture_family": "logger",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W425",
+    "title": "Event Logger with batching, fsync, and group commit follow-ups",
+    "diagram": "diagrams/W425_architecture.svg",
+    "architecture_family": "logger",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W427",
+    "title": "Build a Discord-like TCP Chat Server with Slash Commands, Rooms, Reconnection, and Persistence",
+    "diagram": "diagrams/W427_architecture.svg",
+    "architecture_family": "chat",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W428",
+    "title": "Design a 1:1 Chat System (Pub/Sub, Partitioning, Multi-Region)",
+    "diagram": "diagrams/W428_architecture.svg",
+    "architecture_family": "chat",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W429",
+    "title": "Design a Chat Application with Group and Offline Support",
+    "diagram": "diagrams/W429_architecture.svg",
+    "architecture_family": "chat",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W430",
+    "title": "Design a Collaborative Spreadsheet (Google Sheets)",
+    "diagram": "diagrams/W430_architecture.svg",
+    "architecture_family": "spreadsheet",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W431",
+    "title": "Design a Real-Time Instant Messaging Application with Media Support",
+    "diagram": "diagrams/W431_architecture.svg",
+    "architecture_family": "chat",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W432",
+    "title": "Design a Slack-like Chat System with Deletion Semantics",
+    "diagram": "diagrams/W432_architecture.svg",
+    "architecture_family": "chat",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W433",
+    "title": "Group Chat / Messaging System Design",
+    "diagram": "diagrams/W433_architecture.svg",
+    "architecture_family": "chat",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W434",
+    "title": "Real-Time Collaborative Code Editor",
+    "diagram": "diagrams/W434_architecture.svg",
+    "architecture_family": "collab",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W435",
+    "title": "Real-Time Comment Threads (FigJam / Figma)",
+    "diagram": "diagrams/W435_architecture.svg",
+    "architecture_family": "comments",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W436",
+    "title": "Subreddit Live Chat System",
+    "diagram": "diagrams/W436_architecture.svg",
+    "architecture_family": "chat",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W437",
+    "title": "Credit Card Service with Points Earning and Redemption System",
+    "diagram": "diagrams/W437_architecture.svg",
+    "architecture_family": "ledger",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W438",
+    "title": "Credit Card System Design (OOD)",
+    "diagram": "diagrams/W438_architecture.svg",
+    "architecture_family": "ledger",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W439",
+    "title": "Design a Delayed Virtual-Currency Payment Scheduler",
+    "diagram": "diagrams/W439_architecture.svg",
+    "architecture_family": "payment_scheduler",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W440",
+    "title": "Design a Highly Reliable Account Balance System",
+    "diagram": "diagrams/W440_architecture.svg",
+    "architecture_family": "ledger",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W441",
+    "title": "Design a Ledger Service with Merchant Balance",
+    "diagram": "diagrams/W441_architecture.svg",
+    "architecture_family": "ledger",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W442",
+    "title": "Design a Loan Payment Distribution System",
+    "diagram": "diagrams/W442_architecture.svg",
+    "architecture_family": "loan",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W443",
+    "title": "Design a Multi-Chain Crypto Ledger & Wallet History",
+    "diagram": "diagrams/W443_architecture.svg",
+    "architecture_family": "chain_ledger",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W444",
+    "title": "Design a Payment Gateway System",
+    "diagram": "diagrams/W444_architecture.svg",
+    "architecture_family": "payment",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W445",
+    "title": "Design a Payment Webhook Delivery System",
+    "diagram": "diagrams/W445_architecture.svg",
+    "architecture_family": "webhook",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W446",
+    "title": "Design a Stripe-like Payment Platform",
+    "diagram": "diagrams/W446_architecture.svg",
+    "architecture_family": "payment",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W447",
+    "title": "Design a Wallet with Ledger and Idempotent Transfers",
+    "diagram": "diagrams/W447_architecture.svg",
+    "architecture_family": "ledger",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W448",
+    "title": "Design Capital One's Online Banking Application",
+    "diagram": "diagrams/W448_architecture.svg",
+    "architecture_family": "bank",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W449",
+    "title": "Subscription Billing System for 300M Subscribers",
+    "diagram": "diagrams/W449_architecture.svg",
+    "architecture_family": "billing",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W450",
+    "title": "Venmo-Style P2P Payment Data Model",
+    "diagram": "diagrams/W450_architecture.svg",
+    "architecture_family": "ledger",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W471",
+    "title": "Design a podcast publishing and feed system",
+    "diagram": "diagrams/W471_architecture.svg",
+    "architecture_family": "podcast",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W472",
+    "title": "Design a Topic-Based News Aggregator",
+    "diagram": "diagrams/W472_architecture.svg",
+    "architecture_family": "news",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W473",
+    "title": "Designing a Scalable News Aggregator System with Cassandra",
+    "diagram": "diagrams/W473_architecture.svg",
+    "architecture_family": "news",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W474",
+    "title": "Design a Distributed Blob Cache With a Separate Metadata Index",
+    "diagram": "diagrams/W474_architecture.svg",
+    "architecture_family": "blob_cache",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W475",
+    "title": "Design a High-Throughput Distributed Cache",
+    "diagram": "diagrams/W475_architecture.svg",
+    "architecture_family": "cache",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W476",
+    "title": "Design an S3-Style Blob Store with Deduplication",
+    "diagram": "diagrams/W476_architecture.svg",
+    "architecture_family": "blob",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W477",
+    "title": "Design Google Drive / Data Room",
+    "diagram": "diagrams/W477_architecture.svg",
+    "architecture_family": "file_sync",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W478",
+    "title": "Design Object Storage / File Sync (Dropbox / S3)",
+    "diagram": "diagrams/W478_architecture.svg",
+    "architecture_family": "file_sync",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W479",
+    "title": "Distributed File System Metadata Layer with Strong Consistency",
+    "diagram": "diagrams/W479_architecture.svg",
+    "architecture_family": "fs_metadata",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W480",
+    "title": "Distributed Key-Value Store Design",
+    "diagram": "diagrams/W480_architecture.svg",
+    "architecture_family": "kv",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W481",
+    "title": "File Backup System with Durable Manifest",
+    "diagram": "diagrams/W481_architecture.svg",
+    "architecture_family": "backup",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W482",
+    "title": "In-Memory KV Cache with Write-Ahead Log",
+    "diagram": "diagrams/W482_architecture.svg",
+    "architecture_family": "wal",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W483",
+    "title": "Single-Machine Key-Value Store with Filesystem Spill",
+    "diagram": "diagrams/W483_architecture.svg",
+    "architecture_family": "spill",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W484",
+    "title": "Design a Concurrent Image Upload System",
+    "diagram": "diagrams/W484_architecture.svg",
+    "architecture_family": "upload",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W485",
+    "title": "Design a URL Shortener",
+    "diagram": "diagrams/W485_architecture.svg",
+    "architecture_family": "short_url",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W486",
+    "title": "Design a URL Shortener (TinyURL)",
+    "diagram": "diagrams/W486_architecture.svg",
+    "architecture_family": "short_url",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W487",
+    "title": "Design a URL Shortener (TinyURL)",
+    "diagram": "diagrams/W487_architecture.svg",
+    "architecture_family": "short_url",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W488",
+    "title": "Design a URL Shortener with Aliases, Expiry and Click Analytics",
+    "diagram": "diagrams/W488_architecture.svg",
+    "architecture_family": "short_url",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W489",
+    "title": "Design Scalable TinyURL Service with One-to-One URL Mapping",
+    "diagram": "diagrams/W489_architecture.svg",
+    "architecture_family": "short_url",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W490",
+    "title": "URL Shortener With Click Tracking",
+    "diagram": "diagrams/W490_architecture.svg",
+    "architecture_family": "short_url",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W491",
+    "title": "Ads Demand Intake Data Modeling",
+    "diagram": "diagrams/W491_architecture.svg",
+    "architecture_family": "crud",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W492",
+    "title": "Design Walmart Plus Membership System",
+    "diagram": "diagrams/W492_architecture.svg",
+    "architecture_family": "membership",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W493",
+    "title": "Promotion Posting System Data Model",
+    "diagram": "diagrams/W493_architecture.svg",
+    "architecture_family": "crud",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W494",
+    "title": "Tagging System REST API",
+    "diagram": "diagrams/W494_architecture.svg",
+    "architecture_family": "crud",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W495",
+    "title": "Template & Instance System with Update Propagation",
+    "diagram": "diagrams/W495_architecture.svg",
+    "architecture_family": "template",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W496",
+    "title": "Design a Sales Tax Engine (Address + Date to Tax)",
+    "diagram": "diagrams/W496_architecture.svg",
+    "architecture_family": "rules",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W509",
+    "title": "Design a Website for 100,000 Concurrent Users with Live Comments",
+    "diagram": "diagrams/W509_architecture.svg",
+    "architecture_family": "comments",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W511",
+    "title": "Frontend System Design: Autocomplete Search Input",
+    "diagram": "diagrams/W511_architecture.svg",
+    "architecture_family": "autocomplete",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W512",
+    "title": "Frontend System Design: Infinite-Scroll Image Feed",
+    "diagram": "diagrams/W512_architecture.svg",
+    "architecture_family": "frontend_feed",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W513",
+    "title": "Frontend System Design: Signup Form with A/B Testing",
+    "diagram": "diagrams/W513_architecture.svg",
+    "architecture_family": "signup",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W514",
+    "title": "Design a Matchmaking Service for Multiplayer Games",
+    "diagram": "diagrams/W514_architecture.svg",
+    "architecture_family": "matchmaking",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W515",
+    "title": "Design a Real-Time Multiplayer Game Backend",
+    "diagram": "diagrams/W515_architecture.svg",
+    "architecture_family": "game",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W516",
+    "title": "Design an Online Chess Platform (Matchmaking, Live Games, Clocks)",
+    "diagram": "diagrams/W516_architecture.svg",
+    "architecture_family": "game",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W517",
+    "title": "Minesweeper Game Design (OOD)",
+    "diagram": "diagrams/W517_architecture.svg",
+    "architecture_family": "minesweeper",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W518",
+    "title": "System Design: Chess Game",
+    "diagram": "diagrams/W518_architecture.svg",
+    "architecture_family": "game",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W519",
+    "title": "Charity Donation System",
+    "diagram": "diagrams/W519_architecture.svg",
+    "architecture_family": "donation",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W520",
+    "title": "Design a 3-Day Donation Service",
+    "diagram": "diagrams/W520_architecture.svg",
+    "architecture_family": "donation",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W531",
+    "title": "Design a Crypto Brokerage Order System",
+    "diagram": "diagrams/W531_architecture.svg",
+    "architecture_family": "trading",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W532",
+    "title": "Design Pre-Trade Risk Checking for an Electronic Trading System",
+    "diagram": "diagrams/W532_architecture.svg",
+    "architecture_family": "pretrade",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W533",
+    "title": "Low-Latency Multi-Exchange Buy/Sell System Design",
+    "diagram": "diagrams/W533_architecture.svg",
+    "architecture_family": "trading",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W534",
+    "title": "Low-Latency Trading System Design",
+    "diagram": "diagrams/W534_architecture.svg",
+    "architecture_family": "trading",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W535",
+    "title": "Low-Latency Trading System Design",
+    "diagram": "diagrams/W535_architecture.svg",
+    "architecture_family": "trading",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W536",
+    "title": "Real-time Market Data Distribution System",
+    "diagram": "diagrams/W536_architecture.svg",
+    "architecture_family": "market_data",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W537",
+    "title": "Stock Trading / Real-Time Quote System Design",
+    "diagram": "diagrams/W537_architecture.svg",
+    "architecture_family": "market_data",
+    "scope": "baseline component architecture",
+    "additional_diagrams": [
+      "diagrams/W537_order_execution.svg"
+    ]
+  },
+  {
+    "id": "W538",
+    "title": "Stock Trading Agent Service with Order Deadlines",
+    "diagram": "diagrams/W538_architecture.svg",
+    "architecture_family": "trading",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W539",
+    "title": "Trade Processor with Subscribe / Unsubscribe",
+    "diagram": "diagrams/W539_architecture.svg",
+    "architecture_family": "market_data",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W540",
+    "title": "Coffee Ordering System Design",
+    "diagram": "diagrams/W540_architecture.svg",
+    "architecture_family": "ordering",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W541",
+    "title": "Concurrent User Management System Architecture Design",
+    "diagram": "diagrams/W541_architecture.svg",
+    "architecture_family": "crud",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W542",
+    "title": "Design a Pizza Ordering and Fulfillment System (OOD)",
+    "diagram": "diagrams/W542_architecture.svg",
+    "architecture_family": "ordering",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W543",
+    "title": "Design a Todo-List Full-Stack Service",
+    "diagram": "diagrams/W543_architecture.svg",
+    "architecture_family": "crud",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W544",
+    "title": "Library Book Management System Design and API Architecture",
+    "diagram": "diagrams/W544_architecture.svg",
+    "architecture_family": "crud",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W545",
+    "title": "Object-Oriented Design Round",
+    "diagram": "diagrams/W545_architecture.svg",
+    "architecture_family": "planning",
+    "scope": "answer planning"
+  },
+  {
+    "id": "W546",
+    "title": "Runnable Stack Overflow / Quora REST Service",
+    "diagram": "diagrams/W546_architecture.svg",
+    "architecture_family": "crud",
+    "scope": "baseline component architecture"
+  },
+  {
+    "id": "W547",
+    "title": "University Course Platform: User Auth, Courses, Favorites API & DB Design",
+    "diagram": "diagrams/W547_architecture.svg",
+    "architecture_family": "crud",
+    "scope": "baseline component architecture"
+  }
+]

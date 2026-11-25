@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="770" viewBox="0 0 1120 770" role="img" aria-labelledby="title desc">
+<title id="title">W378 · Global Config Deployment System</title>
+<desc id="desc">Operator change — config generation; Configuration service — validate + approve; Versioned config store — prior rollback version; Distribution stream — snapshot + deltas; Local SDK evaluation — deterministic bucketing; Application behavior — freshness + exposure logs. Version every update and keep a safe fallback; eventual delivery alone does not establish current configuration.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#475569"/></marker></defs>
+<rect width="1120" height="770" rx="16" fill="white"/>
+<g font-family="Arial, Helvetica, sans-serif" fill="#0f172a">
+<text x="32" y="37" font-size="25" font-weight="700" text-anchor="start">W378 · Global Config Deployment System</text>
+<text x="32" y="104" font-size="16" font-weight="400" text-anchor="start">Logical components: boxes may share a process. Arrows show requests, work or state access.</text>
+<polyline points="332,192 410,192" stroke="#475569" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+<polyline points="710,192 788,192" stroke="#475569" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+<polyline points="560,244 560,370" stroke="#475569" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+<text x="573" y="316" font-size="15" font-weight="400" text-anchor="start">work path</text>
+<polyline points="710,422 788,422" stroke="#475569" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+<polyline points="938,370 938,244" stroke="#475569" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+<text x="950" y="317" font-size="15" font-weight="400" text-anchor="start">state</text>
+<polyline points="938,474 938,535 182,535 182,474" stroke="#475569" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+<rect x="32" y="140" width="300" height="104" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+<text x="182" y="186" font-size="18" font-weight="700" text-anchor="middle">Operator change</text>
+<text x="182" y="210" font-size="16" font-weight="400" text-anchor="middle">config generation</text>
+<rect x="410" y="140" width="300" height="104" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+<text x="560" y="186" font-size="18" font-weight="700" text-anchor="middle">Configuration service</text>
+<text x="560" y="210" font-size="16" font-weight="400" text-anchor="middle">validate + approve</text>
+<rect x="788" y="140" width="300" height="104" rx="10" fill="#fff7ed" stroke="#fb923c" stroke-width="2"/>
+<text x="938" y="186" font-size="18" font-weight="700" text-anchor="middle">Versioned config store</text>
+<text x="938" y="210" font-size="16" font-weight="400" text-anchor="middle">prior rollback version</text>
+<rect x="410" y="370" width="300" height="104" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+<text x="560" y="416" font-size="18" font-weight="700" text-anchor="middle">Distribution stream</text>
+<text x="560" y="440" font-size="16" font-weight="400" text-anchor="middle">snapshot + deltas</text>
+<rect x="788" y="370" width="300" height="104" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
+<text x="938" y="416" font-size="18" font-weight="700" text-anchor="middle">Local SDK evaluation</text>
+<text x="938" y="440" font-size="16" font-weight="400" text-anchor="middle">deterministic bucketing</text>
+<rect x="32" y="370" width="300" height="104" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
+<text x="182" y="416" font-size="18" font-weight="700" text-anchor="middle">Application behavior</text>
+<text x="182" y="440" font-size="16" font-weight="400" text-anchor="middle">freshness + exposure logs</text>
+<text x="32" y="590" font-size="18" font-weight="700" text-anchor="start">Key constraint</text>
+<text x="32" y="620" font-size="17" font-weight="400" text-anchor="start">Version every update and keep a safe fallback; eventual delivery alone does not establish current</text>
+<text x="32" y="645" font-size="17" font-weight="400" text-anchor="start">configuration.</text>
+</g></svg>

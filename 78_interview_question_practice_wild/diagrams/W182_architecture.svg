@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="770" viewBox="0 0 1120 770" role="img" aria-labelledby="title desc">
+<title id="title">W182 · ML System Design: Notification Ranking &amp; Ads CTR</title>
+<desc id="desc">Ad request — placement + user context; Eligible-ad retrieval — targeting + consent; Campaign and feature store — bids + budget state; Candidate scoring — CTR + value estimates; Auction and policy — pacing + frequency limits; Ad impression — spend + outcome logs. A high predicted score does not override budget, policy, pacing or frequency constraints.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#475569"/></marker></defs>
+<rect width="1120" height="770" rx="16" fill="white"/>
+<g font-family="Arial, Helvetica, sans-serif" fill="#0f172a">
+<text x="32" y="37" font-size="25" font-weight="700" text-anchor="start">W182 · ML System Design: Notification Ranking &amp; Ads CTR</text>
+<text x="32" y="104" font-size="16" font-weight="400" text-anchor="start">Logical components: boxes may share a process. Arrows show requests, work or state access.</text>
+<polyline points="332,192 410,192" stroke="#475569" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+<polyline points="710,192 788,192" stroke="#475569" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+<polyline points="560,244 560,370" stroke="#475569" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+<text x="573" y="316" font-size="15" font-weight="400" text-anchor="start">work path</text>
+<polyline points="710,422 788,422" stroke="#475569" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+<polyline points="938,370 938,244" stroke="#475569" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+<text x="950" y="317" font-size="15" font-weight="400" text-anchor="start">state</text>
+<polyline points="938,474 938,535 182,535 182,474" stroke="#475569" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+<rect x="32" y="140" width="300" height="104" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+<text x="182" y="186" font-size="18" font-weight="700" text-anchor="middle">Ad request</text>
+<text x="182" y="210" font-size="16" font-weight="400" text-anchor="middle">placement + user context</text>
+<rect x="410" y="140" width="300" height="104" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+<text x="560" y="186" font-size="18" font-weight="700" text-anchor="middle">Eligible-ad retrieval</text>
+<text x="560" y="210" font-size="16" font-weight="400" text-anchor="middle">targeting + consent</text>
+<rect x="788" y="140" width="300" height="104" rx="10" fill="#fff7ed" stroke="#fb923c" stroke-width="2"/>
+<text x="938" y="186" font-size="18" font-weight="700" text-anchor="middle">Campaign and feature store</text>
+<text x="938" y="210" font-size="16" font-weight="400" text-anchor="middle">bids + budget state</text>
+<rect x="410" y="370" width="300" height="104" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+<text x="560" y="416" font-size="18" font-weight="700" text-anchor="middle">Candidate scoring</text>
+<text x="560" y="440" font-size="16" font-weight="400" text-anchor="middle">CTR + value estimates</text>
+<rect x="788" y="370" width="300" height="104" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
+<text x="938" y="416" font-size="18" font-weight="700" text-anchor="middle">Auction and policy</text>
+<text x="938" y="440" font-size="16" font-weight="400" text-anchor="middle">pacing + frequency limits</text>
+<rect x="32" y="370" width="300" height="104" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
+<text x="182" y="416" font-size="18" font-weight="700" text-anchor="middle">Ad impression</text>
+<text x="182" y="440" font-size="16" font-weight="400" text-anchor="middle">spend + outcome logs</text>
+<text x="32" y="590" font-size="18" font-weight="700" text-anchor="start">Key constraint</text>
+<text x="32" y="620" font-size="17" font-weight="400" text-anchor="start">A high predicted score does not override budget, policy, pacing or frequency constraints.</text>
+</g></svg>
