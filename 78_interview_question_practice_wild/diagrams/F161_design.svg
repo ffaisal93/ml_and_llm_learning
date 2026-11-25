@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="570" viewBox="0 0 1000 570" role="img" aria-labelledby="title desc">
+<title id="title">F161 · A network partition and majority-write availability</title>
+<desc id="desc">Client A reaches a region with two of three replicas. Client B reaches an isolated single replica. Under the chosen majority-write policy the first side may commit and the minority defers or rejects writes. Accepting conflicting writes on both sides would require weaker consistency and reconciliation.</desc>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#475569"/></marker></defs>
+<rect width="1000" height="570" rx="16" fill="white"/>
+<g font-family="Arial, Helvetica, sans-serif" fill="#0f172a" text-anchor="middle">
+<text x="500" y="45" font-size="26" font-weight="700">F161 · What a network partition changes</text>
+<rect x="65" y="90" width="340" height="70" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+<rect x="595" y="90" width="340" height="70" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+<text x="235" y="132" font-size="21" font-weight="700">Client A</text><text x="765" y="132" font-size="21" font-weight="700">Client B</text>
+<path d="M235 160V250M765 160V250" fill="none" stroke="#475569" stroke-width="3" marker-end="url(#a)"/>
+<rect x="65" y="250" width="340" height="120" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
+<rect x="595" y="250" width="340" height="120" rx="10" fill="#fff7ed" stroke="#fb923c" stroke-width="2"/>
+<text x="235" y="284" font-size="21" font-weight="700">Replicas 1 + 2</text><text x="235" y="316" font-size="18">Majority remains connected</text><text x="235" y="346" font-size="18">May commit under this protocol</text>
+<text x="765" y="284" font-size="21" font-weight="700">Replica 3</text><text x="765" y="316" font-size="18">Isolated minority</text><text x="765" y="346" font-size="18">Reject or defer writes</text>
+<path d="M405 309H595" stroke="#64748b" stroke-dasharray="8 8" stroke-width="3"/><path d="M481 287L519 331M519 287L481 331" stroke="#dc2626" stroke-width="5"/>
+<text x="500" y="410" font-size="20" font-weight="700">Communication is unavailable between the groups.</text>
+<text x="500" y="456" font-size="18">This is one majority-write example, not a proof that every quorum system is linearizable.</text>
+<text x="500" y="489" font-size="18">Accepting conflicting writes on both sides requires a weaker contract and reconciliation.</text>
+<text x="500" y="522" font-size="18">Other application features may remain available while conflicting writes cannot proceed.</text>
+</g></svg>

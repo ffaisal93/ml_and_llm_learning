@@ -134,6 +134,11 @@ See the [SQL lab](SQL_LAB.md) for executable queries, schemas and example result
 
 ## F177. Design an ETL job that can safely rerun.
 
+![Design an ETL job that can safely rerun. — logical architecture and state flow.](diagrams/F177_design.svg)
+
+**Read the diagram:** follow the incoming request through validation, authoritative state, bounded work and its result. Rerun the same input partition without double-counting; publish only verified output and checkpoint after durable commit. The boxes are responsibilities and can be combined in one process where the question's scope permits.
+
+
 **Start here.** A rerun should converge to the intended data state rather than duplicate outputs.
 
 **Work it through.**

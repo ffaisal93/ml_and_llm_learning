@@ -132,6 +132,11 @@ Very important: distinguish a good benchmark number from a dependable decision.
 
 ## F067. Build an LLM evaluation harness.
 
+![Build an LLM evaluation harness. — logical architecture and state flow.](diagrams/F067_design.svg)
+
+**Read the diagram:** follow the incoming request through validation, authoritative state, bounded work and its result. Do not change the rubric mid-comparison or hide invalid outputs from the denominator. The boxes are responsibilities and can be combined in one process where the question's scope permits.
+
+
 **Start here.** An evaluation harness is a reproducible experiment, not just a loop over prompts.
 
 **Work it through.**

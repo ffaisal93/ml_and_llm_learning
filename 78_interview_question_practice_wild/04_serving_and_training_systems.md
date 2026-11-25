@@ -172,6 +172,11 @@ Very important for MLE and LLM roles: explain the resource bottleneck and the re
 
 ## F039. Design a fair GPU job scheduler.
 
+![Design a fair GPU job scheduler. — logical architecture and state flow.](diagrams/F039_design.svg)
+
+**Read the diagram:** follow the incoming request through validation, authoritative state, bounded work and its result. A queue message is a delivery hint; durable state and attempt leases decide who may execute a job. The boxes are responsibilities and can be combined in one process where the question's scope permits.
+
+
 **Start here.** The scheduler must satisfy resource constraints while making progress and controlling queueing, rather than merely picking the shortest job.
 
 **Work it through.**

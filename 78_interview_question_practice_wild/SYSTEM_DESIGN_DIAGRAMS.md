@@ -4,7 +4,7 @@
 
 [Chapter guide](README.md) · [Complete RAG and agent answers](08_rag_and_agents.md) · [Complete ML system-design answers](09_ml_system_design.md)
 
-**317 design-oriented question entries** now have an architecture, component or workflow diagram in their answer. W408 keeps its two bespoke cart diagrams. W537 has separate order-placement and quote-serving paths. The two expanded foundation guides contain 20 full explanations and 14 additional diagrams.
+**317 design-oriented question entries** now have an architecture, component or workflow diagram in their answer. W408 keeps its two bespoke cart diagrams. W537 has separate order-placement and quote-serving paths. The four expanded guides contain 40 full explanations. These and related design sections include 38 foundation diagrams.
 
 A diagram is a starting architecture to explain and defend, not a claim that each box must be a deployed microservice. A general interview round without a fixed product uses an answer-planning view; it does not invent a missing product specification. Coding and mathematical questions without a system-design task are outside this diagram index.
 
@@ -413,3 +413,44 @@ For each drawing: trace one request, identify the state owner, discuss a duplica
 - [W545. Object-Oriented Design Round](questions/W545.md)
 - [W546. Runnable Stack Overflow / Quora REST Service](questions/W546.md)
 - [W547. University Course Platform: User Auth, Courses, Favorites API & DB Design](questions/W547.md)
+
+## Foundation design diagrams
+
+- [F039. Design a fair GPU job scheduler.](04_serving_and_training_systems.md#f039)
+- [F067. Build an LLM evaluation harness.](07_evaluation_and_data.md#f067)
+- [F071. RAG architecture: indexing, retrieval and grounded answers](08_rag_and_agents.md#f071)
+- [F073. Hybrid search: lexical and semantic candidates, fusion and reranking](08_rag_and_agents.md#f073)
+- [F076. Bounded agent loop: proposals, authorized tools and verified results](08_rag_and_agents.md#f076)
+- [F077. Design tool schemas and validate LLM outputs.](08_rag_and_agents.md#f077)
+- [F079. Trust boundary: retrieved text does not grant capabilities](08_rag_and_agents.md#f079)
+- [F081. How to structure an ML system-design answer](09_ml_system_design.md#f081)
+- [F082. Recommendation: candidates, ranking and feedback](09_ml_system_design.md#f082)
+- [F083. Multimodal moderation: decisions and human review](09_ml_system_design.md#f083)
+- [F084. Risk detection: event-time features and action policy](09_ml_system_design.md#f084)
+- [F085. Image-text retrieval: compatible embeddings and ranked results](09_ml_system_design.md#f085)
+- [F086. Feature platform: historical truth and online availability](09_ml_system_design.md#f086)
+- [F087. Model rollout: shadow, canary, promotion and rollback](09_ml_system_design.md#f087)
+- [F088. Evaluation platform: immutable runs, judgments and reports](09_ml_system_design.md#f088)
+- [F089. Training-data mining: permitted logs, validation and clean labels](09_ml_system_design.md#f089)
+- [F090. Rate-limited classification: durable work and validated results](09_ml_system_design.md#f090)
+- [F161. Explain CAP during a real network partition.](17_distributed_systems_depth.md#f161)
+- [F162. Design a durable work queue with retries and leases.](17_distributed_systems_depth.md#f162)
+- [F163. Handle dependency-aware job scheduling.](17_distributed_systems_depth.md#f163)
+- [F164. Design a read-once secret-sharing service.](17_distributed_systems_depth.md#f164)
+- [F165. Design idempotency for an order or booking API.](17_distributed_systems_depth.md#f165)
+- [F166. Design a token-bucket rate limiter.](17_distributed_systems_depth.md#f166)
+- [F167. Design preemptible long-running generation jobs.](17_distributed_systems_depth.md#f167)
+- [F168. Design a state-wide temperature ingestion and query system.](17_distributed_systems_depth.md#f168)
+- [F169. Explain backpressure in a multi-stage data pipeline.](17_distributed_systems_depth.md#f169)
+- [F170. Design a cache without serving incorrect data.](17_distributed_systems_depth.md#f170)
+- [F177. Design an ETL job that can safely rerun.](18_data_and_sql.md#f177)
+- [F181. Predict the category of a newly listed item.](19_product_ml_case_studies.md#f181)
+- [F182. Recommend cover photos to improve bookings.](19_product_ml_case_studies.md#f182)
+- [F183. Estimate listing lifetime value.](19_product_ml_case_studies.md#f183)
+- [F184. Design personalized short-video ranking.](19_product_ml_case_studies.md#f184)
+- [F185. Rank news without rewarding stale or misleading content.](19_product_ml_case_studies.md#f185)
+- [F186. Design a hiring-workflow assistant without making unsupported automated decisions.](19_product_ml_case_studies.md#f186)
+- [F187. Design a support-ticket routing model.](19_product_ml_case_studies.md#f187)
+- [F188. Design a flight-search and booking agent.](19_product_ml_case_studies.md#f188)
+- [F189. Detect possible image copyright violations as a retrieval problem.](19_product_ml_case_studies.md#f189)
+- [F190. Classify viewers using movie completion behavior.](19_product_ml_case_studies.md#f190)

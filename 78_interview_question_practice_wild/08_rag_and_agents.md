@@ -432,6 +432,11 @@ The loop is deliberately read-only. For tools that send messages, spend money or
 
 ## F077. Design tool schemas and validate model outputs
 
+![Design tool schemas and validate LLM outputs. — logical architecture and state flow.](diagrams/F077_design.svg)
+
+**Read the diagram:** follow the incoming request through validation, authoritative state, bounded work and its result. Untrusted retrieved text cannot grant a new tool, permission or destination; enforce these boundaries outside the model. The boxes are responsibilities and can be combined in one process where the question's scope permits.
+
+
 ### A model proposes data; application code decides whether it can run
 
 Consider a search tool with a query, collection and result limit. Valid JSON such as `{"limit": -3}` is still an invalid request. A well-shaped request for another department's private collection is unauthorized. Schema validation and authorization solve different parts of the problem.

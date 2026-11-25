@@ -1,5 +1,19 @@
 [
   {
+    "id": "F039",
+    "title": "Design a fair GPU job scheduler.",
+    "diagram": "diagrams/F039_design.svg",
+    "architecture_family": "scheduler",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F067",
+    "title": "Build an LLM evaluation harness.",
+    "diagram": "diagrams/F067_design.svg",
+    "architecture_family": "evaluation",
+    "scope": "foundation explanation"
+  },
+  {
     "id": "F071",
     "title": "RAG architecture: indexing, retrieval and grounded answers",
     "diagram": "diagrams/F071_rag_architecture.svg",
@@ -18,6 +32,13 @@
     "title": "Bounded agent loop: proposals, authorized tools and verified results",
     "diagram": "diagrams/F076_agent_loop.svg",
     "architecture_family": "agent",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F077",
+    "title": "Design tool schemas and validate LLM outputs.",
+    "diagram": "diagrams/F077_design.svg",
+    "architecture_family": "injection",
     "scope": "foundation explanation"
   },
   {
@@ -95,6 +116,152 @@
     "title": "Rate-limited classification: durable work and validated results",
     "diagram": "diagrams/F090_classification.svg",
     "architecture_family": "llm_batch",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F161",
+    "title": "Explain CAP during a real network partition.",
+    "diagram": "diagrams/F161_design.svg",
+    "scope": "network-partition example"
+  },
+  {
+    "id": "F162",
+    "title": "Design a durable work queue with retries and leases.",
+    "diagram": "diagrams/F162_design.svg",
+    "architecture_family": "scheduler",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F163",
+    "title": "Handle dependency-aware job scheduling.",
+    "diagram": "diagrams/F163_design.svg",
+    "architecture_family": "scheduler",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F164",
+    "title": "Design a read-once secret-sharing service.",
+    "diagram": "diagrams/F164_design.svg",
+    "architecture_family": "secret",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F165",
+    "title": "Design idempotency for an order or booking API.",
+    "diagram": "diagrams/F165_design.svg",
+    "architecture_family": "reservation",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F166",
+    "title": "Design a token-bucket rate limiter.",
+    "diagram": "diagrams/F166_design.svg",
+    "architecture_family": "rate",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F167",
+    "title": "Design preemptible long-running generation jobs.",
+    "diagram": "diagrams/F167_design.svg",
+    "architecture_family": "media",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F168",
+    "title": "Design a state-wide temperature ingestion and query system.",
+    "diagram": "diagrams/F168_design.svg",
+    "architecture_family": "metrics",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F169",
+    "title": "Explain backpressure in a multi-stage data pipeline.",
+    "diagram": "diagrams/F169_design.svg",
+    "architecture_family": "backpressure",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F170",
+    "title": "Design a cache without serving incorrect data.",
+    "diagram": "diagrams/F170_design.svg",
+    "architecture_family": "cache",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F177",
+    "title": "Design an ETL job that can safely rerun.",
+    "diagram": "diagrams/F177_design.svg",
+    "architecture_family": "etl",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F181",
+    "title": "Predict the category of a newly listed item.",
+    "diagram": "diagrams/F181_design.svg",
+    "architecture_family": "classifier",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F182",
+    "title": "Recommend cover photos to improve bookings.",
+    "diagram": "diagrams/F182_design.svg",
+    "architecture_family": "ranking",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F183",
+    "title": "Estimate listing lifetime value.",
+    "diagram": "diagrams/F183_design.svg",
+    "architecture_family": "forecast",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F184",
+    "title": "Design personalized short-video ranking.",
+    "diagram": "diagrams/F184_design.svg",
+    "architecture_family": "ranking",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F185",
+    "title": "Rank news without rewarding stale or misleading content.",
+    "diagram": "diagrams/F185_design.svg",
+    "architecture_family": "news",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F186",
+    "title": "Design a hiring-workflow assistant without making unsupported automated decisions.",
+    "diagram": "diagrams/F186_design.svg",
+    "architecture_family": "recruiting",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F187",
+    "title": "Design a support-ticket routing model.",
+    "diagram": "diagrams/F187_design.svg",
+    "architecture_family": "ticket_routing",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F188",
+    "title": "Design a flight-search and booking agent.",
+    "diagram": "diagrams/F188_design.svg",
+    "architecture_family": "agent",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F189",
+    "title": "Detect possible image copyright violations as a retrieval problem.",
+    "diagram": "diagrams/F189_design.svg",
+    "architecture_family": "copyright",
+    "scope": "foundation explanation"
+  },
+  {
+    "id": "F190",
+    "title": "Classify viewers using movie completion behavior.",
+    "diagram": "diagrams/F190_design.svg",
+    "architecture_family": "classifier",
     "scope": "foundation explanation"
   },
   {

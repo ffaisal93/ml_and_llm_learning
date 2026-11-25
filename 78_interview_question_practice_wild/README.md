@@ -8,6 +8,8 @@ All **547 question entries**, each with its question text and a worked solution,
 
 - [RAG and agent systems](08_rag_and_agents.md): ten complete answers with offline Python examples, equations, architecture diagrams and failure analysis.
 - [ML system design](09_ml_system_design.md): ten complete answers connecting the product decision to data, models, serving, monitoring and recovery.
+- [Distributed systems](17_distributed_systems_depth.md): complete explanations of partitions, leases, idempotency, rate limits, backpressure and caching.
+- [Product ML cases](19_product_ml_case_studies.md): complete end-to-end designs for ranking, value prediction, assistance workflows and visual retrieval.
 - [Architecture diagram index](SYSTEM_DESIGN_DIAGRAMS.md): diagrams accompanying 317 design-oriented question entries. System, object and workflow diagrams are chosen for the question's scope.
 
 ## Start with a priority group
