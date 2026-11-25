@@ -39,6 +39,8 @@ class RestTests(unittest.TestCase):
     db.flush();db.add(Chapter(course_id=1,position=1,title='Loss',body='Cross entropy'))
    client=app.test_client()
    token=client.get('/api/csrf').json['csrf'];headers={'X-CSRF-Token':token}
+   self.assertEqual(client.post('/api/login',json={},headers={'X-CSRF-Token':'é'}).status_code,403)
+   self.assertEqual(client.post('/api/register',json={'username':'ß'*100,'password':'strong-pass'},headers=headers).status_code,400)
    self.assertEqual(client.post('/api/register',json={'username':'u','password':'strong-pass'},headers=headers).status_code,201)
    self.assertEqual(client.post('/api/register',json={'username':'u','password':'strong-pass'},headers=headers).status_code,409)
    self.assertEqual(client.put('/api/favorites/1',headers=headers).status_code,401)

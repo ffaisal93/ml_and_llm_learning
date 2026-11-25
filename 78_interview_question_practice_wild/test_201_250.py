@@ -201,7 +201,7 @@ class Numerical(unittest.TestCase):
             drops.append(old_rss-np.sum((y-design@fit)**2))
         self.assertEqual(j,int(np.argmax(drops)))
         np.testing.assert_allclose(b,np.linalg.lstsq(np.column_stack((x,z[:,j])),y,rcond=None)[0],atol=1e-10)
-        self.assertAlmostEqual(drop,max(drops));self.assertIsNone(num.add_best_regressor(x,x[:,:1],y)[0])
+        self.assertAlmostEqual(drop,max(drops));self.assertEqual(num.add_best_regressor(x,z*1e-10,y)[0],j);self.assertIsNone(num.add_best_regressor(x,x[:,:1],y)[0])
     def test_two_task_training(self):
         torch.set_num_threads(1);torch.manual_seed(2);x=torch.randn(120,3)
         y=torch.stack((-200000-10000*x[:,0],100+5*x[:,1]),dim=1)

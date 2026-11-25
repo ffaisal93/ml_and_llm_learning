@@ -4,6 +4,7 @@ The retriever is lexical TF-IDF and the answer is an exact evidence excerpt.
 No embedding model or LLM is secretly called. Agent and judge dependencies are
 injected so deterministic examples and failure tests do not require a network.
 """
+
 import asyncio
 from collections import Counter, defaultdict
 from dataclasses import dataclass
@@ -36,12 +37,17 @@ def retrieve(query, chunks, permissions, user, limit=3):
         return []
     counts = [Counter(words(c.text)) for c in allowed]
     document_frequency = Counter(term for count in counts for term in count)
-    idf = {term: 1 + math.log((len(allowed) + 1) / (frequency + 1))
-           for term, frequency in document_frequency.items()}
+    idf = {
+        term: 1 + math.log((len(allowed) + 1) / (frequency + 1))
+        for term, frequency in document_frequency.items()
+    }
 
     def vector(text_counts):
-        weighted = {term: count * idf[term] for term, count in text_counts.items()
-                    if term in idf}
+        weighted = {
+            term: count * idf[term]
+            for term, count in text_counts.items()
+            if term in idf
+        }
         norm = math.sqrt(sum(value * value for value in weighted.values()))
         return {term: value / norm for term, value in weighted.items()} if norm else {}
 
@@ -49,7 +55,9 @@ def retrieve(query, chunks, permissions, user, limit=3):
     hits = []
     for chunk, count in zip(allowed, counts):
         chunk_vector = vector(count)
-        score = sum(value * chunk_vector.get(term, 0) for term, value in query_vector.items())
+        score = sum(
+            value * chunk_vector.get(term, 0) for term, value in query_vector.items()
+        )
         if score > 0:
             hits.append((score, chunk))
     return sorted(hits, key=lambda hit: (-hit[0], hit[1].citation))[:limit]
@@ -61,8 +69,11 @@ def extractive_answer(query, chunks, permissions, user):
         return {"status": "no_evidence", "answer": None, "citations": []}
     evidence = hits[0][1]
     # Exact excerpt: this baseline does not invent an LLM-generated explanation.
-    return {"status": "evidence_excerpt", "answer": evidence.text,
-            "citations": [evidence.citation]}
+    return {
+        "status": "evidence_excerpt",
+        "answer": evidence.text,
+        "citations": [evidence.citation],
+    }
 
 
 def word_chunks(text, size=80, overlap=15):
@@ -123,19 +134,36 @@ def validate_search_call(proposal, allowed_collections):
     if proposal["type"] != "tool" or proposal["name"] != "search":
         raise ValueError("only the search tool is allowed")
     arguments = proposal["arguments"]
-    if not isinstance(arguments, dict) or set(arguments) != {"query", "collection", "limit"}:
+    if not isinstance(arguments, dict) or set(arguments) != {
+        "query",
+        "collection",
+        "limit",
+    }:
         raise ValueError("invalid search argument fields")
-    if not isinstance(arguments["query"], str) or not 1 <= len(arguments["query"].strip()) <= 2000:
+    if (
+        not isinstance(arguments["query"], str)
+        or not 1 <= len(arguments["query"].strip()) <= 2000
+    ):
         raise ValueError("query must contain 1–2000 characters")
     if type(arguments["limit"]) is not int or not 1 <= arguments["limit"] <= 10:
         raise ValueError("limit must be an integer from 1 to 10")
-    if not isinstance(arguments["collection"], str) or arguments["collection"] not in allowed_collections:
+    if (
+        not isinstance(arguments["collection"], str)
+        or arguments["collection"] not in allowed_collections
+    ):
         raise PermissionError("collection is outside this user's permissions")
     return dict(arguments)
 
 
-async def run_agent(planner, search, verify, allowed_collections,
-                    max_steps=4, total_seconds=5, per_call_seconds=1):
+async def run_agent(
+    planner,
+    search,
+    verify,
+    allowed_collections,
+    max_steps=4,
+    total_seconds=5,
+    per_call_seconds=1,
+):
     """Read-only demonstration. Async dependencies must cooperate with cancellation."""
     if max_steps < 1 or min(total_seconds, per_call_seconds) <= 0:
         raise ValueError("budgets must be positive")
@@ -148,7 +176,9 @@ async def run_agent(planner, search, verify, allowed_collections,
         remaining = deadline - loop.time()
         if remaining <= 0:
             raise TimeoutError("total deadline reached")
-        return await asyncio.wait_for(awaitable_factory(), min(remaining, per_call_seconds))
+        return await asyncio.wait_for(
+            awaitable_factory(), min(remaining, per_call_seconds)
+        )
 
     for _ in range(max_steps):
         try:
@@ -157,9 +187,15 @@ async def run_agent(planner, search, verify, allowed_collections,
                 answer = proposal.get("answer")
                 if isinstance(answer, str) and verify(answer, history):
                     return {"status": "completed", "answer": answer, "history": history}
-                return {"status": "unverified_answer", "answer": None, "history": history}
+                return {
+                    "status": "unverified_answer",
+                    "answer": None,
+                    "history": history,
+                }
             arguments = validate_search_call(proposal, allowed_collections)
-            signature = tuple(arguments[key] for key in ["query", "collection", "limit"])
+            signature = tuple(
+                arguments[key] for key in ["query", "collection", "limit"]
+            )
             if signature in completed_calls:
                 return {"status": "repeated_call", "answer": None, "history": history}
             observation = await bounded(lambda: search(**arguments))
@@ -185,19 +221,24 @@ def success_summary(trials):
         grouped[trial["task"]].append(bool(trial["success"]))
     if not grouped:
         raise ValueError("need at least one trial")
-    task_rates = {task: sum(outcomes) / len(outcomes) for task, outcomes in grouped.items()}
+    task_rates = {
+        task: sum(outcomes) / len(outcomes) for task, outcomes in grouped.items()
+    }
     # Equal task weight even when tasks have different trial counts.
-    return {"task_rates": task_rates,
-            "macro_success": sum(task_rates.values()) / len(task_rates)}
+    return {
+        "task_rates": task_rates,
+        "macro_success": sum(task_rates.values()) / len(task_rates),
+    }
 
 
-async def rank_answers(answers, judge, concurrency=2, max_pairs=50,
-                       timeout_seconds=1, retries=1):
+async def rank_answers(
+    answers, judge, concurrency=2, max_pairs=50, timeout_seconds=1, retries=1
+):
     """All-pairs toy ranking; report failures instead of inventing judgments.
 
-judge(left_text, right_text) returns 'left', 'right' or 'tie'. Each distinct
-pair is scheduled once per run. Cross-run caches need model/rubric/text keys.
-"""
+    judge(left_text, right_text) returns 'left', 'right' or 'tie'. Each distinct
+    pair is scheduled once per run. Cross-run caches need model/rubric/text keys.
+    """
     if concurrency < 1 or max_pairs < 0 or retries < 0 or timeout_seconds <= 0:
         raise ValueError("invalid judge budget")
     ids = sorted(answers)
@@ -213,7 +254,11 @@ pair is scheduled once per run. Cross-run caches need model/rubric/text keys.
                     result = await asyncio.wait_for(
                         judge(answers[left], answers[right]), timeout_seconds
                     )
-                if not isinstance(result, str) or result not in {"left", "right", "tie"}:
+                if not isinstance(result, str) or result not in {
+                    "left",
+                    "right",
+                    "tie",
+                }:
                     raise ValueError("invalid judge result")
                 return left, right, result
             except (TimeoutError, asyncio.TimeoutError, OSError, ValueError):
@@ -221,7 +266,9 @@ pair is scheduled once per run. Cross-run caches need model/rubric/text keys.
                     return left, right, "failed"
         raise AssertionError("unreachable")
 
-    comparisons = await asyncio.gather(*(compare(a, b) for a, b in combinations(ids, 2)))
+    comparisons = await asyncio.gather(
+        *(compare(a, b) for a, b in combinations(ids, 2))
+    )
     points, played, failures = dict.fromkeys(ids, 0.0), dict.fromkeys(ids, 0), []
     for left, right, result in comparisons:
         if result == "failed":
@@ -230,11 +277,19 @@ pair is scheduled once per run. Cross-run caches need model/rubric/text keys.
         played[left] += 1
         played[right] += 1
         if result == "tie":
-            points[left] += .5
-            points[right] += .5
+            points[left] += 0.5
+            points[right] += 0.5
         else:
             points[left if result == "left" else right] += 1
-    scores = {item: points[item] / played[item] if played[item] else None for item in ids}
-    ranked = sorted(ids, key=lambda item: (scores[item] is None, -(scores[item] or 0), item))
-    return {"ranking": ranked, "scores": scores,
-            "comparisons": comparisons, "failures": failures}
+    scores = {
+        item: points[item] / played[item] if played[item] else None for item in ids
+    }
+    ranked = sorted(
+        ids, key=lambda item: (scores[item] is None, -(scores[item] or 0), item)
+    )
+    return {
+        "ranking": ranked,
+        "scores": scores,
+        "comparisons": comparisons,
+        "failures": failures,
+    }

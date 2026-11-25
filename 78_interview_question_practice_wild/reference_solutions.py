@@ -3,6 +3,7 @@
 These are teaching implementations, not production kernels. Finite inputs are
 assumed unless a function explicitly supports negative-infinity masks.
 """
+
 import math
 from collections import deque
 from dataclasses import dataclass
@@ -46,6 +47,8 @@ def masked_cross_entropy(logits, labels, mask, epsilon=0.0):
     losses = -(1 - epsilon) * lp[np.arange(len(targets)), targets]
     losses -= epsilon * lp.mean(axis=-1)
     return float(losses.mean())
+
+
 # ANCHOR_END: probabilities
 
 
@@ -113,6 +116,8 @@ def cached_attention_step(q_new, k_new, v_new, cache=None):
         values = np.concatenate([cache[1], v_new], axis=0)
     # The current query may see the entire prefix, including its current key.
     return attention_qkv(q_new, keys, values), (keys, values)
+
+
 # ANCHOR_END: attention
 
 
@@ -137,7 +142,7 @@ def nucleus_candidates(logits, p, temperature=1.0):
     probs = softmax(x / temperature)
     order = np.argsort(-probs, kind="stable")
     count = min(len(order), int(np.searchsorted(np.cumsum(probs[order]), p)) + 1)
-    ids = order[:max(1, count)]
+    ids = order[: max(1, count)]
     selected = probs[ids]
     return ids, selected / selected.sum()
 
@@ -167,12 +172,16 @@ def beam_search(next_log_probs, start, eos, beam_width, max_new_tokens):
             if lp.ndim != 1 or not len(lp) or not np.isfinite(lp).all():
                 raise ValueError("callback must return finite log probabilities")
             for token in np.argsort(-lp, kind="stable")[:beam_width]:
-                candidates.append((tokens + (int(token),), score + float(lp[token]), token == eos))
+                candidates.append(
+                    (tokens + (int(token),), score + float(lp[token]), token == eos)
+                )
         beams = sorted(candidates, key=lambda x: (-x[1], x[0]))[:beam_width]
         if all(done for _, _, done in beams):
             break
     best = max(beams, key=lambda x: x[1])
     return list(best[0]), best[1]
+
+
 # ANCHOR_END: sampling
 
 
@@ -204,6 +213,8 @@ def compute_entropy_blockwise(logits, block_size):
             if weight:
                 weighted_shift += weight * shift
     return math.log(z_sum) - weighted_shift / z_sum
+
+
 # ANCHOR_END: entropy
 
 
@@ -211,7 +222,12 @@ def compute_entropy_blockwise(logits, block_size):
 def layernorm_forward(x, gamma, beta, eps=1e-5):
     x = np.asarray(x, dtype=np.float64)
     gamma, beta = np.asarray(gamma), np.asarray(beta)
-    if x.ndim != 2 or gamma.shape != x.shape[1:] or beta.shape != gamma.shape or eps <= 0:
+    if (
+        x.ndim != 2
+        or gamma.shape != x.shape[1:]
+        or beta.shape != gamma.shape
+        or eps <= 0
+    ):
         raise ValueError("invalid shapes or epsilon")
     centered = x - x.mean(axis=-1, keepdims=True)
     inv = 1 / np.sqrt((centered * centered).mean(axis=-1, keepdims=True) + eps)
@@ -223,9 +239,14 @@ def layernorm_backward(dout, cache):
     normalized, inv, gamma = cache
     dout = np.asarray(dout)
     g = dout * gamma
-    dx = inv * (g - g.mean(axis=-1, keepdims=True)
-                - normalized * (g * normalized).mean(axis=-1, keepdims=True))
+    dx = inv * (
+        g
+        - g.mean(axis=-1, keepdims=True)
+        - normalized * (g * normalized).mean(axis=-1, keepdims=True)
+    )
     return dx, (dout * normalized).sum(axis=0), dout.sum(axis=0)
+
+
 # ANCHOR_END: layernorm
 
 
@@ -239,7 +260,7 @@ def mlp_loss_and_gradients(x, y, params):
     a2 = np.maximum(z2, 0)
     prediction = a2 @ w3 + b3
     residual = prediction - y
-    loss = float(np.mean(residual ** 2))
+    loss = float(np.mean(residual**2))
     g3 = 2 * residual / residual.size
     dw3, db3 = a2.T @ g3, g3.sum(axis=0)
     g2 = (g3 @ w3.T) * (z2 > 0)
@@ -247,6 +268,8 @@ def mlp_loss_and_gradients(x, y, params):
     g1 = (g2 @ w2.T) * (z1 > 0)
     dw1, db1 = x.T @ g1, g1.sum(axis=0)
     return loss, [dw1, db1, dw2, db2, dw3, db3]
+
+
 # ANCHOR_END: mlp
 
 
@@ -279,7 +302,11 @@ def kmeans(x, k, seed=0, max_iter=100, tol=1e-6):
 def knn_predict(x_train, y_train, query, k):
     x_train, query = np.asarray(x_train), np.asarray(query)
     y_train = np.asarray(y_train)
-    if x_train.ndim != 2 or query.shape != x_train.shape[1:] or not 1 <= k <= len(x_train):
+    if (
+        x_train.ndim != 2
+        or query.shape != x_train.shape[1:]
+        or not 1 <= k <= len(x_train)
+    ):
         raise ValueError("invalid KNN shapes or k")
     if y_train.shape != (len(x_train),):
         raise ValueError("invalid label shape")
@@ -287,6 +314,8 @@ def knn_predict(x_train, y_train, query, k):
     labels, counts = np.unique(y_train[ids], return_counts=True)
     # np.unique sorts labels; equal votes choose the smallest comparable label.
     return labels[counts.argmax()]
+
+
 # ANCHOR_END: clustering
 
 
@@ -303,7 +332,9 @@ def ace_calc(logprobs, accs, m_bins=15):
     bins = np.minimum((confidence * m_bins).astype(int), m_bins - 1)
     counts = np.bincount(bins, minlength=m_bins)
     good = counts > 0
-    bin_conf = np.bincount(bins, weights=confidence, minlength=m_bins)[good] / counts[good]
+    bin_conf = (
+        np.bincount(bins, weights=confidence, minlength=m_bins)[good] / counts[good]
+    )
     bin_acc = np.bincount(bins, weights=acc, minlength=m_bins)[good] / counts[good]
     return float(np.abs(bin_conf - bin_acc).mean())
 
@@ -325,19 +356,29 @@ def info_nce_loss(q, k, tau=0.07):
     q, k = np.asarray(q, dtype=float), np.asarray(k, dtype=float)
     if q.ndim != 2 or q.shape != k.shape or not len(q) or tau <= 0:
         raise ValueError("invalid contrastive inputs")
-    qn, kn = np.linalg.norm(q, axis=1, keepdims=True), np.linalg.norm(k, axis=1, keepdims=True)
+    qn, kn = np.linalg.norm(q, axis=1, keepdims=True), np.linalg.norm(
+        k, axis=1, keepdims=True
+    )
     if (qn == 0).any() or (kn == 0).any():
         raise ValueError("zero-norm embedding")
     logits = (q / qn) @ (k / kn).T / tau
     ids = np.arange(len(q))
-    return float(-0.5 * (log_softmax(logits)[ids, ids].mean()
-                         + log_softmax(logits.T)[ids, ids].mean()))
+    return float(
+        -0.5
+        * (
+            log_softmax(logits)[ids, ids].mean()
+            + log_softmax(logits.T)[ids, ids].mean()
+        )
+    )
+
+
 # ANCHOR_END: metrics
 
 
 # ANCHOR: batching
 class DynamicBatcher:
     """Pure scheduling core; no threads, clock or production retry policy."""
+
     def __init__(self, model, b_max, t_max):
         if b_max < 1 or t_max < 0:
             raise ValueError("invalid batching limits")
@@ -354,7 +395,9 @@ class DynamicBatcher:
         return None if not self.queue else self.queue[0][2] + self.t_max
 
     def should_dispatch(self, now):
-        return bool(self.queue) and (len(self.queue) >= self.b_max or now >= self.next_deadline())
+        return bool(self.queue) and (
+            len(self.queue) >= self.b_max or now >= self.next_deadline()
+        )
 
     def dispatch(self, now):
         if not self.should_dispatch(now):
@@ -364,6 +407,8 @@ class DynamicBatcher:
         if len(outputs) != len(batch):
             raise ValueError("model returned the wrong number of outputs")
         return [(item[0], result) for item, result in zip(batch, outputs)]
+
+
 # ANCHOR_END: batching
 
 
@@ -388,10 +433,14 @@ def pack(examples, seq_len, sep, pad_id):
         ids = list(prompt) + list(answer) + [sep]
         if len(ids) <= seq_len:
             layouts.append((ids, [0] * len(prompt) + [1] * (len(answer) + 1)))
-    layouts.sort(key=lambda row: -len(row[0]))  # Python sort preserves input-order ties.
+    layouts.sort(
+        key=lambda row: -len(row[0])
+    )  # Python sort preserves input-order ties.
     samples = []
     for ids, mask in layouts:
-        target = next((s for s in samples if len(s.input_ids) + len(ids) <= seq_len), None)
+        target = next(
+            (s for s in samples if len(s.input_ids) + len(ids) <= seq_len), None
+        )
         if target is None:
             target = PackedSample([], [], [])
             samples.append(target)
@@ -404,4 +453,6 @@ def pack(examples, seq_len, sep, pad_id):
         sample.loss_mask.extend([0] * padding)
         sample.position_ids.extend([0] * padding)
     return samples
+
+
 # ANCHOR_END: packing

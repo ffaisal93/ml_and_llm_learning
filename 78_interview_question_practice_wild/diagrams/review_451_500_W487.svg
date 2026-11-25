@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="310" viewBox="0 0 1320 310" role="img" aria-labelledby="title desc">
+<title id="title">W487 solution flow</title><desc id="desc">Validate + request identity → Transactional code uniqueness → Cache version / absolute expiry → 302 / 404 / 410 + events. Idempotent creation,forced collisions and concurrent aliases have executable tests.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#475569"/></marker></defs>
+<rect width="1320" height="310" fill="#ffffff"/>
+<text x="24" y="38" font-family="Arial,sans-serif" font-size="24" fill="#0f172a">W487 · Solution flow</text>
+<path d="M309 139H345" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="24" y="90" width="285" height="98" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+<text x="166" y="126" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">Validate + request identity</text>
+<path d="M634 139H670" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="349" y="90" width="285" height="98" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+<text x="491" y="126" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">Transactional code</text>
+<text x="491" y="150" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">uniqueness</text>
+<path d="M959 139H995" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="674" y="90" width="285" height="98" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+<text x="816" y="126" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">Cache version / absolute</text>
+<text x="816" y="150" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">expiry</text>
+<rect x="999" y="90" width="285" height="98" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+<text x="1141" y="126" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">302 / 404 / 410 + events</text>
+<text x="24" y="239" font-family="Arial,sans-serif" font-size="17" fill="#334155">Idempotent creation,forced collisions and concurrent aliases have executable tests.</text>
+</svg>

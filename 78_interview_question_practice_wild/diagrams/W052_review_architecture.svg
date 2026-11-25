@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="823" height="210" viewBox="0 0 823 210" role="img" aria-labelledby="title desc">
+<title id="title">W052. Agents / Coding with LLMs — architecture</title>
+<desc id="desc">User question → assistant Messages call → tool-use blocks
+                       ↑                       ↓
+                tool-result blocks ← validate + execute every request
+                       ↓ no tool requests
+                 final grounded answer
+</desc>
+<rect width="823" height="210" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">User question → assistant Messages call → tool-use blocks</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                       ↑                       ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                tool-result blocks ← validate + execute every request</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                       ↓ no tool requests</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                 final grounded answer</text>
+</svg>

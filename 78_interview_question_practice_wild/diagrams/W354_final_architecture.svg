@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="933" height="327" viewBox="0 0 933 327" role="img" aria-labelledby="title desc">
+<title id="title">Temperature readings and three serving views</title>
+<desc id="desc">Sensor readings + registry → validated durable stream → raw time-series archive
+                                      ↓ newest sequence/timestamp only
+                            latest value per sensor
+                              ↙                 ↘
+                  shard hottest sets       replace spatial tile contributions
+                          ↓                           ↓
+                  merge global top K          zoom-level heat-map tiles
+
+Client queries → latest lookup / top-K merge / cached tile refresh</desc>
+<rect width="933" height="327" rx="14" fill="#101c30"/>
+<text x="32" y="42" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Sensor readings + registry → validated durable stream → raw time-series archive</text>
+<text x="32" y="70" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      ↓ newest sequence/timestamp only</text>
+<text x="32" y="98" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                            latest value per sensor</text>
+<text x="32" y="126" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                              ↙                 ↘</text>
+<text x="32" y="154" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                  shard hottest sets       replace spatial tile contributions</text>
+<text x="32" y="182" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                          ↓                           ↓</text>
+<text x="32" y="210" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                  merge global top K          zoom-level heat-map tiles</text>
+<text x="32" y="238" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17"></text>
+<text x="32" y="266" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Client queries → latest lookup / top-K merge / cached tile refresh</text>
+</svg>

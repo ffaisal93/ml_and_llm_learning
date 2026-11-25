@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="922" height="294" viewBox="0 0 922 294" role="img" aria-labelledby="title desc">
+<title id="title">W422. Cross-Platform Client Logging Library — architecture</title>
+<desc id="desc">Application log() → bounded nonwaiting ring/queue → background worker
+                              ↓ full                     ↓
+                      drop/sample counter       redact / serialize / batch
+                                                       ↓
+                                     bounded in-flight request → collector API
+                                                       ↓
+                                     ACK / retry-after / backoff
+Offline: bounded worker-owned persistent spool ↔ same send pipeline
+</desc>
+<rect width="922" height="294" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Application log() → bounded nonwaiting ring/queue → background worker</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                              ↓ full                     ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                      drop/sample counter       redact / serialize / batch</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                       ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                     bounded in-flight request → collector API</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                       ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                     ACK / retry-after / backoff</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Offline: bounded worker-owned persistent spool ↔ same send pipeline</text>
+</svg>

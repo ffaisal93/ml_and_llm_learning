@@ -35,9 +35,14 @@ def masked_cross_entropy(logits, labels, mask, epsilon=0.0):
     return float(losses.mean())
 
 
-assert np.isclose(masked_cross_entropy(np.zeros((3,4)),[0,1,2],[1,1,1],.2),np.log(4))
-assert masked_cross_entropy([[1000,-1000]],[1],[1],0)==2000
-assert masked_cross_entropy([[0,1000]],[0],[0],.1)==0
-assert np.isclose(masked_cross_entropy([[2,0],[0,2]],[0,0],[1,0],.2),np.log1p(np.exp(-2))+.2)
+assert np.isclose(
+    masked_cross_entropy(np.zeros((3, 4)), [0, 1, 2], [1, 1, 1], 0.2), np.log(4)
+)
+assert masked_cross_entropy([[1000, -1000]], [1], [1], 0) == 2000
+assert masked_cross_entropy([[0, 1000]], [0], [0], 0.1) == 0
+assert np.isclose(
+    masked_cross_entropy([[2, 0], [0, 2]], [0, 0], [1, 0], 0.2),
+    np.log1p(np.exp(-2)) + 0.2,
+)
 
-print('W008: all exact-contract behavior checks passed')
+print("W008: all exact-contract behavior checks passed")

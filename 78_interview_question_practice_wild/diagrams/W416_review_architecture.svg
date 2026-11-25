@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="238" viewBox="0 0 900 238" role="img" aria-labelledby="title desc">
+<title id="title">W416. Online Shopping Cart System — architecture</title>
+<desc id="desc">User/device → cart API → user/merchant cart authority → durable cart + lines
+                                 ↓                         ↓
+                         catalog/price refresh       versioned invalidation
+                                 ↓                         ↓
+                             current view ← read cache / other devices
+Ratings → event log → windowed sum/count views → top-rated query
+</desc>
+<rect width="900" height="238" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">User/device → cart API → user/merchant cart authority → durable cart + lines</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                 ↓                         ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         catalog/price refresh       versioned invalidation</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                 ↓                         ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                             current view ← read cache / other devices</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Ratings → event log → windowed sum/count views → top-rated query</text>
+</svg>

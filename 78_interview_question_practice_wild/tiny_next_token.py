@@ -4,6 +4,7 @@ SyntheticDataset here is a LEARNABLE DEMONSTRATION, because the exercise does
 not include its dataset implementation. Reuse the supplied dataset unchanged
 when filling an existing interview skeleton.
 """
+
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -13,7 +14,9 @@ from torch.utils.data import Dataset, DataLoader
 class SyntheticDataset(Dataset):
     def __init__(self, num_samples, seq_len, vocab_size, seed=0):
         if num_samples < 1 or seq_len < 2 or vocab_size < 2:
-            raise ValueError("need samples > 0, sequence length >= 2 and vocabulary >= 2")
+            raise ValueError(
+                "need samples > 0, sequence length >= 2 and vocabulary >= 2"
+            )
         random = torch.Generator().manual_seed(seed)
         starts = torch.randint(vocab_size, (num_samples, 1), generator=random)
         offsets = torch.arange(seq_len).unsqueeze(0)
@@ -37,7 +40,7 @@ class TinyNextTokenModel(nn.Module):
     def forward(self, token_ids):
         embeddings = self.embedding(token_ids)  # (B, L, H)
         hidden_states = torch.relu(self.hidden(embeddings))
-        return self.output(hidden_states)       # (B, L, V), raw logits
+        return self.output(hidden_states)  # (B, L, V), raw logits
 
 
 def next_token_loss(model, sequences):
@@ -92,10 +95,15 @@ def evaluate_loss(model, loader, device="cpu"):
 def run_demo(seed=7, epochs=6):
     torch.manual_seed(seed)
     vocabulary_size = 8
-    dataset = SyntheticDataset(num_samples=256, seq_len=9,
-                               vocab_size=vocabulary_size, seed=seed)
-    loader = DataLoader(dataset, batch_size=32, shuffle=True,
-                        generator=torch.Generator().manual_seed(seed))
+    dataset = SyntheticDataset(
+        num_samples=256, seq_len=9, vocab_size=vocabulary_size, seed=seed
+    )
+    loader = DataLoader(
+        dataset,
+        batch_size=32,
+        shuffle=True,
+        generator=torch.Generator().manual_seed(seed),
+    )
     evaluation_loader = DataLoader(dataset, batch_size=32, shuffle=False)
     model = TinyNextTokenModel(vocabulary_size, hidden_dim=32)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.02)

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="911" height="327" viewBox="0 0 911 327" role="img" aria-labelledby="title desc">
+<title id="title">Grouped notifications, read state and resolution</title>
+<desc id="desc">Events → dedup/group key → stable notification row + grouped children
+                                           ↓
+                         preference-aware delivery outbox → channel workers
+                                           ↓
+                              user notification API / SSE or polling
+                                  ↙                    ↘
+                         read-through sequence       authoritative resolution
+                                  ↘                    ↙
+                           consistent badge/list projections across devices</desc>
+<rect width="911" height="327" rx="14" fill="#101c30"/>
+<text x="32" y="42" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Events → dedup/group key → stable notification row + grouped children</text>
+<text x="32" y="70" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                           ↓</text>
+<text x="32" y="98" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         preference-aware delivery outbox → channel workers</text>
+<text x="32" y="126" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                           ↓</text>
+<text x="32" y="154" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                              user notification API / SSE or polling</text>
+<text x="32" y="182" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                  ↙                    ↘</text>
+<text x="32" y="210" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         read-through sequence       authoritative resolution</text>
+<text x="32" y="238" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                  ↘                    ↙</text>
+<text x="32" y="266" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                           consistent badge/list projections across devices</text>
+</svg>

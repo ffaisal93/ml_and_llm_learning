@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="933" height="154" viewBox="0 0 933 154" role="img" aria-labelledby="title desc">
+<title id="title">W539. Trade Processor with Subscribe / Unsubscribe — architecture</title>
+<desc id="desc">subscribe / unsubscribe → subscription registry
+                                  ↓
+Incoming trade → snapshot handles → live lookup + filter → synchronous callback
+</desc>
+<rect width="933" height="154" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">subscribe / unsubscribe → subscription registry</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                  ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Incoming trade → snapshot handles → live lookup + filter → synchronous callback</text>
+</svg>

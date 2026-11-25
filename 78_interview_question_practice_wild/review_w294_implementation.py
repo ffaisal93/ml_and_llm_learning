@@ -1,5 +1,7 @@
 """Thread-safe snapshot publication; no persistence is claimed."""
+
 import threading
+
 
 class Broker:
     def __init__(self):
@@ -34,5 +36,5 @@ class Broker:
             try:
                 subscriber(message)
             except Exception as exc:
-                errors.append((subscriber, f'{type(exc).__name__}: {exc}'))
+                errors.append((subscriber, f"{type(exc).__name__}: {exc}"))
         return errors

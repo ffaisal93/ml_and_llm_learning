@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="757" height="322" viewBox="0 0 757 322" role="img" aria-labelledby="title desc">
+<title id="title">W409. Design a Ticketing System with Flash-Sale Concurrency — architecture</title>
+<desc id="desc">Fans → CDN/search/seat-map cache
+          ↓ admission token
+      hold API → event inventory transaction → expiring hold
+                                                ↓
+                                    payment-pending claim
+                                                ↓
+                                    provider + reconciler
+                                                ↓
+                                  sold seats + tickets + outbox
+</desc>
+<rect width="757" height="322" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Fans → CDN/search/seat-map cache</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">          ↓ admission token</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">      hold API → event inventory transaction → expiring hold</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                    payment-pending claim</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                    provider + reconciler</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                  sold seats + tickets + outbox</text>
+</svg>

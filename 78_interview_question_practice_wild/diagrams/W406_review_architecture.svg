@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="845" height="551" viewBox="0 0 845 551" role="img" aria-labelledby="title desc">
+<title id="title">Seat expiry and late-payment compensation</title>
+<desc id="desc">AVAILABLE -&gt; HELD -&gt; PAYMENT_PENDING / PROCESSING
+                |                    |
+       deadline reached      deadline reached
+                v                    v
+          EXPIRED + AVAILABLE   EXPIRED_PAYMENT_PENDING + AVAILABLE
+                                      |
+                          provider outcome reconciliation
+                          /                         \
+                 VOIDED / FAILED                SUCCEEDED late
+                       |                             |
+                 EXPIRED                    COMPENSATION_PENDING
+                                                     |
+                                           idempotent refund
+                                                     v
+                                                COMPENSATED
+
+Only a still-owned, unexpired pending hold can become PAID / SOLD.
+PAID -&gt; REFUND_PENDING -&gt; CANCELLED + AVAILABLE is normal cancellation.</desc>
+<rect width="845" height="551" rx="14" fill="#101c30"/>
+<text x="32" y="38" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">AVAILABLE -&gt; HELD -&gt; PAYMENT_PENDING / PROCESSING</text>
+<text x="32" y="65" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                |                    |</text>
+<text x="32" y="92" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">       deadline reached      deadline reached</text>
+<text x="32" y="119" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                v                    v</text>
+<text x="32" y="146" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">          EXPIRED + AVAILABLE   EXPIRED_PAYMENT_PENDING + AVAILABLE</text>
+<text x="32" y="173" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      |</text>
+<text x="32" y="200" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                          provider outcome reconciliation</text>
+<text x="32" y="227" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                          /                         \</text>
+<text x="32" y="254" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                 VOIDED / FAILED                SUCCEEDED late</text>
+<text x="32" y="281" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                       |                             |</text>
+<text x="32" y="308" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                 EXPIRED                    COMPENSATION_PENDING</text>
+<text x="32" y="335" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                     |</text>
+<text x="32" y="362" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                           idempotent refund</text>
+<text x="32" y="389" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                     v</text>
+<text x="32" y="416" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                COMPENSATED</text>
+<text x="32" y="443" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17"></text>
+<text x="32" y="470" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Only a still-owned, unexpired pending hold can become PAID / SOLD.</text>
+<text x="32" y="497" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">PAID -&gt; REFUND_PENDING -&gt; CANCELLED + AVAILABLE is normal cancellation.</text>
+</svg>

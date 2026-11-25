@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="878" height="322" viewBox="0 0 878 322" role="img" aria-labelledby="title desc">
+<title id="title">W415. Million-User Flash Sale System — architecture</title>
+<desc id="desc">Arrivals → CDN / anti-abuse / per-user limits → waiting room
+                                                   ↓ signed expiring token
+                                             checkout API
+                                                   ↓
+                                         stock reservation + order
+                                                   ↓
+                                      payment / reconciliation
+                                                   ↓
+                                        confirm + fulfillment event
+</desc>
+<rect width="878" height="322" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Arrivals → CDN / anti-abuse / per-user limits → waiting room</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                   ↓ signed expiring token</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                             checkout API</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                   ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                         stock reservation + order</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                   ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      payment / reconciliation</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                   ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                        confirm + fulfillment event</text>
+</svg>

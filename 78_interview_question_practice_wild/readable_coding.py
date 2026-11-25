@@ -1,4 +1,5 @@
 """Readable supplementary exercises with explicitly simplified contracts."""
+
 from collections import Counter
 
 
@@ -9,7 +10,7 @@ def encode_bpe(text, merges):
         updated = []
         i = 0
         while i < len(tokens):
-            if i + 1 < len(tokens) and tokens[i:i + 2] == [left, right]:
+            if i + 1 < len(tokens) and tokens[i : i + 2] == [left, right]:
                 updated.append(left + right)
                 i += 2
             else:
@@ -38,7 +39,7 @@ def train_bpe(texts, num_merges):
             updated = []
             i = 0
             while i < len(tokens):
-                if i + 1 < len(tokens) and tuple(tokens[i:i + 2]) == pair:
+                if i + 1 < len(tokens) and tuple(tokens[i : i + 2]) == pair:
                     updated.append(tokens[i] + tokens[i + 1])
                     i += 2
                 else:
@@ -77,8 +78,11 @@ def solve_crossword(board, dictionary):
                 slots.append([(r, col) for r in range(start, row)])
             row += 1
     covered = {cell for slot in slots for cell in slot}
-    if any(grid[r][c] == "." and (r, c) not in covered
-           for r in range(rows) for c in range(cols)):
+    if any(
+        grid[r][c] == "." and (r, c) not in covered
+        for r in range(rows)
+        for c in range(cols)
+    ):
         return None
     words = {}
     for word in set(dictionary):
@@ -90,9 +94,9 @@ def solve_crossword(board, dictionary):
         chosen = None
         for slot in slots:
             candidates = [
-                word for word in words.get(len(slot), [])
-                if all(grid[r][c] in (".", char)
-                       for (r, c), char in zip(slot, word))
+                word
+                for word in words.get(len(slot), [])
+                if all(grid[r][c] in (".", char) for (r, c), char in zip(slot, word))
             ]
             if not candidates:
                 return None

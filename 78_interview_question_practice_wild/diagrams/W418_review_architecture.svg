@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="867" height="322" viewBox="0 0 867 322" role="img" aria-labelledby="title desc">
+<title id="title">W418. Shopping Cart Latency and Inventory — architecture</title>
+<desc id="desc">Cart API → durable versioned cart → read cache
+                     ↓ view enrichment
+              catalog / stock hints
+                     ↑
+Inventory changes → event bus → hot SKU cache + active-cart notifications
+                     ↓ checkout
+             authoritative reservation/order transaction
+                     ↓
+             payment + reconciler → confirmed order
+</desc>
+<rect width="867" height="322" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Cart API → durable versioned cart → read cache</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                     ↓ view enrichment</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">              catalog / stock hints</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                     ↑</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Inventory changes → event bus → hot SKU cache + active-cart notifications</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                     ↓ checkout</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">             authoritative reservation/order transaction</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                     ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">             payment + reconciler → confirmed order</text>
+</svg>

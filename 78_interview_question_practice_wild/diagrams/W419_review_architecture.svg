@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="790" height="266" viewBox="0 0 790 266" role="img" aria-labelledby="title desc">
+<title id="title">W419. Ticketmaster-Style Seat Booking Design — architecture</title>
+<desc id="desc">Seat-map client ← snapshot/deltas ← cached availability view
+       ↓ hold selected IDs
+Hold API → event-seat SQL transaction → hold ID + deadline/version
+       ↓ checkout
+Protected payment workflow → sold seats + order/ticket outbox
+       ↓
+Client pending / confirmed state + replayable events
+</desc>
+<rect width="790" height="266" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Seat-map client ← snapshot/deltas ← cached availability view</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">       ↓ hold selected IDs</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Hold API → event-seat SQL transaction → hold ID + deadline/version</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">       ↓ checkout</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Protected payment workflow → sold seats + order/ticket outbox</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">       ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Client pending / confirmed state + replayable events</text>
+</svg>

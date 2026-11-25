@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="757" height="378" viewBox="0 0 757 378" role="img" aria-labelledby="title desc">
+<title id="title">W410. Design an Event Ticket Marketplace: Seat Holds and On-Sale Traffic — architecture</title>
+<desc id="desc">Fans → CDN event catalog / static seat geometry
+                 ↓
+          virtual waiting room → signed bounded admission
+                                      ↓
+                             live availability / hold API
+                                      ↓
+                         event-sharded transactional inventory
+                                      ↓
+                          order + protected payment attempt
+                                      ↓
+                         provider / reconciler → tickets/outbox
+</desc>
+<rect width="757" height="378" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Fans → CDN event catalog / static seat geometry</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                 ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">          virtual waiting room → signed bounded admission</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                             live availability / hold API</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         event-sharded transactional inventory</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                          order + protected payment attempt</text>
+<text x="32" y="292" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      ↓</text>
+<text x="32" y="320" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         provider / reconciler → tickets/outbox</text>
+</svg>

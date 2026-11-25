@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="856" height="383" viewBox="0 0 856 383" role="img" aria-labelledby="title desc">
+<title id="title">Immutable config and staged deployment generations</title>
+<desc id="desc">Operator publish → validate → immutable config artifact
+                                   ↓
+                       desired deployment generation
+                                   ↓
+                    staged rollout controller / health gates
+                       ↙                      ↘
+                region/cell caches       canary/bake decisions
+                       ↓                      ↑
+                instance verify + atomic apply → generation ACK + health
+
+Rollback → newer deployment generation pointing to known-good artifact</desc>
+<rect width="856" height="383" rx="14" fill="#101c30"/>
+<text x="32" y="42" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Operator publish → validate → immutable config artifact</text>
+<text x="32" y="70" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                   ↓</text>
+<text x="32" y="98" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                       desired deployment generation</text>
+<text x="32" y="126" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                   ↓</text>
+<text x="32" y="154" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                    staged rollout controller / health gates</text>
+<text x="32" y="182" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                       ↙                      ↘</text>
+<text x="32" y="210" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                region/cell caches       canary/bake decisions</text>
+<text x="32" y="238" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                       ↓                      ↑</text>
+<text x="32" y="266" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                instance verify + atomic apply → generation ACK + health</text>
+<text x="32" y="294" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17"></text>
+<text x="32" y="322" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Rollback → newer deployment generation pointing to known-good artifact</text>
+</svg>

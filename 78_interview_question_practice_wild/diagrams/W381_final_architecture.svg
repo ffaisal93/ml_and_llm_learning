@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="411" viewBox="0 0 900 411" role="img" aria-labelledby="title desc">
+<title id="title">Bounded seller quoting and one durable purchase</title>
+<desc id="desc">ISBN + max price + payment token → durable asynchronous job
+                                                ↓
+                          per-seller quota queues → parallel quote adapters
+                                                ↓
+                          fresh executable quotes ranked by total price
+                              ↙                               ↘
+                   best above max                       eligible offer
+                   return suggestion                    reserve/book attempt
+                                                              ↓
+                                          payment + partner reconciliation
+                                                              ↓
+                                                   final durable job outcome</desc>
+<rect width="900" height="411" rx="14" fill="#101c30"/>
+<text x="32" y="42" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">ISBN + max price + payment token → durable asynchronous job</text>
+<text x="32" y="70" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                ↓</text>
+<text x="32" y="98" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                          per-seller quota queues → parallel quote adapters</text>
+<text x="32" y="126" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                ↓</text>
+<text x="32" y="154" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                          fresh executable quotes ranked by total price</text>
+<text x="32" y="182" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                              ↙                               ↘</text>
+<text x="32" y="210" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                   best above max                       eligible offer</text>
+<text x="32" y="238" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                   return suggestion                    reserve/book attempt</text>
+<text x="32" y="266" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                              ↓</text>
+<text x="32" y="294" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                          payment + partner reconciliation</text>
+<text x="32" y="322" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                              ↓</text>
+<text x="32" y="350" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                   final durable job outcome</text>
+</svg>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="999" height="327" viewBox="0 0 999 327" role="img" aria-labelledby="title desc">
+<title id="title">Raw search, entity rollups and mention notifications</title>
+<desc id="desc">Posts / news → durable ingestion log → normalized raw corpus → full-text search index
+                         ↓
+                entity/ticker extraction + deduplication
+                         ↓
+                entity + event-time window rollups → chart/time-series API
+                         ↓
+                subscription rule evaluation → notification outbox
+                         ↓
+                    bounded channel workers</desc>
+<rect width="999" height="327" rx="14" fill="#101c30"/>
+<text x="32" y="42" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Posts / news → durable ingestion log → normalized raw corpus → full-text search index</text>
+<text x="32" y="70" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         ↓</text>
+<text x="32" y="98" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                entity/ticker extraction + deduplication</text>
+<text x="32" y="126" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         ↓</text>
+<text x="32" y="154" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                entity + event-time window rollups → chart/time-series API</text>
+<text x="32" y="182" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         ↓</text>
+<text x="32" y="210" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                subscription rule evaluation → notification outbox</text>
+<text x="32" y="238" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         ↓</text>
+<text x="32" y="266" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                    bounded channel workers</text>
+</svg>

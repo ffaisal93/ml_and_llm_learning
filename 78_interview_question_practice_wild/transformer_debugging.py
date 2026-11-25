@@ -4,6 +4,7 @@ Run without external data. Training uses mode=None. Cache decoding is an
 inference exercise: prefill a prefix, then supply exactly one token per call.
 Caches belong to this model instance; prefill resets them for a new request.
 """
+
 import math
 import torch
 from torch import nn
@@ -52,7 +53,7 @@ class CausalSelfAttention(nn.Module):
         # One-token decode sees only past tokens plus itself, so all keys
         # already in the cache are allowed. A top-left 1 x K triangle is wrong.
         weights = F.softmax(scores, dim=-1)
-        y = weights @ v                           # (B, H, T, D)
+        y = weights @ v  # (B, H, T, D)
         y = y.transpose(1, 2).contiguous().view(b, t, c)  # (B, T, H*D)
         return self.out(y)
 
@@ -75,8 +76,9 @@ class Block(nn.Module):
 
 
 class GPT(nn.Module):
-    def __init__(self, n_tokens=64, hiddens=64, n_heads=4,
-                 n_classes=256, layers=4, vocab=256):
+    def __init__(
+        self, n_tokens=64, hiddens=64, n_heads=4, n_classes=256, layers=4, vocab=256
+    ):
         super().__init__()
         self.tok_emb = nn.Embedding(vocab, hiddens)
         self.pos_emb = nn.Parameter(torch.empty(1, n_tokens, hiddens))
@@ -97,7 +99,7 @@ class GPT(nn.Module):
             raise ValueError("decode needs a prefilled cache and one token")
         if start + t > self.pos_emb.size(1):
             raise ValueError("sequence exceeds positional embedding capacity")
-        x = self.tok_emb(tokens) + self.pos_emb[:, start:start + t, :]
+        x = self.tok_emb(tokens) + self.pos_emb[:, start : start + t, :]
         for block in self.blocks:
             x = block(x, mode=mode)
         if mode in ("prefill", "decode"):
@@ -114,13 +116,12 @@ class GPT(nn.Module):
         inputs = tokens[:, :-1]
         targets = tokens[:, 1:]
         logits = self.forward(inputs, mode=mode)
-        return F.cross_entropy(
-            logits.reshape(-1, logits.size(-1)), targets.reshape(-1)
-        )
+        return F.cross_entropy(logits.reshape(-1, logits.size(-1)), targets.reshape(-1))
 
 
 class ParityClassifier(nn.Module):
     """An intentionally overpowered Transformer for an 8-digit binary task."""
+
     def __init__(self, backbone):
         super().__init__()
         self.backbone = backbone

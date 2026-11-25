@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="933" height="327" viewBox="0 0 933 327" role="img" aria-labelledby="title desc">
+<title id="title">Arrival observations, feasibility and fixed polling</title>
+<desc id="desc">Feed A: record k every 30s → B: ordered arrivals with 0..300s variable lag
+                                          ↓
+                              boot observations + cursor history
+                                          ↓
+                   finite observations cannot certify arbitrary future arrivals
+                                          ↓
+                 extra verified arrival contract?
+                   yes → phase feasibility + drift margin → fixed 30s schedule
+                   no  → relax exactly-one: bulk/cursor reads + durable C</desc>
+<rect width="933" height="327" rx="14" fill="#101c30"/>
+<text x="32" y="42" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Feed A: record k every 30s → B: ordered arrivals with 0..300s variable lag</text>
+<text x="32" y="70" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                          ↓</text>
+<text x="32" y="98" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                              boot observations + cursor history</text>
+<text x="32" y="126" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                          ↓</text>
+<text x="32" y="154" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                   finite observations cannot certify arbitrary future arrivals</text>
+<text x="32" y="182" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                          ↓</text>
+<text x="32" y="210" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                 extra verified arrival contract?</text>
+<text x="32" y="238" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                   yes → phase feasibility + drift margin → fixed 30s schedule</text>
+<text x="32" y="266" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                   no  → relax exactly-one: bulk/cursor reads + durable C</text>
+</svg>

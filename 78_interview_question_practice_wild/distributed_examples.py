@@ -1,4 +1,5 @@
 """Small deterministic examples, not a distributed scheduler implementation."""
+
 from threading import Lock
 import math
 
@@ -23,7 +24,9 @@ class TokenBucket:
             if now < self.last_time:
                 raise ValueError("clock moved backward")
             elapsed = now - self.last_time
-            self.tokens = min(self.capacity, self.tokens + elapsed * self.refill_per_second)
+            self.tokens = min(
+                self.capacity, self.tokens + elapsed * self.refill_per_second
+            )
             self.last_time = now
             if self.tokens < cost:
                 return False
@@ -36,6 +39,9 @@ def ready_jobs(dependencies, states):
     for parents in dependencies.values():
         if not set(parents) <= dependencies.keys():
             raise ValueError("dependency references an unknown job")
-    return sorted(job for job, parents in dependencies.items()
-                  if states.get(job) == 'PENDING'
-                  and all(states.get(parent) == 'SUCCEEDED' for parent in parents))
+    return sorted(
+        job
+        for job, parents in dependencies.items()
+        if states.get(job) == "PENDING"
+        and all(states.get(parent) == "SUCCEEDED" for parent in parents)
+    )

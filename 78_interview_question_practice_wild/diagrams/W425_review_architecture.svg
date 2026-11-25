@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="856" height="294" viewBox="0 0 856 294" role="img" aria-labelledby="title desc">
+<title id="title">W425. Event Logger with batching, fsync, and group commit follow-ups — architecture</title>
+<desc id="desc">Concurrent appenders → bounded queue → single writer
+                                        ↓ collect up to B / time window
+                                   JSONL records with sequence
+                                        ↓
+                              write → flush → fsync once
+                                        ↓
+                           complete every batch Future
+Recovery → complete-record prefix / truncate torn tail → resume sequence
+</desc>
+<rect width="856" height="294" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Concurrent appenders → bounded queue → single writer</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                        ↓ collect up to B / time window</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                   JSONL records with sequence</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                        ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                              write → flush → fsync once</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                        ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                           complete every batch Future</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Recovery → complete-record prefix / truncate torn tail → resume sequence</text>
+</svg>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="922" height="294" viewBox="0 0 922 294" role="img" aria-labelledby="title desc">
+<title id="title">W401. Perishable-Goods Tracking &amp; Location System — architecture</title>
+<desc id="desc">Scanner / store system → movement API → unit snapshot + movement ledger/outbox
+                                               ↓
+                         expiry-time index → due-window queue → expiry worker
+                                               ↓
+                                     relocation task to store staff
+                                               ↓
+                              scan-confirmed move → current-location view
+Query → product-location API → versioned cache / authoritative DB
+</desc>
+<rect width="922" height="294" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Scanner / store system → movement API → unit snapshot + movement ledger/outbox</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                               ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         expiry-time index → due-window queue → expiry worker</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                               ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                     relocation task to store staff</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                               ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                              scan-confirmed move → current-location view</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Query → product-location API → versioned cache / authoritative DB</text>
+</svg>

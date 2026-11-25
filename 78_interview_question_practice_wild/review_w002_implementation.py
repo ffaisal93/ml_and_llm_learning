@@ -30,12 +30,18 @@ def attention(x, wq, wk, wv, mask=None):
     return attention_qkv(x @ wq, x @ wk, x @ wv, mask)
 
 
-X=np.eye(2);W=np.eye(2);V=np.array([[1.,2.],[3.,4.]])
-y=attention(X,W,W,V)
-assert np.allclose(y,[[1.6604769,2.6604769],[2.3395231,3.3395231]])
-assert np.allclose(attention(X,W,W,V,np.eye(2,dtype=bool)),V)
-causal=np.tril(np.ones((2,2),dtype=bool));changed=X.copy();changed[1]*=100
-assert np.allclose(attention(X,W,W,V,causal)[0],attention(changed,W,W,V,causal)[0])
-assert np.isfinite(attention(np.eye(2)*1000,W,W,V)).all()
+X = np.eye(2)
+W = np.eye(2)
+V = np.array([[1.0, 2.0], [3.0, 4.0]])
+y = attention(X, W, W, V)
+assert np.allclose(y, [[1.6604769, 2.6604769], [2.3395231, 3.3395231]])
+assert np.allclose(attention(X, W, W, V, np.eye(2, dtype=bool)), V)
+causal = np.tril(np.ones((2, 2), dtype=bool))
+changed = X.copy()
+changed[1] *= 100
+assert np.allclose(
+    attention(X, W, W, V, causal)[0], attention(changed, W, W, V, causal)[0]
+)
+assert np.isfinite(attention(np.eye(2) * 1000, W, W, V)).all()
 
-print('W002: all exact-contract behavior checks passed')
+print("W002: all exact-contract behavior checks passed")

@@ -45,12 +45,20 @@ def grouped_query_attention(q, k, v):
     return out
 
 
-q=np.zeros((1,4,2,1));k=np.zeros((1,2,3,1));v=np.array([[[[2.],[2.],[2.]],[[9.],[9.],[9.]]]])
-y=grouped_query_attention(q,k,v)
-assert y.shape==(1,4,2,1) and np.all(y[0,:2]==2) and np.all(y[0,2:]==9)
-rng=np.random.default_rng(7);q=rng.normal(size=(2,6,3,4));k=rng.normal(size=(2,2,5,4));v=rng.normal(size=k.shape)
-kr=np.repeat(k,3,axis=1);vr=np.repeat(v,3,axis=1);scores=q@kr.swapaxes(-1,-2)/2
-p=np.exp(scores-scores.max(-1,keepdims=True));p/=p.sum(-1,keepdims=True)
-assert np.allclose(grouped_query_attention(q,k,v),p@vr)
+q = np.zeros((1, 4, 2, 1))
+k = np.zeros((1, 2, 3, 1))
+v = np.array([[[[2.0], [2.0], [2.0]], [[9.0], [9.0], [9.0]]]])
+y = grouped_query_attention(q, k, v)
+assert y.shape == (1, 4, 2, 1) and np.all(y[0, :2] == 2) and np.all(y[0, 2:] == 9)
+rng = np.random.default_rng(7)
+q = rng.normal(size=(2, 6, 3, 4))
+k = rng.normal(size=(2, 2, 5, 4))
+v = rng.normal(size=k.shape)
+kr = np.repeat(k, 3, axis=1)
+vr = np.repeat(v, 3, axis=1)
+scores = q @ kr.swapaxes(-1, -2) / 2
+p = np.exp(scores - scores.max(-1, keepdims=True))
+p /= p.sum(-1, keepdims=True)
+assert np.allclose(grouped_query_attention(q, k, v), p @ vr)
 
-print('W004: all exact-contract behavior checks passed')
+print("W004: all exact-contract behavior checks passed")

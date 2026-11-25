@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="922" height="327" viewBox="0 0 922 327" role="img" aria-labelledby="title desc">
+<title id="title">Priority among eligible domains</title>
+<desc id="desc">Domain URL queues + priority
+                ↓
+        ready max-priority heap ← promote due domains ← delayed min-time heap
+                ↓                                           ↑
+        choose highest eligible domain                      |
+                ↓                                           |
+        reserve/fence domain start → dispatch fetch → next_start &gt;= start + 1s
+
+Parallel workers coordinate the same per-domain eligibility authority</desc>
+<rect width="922" height="327" rx="14" fill="#101c30"/>
+<text x="32" y="42" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Domain URL queues + priority</text>
+<text x="32" y="70" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                ↓</text>
+<text x="32" y="98" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">        ready max-priority heap ← promote due domains ← delayed min-time heap</text>
+<text x="32" y="126" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                ↓                                           ↑</text>
+<text x="32" y="154" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">        choose highest eligible domain                      |</text>
+<text x="32" y="182" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                ↓                                           |</text>
+<text x="32" y="210" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">        reserve/fence domain start → dispatch fetch → next_start &gt;= start + 1s</text>
+<text x="32" y="238" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17"></text>
+<text x="32" y="266" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Parallel workers coordinate the same per-domain eligibility authority</text>
+</svg>

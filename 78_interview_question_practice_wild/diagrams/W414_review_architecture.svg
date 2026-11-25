@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="779" height="378" viewBox="0 0 779 378" role="img" aria-labelledby="title desc">
+<title id="title">W414. Design Ticketmaster - Event Booking and Seat Reservation — architecture</title>
+<desc id="desc">10M visitors → CDN catalog/search + static venue geometry
+                     ↓
+               waiting-room service → signed admission budget
+                                           ↓
+                         seat availability snapshot / live deltas
+                                           ↓
+                           event-owned hold/order transaction
+                                           ↓
+                         payment adapter + durable reconciler
+                                           ↓
+                           tickets / notifications / refunds
+</desc>
+<rect width="779" height="378" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">10M visitors → CDN catalog/search + static venue geometry</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                     ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">               waiting-room service → signed admission budget</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                           ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         seat availability snapshot / live deltas</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                           ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                           event-owned hold/order transaction</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                           ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         payment adapter + durable reconciler</text>
+<text x="32" y="292" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                           ↓</text>
+<text x="32" y="320" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                           tickets / notifications / refunds</text>
+</svg>

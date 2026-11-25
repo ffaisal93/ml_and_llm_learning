@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="322" viewBox="0 0 900 322" role="img" aria-labelledby="title desc">
+<title id="title">W403. Ride-Hailing System Design (Uber) — architecture</title>
+<desc id="desc">Driver GPS → location ingestion → latest-by-driver / stream coalescer
+                                         ↓                ↓
+                                  city geo index     sampled durable history
+                                         ↓
+Rider request → dispatch candidates → authoritative driver/trip reservation
+                                         ↓
+                                  offer / accept / trip events
+                                         ↓
+                                   update eligibility/index
+</desc>
+<rect width="900" height="322" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Driver GPS → location ingestion → latest-by-driver / stream coalescer</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                         ↓                ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                  city geo index     sampled durable history</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                         ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Rider request → dispatch candidates → authoritative driver/trip reservation</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                         ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                  offer / accept / trip events</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                         ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                   update eligibility/index</text>
+</svg>

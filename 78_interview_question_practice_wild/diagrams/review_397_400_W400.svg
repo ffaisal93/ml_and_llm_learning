@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="310" viewBox="0 0 1320 310" role="img" aria-labelledby="title desc">
+<title id="title">W400 solution flow</title><desc id="desc">Versioned scene + preferences → Generate / hard-filter poses → Learned feasible-set ranking → Planner revalidation / fallback. No model score or exploration policy can override legality,safety or accessibility constraints.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#475569"/></marker></defs>
+<rect width="1320" height="310" fill="#ffffff"/>
+<text x="24" y="38" font-family="Arial,sans-serif" font-size="24" fill="#0f172a">W400 · Solution flow</text>
+<path d="M309 139H345" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="24" y="90" width="285" height="98" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+<text x="166" y="126" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">Versioned scene +</text>
+<text x="166" y="150" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">preferences</text>
+<path d="M634 139H670" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="349" y="90" width="285" height="98" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+<text x="491" y="126" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">Generate / hard-filter</text>
+<text x="491" y="150" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">poses</text>
+<path d="M959 139H995" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="674" y="90" width="285" height="98" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+<text x="816" y="126" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">Learned feasible-set</text>
+<text x="816" y="150" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">ranking</text>
+<rect x="999" y="90" width="285" height="98" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+<text x="1141" y="126" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">Planner revalidation /</text>
+<text x="1141" y="150" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">fallback</text>
+<text x="24" y="239" font-family="Arial,sans-serif" font-size="17" fill="#334155">No model score or exploration policy can override legality,safety or accessibility constraints.</text>
+</svg>

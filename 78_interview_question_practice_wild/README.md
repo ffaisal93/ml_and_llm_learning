@@ -10,7 +10,13 @@ All **547 question entries**, each with its question text and a worked solution,
 - [ML system design](09_ml_system_design.md): ten complete answers connecting the product decision to data, models, serving, monitoring and recovery.
 - [Distributed systems](17_distributed_systems_depth.md): complete explanations of partitions, leases, idempotency, rate limits, backpressure and caching.
 - [Product ML cases](19_product_ml_case_studies.md): complete end-to-end designs for ranking, value prediction, assistance workflows and visual retrieval.
-- [Architecture diagram index](SYSTEM_DESIGN_DIAGRAMS.md): diagrams accompanying 317 design-oriented question entries. System, object and workflow diagrams are chosen for the question's scope.
+- [Architecture diagram index](SYSTEM_DESIGN_DIAGRAMS.md): local diagrams accompanying 319 question answers. System, object and workflow diagrams are chosen for the question's scope.
+
+## Offline study
+
+[Download the offline study copy](chapter78-offline.zip). Unzip it and open `START_HERE.html`. Question text, answers, code, diagrams and equation fonts are included. Optional external references and downloading pretrained models require internet.
+
+[Review and verification notes](COVERAGE.md#answer-review) explain the checks and the cases where an exercise omits necessary inputs.
 
 ## Start with a priority group
 
@@ -52,4 +58,4 @@ Some exercises intentionally lack a chart, dataset, schema, numerical odds or bu
 
 Attempt the question before reading the solution. State assumptions and shapes/units, work a small example, then test one boundary condition. For code, implement first and compare afterward. For designs, name the authoritative state and walk through one failure. Repeat difficult questions with changed constraints rather than rereading passively.
 
-All question and solution pages are local and readable offline. Running the numerical examples needs Python 3.9+ and NumPy already installed; the SQL checks use Python’s SQLite library. The full question bank and a machine-readable catalog are in this chapter directory.
+Reading the downloaded book requires only a browser. Running examples needs their dependencies installed in advance: many numerical examples use NumPy/PyTorch, some data examples use pandas/scikit-learn, and web examples use their stated framework. Cache required datasets/model weights before going offline. The machine-readable question and review catalogs are included in this directory.

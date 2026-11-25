@@ -3,6 +3,7 @@
 NumPy functions use float64 so the tiny examples and gradient checks are easy
 to inspect. InfoNCE also has a differentiable PyTorch implementation.
 """
+
 from collections import defaultdict
 import numpy as np
 
@@ -37,7 +38,7 @@ def layer_norm_forward(x, gamma, beta, epsilon=1e-5):
 
     row_mean = np.mean(x, axis=1, keepdims=True)
     centered = x - row_mean
-    row_variance = np.mean(centered ** 2, axis=1, keepdims=True)
+    row_variance = np.mean(centered**2, axis=1, keepdims=True)
     inverse_std = 1.0 / np.sqrt(row_variance + epsilon)
     normalized = centered * inverse_std
     output = gamma * normalized + beta
@@ -65,8 +66,7 @@ def layer_norm_backward(output_gradient, cache):
     )
     # Account for the direct path, centering, and variance normalization.
     input_gradient = inverse_std * (
-        normalized_gradient - mean_gradient
-        - normalized * mean_gradient_times_input
+        normalized_gradient - mean_gradient - normalized * mean_gradient_times_input
     )
     return input_gradient, gamma_gradient, beta_gradient
 
@@ -138,7 +138,7 @@ def k_means(points, cluster_count, max_iterations=100, tolerance=1e-6, seed=0):
         squared_distances = np.empty((len(points), cluster_count))
         for cluster in range(cluster_count):
             differences = points - current_centers[cluster]
-            squared_distances[:, cluster] = np.sum(differences ** 2, axis=1)
+            squared_distances[:, cluster] = np.sum(differences**2, axis=1)
         # Ties go to the first center index.
         return np.argmin(squared_distances, axis=1)
 
@@ -178,7 +178,7 @@ def knn_predict(training_points, training_labels, query_points, neighbor_count=3
     predictions = []
     for query in query_points:
         differences = training_points - query
-        squared_distances = np.sum(differences ** 2, axis=1)
+        squared_distances = np.sum(differences**2, axis=1)
         # Stable sorting resolves equal distances by original training-row order.
         neighbor_indices = np.argsort(squared_distances, kind="stable")[:neighbor_count]
         neighbor_labels = training_labels[neighbor_indices]
@@ -196,7 +196,7 @@ def pairwise_euclidean(x, y):
     if x.ndim != 2 or y.ndim != 2 or x.shape[1] != y.shape[1]:
         raise ValueError("expected matrices (N, D) and (M, D)")
     differences = x[:, None, :] - y[None, :, :]  # (N, M, D)
-    squared_distances = np.sum(differences ** 2, axis=-1)  # (N, M)
+    squared_distances = np.sum(differences**2, axis=-1)  # (N, M)
     return np.sqrt(squared_distances)
 
 
@@ -205,8 +205,8 @@ def pairwise_euclidean_fast(x, y):
     y = np.asarray(y, dtype=np.float64)
     if x.ndim != 2 or y.ndim != 2 or x.shape[1] != y.shape[1]:
         raise ValueError("expected matrices (N, D) and (M, D)")
-    x_squared_norms = np.sum(x ** 2, axis=1, keepdims=True)  # (N, 1)
-    y_squared_norms = np.sum(y ** 2, axis=1)[None, :]       # (1, M)
+    x_squared_norms = np.sum(x**2, axis=1, keepdims=True)  # (N, 1)
+    y_squared_norms = np.sum(y**2, axis=1)[None, :]  # (1, M)
     squared_distances = x_squared_norms + y_squared_norms - 2 * (x @ y.T)
     squared_distances = np.maximum(squared_distances, 0)  # roundoff protection
     return np.sqrt(squared_distances)
@@ -269,7 +269,7 @@ def binary_focal_loss(logits, labels, gamma=2.0, alpha=None):
     binary_cross_entropy = np.logaddexp(0.0, -signed_logits)
     # p_true = exp(-BCE). expm1 computes exp(x)-1 accurately near zero.
     one_minus_p_true = -np.expm1(-binary_cross_entropy)
-    focal_weights = one_minus_p_true ** gamma
+    focal_weights = one_minus_p_true**gamma
     losses = focal_weights * binary_cross_entropy
     if alpha is not None:
         class_weights = np.where(labels == 1, alpha, 1 - alpha)
@@ -303,8 +303,15 @@ def calibration_error(log_confidences, correct, bin_count=10):
         mean_confidence = float(np.mean(confidences[members]))
         accuracy = float(np.mean(correct[members]))
         gap = abs(accuracy - mean_confidence)
-        report.append({"bin": bin_index, "count": count,
-                       "confidence": mean_confidence, "accuracy": accuracy, "gap": gap})
+        report.append(
+            {
+                "bin": bin_index,
+                "count": count,
+                "confidence": mean_confidence,
+                "accuracy": accuracy,
+                "gap": gap,
+            }
+        )
     average_error = float(np.mean([row["gap"] for row in report]))
     return average_error, report
 
@@ -337,7 +344,9 @@ def clean_annotations(annotations, minimum_agreement=0.8, minimum_items=3):
         consensus[item] = majority_label([label for _, label in votes])
         for rater, label in votes:
             # Leave THIS rater out of the vote used to assess their agreement.
-            other_votes = [other_label for other, other_label in votes if other != rater]
+            other_votes = [
+                other_label for other, other_label in votes if other != rater
+            ]
             reference = majority_label(other_votes)
             if reference is not None:
                 resolved_counts[rater] += 1
@@ -349,7 +358,11 @@ def clean_annotations(annotations, minimum_agreement=0.8, minimum_items=3):
         count = resolved_counts[rater]
         agreement = matches[rater] / count if count else None
         keep = count >= minimum_items and agreement >= minimum_agreement
-        reliability[rater] = {"resolved_items": count, "agreement": agreement, "keep": keep}
+        reliability[rater] = {
+            "resolved_items": count,
+            "agreement": agreement,
+            "keep": keep,
+        }
         if keep:
             retained_raters.add(rater)
     cleaned = [row for row in annotations if row[1] in retained_raters]

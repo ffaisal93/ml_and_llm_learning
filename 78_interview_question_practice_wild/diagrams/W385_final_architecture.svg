@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="889" height="439" viewBox="0 0 889 439" role="img" aria-labelledby="title desc">
+<title id="title">Per-root image provenance and crawl completion</title>
+<desc id="desc">Job + many roots → unique (job, root, URL) reachability rows
+                                       ↓
+                         durable frontier / leased URL work
+                                       ↓
+                         shared fetch cache / parse result
+                           ↙                         ↘
+                discovered links               discovered image URLs
+                           ↓                         ↓
+               propagate each root          (job, root, image) results
+                           ↘                         ↙
+                    atomic child insertion + outstanding-work accounting
+                                       ↓
+                         finite frontier empty? → completed / still running</desc>
+<rect width="889" height="439" rx="14" fill="#101c30"/>
+<text x="32" y="42" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Job + many roots → unique (job, root, URL) reachability rows</text>
+<text x="32" y="70" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                       ↓</text>
+<text x="32" y="98" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         durable frontier / leased URL work</text>
+<text x="32" y="126" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                       ↓</text>
+<text x="32" y="154" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         shared fetch cache / parse result</text>
+<text x="32" y="182" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                           ↙                         ↘</text>
+<text x="32" y="210" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                discovered links               discovered image URLs</text>
+<text x="32" y="238" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                           ↓                         ↓</text>
+<text x="32" y="266" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">               propagate each root          (job, root, image) results</text>
+<text x="32" y="294" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                           ↘                         ↙</text>
+<text x="32" y="322" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                    atomic child insertion + outstanding-work accounting</text>
+<text x="32" y="350" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                       ↓</text>
+<text x="32" y="378" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         finite frontier empty? → completed / still running</text>
+</svg>

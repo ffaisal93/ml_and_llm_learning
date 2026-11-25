@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="790" height="378" viewBox="0 0 790 378" role="img" aria-labelledby="title desc">
+<title id="title">W407. Design a Hotel Booking System with External Inventory — architecture</title>
+<desc id="desc">Hotel/API feeds → normalization → cached offers + geo/search index
+                                           ↓
+User search → query/availability hints → select offer
+                                           ↓
+                             provider reprice / atomic hold
+                                           ↓
+                             local pending booking + payment
+                                           ↓
+                            provider confirmation / reconciliation
+                                           ↓
+                                 confirmed booking or alternatives
+</desc>
+<rect width="790" height="378" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Hotel/API feeds → normalization → cached offers + geo/search index</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                           ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">User search → query/availability hints → select offer</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                           ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                             provider reprice / atomic hold</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                           ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                             local pending booking + payment</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                           ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                            provider confirmation / reconciliation</text>
+<text x="32" y="292" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                           ↓</text>
+<text x="32" y="320" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                 confirmed booking or alternatives</text>
+</svg>

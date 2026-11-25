@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="911" height="266" viewBox="0 0 911 266" role="img" aria-labelledby="title desc">
+<title id="title">W423. Design an Audit Logs Service — architecture</title>
+<desc id="desc">Account operation + transactional outbox → durable audit ingestion
+                                                    ↓
+                                   append-only partitioned event store
+                                       ↓                         ↓
+                             account/time index             archive/retention
+                                       ↓
+Authenticated query API → authorized account scope → paginated events
+</desc>
+<rect width="911" height="266" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Account operation + transactional outbox → durable audit ingestion</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                    ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                   append-only partitioned event store</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                       ↓                         ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                             account/time index             archive/retention</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                       ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Authenticated query API → authorized account scope → paginated events</text>
+</svg>

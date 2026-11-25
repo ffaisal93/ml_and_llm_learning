@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="889" height="383" viewBox="0 0 889 383" role="img" aria-labelledby="title desc">
+<title id="title">Browser origin checks and CORS request flow</title>
+<desc id="desc">Browser page origin = scheme + host + port
+                         ↓ cross-origin fetch
+              preflight needed? → OPTIONS request to API
+                         ↓         allowed origin/method/header response
+                   browser validates preflight
+                         ↓
+                   actual API request
+                         ↓
+              actual response CORS/credential checks → expose or block read
+
+Alternative: same-origin server proxy → authorized third-party API</desc>
+<rect width="889" height="383" rx="14" fill="#101c30"/>
+<text x="32" y="42" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Browser page origin = scheme + host + port</text>
+<text x="32" y="70" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         ↓ cross-origin fetch</text>
+<text x="32" y="98" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">              preflight needed? → OPTIONS request to API</text>
+<text x="32" y="126" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         ↓         allowed origin/method/header response</text>
+<text x="32" y="154" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                   browser validates preflight</text>
+<text x="32" y="182" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         ↓</text>
+<text x="32" y="210" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                   actual API request</text>
+<text x="32" y="238" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         ↓</text>
+<text x="32" y="266" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">              actual response CORS/credential checks → expose or block read</text>
+<text x="32" y="294" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17"></text>
+<text x="32" y="322" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Alternative: same-origin server proxy → authorized third-party API</text>
+</svg>

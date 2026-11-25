@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="922" height="266" viewBox="0 0 922 266" role="img" aria-labelledby="title desc">
+<title id="title">W404. Rider-Driver Matching System — architecture</title>
+<desc id="desc">GPS → region location service → fresh geo candidate index
+                                         ↓
+Rider API → ride request store → matcher → driver reservation authority
+                                         ↓                  ↓
+                                     offer gateway ← accepted/declined/expired
+                                         ↓
+                             durable trip + events → rider/driver views
+</desc>
+<rect width="922" height="266" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">GPS → region location service → fresh geo candidate index</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                         ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Rider API → ride request store → matcher → driver reservation authority</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                         ↓                  ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                     offer gateway ← accepted/declined/expired</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                         ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                             durable trip + events → rider/driver views</text>
+</svg>

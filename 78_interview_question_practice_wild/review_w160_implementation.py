@@ -1,5 +1,7 @@
 """W160 executable answer; demonstration fixtures are explicitly labeled."""
+
 import math
+
 
 # uniform() is supplied by the caller/environment.
 def sample_gaussian():

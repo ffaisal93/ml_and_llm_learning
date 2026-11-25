@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="310" viewBox="0 0 1320 310" role="img" aria-labelledby="title desc">
+<title id="title">W399 solution flow</title><desc id="desc">Durable async shipment intake → Eligible carrier / audited score → Idempotent booking + reconcile → Normalized tracking projection. An unknown booking is reconciled before rerouting;late tracking does not regress delivery.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#475569"/></marker></defs>
+<rect width="1320" height="310" fill="#ffffff"/>
+<text x="24" y="38" font-family="Arial,sans-serif" font-size="24" fill="#0f172a">W399 · Solution flow</text>
+<path d="M309 139H345" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="24" y="90" width="285" height="98" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+<text x="166" y="126" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">Durable async shipment</text>
+<text x="166" y="150" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">intake</text>
+<path d="M634 139H670" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="349" y="90" width="285" height="98" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+<text x="491" y="126" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">Eligible carrier / audited</text>
+<text x="491" y="150" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">score</text>
+<path d="M959 139H995" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="674" y="90" width="285" height="98" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+<text x="816" y="126" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">Idempotent booking +</text>
+<text x="816" y="150" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">reconcile</text>
+<rect x="999" y="90" width="285" height="98" rx="10" fill="#eff6ff" stroke="#2563eb"/>
+<text x="1141" y="126" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">Normalized tracking</text>
+<text x="1141" y="150" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="#0f172a">projection</text>
+<text x="24" y="239" font-family="Arial,sans-serif" font-size="17" fill="#334155">An unknown booking is reconciled before rerouting;late tracking does not regress delivery.</text>
+</svg>
