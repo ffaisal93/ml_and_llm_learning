@@ -79,7 +79,7 @@ m_t=\beta_1m_{t-1}+(1-\beta_1)g_t,
 \theta_{t+1}=\theta_t-\eta m_t.
 $$
 
-Here $eta_1$ is commonly near $0.9$. Gradients with a consistent sign accumulate; alternating
+Here $\beta_1$ is commonly near $0.9$. Gradients with a consistent sign accumulate; alternating
 gradients cancel. In the narrow-valley picture, momentum damps side-to-side oscillation and accelerates
 motion along the valley floor.
 
@@ -176,7 +176,7 @@ Adam step =  η × --------------------
                  recent gradient scale
 ```
 
-Typical defaults are $eta_1=0.9$, $eta_2=0.999$, and $\epsilon=10^{-8}$, but Adam still depends on
+Typical defaults are $\beta_1=0.9$, $\beta_2=0.999$, and $\epsilon=10^{-8}$, but Adam still depends on
 the learning rate, warmup, schedule, batch size, and clipping.
 
 **What remains broken:** Adam stores two state tensors per parameter, may generalize differently from

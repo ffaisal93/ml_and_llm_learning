@@ -107,7 +107,7 @@ For uniform predictions on four classes, every $\log p=-\log4$ and the loss is $
 
 1. For W shaped (d_out,d_in), use delta_W=(alpha/r)*B@A with A:(r,d_in) and B:(d_out,r).
 2. Train A and B, usually initializing one factor to zero so the initial update is zero without making both gradients permanently zero.
-3. The trainable count is r*(d_in+d_out), versus d_in*d_out for the full matrix. Include all targeted matrices when estimating the whole model.
+3. The trainable count is $r\,(d_{\text{in}} + d_{\text{out}})$, versus $d_{\text{in}} \times d_{\text{out}}$ for the full matrix. Include all targeted matrices when estimating the whole model.
 
 **Small example.** A 4096-by-4096 matrix with r=8 has 65536 adapter parameters instead of 16777216 full parameters, excluding biases.
 
@@ -222,8 +222,8 @@ A lower optimization loss is not independent evidence of better task behavior. R
 
 **Work it through.**
 
-1. Let a=log pi_theta(y_w|x)-log pi_ref(y_w|x) and b=log pi_theta(y_l|x)-log pi_ref(y_l|x).
-2. Minimize L=-log sigmoid(beta*(a-b)); use a stable log-sigmoid or softplus implementation.
+1. Let $a = \log \pi_\theta(y_w \mid x) - \log \pi_{\text{ref}}(y_w \mid x)$ and $b = \log \pi_\theta(y_l \mid x) - \log \pi_{\text{ref}}(y_l \mid x)$.
+2. Minimize $L = -\log \sigma\!\big(\beta\,(a-b)\big)$; use a stable log-sigmoid or softplus implementation.
 3. Sum token log probabilities over each response, excluding prompt and padding targets under a consistent convention. Keep the reference frozen.
 
 **Small example.** If beta*(a-b)=0, the loss is log(2)=0.693. If the margin is 1, the loss is about 0.313.
@@ -242,7 +242,7 @@ A lower optimization loss is not independent evidence of better task behavior. R
 
 **Work it through.**
 
-1. Form r=pi_new(action|state)/pi_old(action|state) from the rollout policy, with rollout quantities treated as fixed.
+1. Form $r = \pi_{\text{new}}(\text{action} \mid \text{state}) / \pi_{\text{old}}(\text{action} \mid \text{state})$ from the rollout policy, with rollout quantities treated as fixed.
 2. Maximize mean(min(r*A,clip(r,1-epsilon,1+epsilon)*A)). A common minimized total loss adds value error and KL regularization and subtracts an entropy bonus.
 3. Estimate advantages from returns and a value baseline, then monitor policy KL, reward, value error and clipping fraction.
 

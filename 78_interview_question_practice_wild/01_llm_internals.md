@@ -16,7 +16,7 @@ Very important: explain the computation before naming an architecture.
 
 **Work it through.**
 
-1. Write Q=XWq, K=XWk and V=XWv, with X shaped (B,T,d_model).
+1. Write $Q = XW_Q$, $K = XW_K$ and $V = XW_V$, with $X$ shaped $(B, T, d_{\text{model}})$.
 2. Compute scores QKᵀ, normalize each query's row over keys, then mix the value vectors.
 3. Separate Q and K allow asymmetric relevance. Separate V lets the features used for matching differ from the features transmitted; the output projection mixes heads.
 
@@ -37,8 +37,8 @@ Very important: explain the computation before naming an architecture.
 **Work it through.**
 
 1. Assume independent, zero-mean, unit-variance query and key coordinates. Each product has variance one.
-2. A sum of d_k such products has variance d_k and standard deviation sqrt(d_k).
-3. Divide by sqrt(d_k), then subtract the row maximum before exponentiation. The divisor controls scale; max subtraction prevents overflow. These are different mechanisms.
+2. A sum of $d_k$ such products has variance $d_k$ and standard deviation $\sqrt{d_k}$.
+3. Divide by $\sqrt{d_k}$, then subtract the row maximum before exponentiation. The divisor controls scale; max subtraction prevents overflow. These are different mechanisms.
 
 **Small example.** With d_k=64, the unscaled score has standard deviation 8 under these assumptions. Scaling reduces it to 1; dividing by 64 would make the scores unnecessarily small.
 
@@ -60,7 +60,7 @@ Very important: explain the computation before naming an architecture.
 2. Multiply Q by K transposed on its last two axes to obtain (B,H,T,T). Softmax over the final key axis.
 3. Multiply by V to obtain (B,H,T,d_h), transpose to (B,T,H,d_h), concatenate to (B,T,H*d_h), and apply Wo to return to (B,T,d).
 
-**Small example.** For B=2, T=3, H=4, d_h=8, each score tensor has shape (2,4,3,3); concatenating produces (2,3,32).
+**Small example.** For $B=2$, $T=3$, $H=4$, $d_h=8$, each score tensor has shape $(2,4,3,3)$; concatenating produces $(2,3,32)$.
 
 **Common trap.** Reshaping without the transpose, which silently mixes token and head dimensions while preserving the total element count.
 
@@ -180,7 +180,7 @@ Very important: explain the computation before naming an architecture.
 2. Sum the actual layer tensors, embeddings and output head, accounting for tied weights and architecture-specific projections.
 3. Cache bytes are 2*B*L*T*H_kv*d_h*bytes_per_element for equal-length sequences. The factor two is keys plus values; add allocator and metadata overhead separately.
 
-**Small example.** For B=1, L=32, T=4096, H_kv=8, d_h=128 and two-byte elements, the cache is 536870912 bytes, or 512 MiB.
+**Small example.** For $B=1$, $L=32$, $T=4096$, $H_{kv}=8$, $d_h=128$ and two-byte elements, the cache is 536,870,912 bytes, or 512 MiB.
 
 **Common trap.** Using query-head count in the cache formula for GQA, or silently treating GB and GiB as the same unit.
 

@@ -36,9 +36,9 @@ Very important: distinguish a good benchmark number from a dependable decision.
 
 **Work it through.**
 
-1. For C classes and a correct argmax, p_true>=1/C, so 0<=loss<=log(C), subject to tie conventions.
-2. For an incorrect argmax, p_true<=1/2 and loss>=log(2), with the lower bound an infimum when strict inequality is required.
-3. There is no finite upper bound for an incorrect prediction as p_true approaches zero. For N examples with k errors, the mean-loss lower bound is (k/N)*log(2). If k=0 the upper bound is log(C); if k>0 there is no finite upper bound.
+1. For $C$ classes and a correct argmax, $p_{\text{true}} \ge 1/C$, so $0 \le \text{loss} \le \log C$, subject to tie conventions.
+2. For an incorrect argmax, $p_{\text{true}} \le 1/2$ and $\text{loss} \ge \log 2$, with the lower bound an infimum when strict inequality is required.
+3. There is no finite upper bound for an incorrect prediction as $p_{\text{true}}$ approaches zero. For $N$ examples with $k$ errors, the mean-loss lower bound is $(k/N)\log 2$. If $k=0$ the upper bound is $\log C$; if $k>0$ there is no finite upper bound.
 
 **Small example.** For 10 classes, a correct prediction's loss cannot exceed log(10) under an ordinary argmax decision; an incorrect prediction can have arbitrarily large loss.
 

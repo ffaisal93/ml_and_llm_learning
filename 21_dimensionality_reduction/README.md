@@ -174,11 +174,11 @@ def pca(X: np.ndarray, n_components: int) -> tuple:
 
 **Mathematical Formulation:**
 
-1. **Covariance Matrix**: C = (1/n) X^T X
-2. **Eigenvalue Decomposition**: C = Q Λ Q^T
+1. **Covariance Matrix**: $C = \frac{1}{n} X^{\top} X$
+2. **Eigenvalue Decomposition**: $C = Q \Lambda Q^{\top}$
 3. **Principal Components**: Columns of Q (eigenvectors)
 4. **Explained Variance**: Eigenvalues
-5. **Projection**: Y = X Q_k (where Q_k is top k components)
+5. **Projection**: $Y = X Q_k$ (where $Q_k$ is the top $k$ components)
 
 **Why it works:**
 - Maximizes variance in projected space

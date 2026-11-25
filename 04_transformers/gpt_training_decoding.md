@@ -118,7 +118,7 @@ The key insight of multi-head attention is that it allows the model to attend to
 
 Linear attention is a variant that reduces the complexity from O(n²d) to O(nd²) by reformulating the attention computation. Instead of computing the full attention matrix, linear attention uses a different mathematical formulation that avoids the quadratic dependency on sequence length.
 
-The key idea is to rewrite the attention computation using the associative property of matrix multiplication. Standard attention computes QK^T (which is O(n²d)) and then multiplies by V (which is O(n²d)), resulting in O(n²d) overall. Linear attention reformulates this as (QK^T)V = Q(K^T V), where K^T V is computed first (O(nd²)) and then multiplied by Q (O(nd²)), resulting in O(nd²) overall.
+The key idea is to rewrite the attention computation using the associative property of matrix multiplication. Standard attention computes $QK^{\top}$ (which is $O(n^{2}d)$) and then multiplies by $V$ (also $O(n^{2}d)$), so the whole thing is $O(n^{2}d)$. Linear attention reformulates this as $(QK^{\top})V = Q(K^{\top}V)$, where $K^{\top}V$ is computed first ($O(nd^{2})$) and then multiplied by $Q$ ($O(nd^{2})$), so the whole thing is $O(nd^{2})$.
 
 However, linear attention requires using a different similarity function (often a kernel function) instead of the standard dot product, which can affect the model's expressiveness. The trade-off is between computational efficiency (linear attention is faster for long sequences) and model capacity (standard attention may be more expressive). For sequences where n >> d, linear attention provides significant speedup, but for typical GPT applications where n and d are similar in scale, the benefit may be limited.
 

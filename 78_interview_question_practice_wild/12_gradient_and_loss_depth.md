@@ -16,8 +16,8 @@ Important: derive compact numerical rules and test boundary conventions.
 
 **Work it through.**
 
-1. Write L=-sum(y_j*logp_j), with targets summing to one.
-2. Differentiate logp_j=z_j-logsumexp(z), yielding dL/dz_i=p_i-y_i.
+1. Write $L = -\sum_j y_j \log p_j$, with targets summing to one.
+2. Differentiate $\log p_j = z_j - \operatorname{logsumexp}(z)$, yielding $\partial L/\partial z_i = p_i - y_i$.
 3. Apply the chosen batch or mask reduction afterward and preserve zero gradients for excluded examples.
 
 **Small example.** For p=[0.2,0.3,0.5] and class 2, the per-example logit gradient is [0.2,0.3,-0.5].
@@ -56,7 +56,7 @@ Important: derive compact numerical rules and test boundary conventions.
 
 **Work it through.**
 
-1. Write L=(1-p_t)^gamma*(-logp_t), with any class weight explicit.
+1. Write $L = -(1-p_t)^{\gamma}\log p_t$, with any class weight explicit.
 2. Apply the product rule: changing the logit changes the BCE term and the modulation term.
 3. Use a stable differentiable implementation and compare gradients with finite differences rather than multiplying BCE gradients by a fixed-looking weight.
 

@@ -137,7 +137,7 @@ Diffusion models are generative models that learn to reverse a gradual noising p
 
 **Training Objective:**
 - Predict the noise added at each step
-- L = E[||ε - ε_θ(x_t, t)||²]
+- $L = \mathbb{E}\big[\lVert \varepsilon - \varepsilon_\theta(x_t, t) \rVert^{2}\big]$
 - Learn to predict noise, then subtract it
 
 ## Industry-Standard Boilerplate Code

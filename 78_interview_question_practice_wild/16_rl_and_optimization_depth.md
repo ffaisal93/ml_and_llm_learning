@@ -17,7 +17,7 @@ Important: move from algorithm names to states, objectives and observable feedba
 **Work it through.**
 
 1. Specify transition probabilities, immediate rewards, terminal states and discount gamma<1 for the standard contraction setting.
-2. Update V_new(s)=max_a sum_s' P(s'|s,a)*(R(s,a,s')+gamma*V(s')), with terminal treatment explicit.
+2. Update $V_{\text{new}}(s) = \max_a \sum_{s'} P(s' \mid s, a)\,\big(R(s,a,s') + \gamma V(s')\big)$, with terminal treatment explicit.
 3. Stop on a convergence criterion or iteration cap, then derive the greedy policy from the final values.
 
 **Small example.** An action giving reward 1 forever at gamma=0.9 has value 1/(1-0.9)=10.

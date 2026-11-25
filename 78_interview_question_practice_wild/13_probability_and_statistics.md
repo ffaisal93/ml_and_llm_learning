@@ -17,7 +17,7 @@ Important: state the random variables and assumptions before calculating.
 **Work it through.**
 
 1. Draw U1 in (0,1) and U2 in [0,1), avoiding log(0).
-2. Set R=sqrt(-2*log(U1)) and theta=2*pi*U2; return R*cos(theta) and R*sin(theta).
+2. Set $R = \sqrt{-2\log U_1}$ and $\theta = 2\pi U_2$; return $R\cos\theta$ and $R\sin\theta$.
 3. For mean mu and standard deviation sigma, transform each z to mu+sigma*z. Test sample moments and distribution shape rather than exact draws.
 
 **Small example.** With U1=exp(-0.5) and U2=0, the pair is (1,0).
@@ -36,8 +36,8 @@ Important: state the random variables and assumptions before calculating.
 
 **Work it through.**
 
-1. Let p=1/6 and q=1-p, so P(N=n)=p*q^(n-1).
-2. Sum E[1/N]=(p/q)*sum(q^n/n) from n=1 to infinity.
+1. Let $p = 1/6$ and $q = 1-p$, so $P(N=n) = p\,q^{\,n-1}$.
+2. Sum $E[1/N] = (p/q)\sum_{n=1}^{\infty} q^{n}/n$.
 3. Use sum(q^n/n)=-log(1-q)=-log(p), giving -p*log(p)/q.
 
 **Small example.** For a fair die, E[1/N]=log(6)/5, approximately 0.35835; 1/E[N]=1/6 is different.
@@ -78,9 +78,9 @@ Important: state the random variables and assumptions before calculating.
 
 1. Specify a point distance a from the screen and a direction angle theta uniform on (-pi/2,pi/2) toward it.
 2. Geometry gives signed displacement along the screen X=a*tan(theta).
-3. Use change of variables to obtain f_X(x)=a/[pi*(a²+x²)], a Cauchy density. Simulate via uniform angles while avoiding endpoints.
+3. Use change of variables to obtain $f_X(x) = a / [\pi (a^{2} + x^{2})]$, a Cauchy density. Simulate via uniform angles while avoiding endpoints.
 
-**Small example.** For a=1, P(|X|<=1)=1/2, but the ordinary mean and variance do not exist.
+**Small example.** For $a=1$, $P(|X| \le 1) = 1/2$, but the ordinary mean and variance do not exist.
 
 **Common trap.** Using a sample mean as a stable estimator of a nonexistent population mean.
 
@@ -178,7 +178,7 @@ Important: state the random variables and assumptions before calculating.
 
 1. Define I_e=1 if an allowed edge exists and zero otherwise.
 2. If each of m allowed edges appears with probability p, E[number_of_edges]=sum E[I_e]=m*p.
-3. For a simple undirected graph on n vertices, m=n*(n-1)/2. Dependence matters when computing variance or other nonlinear quantities.
+3. For a simple undirected graph on $n$ vertices, $m = n(n-1)/2$. Dependence matters when computing variance or other nonlinear quantities.
 
 **Small example.** With 10 vertices and p=0.2, there are 45 possible edges and an expected 9 realized edges.
 

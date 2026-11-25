@@ -126,7 +126,7 @@ Eigenvectors: v₁ = [1, 1], v₂ = [1, -1]
 
 **Answer:**
 - **SVD**: Singular Value Decomposition
-- **Formula**: A = U Σ V^T
+- **Formula**: $A = U \Sigma V^{\top}$
 - **U**: Left singular vectors (eigenvectors of AA^T)
 - **Σ**: Singular values (diagonal matrix)
 - **V**: Right singular vectors (eigenvectors of A^T A)
@@ -169,7 +169,7 @@ See [`linear_algebra_qa.py`](linear_algebra_qa_py.md) for implementations.
 - **Inverse**: A × A^(-1) = I
 
 ### Eigenvalue Decomposition
-- **Formula**: A = Q Λ Q^(-1)
+- **Formula**: $A = Q \Lambda Q^{-1}$
 - **Q**: Eigenvectors (columns)
 - **Λ**: Eigenvalues (diagonal)
 

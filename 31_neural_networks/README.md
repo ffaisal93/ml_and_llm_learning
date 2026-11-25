@@ -185,12 +185,12 @@ For hidden layer (layer 1):
 ### Loss Functions
 
 **Mean Squared Error (MSE):**
-- Formula: L = (1/n) Σ(y_pred - y_true)²
+- Formula: $L = \frac{1}{n}\sum (y_{\text{pred}} - y_{\text{true}})^{2}$
 - **Use**: Regression
 - **Derivative**: ∂L/∂y_pred = 2(y_pred - y_true)
 
 **Cross-Entropy:**
-- Formula: L = -Σ y_true × log(y_pred)
+- Formula: $L = -\sum y_{\text{true}} \log(y_{\text{pred}})$
 - **Use**: Classification
 - **Derivative**: ∂L/∂y_pred = -y_true / y_pred
 

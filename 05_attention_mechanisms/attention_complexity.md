@@ -108,7 +108,7 @@ Standard: Attention = softmax(QK^T)V
 Linear: Attention = Q(K^T V) / normalization
 ```
 
-The key insight is using the associative property: (QK^T)V = Q(K^T V).
+The key insight is using the associative property: $(QK^{\top})V = Q(K^{\top}V)$.
 
 ### Complexity Analysis
 

@@ -38,7 +38,7 @@ Important: second-pass depth after the core internals are comfortable.
 
 1. For O=P@V and upstream G, compute dV=Pᵀ@G and dP=G@Vᵀ.
 2. For each softmax row, dS=P*(dP-sum(dP*P)); zero forbidden-score gradients.
-3. For S=QKᵀ/sqrt(d), use dQ=dS@K/sqrt(d) and dK=dSᵀ@Q/sqrt(d), then chain through projections.
+3. For $S = QK^{\top}/\sqrt{d}$, use $dQ = (dS)\,K/\sqrt{d}$ and $dK = (dS)^{\top}Q/\sqrt{d}$, then chain through projections.
 
 **Small example.** Every row of dS sums approximately to zero because softmax is invariant to adding a row constant.
 

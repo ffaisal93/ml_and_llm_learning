@@ -23,7 +23,7 @@
 
 **3. Training:**
 - Predict the noise that was added
-- Loss: L = E[||ε - ε_θ(x_t, t)||²]
+- Loss: $L = \mathbb{E}\big[\lVert \varepsilon - \varepsilon_\theta(x_t, t) \rVert^{2}\big]$
 - Model learns: given noisy data x_t and timestep t, predict noise ε
 
 **4. Generation:**
@@ -227,7 +227,7 @@ Where p_θ(x_t, t) is probability distribution over vocabulary.
 
 **Training:**
 - Loss: Cross-entropy between predicted and original tokens
-- L = E[-log p_θ(x_0 | x_t, t)]
+- $L = \mathbb{E}\big[-\log p_\theta(x_0 \mid x_t, t)\big]$
 
 **Advantages for NLP:**
 - Non-autoregressive (can generate in parallel)

@@ -71,7 +71,7 @@
 - **Impact**: Prefix directly modifies attention computation
 
 **3. Parameters:**
-- **Prompt tuning**: p × d_model (p = prompt length)
+- **Prompt tuning**: $p \times d_{\text{model}}$ (where $p$ is the prompt length)
 - **Prefix tuning**: L × p × 2d_model (L = layers, for K and V)
 - **Example**: 12 layers, 20 tokens, 768 dim
   - Prompt: 20 × 768 = 15,360
@@ -412,7 +412,7 @@ Project up to full dimension
 
 **LoRA:**
 - Parameters: Low-rank matrices (r × d_model)
-- Example: r=8, d_model=768 → ~6K per layer
+- Example: $r=8$, $d_{\text{model}}=768$ → ~6K per layer
 - Total: ~0.1-1% of model parameters
 - Storage: Small adapter weights
 

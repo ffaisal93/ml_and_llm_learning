@@ -16,7 +16,7 @@ Very important: implement the primitives and defend their shapes and edge cases.
 
 **Work it through.**
 
-1. Project X into Q,K,V, then form QKᵀ/sqrt(d_k).
+1. Project $X$ into $Q$, $K$, $V$, then form $QK^{\top}/\sqrt{d_k}$.
 2. Replace forbidden scores with negative infinity. Subtract each row's maximum, exponentiate, and divide by the row sum.
 3. Return probabilities @ V. Check mask shape and reject rows with no valid keys. See the executable attention implementation in the coding lab.
 
@@ -268,7 +268,7 @@ Use a tiny callback model with known probabilities, enumerate its short possible
 **Work it through.**
 
 1. Scan by integer indexing to validate logits and find the finite maximum m; reject NaN, positive infinity, empty input and all-negative-infinity input.
-2. Scan again in bounded inner blocks, accumulating Z=sum(exp(x-m)) and S=sum(exp(x-m)*(x-m)); negative infinity contributes zero.
+2. Scan again in bounded inner blocks, accumulating $Z = \sum \exp(x-m)$ and $S = \sum \exp(x-m)\,(x-m)$; negative infinity contributes zero.
 3. Return log(Z)-S/Z. The shifted form avoids subtracting two huge nearly equal unshifted numbers. Keep only scalar accumulators.
 
 **Small example.** For [0,0], Z=2 and S=0, so entropy is log(2). For one finite logit and the rest negative infinity, entropy is zero.

@@ -288,7 +288,7 @@ Where:
 
 **Gini vs Entropy:**
 - **Gini**: Gini = 1 - Σ p_i² (faster to compute)
-- **Entropy**: H = -Σ p_i * log(p_i) (more information-theoretic)
+- **Entropy**: $H = -\sum_i p_i \log p_i$ (more information-theoretic)
 - **In practice**: Both work similarly for decision trees
 - **Gini**: Slightly faster, more sensitive to class probability changes
 - **Entropy**: More theoretically grounded

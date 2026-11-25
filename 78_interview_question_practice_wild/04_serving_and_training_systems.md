@@ -116,7 +116,7 @@ Very important for MLE and LLM roles: explain the resource bottleneck and the re
 
 **Work it through.**
 
-1. Fix a convention: X:(N,d_in), W:(d_in,d_out), Y=XW. If output columns of W are split, each worker produces a slice of Y.
+1. Fix a convention: $X:(N, d_{\text{in}})$, $W:(d_{\text{in}}, d_{\text{out}})$, $Y = XW$. If output columns of $W$ are split, each worker produces a slice of $Y$.
 2. For replicated X, each worker computes its local dW=Xᵀ*dY_slice and partial dX=dY_slice*W_sliceᵀ.
 3. Sum partial dX across workers. If forward concatenated slices with all-gather, backward distributes the corresponding gradient slices with the correct sum semantics for the surrounding graph.
 
@@ -197,7 +197,7 @@ Very important for MLE and LLM roles: explain the resource bottleneck and the re
 **Work it through.**
 
 1. If a worker handles at most b requests per model call taking s seconds, its optimistic sustained capacity is b/s requests per second.
-2. A bound like wait<=t_max+s needs additional conditions: a ready batch can be served after at most one current model call, with no earlier queued backlog or competing delay.
+2. A bound like $\text{wait} \le t_{\max} + s$ needs additional conditions: a ready batch can be served after at most one current model call, with no earlier queued backlog or competing delay.
 3. Under sustained arrivals above service capacity, backlog grows; bound the queue and apply admission control or add capacity. Below average capacity, bursts can still violate a per-request bound.
 
 **Small example.** With b=8 and s=0.1, the optimistic capacity is 80 requests/s. Arrivals at 100/s add about 20 queued requests/s if nothing is rejected.

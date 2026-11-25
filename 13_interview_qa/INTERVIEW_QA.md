@@ -127,7 +127,7 @@ Stacked over all $j$, the first expression is exactly $\frac{2}{n}X^\top e$ — 
 
 **Key Difference:**
 - Linear: y = w*x + b
-- Logistic: p = sigmoid(w*x + b), then classify p > 0.5
+- Logistic: $p = \sigma(w \cdot x + b)$, then classify $p > 0.5$
 
 **Why it works.**
 
@@ -553,7 +553,7 @@ with $s = (x_{\max} - x_{\min}) / (q_{\max} - q_{\min})$ and $z$ chosen so that 
 **Algorithm:**
 1. Sort tokens by probability (descending)
 2. Compute cumulative probability
-3. Find smallest set where cum_prob >= p
+3. Find the smallest set whose cumulative probability is $\ge p$
 4. Sample from this "nucleus"
 5. Renormalize probabilities
 
@@ -3741,8 +3741,8 @@ The problem with putting a line straight onto a probability is that lines are un
 
 **Step 2: Solve for P**
 - P / (1-P) = e^(wx + b)
-- P = e^(wx + b) / (1 + e^(wx + b))
-- P = 1 / (1 + e^(-(wx + b))) = σ(wx + b)
+- $P = e^{wx+b} / \left(1 + e^{wx+b}\right)$
+- $P = 1 / \left(1 + e^{-(wx+b)}\right) = \sigma(wx+b)$
 
 **Why Sigmoid?**
 - Bounded: Always between 0 and 1
@@ -5968,7 +5968,7 @@ The $n^2$ comes from the fact that attention compares every token to every other
 - Can parallelize across heads
 
 **Linear Attention: O(nd²)**
-- Reformulates: (QK^T)V = Q(K^T V)
+- Reformulates: $(QK^{\top})V = Q(K^{\top}V)$
 - Compute K^T V first: O(nd²)
 - Then Q @ (K^T V): O(nd²)
 - Faster when n >> d
@@ -6561,7 +6561,7 @@ Generating a photograph in one shot means sampling from a distribution nobody ca
 
 **3. Training:**
 - Predict the noise that was added
-- Loss: L = E[||ε - ε_θ(x_t, t)||²]
+- Loss: $L = \mathbb{E}\big[\lVert \varepsilon - \varepsilon_\theta(x_t, t) \rVert^{2}\big]$
 
 **4. Generation:**
 - Start from pure noise x_T ~ N(0, I)

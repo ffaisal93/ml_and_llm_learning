@@ -314,7 +314,7 @@ As models grow, **stability** matters more than per-step quality. A single irrec
 
 The **danger zones** are softmaxes (exp + division). LLMs have two:
 - Output softmax (token logits).
-- Attention softmax (over Q·K^T scores).
+- Attention softmax (over $Q \cdot K^{\top}$ scores).
 
 ### 8.1 z-loss — output-softmax stability
 

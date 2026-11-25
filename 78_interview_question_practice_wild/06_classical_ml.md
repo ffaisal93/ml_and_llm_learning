@@ -16,7 +16,7 @@ Very important: these concepts are common follow-ups even in LLM-focused intervi
 
 **Work it through.**
 
-1. Compute z=xᵀw+b and p=sigmoid(z); p/(1-p)=exp(z), so the log odds are linear.
+1. Compute $z = x^{\top}w + b$ and $p = \sigma(z)$; then $p/(1-p) = e^{z}$, so the log odds are linear.
 2. Fit weights by minimizing binary cross-entropy, preferably calculated from logits for stability.
 3. The score gradient is p-y, giving weight gradient Xᵀ(p-y)/N under mean reduction. Choose the classification threshold using validation costs and metrics.
 

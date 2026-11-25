@@ -325,7 +325,7 @@ This is why the kernel trick works - we never need the transformed features, onl
 
 | Aspect | Linear | Polynomial | RBF |
 |--------|--------|------------|-----|
-| **Formula** | x · y | (γx·y + r)^d | exp(-γ\|x-y\|²) |
+| **Formula** | $x \cdot y$ | $(\gamma\, x \cdot y + r)^{d}$ | $\exp(-\gamma \lVert x-y \rVert^{2})$ |
 | **Complexity** | Simple | Moderate | Complex |
 | **Parameters** | C only | degree, γ, r | γ, C |
 | **Speed** | Fastest | Fast | Slower |

@@ -60,8 +60,8 @@ Where:
 - This allows efficient sampling during training
 
 **Intuition:**
-- At t=0: x_0 is clean data
-- At t=T: x_T is approximately pure noise N(0, I)
+- At $t=0$: $x_0$ is clean data
+- At $t=T$: $x_T$ is approximately pure noise $\mathcal{N}(0, I)$
 - The variance schedule β_t controls how quickly we add noise
 
 ### Reverse Diffusion Process

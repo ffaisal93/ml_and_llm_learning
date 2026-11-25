@@ -286,7 +286,7 @@ Attention_l = softmax(Q_l K_l^T / √d_k) V_l
 Total = L × prefix_length × (d_k + d_v)
 ```
 
-For L=12 layers, prefix_length=20, d_k=d_v=768:
+For $L=12$ layers, a prefix length of 20, and $d_k = d_v = 768$:
 - Total = 12 × 20 × (768 + 768) = 368,640 parameters
 - Much less than full model (e.g., 125M parameters for GPT-2)
 
