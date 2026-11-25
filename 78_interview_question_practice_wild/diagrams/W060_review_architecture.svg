@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="768" height="378" viewBox="0 0 768 378" role="img" aria-labelledby="title desc">
+<title id="title">W060. Designing a Harmful Content Detection System — architecture</title>
+<desc id="desc">Upload/comment/edit → durable versioned content event
+                         ↓                    ↓
+               synchronous gate       asynchronous scan queue
+               text/image/light       video/audio/context models
+                  models                      ↓
+                     ↘               policy-versioned decision
+                       allow / restrict / block / review
+                                      ↓
+                        prioritized human queue + appeals
+                                      ↓
+                         audit labels → evaluation/training
+</desc>
+<rect width="768" height="378" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Upload/comment/edit → durable versioned content event</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         ↓                    ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">               synchronous gate       asynchronous scan queue</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">               text/image/light       video/audio/context models</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                  models                      ↓</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                     ↘               policy-versioned decision</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                       allow / restrict / block / review</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                        prioritized human queue + appeals</text>
+<text x="32" y="292" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      ↓</text>
+<text x="32" y="320" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         audit labels → evaluation/training</text>
+</svg>

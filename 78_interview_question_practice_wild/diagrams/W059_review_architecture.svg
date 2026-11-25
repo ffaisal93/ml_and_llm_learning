@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="757" height="378" viewBox="0 0 757 378" role="img" aria-labelledby="title desc">
+<title id="title">W059. ML System to Detect Harmful LLM Content — architecture</title>
+<desc id="desc">User prompt → input risk screen → generation
+                                     ↓
+                        rolling output moderation gate
+                                     ↓
+                      final multimodal policy decision
+                         ↓                    ↓
+                  deliver / restrict     review or regenerate
+                         ↓                    ↓
+                         audit + appeals + sampled human labels
+                                            ↓
+                                versioned dataset → training
+</desc>
+<rect width="757" height="378" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">User prompt → input risk screen → generation</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                     ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                        rolling output moderation gate</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                     ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                      final multimodal policy decision</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         ↓                    ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                  deliver / restrict     review or regenerate</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         ↓                    ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         audit + appeals + sampled human labels</text>
+<text x="32" y="292" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                            ↓</text>
+<text x="32" y="320" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                versioned dataset → training</text>
+</svg>

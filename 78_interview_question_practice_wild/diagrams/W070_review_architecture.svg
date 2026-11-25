@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="801" height="434" viewBox="0 0 801 434" role="img" aria-labelledby="title desc">
+<title id="title">W070. ML System Design: Restaurant / Store Recommendation — architecture</title>
+<desc id="desc">Request → open/serviceable/in-stock eligibility
+                          ↓
+        lexical + two-tower ANN + discovery sources
+                          ↓
+              merge / filter / candidate budget
+                          ↓
+             bulk features → daily-trained ranker
+                          ↓
+           delivery/quality/diversity/ad-slot policy
+                          ↓
+        results → impressions/orders/ETA outcomes → event bus
+                                                     ↓
+                          online features + offline training tables
+</desc>
+<rect width="801" height="434" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Request → open/serviceable/in-stock eligibility</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                          ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">        lexical + two-tower ANN + discovery sources</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                          ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">              merge / filter / candidate budget</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                          ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">             bulk features → daily-trained ranker</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                          ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">           delivery/quality/diversity/ad-slot policy</text>
+<text x="32" y="292" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                          ↓</text>
+<text x="32" y="320" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">        results → impressions/orders/ETA outcomes → event bus</text>
+<text x="32" y="348" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                     ↓</text>
+<text x="32" y="376" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                          online features + offline training tables</text>
+</svg>

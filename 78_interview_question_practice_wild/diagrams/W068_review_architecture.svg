@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="867" height="378" viewBox="0 0 867 378" role="img" aria-labelledby="title desc">
+<title id="title">W068. Design App Store Search and Ranking — architecture</title>
+<desc id="desc">Query → normalization / language / intent / embedding
+                            ↓ parallel
+                    lexical index + ANN index
+                            ↓
+              merge + device/locale/policy eligibility
+                            ↓
+                 feature batch lookup → ranker
+                            ↓
+               diversity / spam policy → results
+                            ↓
+          impressions / installs / uninstalls → training + fresh features
+</desc>
+<rect width="867" height="378" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Query → normalization / language / intent / embedding</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                            ↓ parallel</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                    lexical index + ANN index</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                            ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">              merge + device/locale/policy eligibility</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                            ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                 feature batch lookup → ranker</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                            ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">               diversity / spam policy → results</text>
+<text x="32" y="292" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                            ↓</text>
+<text x="32" y="320" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">          impressions / installs / uninstalls → training + fresh features</text>
+</svg>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="878" height="266" viewBox="0 0 878 266" role="img" aria-labelledby="title desc">
+<title id="title">W062. Design an Account Takeover Prediction System — architecture</title>
+<desc id="desc">Login / sensitive action → ATO scoring → allow / step-up / deny
+                                ↑                     ↓
+                    device / IP / account features   audit events
+                                ↑                     ↓
+Events → stream velocity aggregates → feature store   confirmed cases
+                                                       ↓
+                         registry ← calibrated model ← time-split training
+</desc>
+<rect width="878" height="266" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Login / sensitive action → ATO scoring → allow / step-up / deny</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                ↑                     ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                    device / IP / account features   audit events</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                ↑                     ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Events → stream velocity aggregates → feature store   confirmed cases</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                       ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         registry ← calibrated model ← time-split training</text>
+</svg>

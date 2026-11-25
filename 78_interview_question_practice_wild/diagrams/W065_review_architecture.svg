@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="834" height="462" viewBox="0 0 834 462" role="img" aria-labelledby="title desc">
+<title id="title">W065. Video Recommendation — architecture</title>
+<desc id="desc">App → recommendation API → parallel candidate sources
+                              ANN / subscriptions / recent / trending
+                                          ↓
+                                eligibility + dedup
+                                          ↓
+                           batched ranker → slate reranker → app
+                                          ↓
+App impressions / playback → event gateway → event bus
+                                              ↙           ↘
+                                stream aggregates       raw data lake
+                                      ↓                     ↓
+                                online features    point-in-time joins
+                                                            ↓
+                            ANN index + model registry ← training/eval
+</desc>
+<rect width="834" height="462" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">App → recommendation API → parallel candidate sources</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                              ANN / subscriptions / recent / trending</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                          ↓</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                eligibility + dedup</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                          ↓</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                           batched ranker → slate reranker → app</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                          ↓</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">App impressions / playback → event gateway → event bus</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                              ↙           ↘</text>
+<text x="32" y="292" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                stream aggregates       raw data lake</text>
+<text x="32" y="320" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      ↓                     ↓</text>
+<text x="32" y="348" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                online features    point-in-time joins</text>
+<text x="32" y="376" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                            ↓</text>
+<text x="32" y="404" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                            ANN index + model registry ← training/eval</text>
+</svg>

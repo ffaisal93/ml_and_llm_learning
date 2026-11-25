@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="889" height="322" viewBox="0 0 889 322" role="img" aria-labelledby="title desc">
+<title id="title">W058. Design an LLM-Backed Customer-Service Chat System with Failure Handling — architecture</title>
+<desc id="desc">Clients / multiple tabs ← resumable event gateway ← durable reply/chunk log
+           ↓                                      ↑
+      message API → conversation DB + outbox → per-conversation queue
+                                                   ↓
+                                           reply orchestrator
+                                         ↙         ↓          ↘
+                               provider router   tool ledger   human queue
+                                    ↓                ↓
+                             regional LLM APIs   refund service
+</desc>
+<rect width="889" height="322" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Clients / multiple tabs ← resumable event gateway ← durable reply/chunk log</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">           ↓                                      ↑</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">      message API → conversation DB + outbox → per-conversation queue</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                   ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                           reply orchestrator</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                         ↙         ↓          ↘</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                               provider router   tool ledger   human queue</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                    ↓                ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                             regional LLM APIs   refund service</text>
+</svg>

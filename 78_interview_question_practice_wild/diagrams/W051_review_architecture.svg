@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="322" viewBox="0 0 720 322" role="img" aria-labelledby="title desc">
+<title id="title">W051. Live Coding: Replace a Heuristic Terminal Game with an LLM-Driven Agent — architecture</title>
+<desc id="desc">Game observation + legal actions + recent trace
+                    ↓
+          JSON prompt → model call
+                    ↓
+         parse JSON → check legality
+             ↓ valid       ↓ invalid
+        engine.step()    bounded correction
+             ↓               ↓ exhausted
+        next observation ← legal baseline action
+</desc>
+<rect width="720" height="322" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Game observation + legal actions + recent trace</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                    ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">          JSON prompt → model call</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                    ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">         parse JSON → check legality</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">             ↓ valid       ↓ invalid</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">        engine.step()    bounded correction</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">             ↓               ↓ exhausted</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">        next observation ← legal baseline action</text>
+</svg>

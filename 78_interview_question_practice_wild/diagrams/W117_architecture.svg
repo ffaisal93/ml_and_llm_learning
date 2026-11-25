@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1120" height="770" viewBox="0 0 1120 770" role="img" aria-labelledby="title desc">
 <title id="title">W117 · Jira AI Auto-Fix Pipeline</title>
-<desc id="desc">Repository event — issue + commit id; Analysis coordinator — scoped checkout; Run and finding store — exact source revision; Isolated analysis queue — tests + resource limits; Patch or review worker — verify findings; Reviewable changes — checks + human decision. Analyze the stated commit in an isolated environment; repository content cannot grant deployment permissions.</desc>
+<desc id="desc">Jira ticket event — ticket + source revision; Fix-run coordinator — idempotent dispatch; Ticket and run store — cursor + exact revision; Durable ticket queue — leases + retry budget; AI fix + PR finalizer — verify failing test; One tracked fix PR — checks + ticket status. Analyze the stated commit in an isolated environment; repository content cannot grant deployment permissions.</desc>
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#475569"/></marker></defs>
 <rect width="1120" height="770" rx="16" fill="white"/>
 <g font-family="Arial, Helvetica, sans-serif" fill="#0f172a">
@@ -15,23 +15,23 @@
 <text x="950" y="317" font-size="15" font-weight="400" text-anchor="start">state</text>
 <polyline points="938,474 938,535 182,535 182,474" stroke="#475569" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
 <rect x="32" y="140" width="300" height="104" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
-<text x="182" y="186" font-size="18" font-weight="700" text-anchor="middle">Repository event</text>
-<text x="182" y="210" font-size="16" font-weight="400" text-anchor="middle">issue + commit id</text>
+<text x="182" y="186" font-size="18" font-weight="700" text-anchor="middle">Jira ticket event</text>
+<text x="182" y="210" font-size="16" font-weight="400" text-anchor="middle">ticket + source revision</text>
 <rect x="410" y="140" width="300" height="104" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
-<text x="560" y="186" font-size="18" font-weight="700" text-anchor="middle">Analysis coordinator</text>
-<text x="560" y="210" font-size="16" font-weight="400" text-anchor="middle">scoped checkout</text>
+<text x="560" y="186" font-size="18" font-weight="700" text-anchor="middle">Fix-run coordinator</text>
+<text x="560" y="210" font-size="16" font-weight="400" text-anchor="middle">idempotent dispatch</text>
 <rect x="788" y="140" width="300" height="104" rx="10" fill="#fff7ed" stroke="#fb923c" stroke-width="2"/>
-<text x="938" y="186" font-size="18" font-weight="700" text-anchor="middle">Run and finding store</text>
-<text x="938" y="210" font-size="16" font-weight="400" text-anchor="middle">exact source revision</text>
+<text x="938" y="186" font-size="18" font-weight="700" text-anchor="middle">Ticket and run store</text>
+<text x="938" y="210" font-size="16" font-weight="400" text-anchor="middle">cursor + exact revision</text>
 <rect x="410" y="370" width="300" height="104" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
-<text x="560" y="416" font-size="18" font-weight="700" text-anchor="middle">Isolated analysis queue</text>
-<text x="560" y="440" font-size="16" font-weight="400" text-anchor="middle">tests + resource limits</text>
+<text x="560" y="416" font-size="18" font-weight="700" text-anchor="middle">Durable ticket queue</text>
+<text x="560" y="440" font-size="16" font-weight="400" text-anchor="middle">leases + retry budget</text>
 <rect x="788" y="370" width="300" height="104" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
-<text x="938" y="416" font-size="18" font-weight="700" text-anchor="middle">Patch or review worker</text>
-<text x="938" y="440" font-size="16" font-weight="400" text-anchor="middle">verify findings</text>
+<text x="938" y="416" font-size="18" font-weight="700" text-anchor="middle">AI fix + PR finalizer</text>
+<text x="938" y="440" font-size="16" font-weight="400" text-anchor="middle">verify failing test</text>
 <rect x="32" y="370" width="300" height="104" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
-<text x="182" y="416" font-size="18" font-weight="700" text-anchor="middle">Reviewable changes</text>
-<text x="182" y="440" font-size="16" font-weight="400" text-anchor="middle">checks + human decision</text>
+<text x="182" y="416" font-size="18" font-weight="700" text-anchor="middle">One tracked fix PR</text>
+<text x="182" y="440" font-size="16" font-weight="400" text-anchor="middle">checks + ticket status</text>
 <text x="32" y="590" font-size="18" font-weight="700" text-anchor="start">Key constraint</text>
 <text x="32" y="620" font-size="17" font-weight="400" text-anchor="start">Analyze the stated commit in an isolated environment; repository content cannot grant deployment permissions.</text>
 </g></svg>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="378" viewBox="0 0 900 378" role="img" aria-labelledby="title desc">
+<title id="title">W066. Homepage Video Recommendation System — architecture</title>
+<desc id="desc">TV / mobile client → edge/auth → homepage orchestrator
+                                      ↓ parallel bounded calls
+                    profile/context   eligibility/catalog   candidate caches
+                                      ↓
+                           item ranker + row composer
+                                      ↓
+                          metadata hydration → homepage
+                                      ↓
+Client impressions / plays → durable events → features/training
+                                                   ↓
+                      cached candidates + model/index registry
+</desc>
+<rect width="900" height="378" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">TV / mobile client → edge/auth → homepage orchestrator</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      ↓ parallel bounded calls</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                    profile/context   eligibility/catalog   candidate caches</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                           item ranker + row composer</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                          metadata hydration → homepage</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Client impressions / plays → durable events → features/training</text>
+<text x="32" y="292" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                                   ↓</text>
+<text x="32" y="320" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                      cached candidates + model/index registry</text>
+</svg>

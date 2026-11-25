@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1120" height="770" viewBox="0 0 1120 770" role="img" aria-labelledby="title desc">
 <title id="title">W144 · Design an API for Embedding and Classification Results</title>
-<desc id="desc">Application — model + request id; Inference gateway — validate + route; Model registry — versioned weights; Bounded batch queue — deadlines + token budget; GPU model workers — prefill + decode; Streamed response — usage + cancellation. Pin a compatible model version; admit work within memory limits and cancel expired requests.</desc>
+<desc id="desc">Stored-file client — file id + model versions; Classification API — authorize + deduplicate; Job and model registry — state + contracts + results; Two-stage work queues — stage deadlines + quotas; Embedding + classifier — validate + persist vector; Durable JSON result — poll job or bounded wait. Pin file and model versions; reuse valid embeddings and commit one canonical result.</desc>
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#475569"/></marker></defs>
 <rect width="1120" height="770" rx="16" fill="white"/>
 <g font-family="Arial, Helvetica, sans-serif" fill="#0f172a">
@@ -15,23 +15,23 @@
 <text x="950" y="317" font-size="15" font-weight="400" text-anchor="start">state</text>
 <polyline points="938,474 938,535 182,535 182,474" stroke="#475569" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
 <rect x="32" y="140" width="300" height="104" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
-<text x="182" y="186" font-size="18" font-weight="700" text-anchor="middle">Application</text>
-<text x="182" y="210" font-size="16" font-weight="400" text-anchor="middle">model + request id</text>
+<text x="182" y="186" font-size="18" font-weight="700" text-anchor="middle">Stored-file client</text>
+<text x="182" y="210" font-size="16" font-weight="400" text-anchor="middle">file id + model versions</text>
 <rect x="410" y="140" width="300" height="104" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
-<text x="560" y="186" font-size="18" font-weight="700" text-anchor="middle">Inference gateway</text>
-<text x="560" y="210" font-size="16" font-weight="400" text-anchor="middle">validate + route</text>
+<text x="560" y="186" font-size="18" font-weight="700" text-anchor="middle">Classification API</text>
+<text x="560" y="210" font-size="16" font-weight="400" text-anchor="middle">authorize + deduplicate</text>
 <rect x="788" y="140" width="300" height="104" rx="10" fill="#fff7ed" stroke="#fb923c" stroke-width="2"/>
-<text x="938" y="186" font-size="18" font-weight="700" text-anchor="middle">Model registry</text>
-<text x="938" y="210" font-size="16" font-weight="400" text-anchor="middle">versioned weights</text>
+<text x="938" y="186" font-size="18" font-weight="700" text-anchor="middle">Job and model registry</text>
+<text x="938" y="210" font-size="16" font-weight="400" text-anchor="middle">state + contracts + results</text>
 <rect x="410" y="370" width="300" height="104" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
-<text x="560" y="416" font-size="18" font-weight="700" text-anchor="middle">Bounded batch queue</text>
-<text x="560" y="440" font-size="16" font-weight="400" text-anchor="middle">deadlines + token budget</text>
+<text x="560" y="416" font-size="18" font-weight="700" text-anchor="middle">Two-stage work queues</text>
+<text x="560" y="440" font-size="16" font-weight="400" text-anchor="middle">stage deadlines + quotas</text>
 <rect x="788" y="370" width="300" height="104" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
-<text x="938" y="416" font-size="18" font-weight="700" text-anchor="middle">GPU model workers</text>
-<text x="938" y="440" font-size="16" font-weight="400" text-anchor="middle">prefill + decode</text>
+<text x="938" y="416" font-size="18" font-weight="700" text-anchor="middle">Embedding + classifier</text>
+<text x="938" y="440" font-size="16" font-weight="400" text-anchor="middle">validate + persist vector</text>
 <rect x="32" y="370" width="300" height="104" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
-<text x="182" y="416" font-size="18" font-weight="700" text-anchor="middle">Streamed response</text>
-<text x="182" y="440" font-size="16" font-weight="400" text-anchor="middle">usage + cancellation</text>
+<text x="182" y="416" font-size="18" font-weight="700" text-anchor="middle">Durable JSON result</text>
+<text x="182" y="440" font-size="16" font-weight="400" text-anchor="middle">poll job or bounded wait</text>
 <text x="32" y="590" font-size="18" font-weight="700" text-anchor="start">Key constraint</text>
-<text x="32" y="620" font-size="17" font-weight="400" text-anchor="start">Pin a compatible model version; admit work within memory limits and cancel expired requests.</text>
+<text x="32" y="620" font-size="17" font-weight="400" text-anchor="start">Pin file and model versions; reuse valid embeddings and commit one canonical result.</text>
 </g></svg>

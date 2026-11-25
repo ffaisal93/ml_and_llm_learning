@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="779" height="350" viewBox="0 0 779 350" role="img" aria-labelledby="title desc">
+<title id="title">W055. Design Durable Execution for Long-Running Agent Queries — architecture</title>
+<desc id="desc">Client ─POST /queries (idempotency key)→ API
+                                          ↓ transaction
+                                  Query DB + outbox
+                                          ↓
+                                  durable step queue
+                                          ↓ lease / fencing token
+Model/search provider ← bounded worker → checkpoint + event log
+                                          ↓
+Client ← resumable SSE /events?after=seq ← event gateway
+Client ← GET /queries/{id}/result       ← object storage
+</desc>
+<rect width="779" height="350" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Client ─POST /queries (idempotency key)→ API</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                          ↓ transaction</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                  Query DB + outbox</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                          ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                  durable step queue</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                          ↓ lease / fencing token</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Model/search provider ← bounded worker → checkpoint + event log</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                          ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Client ← resumable SSE /events?after=seq ← event gateway</text>
+<text x="32" y="292" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Client ← GET /queries/{id}/result       ← object storage</text>
+</svg>

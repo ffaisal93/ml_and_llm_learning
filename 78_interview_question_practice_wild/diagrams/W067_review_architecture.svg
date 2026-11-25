@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="856" height="378" viewBox="0 0 856 378" role="img" aria-labelledby="title desc">
+<title id="title">W067. Design Meta Ads Ranking — architecture</title>
+<desc id="desc">Impression context → eligible campaigns / targeting / budget filter
+                                        ↓
+                             retrieval → lightweight rank
+                                        ↓
+                        pCTR + conditional pCVR + quality models
+                                        ↓
+                         calibrated value + UX policy → auction
+                                        ↓
+                     impression / click / delayed conversion logs
+                                        ↓
+                   attribution + label maturation → training/calibration
+</desc>
+<rect width="856" height="378" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Impression context → eligible campaigns / targeting / budget filter</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                        ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                             retrieval → lightweight rank</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                        ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                        pCTR + conditional pCVR + quality models</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                        ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         calibrated value + UX policy → auction</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                        ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                     impression / click / delayed conversion logs</text>
+<text x="32" y="292" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                        ↓</text>
+<text x="32" y="320" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                   attribution + label maturation → training/calibration</text>
+</svg>

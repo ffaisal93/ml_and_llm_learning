@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="746" height="378" viewBox="0 0 746 378" role="img" aria-labelledby="title desc">
+<title id="title">W057. ML Design: Recruiter Hiring Pipeline Assistant — architecture</title>
+<desc id="desc">ATS events + role requirements + permitted candidate records
+                         ↓ consent / access / cleaning
+                 versioned feature and label pipeline
+                    ↓                       ↓
+             offline training         online features
+                    ↓                       ↓
+             model registry → candidate-priority API
+                                      ↓
+                        recruiter queue + explanations
+                                      ↓
+                      decisions / corrections / outcomes → ATS
+</desc>
+<rect width="746" height="378" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">ATS events + role requirements + permitted candidate records</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                         ↓ consent / access / cleaning</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                 versioned feature and label pipeline</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                    ↓                       ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">             offline training         online features</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                    ↓                       ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">             model registry → candidate-priority API</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                        recruiter queue + explanations</text>
+<text x="32" y="292" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      ↓</text>
+<text x="32" y="320" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                      decisions / corrections / outcomes → ATS</text>
+</svg>

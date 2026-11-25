@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="757" height="378" viewBox="0 0 757 378" role="img" aria-labelledby="title desc">
+<title id="title">W100. MLE Deployment, Monitoring &amp; Latency Optimisation — architecture</title>
+<desc id="desc">Validated training run → model + preprocessing/schema + metrics
+                                      ↓
+                              versioned registry
+                                      ↓
+                     build / integration / load tests
+                                      ↓
+                      shadow → canary → live endpoint
+                                      ↓
+                   prediction logs + delayed outcomes
+                                      ↓
+                             monitor / rollback
+</desc>
+<rect width="757" height="378" rx="14" fill="#101c30"/>
+<text x="32" y="40" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">Validated training run → model + preprocessing/schema + metrics</text>
+<text x="32" y="68" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      ↓</text>
+<text x="32" y="96" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                              versioned registry</text>
+<text x="32" y="124" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      ↓</text>
+<text x="32" y="152" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                     build / integration / load tests</text>
+<text x="32" y="180" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      ↓</text>
+<text x="32" y="208" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                      shadow → canary → live endpoint</text>
+<text x="32" y="236" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      ↓</text>
+<text x="32" y="264" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                   prediction logs + delayed outcomes</text>
+<text x="32" y="292" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                                      ↓</text>
+<text x="32" y="320" xml:space="preserve" fill="#e5edf9" font-family="monospace" font-size="17">                             monitor / rollback</text>
+</svg>
